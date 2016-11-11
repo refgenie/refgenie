@@ -1,0 +1,15 @@
+
+tools:
+  # absolute paths to required tools
+  bowtie2build: bowtie2-build
+  bismark_genome_preparation: bismark_genome_preparation
+  epilog_indexer: ${CODEBASE}pipelines/pipelines/tools/epilog_indexer.py
+  samtools: samtools
+  kallisto: kallisto
+
+index:
+  bowtie2: True
+  bismark_bt1: True
+  bismark_bt2: True
+  epilog: False
+  kallisto: False
