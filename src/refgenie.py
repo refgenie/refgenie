@@ -73,35 +73,42 @@ index = pm.config.index
 
 #pm.make_sure_path_exists(outfolder)
 conversions = {}
-conversions["2bit"] = "twoBitToFa {INPUT} {OUTPUT}"
-conversions["gz"] = ngstk.ziptool + " -cd {INPUT} > {OUTPUT}"
+conversions[".2bit"] = "twoBitToFa {INPUT} {OUTPUT}"
+conversions[".gz"] = ngstk.ziptool + " -cd {INPUT} > {OUTPUT}"
 
-def get_raw_file(input_string, output_file, conversions=conversions):
+def move_or_download_file(input_string, outfolder):
 	"""
-	Given an input file, output file, and a list of conversions, gives the appropriate output file.
-	Also downloads if you give a URL.
+	Given an input file, which can be a local file or a URL, and output folder, 
+	this downloads or copies the file into the output folder.
 	@param input_string: Can be either a URL or a path to a local file
 	@type input_string: str
+	@param outfolder: Where to store the result.
+	"""
+	result_file = os.path.join(outfolder, os.path.basename(input_string))
+
+	if is_url(input_string):
+		cmd = "wget -O " + result_file + " " + input_string
+	else:
+		cmd = "cp " + input_string + " " + result_file
+	return([result_file, cmd])
+
+def convert_file(input_file, output_file, conversions):
+	"""
+	Given an input file, output file, and a list of conversions, gives the appropriate output file.
 	@param output_file: Path to local output file you want to create
 	@param conversions: A dictionary of shell commands to convert files of a given type.
 	@type conversions: dict
 	"""
-	input_file = os.path.join(outfolder, os.path.basename(input_string))
-	print("input:" + input_file + " output:" + output_file)
 	form = {"INPUT": input_file, "OUTPUT": output_file}
-	if is_url(input_string):
-		cmd = "wget -O " + input_file + " " + input_string
-	else:
-		cmd = "cp " + input_string + " " + input_file
-
-	
 	ext = os.path.splitext(input_file)[1]
-	try:
-		cmd2 = conversions[ext].format(**form)
+	if ext in conversions:
+		cmd = conversions[ext].format(**form)
+		return(cmd)
 	else:
-		cmd2 = None
+		# No conversion available/necessary.
+		return None
 	
-	return([cmd, cmd2])
+	
 
 # Copy fasta file to genome folder structure
 local_raw_fasta = genome_name + ".fa"
@@ -109,8 +116,12 @@ raw_fasta = os.path.join(outfolder, local_raw_fasta)
 
 input_file = os.path.join(outfolder, os.path.basename(args.input))
 
-cmdlist = get_raw_file(args.input, raw_fasta)
-pm.run(cmdlist, raw_fasta)
+input_file, cmd = move_or_download_file(args.input, outfolder)
+pm.run(cmd, input_file)
+
+cmd = convert_file(input_file, raw_fasta, conversions)
+if cmd:
+	pm.run(cmd, raw_fasta)
 
 cmd = tools.samtools + " faidx " + raw_fasta
 pm.run(cmd, raw_fasta + ".fai")
@@ -127,11 +138,12 @@ pm.run([cmd, cmd2], chrom_sizes_alias)
 
 # Copy annotation file (if any) to folder structure
 if args.annotation:
-
-	annotation_file = os.path.join(outfolder, genome_name + ".gtf.gz")
 	annotation_file_unzipped = os.path.join(outfolder, genome_name + ".gtf")
-	cmdlist = get_raw_file(args.annotation, annotation_file_unzipped)
-	pm.run(cmdlist, annotation_file_unzipped)
+	annotation_file, cmd = move_or_download_file(args.annotation, outfolder)
+	pm.run(cmd, annotation_file)
+
+	cmd = convert_file(annotation_file, annotation_file_unzipped, conversions)
+	pm.run(cmd, annotation_file_unzipped)
 
 #	cmd = "cp " + args.annotation + " " + annotation_file
 #	cmd2 = ngstk.ziptool + " -d " + annotation_file 
