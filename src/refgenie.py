@@ -57,7 +57,7 @@ args = parser.parse_args()
 if args.name:
 	genome_name = args.name
 else:
-	genome_name = os.path.basename(args.fasta)
+	genome_name = os.path.basename(args.input)
 	# eliminate extensions to get canonical genome name.
 	for strike in [".fasta$", ".fa$", ".gz$", ".2bit$"]:
 		genome_name = re.sub(strike, "", genome_name)
