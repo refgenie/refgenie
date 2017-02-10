@@ -24,3 +24,4 @@ GTF=ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_23/gencode.v23.prim
 ${BUILDER} -i ${INPUT} -a ${GTF} -n hg38
 ```
 
+## mm10
