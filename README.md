@@ -7,8 +7,8 @@ Refgenie currently builds indexes for tools like bowtie, bowtie2, bismark (for D
 ## Installing
 
 * Install [Pypiper](http://databio.org/pypiper/) (`pip install --user --upgrade https://github.com/epigen/pypiper/zipball/master`)
-* Clone this repo
-* Install indexers for any indexes you want to build; put them in your path (default) or specify paths in your [refgenie config file](src/refgenie.yaml)
+* Clone this repo (e.g. `git clone git@github.com:databio/refgenie.git`)
+* Install software for indexes to build; put them in your path (default) or specify paths in your [refgenie config file](src/refgenie.yaml)
 
 ## Running
 
