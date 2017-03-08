@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
-import pypiper
 from argparse import ArgumentParser
-import os, re
+import pypiper
+import os
+import re
 import urlparse
+from _version import __version__
 
 def is_url(url):
 	return urlparse.urlparse(url).scheme != ""
@@ -32,9 +34,10 @@ parser.add_argument('-input', '--input', dest='input', required = True,
 parser.add_argument('-n', '--name', dest='name', required = False,
 	help='Name of the genome to build.')
 
-
 parser.add_argument('-a', '--annotation', dest='annotation', required = False,
 	help='Path to GTF gene annotation file')
+
+parser.add_argument("-d", "--docker", action="store_true")
 
 # Don't error if RESOURCES is not set.
 try:
@@ -64,9 +67,10 @@ else:
 
 
 outfolder = os.path.join(args.outfolder, genome_name)
+outfolder = os.path.abspath(outfolder)
 print("Output to: " , genome_name, args.outfolder, outfolder)
 
-pm = pypiper.PipelineManager(name="build_reference", outfolder = outfolder, args = args)
+pm = pypiper.PipelineManager(name="refgenie", outfolder = outfolder, args = args)
 ngstk = pypiper.NGSTk(pm = pm)
 tools = pm.config.tools  # Convenience alias
 index = pm.config.index
@@ -108,7 +112,7 @@ def convert_file(input_file, output_file, conversions):
 		# No conversion available/necessary.
 		return None
 	
-	
+
 
 # Copy fasta file to genome folder structure
 local_raw_fasta = genome_name + ".fa"
@@ -119,12 +123,25 @@ input_file = os.path.join(outfolder, os.path.basename(args.input))
 input_file, cmd = move_or_download_file(args.input, outfolder)
 pm.run(cmd, input_file)
 
+container = None
+if args.docker:
+	# Set up some docker stuff
+	pm.get_container("nsheff/refgenie", outfolder)
+	# of = os.path.abspath(outfolder)
+	# outfolder = of
+	# cmd = "docker run -itd"
+	# cmd += " -v " + of + ":" + of
+	# cmd += " nsheff/refgenie"
+	# container = pm.checkprint(cmd).rstrip()
+	# print("Using docker container: " + container)
+	# pm.atexit_register(remove_container, container)
+
 cmd = convert_file(input_file, raw_fasta, conversions)
 if cmd:
 	pm.run(cmd, raw_fasta)
 
 cmd = tools.samtools + " faidx " + raw_fasta
-pm.run(cmd, raw_fasta + ".fai")
+pm.run(cmd, raw_fasta + ".fai", container=pm.container)
 
 # Determine chromosome sizes
 fai_file = raw_fasta + ".fai"
@@ -134,7 +151,7 @@ chrom_sizes_file = os.path.join(outfolder, loc_chrom_sizes_file)
 chrom_sizes_alias = os.path.join(outfolder, genome_name + ".chromSizes")
 cmd = "cut -f 1,2 " + fai_file + " > " + chrom_sizes_file
 cmd2 = "ln -s " + loc_chrom_sizes_file + " " + chrom_sizes_alias
-pm.run([cmd, cmd2], chrom_sizes_alias)
+pm.run([cmd, cmd2], chrom_sizes_alias, container=pm.container)
 
 # Copy annotation file (if any) to folder structure
 if args.annotation:
@@ -161,7 +178,7 @@ if index.bowtie2:
 	cmd1 = "ln -sf ../" + local_raw_fasta + " " + folder
 	cmd2 = tools.bowtie2build + " " + raw_fasta + " " + os.path.join(folder, genome_name)
 	cmd3 = "touch " + target
-	pm.run([cmd1, cmd2, cmd3], target)
+	pm.run([cmd1, cmd2, cmd3], target, container=pm.container)
 
 # Bismark index - bowtie2
 if index.bismark_bt2:
@@ -171,7 +188,7 @@ if index.bismark_bt2:
 	cmd1 = "ln -sf ../" + local_raw_fasta + " " + folder
 	cmd2 = tools.bismark_genome_preparation + " --bowtie2 " + folder
 	cmd3 = "touch " + target
-	pm.run([cmd1, cmd2, cmd3], target)
+	pm.run([cmd1, cmd2, cmd3], target, container=pm.container)
 
 # Bismark index - bowtie1
 if index.bismark_bt1:
@@ -181,7 +198,7 @@ if index.bismark_bt1:
 	cmd1 = "ln -sf ../" + local_raw_fasta + " " + folder
 	cmd2 = tools.bismark_genome_preparation + " " + folder
 	cmd3 = "touch " + target
-	pm.run([cmd1, cmd2, cmd3], target)
+	pm.run([cmd1, cmd2, cmd3], target, container=pm.container)
 
 # Epilog meth calling
 if index.epilog:
@@ -193,15 +210,25 @@ if index.epilog:
 	cmd2 += " -o " + os.path.join(folder, genome_name + "_cg.tsv")
 	cmd2 += " -s CG -t"
 	cmd3 = "touch " + target
-	pm.run([cmd1, cmd2, cmd3], target)
+	pm.run([cmd1, cmd2, cmd3], target, container=pm.container)
 
-if index.kallisto:
-	folder = os.path.join(outfolder, "indexed_kallisto")
+if index.hisat2:
+	folder = os.path.join(outfolder, "indexed_hisat2")
 	ngstk.make_dir(folder)
 	target = os.path.join(folder, "completed.flag")
-	cmd2 = tools.kallisto + " index -i " + os.path.join(folder, genome_name + "_kallisto_index.idx")
-	cmd2 += " " + raw_fasta
+	cmd1 = "ln -sf ../" + local_raw_fasta + " " + folder
+	cmd2 = tools.hisat2build + " " + raw_fasta + " " + os.path.join(folder, genome_name)
 	cmd3 = "touch " + target
-	pm.run([cmd2, cmd3], target)
+	pm.run([cmd1, cmd2, cmd3], target, container=pm.container)
+
+# Kallisto should index transcriptome
+# if index.kallisto:
+# 	folder = os.path.join(outfolder, "indexed_kallisto")
+# 	ngstk.make_dir(folder)
+# 	target = os.path.join(folder, "completed.flag")
+# 	cmd2 = tools.kallisto + " index -i " + os.path.join(folder, genome_name + "_kallisto_index.idx")
+# 	cmd2 += " " + raw_fasta
+# 	cmd3 = "touch " + target
+# 	pm.run([cmd2, cmd3], target, container=pm.container)
 
 pm.stop_pipeline()

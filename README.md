@@ -1,14 +1,14 @@
 # Refgenie: Reference Genome Indexer
 
-Refgenie is a python script that creates a standardized folder structure for reference genome files and indexes. Minimal input is just a fasta file. 
+Refgenie is a python script that creates a standardized folder structure for reference genome files and indexes. Minimal input is just a fasta file. It also comes with a [docker container (nsheff/refgenie)](https://hub.docker.com/r/nsheff/refgenie/) so you don't have to install any software, if you like.
 
-Refgenie currently builds indexes for tools like bowtie, bowtie2, bismark (for DNA methylation), etc. You can find the complete list in the [config file](src/refgenie.yaml). These are all optional; you only have to build indexes for ones you intend to use. You can also add more later.
+Refgenie currently builds indexes for tools like bowtie2, hisat2, bismark (for DNA methylation), etc. You can find the complete list in the [config file](src/refgenie.yaml). These are all optional; you only have to build indexes for ones you intend to use. You can also add more later.
 
 ## Installing
 
 * Install [Pypiper](http://databio.org/pypiper/) (`pip install --user --upgrade https://github.com/epigen/pypiper/zipball/master`)
 * Clone this repo (e.g. `git clone git@github.com:databio/refgenie.git`)
-* Install software for indexes to build; put them in your path (default) or specify paths in your [refgenie config file](src/refgenie.yaml)
+* Install software for indexes to build; put them in your path (default) or specify paths in your [refgenie config file](src/refgenie.yaml). Or, you can use the [Docker version](#docker) and then you don't have to install anything but Docker!
 
 ## Running
 
@@ -20,6 +20,8 @@ Run refgenie with: `src/refgenie.py -i INPUT_FILE.fa`. (INPUT_FILE is a fasta fi
 * Choose which indexes you want to include by toggling them in the [config file](src/refgenie.yaml).
 
 To build a standard reference for a popular genome, follow one of the [recipes](recipes.md).
+
+## Docker
 
 ## Why it's useful
 
