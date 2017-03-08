@@ -23,6 +23,13 @@ To build a standard reference for a popular genome, follow one of the [recipes](
 
 ## Docker
 
+I have produced a docker image on DockerHub (nsheff/refgenie) that has all of these packages pre-installed, so you can run the complete indexer without worrying about paths and packages. Just clone this repo and run it with the `-d` flag. For example:
+
+```
+~/code/refgenie/src/refgenie.py -d --input rn6.fa --outfolder $HOME
+```
+
+
 ## Why it's useful
 
 NGS pipelines require reference genomes for alignments and other computation. Usually, pipeline authors have a unique way to organize reference genomes, and they point pipelines to this structure. This means you have to build a new reference genome folder organization for each pipeline, or somehow specify your location to each pipeline. Refgenie standardizes the reference genome index folder structure, so you can build your pipelines around that standardized reference genome format. This makes it easy to switch to a new reference genome, or to share pipelines and reference data among collaborators. Pipelines then need only a single variable: the genome name, and you can even use an environment variable to make all pipelines work seamlessly.
