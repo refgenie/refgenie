@@ -138,7 +138,7 @@ if args.docker:
 
 cmd = convert_file(input_file, raw_fasta, conversions)
 if cmd:
-	pm.run(cmd, raw_fasta)
+	pm.run(cmd, raw_fasta, container=pm.container)
 
 cmd = tools.samtools + " faidx " + raw_fasta
 pm.run(cmd, raw_fasta + ".fai", container=pm.container)
