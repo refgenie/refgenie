@@ -8,7 +8,7 @@ Refgenie currently builds indexes for tools like bowtie2, hisat2, bismark (for D
 
 * Install [Pypiper](http://databio.org/pypiper/) (`pip install --user --upgrade https://github.com/epigen/pypiper/zipball/master`)
 * Clone this repo (e.g. `git clone git@github.com:databio/refgenie.git`)
-* Install software for indexes to build; put them in your path (default) or specify paths in your [refgenie config file](src/refgenie.yaml). Or, you can use the [Docker version](#docker) and then you don't have to install anything but Docker!
+* Install software for indexes to build; put them in your path (default) or specify paths in your [refgenie config file](src/refgenie.yaml). Or, you can use the [Docker version](#docker) and then you don't have to install anything but Pypiper and Docker.
 
 ## Running
 
@@ -28,6 +28,17 @@ I have produced a docker image on DockerHub (nsheff/refgenie) that has all of th
 ```
 ~/code/refgenie/src/refgenie.py -d --input rn6.fa --outfolder $HOME
 ```
+
+## Pre-built downloads
+
+I am accumulating a resource of already-built refgenie folders for common genomes, which you can download here:
+
+* [hg38](http://obx.cphg.virginia.edu/swift/refgenome.php?assembly=hg38)
+* [rn6](http://obx.cphg.virginia.edu/swift/refgenome.php?assembly=rn6)
+* hg19 (pending)
+* mm9 (pending)
+* mm10 (pending)
+
 
 
 ## Why it's useful
