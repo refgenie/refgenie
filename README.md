@@ -33,7 +33,7 @@ I have produced a docker image on DockerHub (nsheff/refgenie) that has all of th
 
 I am accumulating a resource of already-built refgenie folders for common genomes, which you can download here:
 
-* Human: [hg38](http://obx.cphg.virginia.edu/swift/refgenome.php?assembly=hg38), hg19 (pending)
+* Human: [hg38](http://obx.cphg.virginia.edu/swift/refgenome.php?assembly=hg38), [hg19](http://obx.cphg.virginia.edu/swift/refgenome.php?assembly=hg19)
 * Rat: [rn6](http://obx.cphg.virginia.edu/swift/refgenome.php?assembly=rn6)
 * Mouse: mm9 (pending), mm10 (pending)
 
