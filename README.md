@@ -1,16 +1,25 @@
 # Refgenie: Reference Genome Indexer
 
-Refgenie is a python script that creates a standardized folder structure for reference genome files and indexes. Minimal input is just a fasta file. It also comes with a [docker container (nsheff/refgenie)](https://hub.docker.com/r/nsheff/refgenie/) so you don't have to install any software, if you like.
+Refgenie creates a standardized folder structure for reference genome files and indexes. You can download pre-built genomes or use the script to build your own for any genome you like. Minimal input is just a fasta file. It also comes with an optional [docker container (nsheff/refgenie)](https://hub.docker.com/r/nsheff/refgenie/) so you don't have to install any software.
+
+## Download pre-built indexed reference genomes
+
+These are built indexes for common genomes:
+
+* Human: [hg38.tgz](http://obx.cphg.virginia.edu/swift/refgenome.php?assembly=hg38), [hg19.tgz](http://obx.cphg.virginia.edu/swift/refgenome.php?assembly=hg19)
+* Human decoy sequences: [ref_decoy_built](http://obx.cphg.virginia.edu/swift/refgenome.php?assembly=refdecoy) (from the [ref_decoy github repository](https://github.com/databio/ref_decoy))
+* Rat: [rn6.tgz](http://obx.cphg.virginia.edu/swift/refgenome.php?assembly=rn6)
+* Mouse: mm9 (pending), mm10 (pending)
+
+## Index list
 
 Refgenie currently builds indexes for tools like bowtie2, hisat2, bismark (for DNA methylation), etc. You can find the complete list in the [config file](src/refgenie.yaml). These are all optional; you only have to build indexes for ones you intend to use. You can also add more later.
 
-## Installing
+## Indexing your own reference genome
 
 * Install [Pypiper](http://databio.org/pypiper/) (`pip install --user --upgrade https://github.com/epigen/pypiper/zipball/master`) (Refgenie requires version >= 0.5)
 * Clone this repo (e.g. `git clone git@github.com:databio/refgenie.git`)
-* Install software for indexes to build; put them in your path (default) or specify paths in your [refgenie config file](src/refgenie.yaml). Or, you can use the [Docker version](#docker) and then you don't have to install anything but Pypiper and Docker.
-
-## Running
+* Install software for indexes to build; put them in your path (default) or specify paths in your [refgenie config file](src/refgenie.yaml). Or, you can use the [Docker version](#docker) and then you don't have to install anything but [pypiper](http://databio.org/pypiper/) and [docker](http://www.docker.com).
 
 Run refgenie with: `src/refgenie.py -i INPUT_FILE.fa`. (INPUT_FILE is a fasta file of your reference genome, and can be either a local file or a URL)
 
@@ -28,16 +37,6 @@ I have produced a docker image on DockerHub (nsheff/refgenie) that has all of th
 ```
 ~/code/refgenie/src/refgenie.py -d --input rn6.fa --outfolder $HOME
 ```
-
-## Pre-built downloads
-
-I am accumulating a resource of already-built refgenie folders for common genomes, which you can download here:
-
-* Human: [hg38](http://obx.cphg.virginia.edu/swift/refgenome.php?assembly=hg38), [hg19](http://obx.cphg.virginia.edu/swift/refgenome.php?assembly=hg19)
-* Rat: [rn6](http://obx.cphg.virginia.edu/swift/refgenome.php?assembly=rn6)
-* Mouse: mm9 (pending), mm10 (pending)
-
-
 
 ## Why it's useful
 
