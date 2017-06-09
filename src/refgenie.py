@@ -74,6 +74,7 @@ pm = pypiper.PipelineManager(name="refgenie", outfolder = outfolder, args = args
 ngstk = pypiper.NGSTk(pm = pm)
 tools = pm.config.tools  # Convenience alias
 index = pm.config.index
+param = pm.config.param
 
 #pm.make_sure_path_exists(outfolder)
 conversions = {}
@@ -207,8 +208,9 @@ if index.epilog:
 	target = os.path.join(folder, "completed.flag")
 	cmd1 = "ln -sf ../" + local_raw_fasta + " " + folder
 	cmd2 = tools.epilog_indexer + " -i " + raw_fasta
-	cmd2 += " -o " + os.path.join(folder, genome_name + "_cg.tsv")
-	cmd2 += " -s CG -t"
+	cmd2 += " -o " + os.path.join(folder, genome_name + "_" + param.epilog.context + ".tsv")
+	cmd2 += " -s " + param.epilog.context  #context
+	cmd2 += " -t"
 	cmd3 = "touch " + target
 	pm.run([cmd1, cmd2, cmd3], target, container=pm.container)
 
@@ -222,13 +224,14 @@ if index.hisat2:
 	pm.run([cmd1, cmd2, cmd3], target, container=pm.container)
 
 # Kallisto should index transcriptome
-# if index.kallisto:
-# 	folder = os.path.join(outfolder, "indexed_kallisto")
-# 	ngstk.make_dir(folder)
-# 	target = os.path.join(folder, "completed.flag")
-# 	cmd2 = tools.kallisto + " index -i " + os.path.join(folder, genome_name + "_kallisto_index.idx")
-# 	cmd2 += " " + raw_fasta
-# 	cmd3 = "touch " + target
-# 	pm.run([cmd2, cmd3], target, container=pm.container)
+# So it doesn't make sense to run these at the same time as the others.
+if index.kallisto:
+	folder = os.path.join(outfolder, "indexed_kallisto")
+	ngstk.make_dir(folder)
+	target = os.path.join(folder, "completed.flag")
+	cmd2 = tools.kallisto + " index -i " + os.path.join(folder, genome_name + "_kallisto_index.idx")
+	cmd2 += " " + raw_fasta
+	cmd3 = "touch " + target
+	pm.run([cmd2, cmd3], target, container=pm.container)
 
 pm.stop_pipeline()

@@ -10,8 +10,12 @@ tools:
 
 index:
   bowtie2: True
-  bismark_bt1: True
-  bismark_bt2: True
-  epilog: True
-  hisat: True
-  kallisto: False
+  bismark_bt1: False
+  bismark_bt2: False
+  epilog: False
+  hisat: False
+  kallisto: True
+
+param:
+  epilog:
+    context: "cg"
