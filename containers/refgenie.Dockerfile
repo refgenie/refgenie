@@ -1,0 +1,55 @@
+# Dockerfile for refgenie environment:
+# public image at nsheff/refgenie
+
+FROM ubuntu:16.04
+
+MAINTAINER Nathan Sheffield <nathan@code.databio.org>
+
+# Updates and dependencies
+	RUN apt-get update && apt-get install -y wget git unzip
+	RUN apt-get install -y python python-pip
+	RUN apt-get install -y curl
+
+# HTSLIB
+	RUN apt-get install -y libz-dev libncurses-dev
+	RUN wget -O ~/htslib.tar.bz2 https://github.com/samtools/htslib/releases/download/1.3.2/htslib-1.3.2.tar.bz2
+	RUN tar -xf ~/htslib.tar.bz2
+	RUN cd /htslib-1.3.2  && ./configure && make && make install
+
+# install samtools
+	RUN wget -O ~/samtools.bz2 https://github.com/samtools/samtools/releases/download/1.3.1/samtools-1.3.1.tar.bz2
+	RUN tar -xf ~/samtools.bz2
+	RUN cd /samtools-1.3.1 && make
+	ENV PATH="/samtools-1.3.1:${PATH}"
+
+# bowtie2 and deps
+	RUN apt-get install -y libtbb-dev  # bowtie2 dependencies
+	RUN wget -O ~/bowtie.zip "https://downloads.sourceforge.net/project/bowtie-bio/bowtie2/2.3.0/bowtie2-2.3.0-linux-x86_64.zip?r=https%3A%2F%2Fsourceforge.net%2Fprojects%2Fbowtie-bio%2Ffiles%2Fbowtie2%2F2.3.0%2F&ts=1485465820&use_mirror=kent"
+	RUN unzip ~/bowtie.zip
+	ENV PATH="/bowtie2-2.3.0:${PATH}"
+
+# Bismark Methylation caller
+	RUN wget -O ~/bismark.zip https://github.com/FelixKrueger/Bismark/archive/0.17.0.zip
+	RUN unzip ~/bismark.zip
+	ENV PATH="/Bismark-0.17.0:${PATH}"
+
+# HISAT2
+	RUN wget -O ~/hisat.zip ftp://ftp.ccb.jhu.edu/pub/infphilo/hisat2/downloads/hisat2-2.0.5-source.zip
+	RUN unzip ~/hisat.zip
+	RUN cd hisat2-2.0.5 && make
+	ENV PATH="/hisat2-2.0.5:${PATH}"
+
+# kallisto
+	RUN wget -O ~/kallisto.tar.gz https://github.com/pachterlab/kallisto/releases/download/v0.43.0/kallisto_linux-v0.43.0.tar.gz
+	RUN tar -xf ~/kallisto.tar.gz
+	ENV PATH="/kallisto_linux-v0.43.0:${PATH}"
+
+# epilog meth calling
+	# TODO: Use public version after publication.
+	#RUN wget -O epilog_indexer.py https://github.com/databio/epilog/blob/master/epilog/epilog_indexer.py
+	ADD includes/epilog_indexer.py bin/epilog_indexer.py
+	RUN pip install --user regex
+
+# UCSC twoBitToFa
+	ADD includes/twoBitToFa bin/twoBitToFa
+	RUN apt-get install -y libpng-dev
