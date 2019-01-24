@@ -34,7 +34,7 @@ Refgenie currently builds indexes for tools like bowtie2, hisat2, bismark (for D
 
 ## Indexing your own reference genome
 
-* Install [Pypiper](http://databio.org/pypiper/) (`pip install --user --upgrade https://github.com/epigen/pypiper/zipball/master`) (Refgenie requires version >= 0.5)
+* Install [Pypiper](http://databio.org/pypiper/) (`pip install --user --upgrade piper`) (Refgenie requires version >= 0.5)
 * Clone this repo (e.g. `git clone git@github.com:databio/refgenie.git`)
 * Install software for indexes to build; put them in your path (default) or specify paths in your [refgenie config file](src/refgenie.yaml). Or, you can use the [Docker version](#docker) and then you don't have to install anything but [pypiper](http://databio.org/pypiper/) and [docker](http://www.docker.com).
 
