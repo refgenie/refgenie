@@ -10,7 +10,7 @@ nav:
     - Hello world: hello-world.md
   - How-to guides:    
     - Download pre-built indexes: download.md
-    - Index your own genome: index.md
+    - Index your own genome: run.md
     - Customize indexes: customize.md
   - Reference:
     - Usage: usage.md
