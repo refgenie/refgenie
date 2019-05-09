@@ -1,1 +1,76 @@
+# ignore test results
+tests/test/*
+
+# toy/experimental files
+*.csv
+*.tsv
+*.pkl
+
+# ignore eggs
+.eggs/
+
+# generic ignore list:
+*.lst
+
+# Compiled source 
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
 *.pyc
+ 
+# Packages 
+# it's better to unpack these files and commit the raw source
+# git has its own built in compression methods
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+ 
+# Logs and databases 
+*.log
+*.sql
+*.sqlite
+ 
+# OS generated files 
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Gedit temporary files 
+*~
+
+# libreoffice lock files:
+.~lock*
+
+# Default-named test output
+microtest/
+open_pipelines/
+
+# IDE-specific items
+.idea/
+
+# pytest-related
+.cache/
+.coverage
+.pytest_cache
+
+# Reserved files for comparison
+*RESERVE*
+
+doc/
+build/
+dist/
+refgnie.egg-info/
+
+*ipynb_checkpoints*
