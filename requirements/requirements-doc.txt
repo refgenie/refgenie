@@ -1,0 +1,1 @@
+https://github.com/databio/mkdocs-databio/archive/master.zip
