@@ -1,0 +1,26 @@
+site_name: Refgenie
+site_logo: img/refgenie_logo.svg
+site_url: http://refgenie.databio.org/
+repo_url: http://github.com/databio/refgenie
+pypi_name: refgenie
+
+nav:
+  - Getting Started: 
+    - Introduction: README.md
+    - Hello world: hello-world.md
+  - How-to guides:    
+    - Download pre-built indexes: download.md
+    - Index your own genome: index.md
+    - Customize indexes: customize.md
+  - Reference:
+    - Usage: usage.md
+    - FAQ: faq.md
+    - Support: support.md
+    - Contributing: contributing.md
+    - Changelog: changelog.md
+
+theme: databio
+
+plugins:
+  - databio
+  - search
