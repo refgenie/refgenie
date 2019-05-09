@@ -20,7 +20,7 @@ Mirror 1:
 * Human: [hg38.tgz](http://big.databio.org/refgenomes/hg38.tgz), [hg19.tgz](http://big.databio.org/refgenomes/hg19.tgz)
 * Rat: [rn6.tgz](http://big.databio.org/refgenomes/rn6.tgz)
 * Mouse: [mm10](http://big.databio.org/refgenomes/mm10.tgz)
-* Prealignment 'decoy' references: available at [big.databio.org/refgenomes/](http://big.databio.org/refgenomes/) for sequences from [ref_decoy](https://github.com/databio/ref_decoy))
+* Prealignment 'decoy' references: available at [big.databio.org/refgenomes/](http://big.databio.org/refgenomes/) for sequences from [ref_decoy](https://github.com/databio/ref_decoy)
 
 Mirror 2 (use if mirror 1 is down):
 * Human: [hg38.tgz](http://cloud.databio.org/refgenomes/hg38.tgz), [hg19.tgz](http://cloud.databio.org/refgenomes/hg19.tgz)
@@ -34,7 +34,7 @@ Refgenie currently builds indexes for tools like bowtie2, hisat2, bismark (for D
 
 ## Indexing your own reference genome
 
-* Install [Pypiper](http://databio.org/pypiper/) (`pip install --user --upgrade https://github.com/epigen/pypiper/zipball/master`) (Refgenie requires version >= 0.5)
+* Install [Pypiper](https://pypiper.readthedocs.io/en/latest/) (`pip install --user --upgrade piper`) (Refgenie requires version >= 0.5)
 * Clone this repo (e.g. `git clone git@github.com:databio/refgenie.git`)
 * Install software for indexes to build; put them in your path (default) or specify paths in your [refgenie config file](src/refgenie.yaml). Or, you can use the [Docker version](#docker) and then you don't have to install anything but [pypiper](http://databio.org/pypiper/) and [docker](http://www.docker.com).
 
