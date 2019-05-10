@@ -1,8 +1,10 @@
 
 To build a standard reference for a popular genome, follow one of the [recipes](recipes.md).
 
-
-
+http://big.databio.org/example_data/rCRS.fa.gz
+```
+refgenie -i http://big.databio.org/example_data/rCRS.fa.gz -R -d
+```
 
 ## Indexing your own reference genome
 

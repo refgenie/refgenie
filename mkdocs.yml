@@ -1,5 +1,5 @@
 site_name: Refgenie
-site_logo: img/refgenie_logo.svg
+site_logo: img/refgenie_logo_light.svg
 site_url: http://refgenie.databio.org/
 repo_url: http://github.com/databio/refgenie
 pypi_name: refgenie

@@ -1,4 +1,3 @@
 include requirements/*
 include README.md
-include refgenie/genomes/*
 include refgenie/refgenie.yaml
