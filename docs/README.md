@@ -4,7 +4,7 @@
 
 ## What is refgenie?
 
-Refgenie creates a standardized folder structure for reference genome files and indexes. You can download pre-built genomes or use the script to build your own for any genome you like. Minimal input is just a fasta file. It also comes with an optional [docker container (nsheff/refgenie)](https://hub.docker.com/r/nsheff/refgenie/) so you don't have to install any software.
+Refgenie creates a standardized folder structure for reference genome files and indexes. You can download pre-built genomes or build your own for any fasta file.
 
 ## What makes refgenie better?
 
@@ -12,7 +12,9 @@ Refgenie provides a **standard folder structure** for reference genome indexes, 
 
 ## Installing
 
-Install from [GitHub releases](https://github.com/databio/refgenie/releases) or from PyPI with `pip`:
+If you just want to use pre-built refgenie assemblies, just head over to the [download page](/download). If you want to index your own genomes, then you'll need to install refgenie as well as any genome indexers you want to use, or you can use the [refgenie docker container (nsheff/refgenie)](https://hub.docker.com/r/nsheff/refgenie/) so you don't have to install any software.
+
+Install refgenie from [GitHub releases](https://github.com/databio/refgenie/releases) or from PyPI with `pip`:
 
 
 ```console
@@ -25,25 +27,16 @@ Update with:
 pip install --user --upgrade refgenie
 ```
 
+## Quick start
+
+See if your install worked by invoking `refgenie` from the command line:
+
+```
+refgenie -h
+```
+
 If the `refgenie` executable in not automatically in your `$PATH`, add the following line to your `.bashrc` or `.profile`:
 
 ```console
 export PATH=~/.local/bin:$PATH
 ```
-
-## Quick start
-
-To test `refgenie`, follow the [Hello Looper example repository](https://github.com/databio/hello_looper) to run your first looper project:
-
-
-```console
-# download and unzip the hello_looper repository
-wget https://github.com/databio/hello_looper/archive/master.zip
-unzip master.zip
-
-# Run looper:
-cd hello_looper-master
-looper run project/project_config.yaml
-```
-
-Detailed explanation of results is in the [Hello world tutorial](hello-world.md).

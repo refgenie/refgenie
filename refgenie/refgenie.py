@@ -17,27 +17,29 @@ def build_parser():
     :return argparse.ArgumentParser
     """
 
-    parser = ArgumentParser(description='Pipeline')
+    parser = ArgumentParser(description='Refgenie')
 
     #parser = pypiper.add_pypiper_args(parser, args = ["config"]) # new way
     #old way: 
     import sys
-    parser = pypiper.add_pypiper_args(parser, groups=["pypiper", "config"])
+    parser = pypiper.add_pypiper_args(parser, groups=None, args=["recover", "config"])
 
     default_config = os.path.splitext(os.path.basename(sys.argv[0]))[0] + ".yaml"
     # Arguments to optimize the interface to looper
 
     # Add any pipeline-specific arguments
-    parser.add_argument('-input', '--input', dest='input', required = True,
-        help='Local path or URL to genome sequence file in .fa or .2bit format.')
+    parser.add_argument('-i', '--input', dest='input', required = True,
+        help='Local path or URL to genome sequence file in .fa, .fa.gz, or .2bit format.')
 
     parser.add_argument('-n', '--name', dest='name', required = False,
-        help='Name of the genome to build.')
+        help='Name of the genome to build. If ommitted, refgenie will use'
+        'the basename of the file specified in --input')
 
     parser.add_argument('-a', '--annotation', dest='annotation', required = False,
         help='Path to GTF gene annotation file')
 
-    parser.add_argument("-d", "--docker", action="store_true")
+    parser.add_argument("-d", "--docker", action="store_true",
+        help="Run all commands in the refgenie docker container.")
 
     # Don't error if RESOURCES is not set.
     try:
@@ -53,7 +55,9 @@ def build_parser():
 
     parser.add_argument('-o', '--outfolder', dest='outfolder', required = False,
         default = default_outfolder,
-        help='Path to output genomes folder')
+        help='Path to output genomes folder, using the $GENOMES environment variable'
+        ' if set. Currently set to: \'{}\''.format(
+            default_outfolder))
 
     return parser
 
