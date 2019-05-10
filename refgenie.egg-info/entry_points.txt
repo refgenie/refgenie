@@ -1,0 +1,3 @@
+[console_scripts]
+refgenie = refgenie.refgenie:main
+
