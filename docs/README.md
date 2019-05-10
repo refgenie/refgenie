@@ -1,4 +1,4 @@
-# <img src="img/refgenie_logo.svg" class="img-header"> a reference genome indexer
+# <img src="img/refgenie_logo.svg" class="img-header"> genome index manager
 
 [![PEP compatible](http://pepkit.github.io/img/PEP-compatible-green.svg)](http://pepkit.github.io)
 

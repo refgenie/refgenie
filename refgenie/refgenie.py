@@ -95,7 +95,15 @@ def convert_file(input_file, output_file, conversions):
     else:
         # No conversion available/necessary.
         return None
-    
+
+
+def example_folder(self):
+    """
+    Path to folder with default submission templates.
+
+    :return str: path to folder with default submission templates
+    """
+    return os.path.join(os.path.dirname(__file__), "genomes")    
 
 
 def build_indexes(args):

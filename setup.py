@@ -50,6 +50,8 @@ setup(
         ],
     },
     keywords="bioinformatics, sequencing, ngs",
+    package_data={"refgenie": [os.path.join("refgenie", "*")]},
+    include_package_data=True,
     url='https://github.com/databio/refgenie',
     author='Nathan Sheffield',
     author_email='nathan@code.databio.org',
