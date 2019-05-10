@@ -22,16 +22,10 @@ def build_parser():
     #parser = pypiper.add_pypiper_args(parser, args = ["config"]) # new way
     #old way: 
     import sys
-    parser = pypiper.add_pypiper_args(parser)
+    parser = pypiper.add_pypiper_args(parser, groups=["pypiper", "config"])
 
     default_config = os.path.splitext(os.path.basename(sys.argv[0]))[0] + ".yaml"
     # Arguments to optimize the interface to looper
-    parser.add_argument(
-        "-C", "--config", dest="config_file", type=str,
-        help="pipeline config file in YAML format; relative paths are \
-        considered relative to the pipeline script. \
-        defaults to " + default_config,
-        required=False, default=default_config, metavar="CONFIG_FILE")
 
     # Add any pipeline-specific arguments
     parser.add_argument('-input', '--input', dest='input', required = True,
@@ -96,6 +90,16 @@ def convert_file(input_file, output_file, conversions):
         # No conversion available/necessary.
         return None
 
+
+def default_config_file():
+    """
+    Path to default compute environment settings file.
+    
+    :return str: Path to default compute settings file
+    """
+    return os.path.join(os.path.dirname(__file__), "refgenie.yaml")
+
+
 def build_indexes(args):
 
     if args.name:
@@ -111,7 +115,20 @@ def build_indexes(args):
     outfolder = os.path.abspath(outfolder)
     print("Output to: " , genome_name, args.outfolder, outfolder)
 
-    pm = pypiper.PipelineManager(name="refgenie", outfolder = outfolder, args = args)
+    print(default_config_file())
+
+    config_file = args.config_file
+    import logging
+    if config_file:
+        if os.path.isfile(config_file):
+            #looks good!
+            pass
+        else:
+            logging.debug("Config file path isn't a file: {}".
+                          format(config_file))
+            args.config_file = default_config_file()
+
+    pm = pypiper.PipelineManager(name="refgenie", outfolder=outfolder, args=args)
     ngstk = pypiper.NGSTk(pm = pm)
     tools = pm.config.tools  # Convenience alias
     index = pm.config.index
