@@ -1,7 +1,7 @@
 # Dockerfile for refgenie environment:
 # public image at nsheff/refgenie
 
-FROM ubuntu:16.04
+FROM ubuntu:18.04
 
 MAINTAINER Nathan Sheffield <nathan@code.databio.org>
 
