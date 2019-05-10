@@ -113,10 +113,10 @@ def build_indexes(args):
     else:
         genome_name = os.path.basename(args.input)
         # eliminate extensions to get canonical genome name.
-        for strike in [".fasta$", ".fa$", ".gz$", ".2bit$"]:
+        for strike in [".fasta.gz$", ".fa.gz$", ".fasta$", ".fa$", ".gz$", ".2bit$"]:
             genome_name = re.sub(strike, "", genome_name)
 
-
+    print("Using genome name: {}".format(genome_name))
     outfolder = os.path.join(args.outfolder, genome_name)
     outfolder = os.path.abspath(outfolder)
     print("Output to: " , genome_name, args.outfolder, outfolder)
