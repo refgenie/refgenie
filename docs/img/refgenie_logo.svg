@@ -9,9 +9,9 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="224.32678mm"
-   height="52.409737mm"
-   viewBox="0 0 794.85869 185.70378"
+   width="178.96291mm"
+   height="43.182297mm"
+   viewBox="0 0 634.12054 153.00813"
    id="svg4198"
    version="1.1"
    inkscape:version="0.91 r13725"
@@ -27,7 +27,7 @@
      inkscape:pageshadow="2"
      inkscape:zoom="0.70710677"
      inkscape:cx="481.35832"
-     inkscape:cy="-47.42587"
+     inkscape:cy="131.75476"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -51,11 +51,11 @@
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
      id="layer1"
-     transform="translate(-76.667803,-720.71137)">
+     transform="translate(-76.667804,-741.58761)">
     <g
        style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:150.37954712px;line-height:0%;font-family:'Latin Modern Sans Quotation';-inkscape-font-specification:'Latin Modern Sans Quotation';text-indent:0;text-align:center;text-decoration:none;text-decoration-line:none;text-decoration-style:solid;text-decoration-color:#000000;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;baseline-shift:baseline;text-anchor:middle;white-space:normal;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;fill:#008066;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate"
        id="text4188"
-       transform="translate(0,-15)">
+       transform="matrix(0.79222024,0,0,0.79222024,18.138701,165.04285)">
       <path
          d="m 375.11899,792.85982 q -0.90228,-0.30076 -2.70684,-0.30076 -9.92505,0 -16.8425,8.1205 -6.76708,7.97011 -6.76708,21.50427 l 0,41.35438 -9.02278,0 0,-51.73057 q 0,-16.99289 -2.25569,-25.11338 l 7.66936,0 q 2.40607,4.81214 2.40607,15.33871 7.21822,-16.99289 23.15845,-16.99289 2.10531,0 4.36101,0.45114 l 0,7.3686 z"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Laksaman;-inkscape-font-specification:Laksaman;fill:#008066;fill-opacity:1"
@@ -98,7 +98,7 @@
          inkscape:connector-curvature="0" />
     </g>
     <g
-       transform="matrix(4.8422866,0,0,4.8422866,82.474807,672.24852)"
+       transform="matrix(3.8361574,0,0,3.8361574,83.476912,709.49503)"
        id="g4-4"
        style="fill:#008066;fill-opacity:1">
       <path
@@ -119,15 +119,15 @@
     </g>
     <text
        xml:space="preserve"
-       style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:150.37954712px;line-height:0%;font-family:'Latin Modern Sans Quotation';-inkscape-font-specification:'Latin Modern Sans Quotation';text-indent:0;text-align:center;text-decoration:none;text-decoration-line:none;text-decoration-style:solid;text-decoration-color:#000000;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;baseline-shift:baseline;text-anchor:middle;white-space:normal;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;fill:#008066;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate"
-       x="597.96973"
-       y="1054.5382"
+       style="color:#000000;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:140.75775146px;line-height:0%;font-family:'Latin Modern Sans Quotation';-inkscape-font-specification:'Latin Modern Sans Quotation';text-indent:0;text-align:center;text-decoration:none;text-decoration-line:none;text-decoration-style:solid;text-decoration-color:#000000;letter-spacing:0px;word-spacing:0px;text-transform:none;direction:ltr;block-progression:tb;writing-mode:lr-tb;baseline-shift:baseline;text-anchor:middle;white-space:normal;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;fill:#008066;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;marker:none;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate"
+       x="565.29523"
+       y="1056.8282"
        id="text4162"
        sodipodi:linespacing="0%"><tspan
          sodipodi:role="line"
          id="tspan4164"
-         x="597.96973"
-         y="1054.5382"
+         x="565.29523"
+         y="1056.8282"
          style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:Laksaman;-inkscape-font-specification:Laksaman;fill:#008066;fill-opacity:1">refgenie</tspan></text>
   </g>
 </svg>

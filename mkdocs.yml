@@ -7,14 +7,15 @@ pypi_name: refgenie
 nav:
   - Getting Started: 
     - Introduction: README.md
+    - Installing genome indexers: install.md
     - Hello world: hello-world.md
     - Use cases: use-cases.md
     
   - How-to guides:    
     - Download pre-built indexes: download.md
-    - Index your own genome: run.md
-    - Customize indexes: customize.md
+    - Build genome indexes: build.md
   - Reference:
+    - Recipes: recipes.md
     - Usage: usage.md
     - FAQ: faq.md
     - Support: support.md

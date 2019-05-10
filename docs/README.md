@@ -12,9 +12,7 @@ Refgenie provides a **standard folder structure** for reference genome indexes, 
 
 ## Installing
 
-If you just want to use pre-built refgenie assemblies, just head over to the [download page](/download). If you want to index your own genomes, then you'll need to install refgenie as well as any genome indexers you want to use, or you can use the [refgenie docker container (nsheff/refgenie)](https://hub.docker.com/r/nsheff/refgenie/) so you don't have to install any software.
-
-Install refgenie from [GitHub releases](https://github.com/databio/refgenie/releases) or from PyPI with `pip`:
+If you just want to use pre-built refgenie assemblies, just head over to the [download page](/download); you don't even need to install refgenie. If you want to index your own genomes, then you'll need to install refgenie plus your genome indexers of choice. Install refgenie from [GitHub releases](https://github.com/databio/refgenie/releases) or from PyPI with `pip`:
 
 
 ```console
@@ -27,6 +25,8 @@ Update with:
 pip install --user --upgrade refgenie
 ```
 
+After that, you'll need to [install the genome indexers](/install) -- but first, you can confirm that `refgenie` is functioning:
+
 ## Quick start
 
 See if your install worked by invoking `refgenie` from the command line:
@@ -35,8 +35,10 @@ See if your install worked by invoking `refgenie` from the command line:
 refgenie -h
 ```
 
-If the `refgenie` executable in not automatically in your `$PATH`, add the following line to your `.bashrc` or `.profile`:
+If the `refgenie` executable in not automatically in your `$PATH`, add the following line to your `.bashrc` or `.profile` (or `.bash_profile` on MACOS):
 
 ```console
 export PATH=~/.local/bin:$PATH
 ```
+
+Next, [install the genome indexers](/install).
