@@ -1,5 +1,6 @@
+import os
 from setuptools import setup
-
+import sys
 
 # Ordinary dependencies
 DEPENDENCIES = []
@@ -10,9 +11,15 @@ with open("requirements/requirements-all.txt", "r") as reqs_file:
         #DEPENDENCIES.append(line.split("=")[0].rstrip("<>"))
         DEPENDENCIES.append(line)
 
+# Additional keyword arguments for setup().
+extra = {}
 extra["install_requires"] = DEPENDENCIES
 
-with open("looper/_version.py", 'r') as versionfile:
+# 2to3
+if sys.version_info >= (3, ):
+    extra["use_2to3"] = True
+
+with open("refgenie/_version.py", 'r') as versionfile:
     version = versionfile.readline().split()[-1].strip("\"'\n")
 
 # Handle the pypi README formatting.
@@ -39,10 +46,12 @@ setup(
     license="BSD2",
     entry_points={
         "console_scripts": [
-            'looper = looper.looper:main'
+            'refgenie = refgenie.refgenie:main'
         ],
     },
     keywords="bioinformatics, sequencing, ngs",
+    package_data={"refgenie": [os.path.join("refgenie", "*")]},
+    include_package_data=True,
     url='https://github.com/databio/refgenie',
     author='Nathan Sheffield',
     author_email='nathan@code.databio.org',

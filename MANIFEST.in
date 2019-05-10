@@ -1,0 +1,4 @@
+include requirements/*
+include README.md
+include refgenie/refgenie.yaml
+include docs/img/refgenie_logo.svg
