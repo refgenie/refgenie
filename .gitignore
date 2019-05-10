@@ -71,6 +71,6 @@ open_pipelines/
 doc/
 build/
 dist/
-refgnie.egg-info/
+refgenie.egg-info/
 
 *ipynb_checkpoints*
