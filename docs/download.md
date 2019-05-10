@@ -1,4 +1,4 @@
-# Download pre-built indexed reference genomes
+# Download pre-indexed reference genomes
 
 These are built indexes for common genomes. These pre-built downloads are `tar gzipped` files, so **you will need to unarchive them after downloading**. The complete collection is listed at [http://big.databio.org/refgenomes/](http://big.databio.org/refgenomes/):
 
