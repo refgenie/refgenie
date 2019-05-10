@@ -33,7 +33,7 @@ Update with:
 pip install --user --upgrade refgenie
 ```
 
-If the `looper` executable in not automatically in your `$PATH`, add the following line to your `.bashrc` or `.profile`:
+If the `refgenie` executable in not automatically in your `$PATH`, add the following line to your `.bashrc` or `.profile`:
 
 ```console
 export PATH=~/.local/bin:$PATH
@@ -41,7 +41,7 @@ export PATH=~/.local/bin:$PATH
 
 ## Quick start
 
-To test `looper`, follow the [Hello Looper example repository](https://github.com/databio/hello_looper) to run your first looper project:
+To test `refgenie`, follow the [Hello Looper example repository](https://github.com/databio/hello_looper) to run your first looper project:
 
 
 ```console
