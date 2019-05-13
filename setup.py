@@ -27,6 +27,7 @@ try:
     import pypandoc
     long_description = pypandoc.convert_file('README.md', 'rst')
 except(IOError, ImportError, OSError):
+    print("Warning -- couldn't convert README to rst")
     long_description = open('README.md').read()
 
 setup(
