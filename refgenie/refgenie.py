@@ -6,6 +6,7 @@ import attmap
 import pypiper
 import os
 import re
+import sys
 import urlparse
 from _version import __version__
 
@@ -22,62 +23,115 @@ class RefGenomeConfiguration(attmap.PathExAttMap):
 
             return self.refgenomes[genome_name][index_name]
 
+    def to_yaml(self, filename):
+        with open(filename, 'w') as outfile:
+            try:
+                return yaml.print(self, outfile, default_flow_style=False)
+            except yaml.representer.RepresenterError:
+                print("SERIALIZED SAMPLE DATA: {}".format(self))
+                raise
+
+
 def is_url(url):
     return urlparse.urlparse(url).scheme != ""
 
-def build_parser():
+
+class _VersionInHelpParser(ArgumentParser):
+    def format_help(self):
+        """ Add version information to help text. """
+        return "version: {}\n".format(__version__) + \
+               super(_VersionInHelpParser, self).format_help()
+
+
+
+def build_argparser():
     """
-    Building argument parser.
+    Builds argument parser.
 
     :return argparse.ArgumentParser
     """
 
-    parser = ArgumentParser(description='Refgenie')
+    banner = "%(prog)s - builds and manages reference genome assemblies"
+    additional_description = "\nhttps://refgenie.databio.org"
 
-    #parser = pypiper.add_pypiper_args(parser, args = ["config"]) # new way
-    #old way: 
-    import sys
-    parser = pypiper.add_pypiper_args(parser, groups=None, args=["recover", "config"])
+    parser = _VersionInHelpParser(
+            description=banner,
+            epilog=additional_description)
+
+
+    parser.add_argument(
+            "-V", "--version",
+            action="version",
+            version="%(prog)s {v}".format(v=__version__))
+
+    subparsers = parser.add_subparsers(dest="command") 
+
+    def add_subparser(cmd, description):
+        return subparsers.add_parser(
+            cmd, description=description, help=description)
+
+    subparser_messages = {
+        "build": "Build genome indexes",
+        "list": "List available local genomes.",
+        "pull": "Download indexes.",
+        "avail": "List available genomes and indexes on server.",
+    }
+
+    sps = {}
+    for cmd, desc in subparser_messages.items():
+        sps[cmd] = add_subparser(cmd, desc)
+
+    sps["build"] = pypiper.add_pypiper_args(sps["build"], groups=None, args=["recover", "config"])
 
     default_config = os.path.splitext(os.path.basename(sys.argv[0]))[0] + ".yaml"
     # Arguments to optimize the interface to looper
 
     # Add any pipeline-specific arguments
-    parser.add_argument('-i', '--input', dest='input', required = True,
+    sps["build"].add_argument('-i', '--input', dest='input', required = True,
         help='Local path or URL to genome sequence file in .fa, .fa.gz, or .2bit format.')
 
-    parser.add_argument('-n', '--name', dest='name', required = False,
+    sps["build"].add_argument('-n', '--name', dest='name', required = False,
         help='Name of the genome to build. If ommitted, refgenie will use'
         'the basename of the file specified in --input')
 
-    parser.add_argument('-a', '--annotation', dest='annotation', required = False,
+    sps["build"].add_argument('-a', '--annotation', dest='annotation', required = False,
         help='Path to GTF gene annotation file')
 
-    parser.add_argument("-d", "--docker", action="store_true",
+    sps["build"].add_argument("-d", "--docker", action="store_true",
         help="Run all commands in the refgenie docker container.")
 
     # Don't error if RESOURCES is not set.
     try:
         # First priority: GENOMES variable
-        default_outfolder = os.environ["GENOMES"]
+        genome_folder = os.environ["GENOMES"]
     except:
         try:
             # Second priority: RESOURCES/genomes
-            default_outfolder = os.path.join(os.environ["RESOURCES"], "genomes")
+            genome_folder = os.path.join(os.environ["RESOURCES"], "genomes")
         except:
             # Otherwise, current directory
-            default_outfolder = ""
+            genome_folder = ""
 
-    parser.add_argument('-o', '--outfolder', dest='outfolder', required = False,
-        default = default_outfolder,
-        help='Path to output genomes folder, using the $GENOMES environment variable'
+    sps["build"].add_argument('-o', '--outfolder', dest='outfolder', required = False,
+        default=genome_folder,
+        help='Path to genomes folder, using the $GENOMES environment variable'
         ' if set. Currently set to: \'{}\''.format(
-            default_outfolder))
+            genome_folder))
+
+    sps["list"].add_argument('-g', '--genome-folder', required = False,
+        default=genome_folder,
+        help='Path to genomes folder, using the $GENOMES environment variable'
+        ' if set. Currently set to: \'{}\''.format(
+            genome_folder))
+
+    genome_config = os.path.join(genome_folder, "refgenie.yaml")
+    sps["list"].add_argument("-c", "--genome-config",
+        default=genome_config)
 
     return parser
 
 
-def move_or_download_file(input_string, outfolder):
+def copy_or_download_file(input_string, outfolder):
     """
     Given an input file, which can be a local file or a URL, and output folder, 
     this downloads or copies the file into the output folder.
@@ -164,7 +218,7 @@ def build_indexes(args):
 
     input_file = os.path.join(outfolder, os.path.basename(args.input))
 
-    input_file, cmd = move_or_download_file(args.input, outfolder)
+    input_file, cmd = copy_or_download_file(args.input, outfolder)
     pm.run(cmd, input_file)
 
     container = None
@@ -200,7 +254,7 @@ def build_indexes(args):
     # Copy annotation file (if any) to folder structure
     if args.annotation:
         annotation_file_unzipped = os.path.join(outfolder, genome_name + ".gtf")
-        annotation_file, cmd = move_or_download_file(args.annotation, outfolder)
+        annotation_file, cmd = copy_or_download_file(args.annotation, outfolder)
         pm.run(cmd, annotation_file)
 
         cmd = convert_file(annotation_file, annotation_file_unzipped, conversions)
@@ -280,15 +334,33 @@ def build_indexes(args):
     pm.stop_pipeline()
 
 
+def load_yaml(filename):
+    import yaml
+    with open(filename, 'r') as f:
+        data = yaml.load(f, yaml.SafeLoader)
+    return data
+
 
 def main():
     """ Primary workflow """
 
 
-    parser = build_parser()
+    parser = build_argparser()
     args, remaining_args = parser.parse_known_args()
 
-    build_indexes(args)
+    if args.command == "build":
+        build_indexes(args)
+
+    if args.command == "list":
+        print("List of available reference genomes")
+
+        rgc = RefGenomeConfiguration(load_yaml(args.genome_config))
+
+        print(rgc)
+
+        print(rgc.to_yaml())
+
+
 
 if __name__ == '__main__':
     try:
