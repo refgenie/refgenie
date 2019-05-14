@@ -2,11 +2,25 @@
 
 
 from argparse import ArgumentParser
+import attmap
 import pypiper
 import os
 import re
 import urlparse
 from _version import __version__
+
+class RefGenomeConfiguration(attmap.PathExAttMap):
+
+    def get_index(self, genome_name, index_name):
+        if not genome_name in self.refgenomes:
+            msg = "Your genomes do not include {}".format(genome_name)
+            raise MissingGenomeError(msg)
+
+        if not index_name in self.refgenomes[genome_name]:
+            msg = "Genome {} exists, but index {} is missing".format(genome_name, index_name)
+            raise MissingIndexError(msg)
+
+            return self.refgenomes[genome_name][index_name]
 
 def is_url(url):
     return urlparse.urlparse(url).scheme != ""
