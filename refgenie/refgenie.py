@@ -288,12 +288,6 @@ def main():
     parser = build_parser()
     args, remaining_args = parser.parse_known_args()
 
-    with open(args.config_file, 'r') as f:
-        config = yaml.load(f, yaml.SafeLoader)
-
-    rgc = RefGenomeConfiguration(config)   
-
-
     build_indexes(args)
 
 if __name__ == '__main__':
