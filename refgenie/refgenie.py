@@ -4,11 +4,12 @@
 from argparse import ArgumentParser
 import attmap
 import pypiper
+import yaml
 import os
 import re
 import sys
-import urlparse
-from _version import __version__
+import urllib
+from ._version import __version__
 
 class RefGenomeConfiguration(attmap.PathExAttMap):
 
@@ -23,17 +24,27 @@ class RefGenomeConfiguration(attmap.PathExAttMap):
 
             return self.refgenomes[genome_name][index_name]
 
-    def to_yaml(self, filename):
-        with open(filename, 'w') as outfile:
-            try:
-                return yaml.print(self, outfile, default_flow_style=False)
-            except yaml.representer.RepresenterError:
-                print("SERIALIZED SAMPLE DATA: {}".format(self))
-                raise
+    def list_genomes(self):
+        return list(self.refgenomes.keys())
+
+
+    def list_indexes(self):
+        string = ""
+        for genome, value in self.refgenomes.items():
+            string += "  {}: {}\n".format(genome, "; ".join(list(value.indexes)))
+        return string
+
+    def to_yaml(self):
+        ## TODO: use a recursive dict function for attmap representation
+        try:
+            return yaml.dump(self.__dict__, default_flow_style=False)
+        except yaml.representer.RepresenterError:
+            print("SERIALIZED SAMPLE DATA: {}".format(self))
+            raise
 
 
 def is_url(url):
-    return urlparse.urlparse(url).scheme != ""
+    return urllib.parse(url).scheme != ""
 
 
 class _VersionInHelpParser(ArgumentParser):
@@ -123,6 +134,10 @@ def build_argparser():
         help='Path to genomes folder, using the $GENOMES environment variable'
         ' if set. Currently set to: \'{}\''.format(
             genome_folder))
+
+    sps["pull"].add_argument('-g', '--genome', default="hg38")
+    sps["pull"].add_argument('-i', '--index', default="bowtie2")
+
 
     genome_config = os.path.join(genome_folder, "refgenie.yaml")
     sps["list"].add_argument("-c", "--genome-config",
@@ -341,6 +356,33 @@ def load_yaml(filename):
     return data
 
 
+def pull_index(genome, asset, genome_folder=None):
+
+    import urllib.request
+    import shutil
+
+    url = "http://big.databio.org/example_data/rCRS.fa.gz"
+
+    base = "http://big.databio.org/"
+    base = "http://localhost/asset"
+    url = "{base}/{genome}/{asset}".format(base=base, genome=genome, asset=asset)
+
+    # local file to save as
+    file_name = "{genome_folder}/{genome}/{asset}.tar".format(
+        genome_folder=genome_folder,
+        genome=genome,
+        asset=asset)
+
+    # Download the file from `url` and save it locally under `file_name`:
+    print("Downloading {}...".format(url))
+    with urllib.request.urlopen(url) as response, open(file_name, 'wb') as out_file:
+        shutil.copyfileobj(response, out_file)
+    print("Download complete.")
+    print("Saved as: {}".format(file_name))
+
+
+
+
 def main():
     """ Primary workflow """
 
@@ -352,15 +394,21 @@ def main():
         build_indexes(args)
 
     if args.command == "list":
-        print("List of available reference genomes")
+        print("Local reference genomes")
 
         rgc = RefGenomeConfiguration(load_yaml(args.genome_config))
 
         print(rgc)
 
+        print("Genomes: {}".format(rgc.list_genomes()))
+        print("Indexes:\n{}".format(rgc.list_indexes()))
+
         print(rgc.to_yaml())
 
 
+    if args.command == "pull":
+        print("Pull genome: {}; index: {}".format(args.genome, args.index))
+        pull_index(args.genome, args.index)
 
 if __name__ == '__main__':
     try:
@@ -368,3 +416,5 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print("Program canceled by user!")
         sys.exit(1)
+
+
