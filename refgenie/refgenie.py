@@ -13,6 +13,7 @@ from ._version import __version__
 
 from refgenconf import load_genome_config, RefGenomeConfiguration
 
+
 def is_url(url):
     return urllib.parse(url).scheme != ""
 
