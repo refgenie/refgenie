@@ -1,13 +1,11 @@
 ## Contributing
 
-Pull requests or issues are welcome.
+We welcome contributions from the community.
 
-- After adding tests in `tests` for a new feature or a bug fix, please run the test suite.
-- To do so, the only additional dependencies needed beyond those for the package can be 
-installed with:
+## New indexers
 
-  ```pip install -r requirements/requirements-dev.txt```
-  
-- Once those are installed, the tests can be run with `pytest`. Alternatively, 
-`python setup.py test` can be used.
+If you want to add a new indexer, please update the Dockerfile with instructions for how to install the index builder software, and how to index a `.fa.gz` file using it. 
 
+## Suggestions and feedback
+
+Please open an issue on the github issue tracker with suggestions, bug reports, or other feedback.
