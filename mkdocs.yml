@@ -7,7 +7,7 @@ pypi_name: refgenie
 nav:
   - Getting Started: 
     - Introduction: README.md
-    - Installing genome indexers: install.md
+    - Installing: install.md
     - Hello world: hello-world.md
     - Use cases: use-cases.md
     

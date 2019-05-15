@@ -10,35 +10,31 @@ Refgenie creates a standardized folder structure for reference genome files and 
 
 Refgenie provides a **standard folder structure** for reference genome indexes, so that alignment tools can easily swap from one genome to another. Most importantly, Refgenie is **scripted** so that users can create their own assembly index packages from whatever genome source they like.
 
-## Installing
+## Example
 
-If you just want to use pre-built refgenie assemblies, just head over to the [download page](download.md); you don't even need to install refgenie. If you want to index your own genomes, then you'll need to install refgenie plus your genome indexers of choice. Install refgenie from [GitHub releases](https://github.com/databio/refgenie/releases) or from PyPI with `pip`:
+Download aligner indexes and other resources for your genome of interest right from the command-line:
 
-
-```console
-pip install --user refgenie
-```
-
-Update with:
 
 ```console
-pip install --user --upgrade refgenie
+refgenie pull --genome hg38 --asset bowtie2
 ```
 
-After that, you'll need to [install the genome indexers](install.md) -- but first, you can confirm that `refgenie` is functioning:
-
-## Quick start
-
-See if your install worked by invoking `refgenie` from the command line:
-
+Response:
+```console
+Pulling... Genome: hg38; assets: bowtie2
+Downloading... URL: http://.../asset/hg38/bowtie2
+Download complete.
+Saved as: /path/to/genome/hg38/bowtie2.tar
+Unarchived result at: /path/to/genome/hg38/bowtie2_index
 ```
-refgenie -h
+
+Pull many assets at once:
+```console
+refgenie pull --genome mm10 --asset kallisto TSS_enrichment mappability
 ```
 
-If the `refgenie` executable in not automatically in your `$PATH`, add the following line to your `.bashrc` or `.profile` (or `.bash_profile` on MACOS):
+Or, build your own indexes:
 
 ```console
-export PATH=~/.local/bin:$PATH
+refgenie build --input hg38.fa.gz
 ```
-
-Next, [install the genome indexers](install.md).
