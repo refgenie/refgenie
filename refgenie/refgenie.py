@@ -88,7 +88,7 @@ def build_argparser():
         'use the genome_folder attribute in the genome configuration file')
 
     sps["pull"].add_argument('-g', '--genome', default="hg38")
-    sps["pull"].add_argument('-i', '--index', default="bowtie2", nargs='+')
+    sps["pull"].add_argument('-a', '--asset', default="bowtie2", nargs='+')
 
     return parser
 
@@ -303,29 +303,34 @@ def load_yaml(filename):
     return data
 
 
-def pull_index(genome, asset, genome_folder=None):
+def pull_index(rgc, genome, assets):
 
     import urllib.request
     import shutil
 
-    url = "http://big.databio.org/example_data/rCRS.fa.gz"
+    print("Pulling... Genome: {}; assets: {}".format(genome, assets))
+    if not isinstance(assets, list):
+        assets = [assets]
 
-    base = "http://big.databio.org/"
-    base = "http://localhost/asset"
-    url = "{base}/{genome}/{asset}".format(base=base, genome=genome, asset=asset)
+    for asset in assets:
+        try:
+            url = "{base}/{genome}/{asset}".format(base=rgc.genome_server, genome=genome, asset=asset)
 
-    # local file to save as
-    file_name = "{genome_folder}/{genome}/{asset}.tar".format(
-        genome_folder=genome_folder,
-        genome=genome,
-        asset=asset)
+            # local file to save as
+            file_name = "{genome_folder}/{genome}/{asset}.tar".format(
+                genome_folder=rgc.genome_folder,
+                genome=genome,
+                asset=asset)
 
-    # Download the file from `url` and save it locally under `file_name`:
-    print("Downloading {}...".format(url))
-    with urllib.request.urlopen(url) as response, open(file_name, 'wb') as out_file:
-        shutil.copyfileobj(response, out_file)
-    print("Download complete.")
-    print("Saved as: {}".format(file_name))
+            # Download the file from `url` and save it locally under `file_name`:
+            print("Downloading... URL: {}".format(url))
+            with urllib.request.urlopen(url) as response, open(file_name, 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
+            print("Download complete.")
+            print("Saved as: {}".format(file_name))
+        except (ConnectionRefusedError, urllib.error.URLError) as e:
+            print("Server {} refused download. Check your internet settings".format(rgc.genome_server))
+            pass
 
 
 
@@ -360,10 +365,8 @@ def main():
         print("Local genomes: {}".format(rgc.list_genomes()))
         print("Local assets:\n{}".format(rgc.list_assets()))
 
-
     if args.command == "pull":
-        print("Pull genome: {}; index: {}".format(args.genome, args.index))
-        pull_index(args.genome, args.index)
+        pull_index(rgc, args.genome, args.asset)
 
 if __name__ == '__main__':
     try:
