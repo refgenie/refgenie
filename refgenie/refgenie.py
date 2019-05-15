@@ -308,13 +308,13 @@ def pull_index(rgc, genome, assets):
     import urllib.request
     import shutil
 
-    print("Pulling... Genome: {}; assets: {}".format(genome, assets))
+    print("Pulling... Genome: {}; assets: {}".format(genome, ", ".join(assets)))
     if not isinstance(assets, list):
         assets = [assets]
 
     for asset in assets:
         try:
-            url = "{base}/{genome}/{asset}".format(base=rgc.genome_server, genome=genome, asset=asset)
+            url = "{base}/asset/{genome}/{asset}".format(base=rgc.genome_server, genome=genome, asset=asset)
 
             # local file to save as
             file_name = "{genome_folder}/{genome}/{asset}.tar".format(
@@ -324,14 +324,44 @@ def pull_index(rgc, genome, assets):
 
             # Download the file from `url` and save it locally under `file_name`:
             print("Downloading... URL: {}".format(url))
-            with urllib.request.urlopen(url) as response, open(file_name, 'wb') as out_file:
-                shutil.copyfileobj(response, out_file)
+
+            if not os.path.exists(os.path.dirname(file_name)):
+                print("Directory {} does not exist, creating it...".format(os.path.dirname(file_name)))
+                os.mkdir(os.path.dirname(file_name))
+
+            with urllib.request.urlopen(url) as response:
+
+                with open(file_name, 'wb') as out_file:
+                    shutil.copyfileobj(response, out_file)
             print("Download complete.")
+
+            # successfully downloaded and moved tarball; untar it
+
+            if file_name.endswith(".tar"):
+                import tarfile
+                with tarfile.open(file_name) as tf:
+                    tf.extractall(path=os.path.dirname(file_name))
+
+
+            if file_name.endswith(".tgz"):
+                import tarfile
+                with tarfile.open(file_name) as tf:
+                    tf.extractall(path=os.path.dirname(file_name))
+
             print("Saved as: {}".format(file_name))
-        except (ConnectionRefusedError, urllib.error.URLError) as e:
+        except urllib.error.HTTPError as e:
+            print(e)
+            print("File not found on server")
+        except ConnectionRefusedError as e:
+            print(e)
             print("Server {} refused download. Check your internet settings".format(rgc.genome_server))
             pass
+        except FileNotFoundError as e:
+            print(e)
+            print("Local genomes folder '{}' not found.".format(rgc.genome_folder))
+            pass
 
+        # TODO: Check that the server returned a tarball, and not an error code
 
 
 
