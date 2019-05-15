@@ -308,7 +308,7 @@ def pull_index(rgc, genome, assets):
     import urllib.request
     import shutil
 
-    print("Pulling... Genome: {}; assets: {}".format(genome, ", ".join(assets)))
+    print("Pulling assets '{}' from genome '{}'".format(", ".join(assets)), genome)
     if not isinstance(assets, list):
         assets = [assets]
 
@@ -323,7 +323,7 @@ def pull_index(rgc, genome, assets):
                 asset=asset)
 
             # Download the file from `url` and save it locally under `file_name`:
-            print("Downloading... URL: {}".format(url))
+            print("Downloading URL: {}".format(url))
 
             if not os.path.exists(os.path.dirname(file_name)):
                 print("Directory {} does not exist, creating it...".format(os.path.dirname(file_name)))
@@ -333,22 +333,26 @@ def pull_index(rgc, genome, assets):
 
                 with open(file_name, 'wb') as out_file:
                     shutil.copyfileobj(response, out_file)
-            print("Download complete.")
+            print("Download complete: {}".format(file_name))
 
             # successfully downloaded and moved tarball; untar it
+            # TODO: Make this a CLI option
+            unpack = True
 
-            if file_name.endswith(".tar"):
-                import tarfile
-                with tarfile.open(file_name) as tf:
-                    tf.extractall(path=os.path.dirname(file_name))
+            if unpack:
 
+                if file_name.endswith(".tar"):
+                    import tarfile
+                    with tarfile.open(file_name) as tf:
+                        tf.extractall(path=os.path.dirname(file_name))
 
-            if file_name.endswith(".tgz"):
-                import tarfile
-                with tarfile.open(file_name) as tf:
-                    tf.extractall(path=os.path.dirname(file_name))
+                if file_name.endswith(".tgz"):
+                    import tarfile
+                    with tarfile.open(file_name) as tf:
+                        tf.extractall(path=os.path.dirname(file_name))
 
-            print("Saved as: {}".format(file_name))
+                print("Unpackaged archive into: {}".format(os.path.dirname(file_name)))
+
         except urllib.error.HTTPError as e:
             print(e)
             print("File not found on server")

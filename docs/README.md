@@ -21,11 +21,10 @@ refgenie pull --genome hg38 --asset bowtie2
 
 Response:
 ```console
-Pulling... Genome: hg38; assets: bowtie2
-Downloading... URL: http://.../asset/hg38/bowtie2
-Download complete.
-Saved as: /path/to/genome/hg38/bowtie2.tar
-Unarchived result at: /path/to/genome/hg38/bowtie2_index
+Pulling genome: hg38; assets: bowtie2
+Downloading URL: http://.../asset/hg38/bowtie2
+Download complete: /path/to/genome/hg38/bowtie2.tar
+Unpacked archive at: /path/to/genome/hg38/bowtie2_index
 ```
 
 Pull many assets at once:
@@ -38,3 +37,4 @@ Or, build your own indexes:
 ```console
 refgenie build --input hg38.fa.gz
 ```
+
