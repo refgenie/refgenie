@@ -57,10 +57,11 @@ def build_argparser():
         "avail": "List available genomes and indexes on server.",
     }
 
+    parser.add_argument('-c', '--genome-config', dest="genome_config")
+
     sps = {}
     for cmd, desc in subparser_messages.items():
         sps[cmd] = add_subparser(cmd, desc)
-        sps[cmd].add_argument('-g', '--genome-config', default=None)
 
     sps["build"] = pypiper.add_pypiper_args(sps["build"], groups=None, args=["recover"])
 
@@ -82,17 +83,12 @@ def build_argparser():
         help="Run all commands in the refgenie docker container.")
 
     sps["build"].add_argument('-o', '--outfolder', dest='outfolder', required = False,
-        default=genome_folder,
+        default=None,
         help='Override the default path to genomes folder, which is to '
         'use the genome_folder attribute in the genome configuration file')
 
     sps["pull"].add_argument('-g', '--genome', default="hg38")
     sps["pull"].add_argument('-i', '--index', default="bowtie2", nargs='+')
-
-
-    genome_config = os.path.join(genome_folder, "refgenie.yaml")
-    sps["list"].add_argument("-c", "--genome-config",
-        default=genome_config)
 
     return parser
 
@@ -343,8 +339,12 @@ def main():
 
     # All commands need to load the genome config file
 
-    if args.genome_config:
-        rgc = RefGenomeConfiguration(load_genome_config(args.genome_config))
+    if not args.genome_config:
+         parser.print_help()
+         sys.exit(1)
+
+    rgc = RefGenomeConfiguration(load_genome_config(args.genome_config))
+
 
     if args.command == "build":
         build_indexes(args)
