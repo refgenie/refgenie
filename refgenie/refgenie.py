@@ -11,37 +11,7 @@ import sys
 import urllib
 from ._version import __version__
 
-class RefGenomeConfiguration(attmap.PathExAttMap):
-
-    def get_index(self, genome_name, index_name):
-        if not genome_name in self.refgenomes:
-            msg = "Your genomes do not include {}".format(genome_name)
-            raise MissingGenomeError(msg)
-
-        if not index_name in self.refgenomes[genome_name]:
-            msg = "Genome {} exists, but index {} is missing".format(genome_name, index_name)
-            raise MissingIndexError(msg)
-
-            return self.refgenomes[genome_name][index_name]
-
-    def list_genomes(self):
-        return list(self.refgenomes.keys())
-
-
-    def list_indexes(self):
-        string = ""
-        for genome, value in self.refgenomes.items():
-            string += "  {}: {}\n".format(genome, "; ".join(list(value.indexes)))
-        return string
-
-    def to_yaml(self):
-        ## TODO: use a recursive dict function for attmap representation
-        try:
-            return yaml.dump(self.__dict__, default_flow_style=False)
-        except yaml.representer.RepresenterError:
-            print("SERIALIZED SAMPLE DATA: {}".format(self))
-            raise
-
+from refgenconf import load_genome_config, RefGenomeConfiguration
 
 def is_url(url):
     return urllib.parse(url).scheme != ""
@@ -52,7 +22,6 @@ class _VersionInHelpParser(ArgumentParser):
         """ Add version information to help text. """
         return "version: {}\n".format(__version__) + \
                super(_VersionInHelpParser, self).format_help()
-
 
 
 def build_argparser():
@@ -91,8 +60,9 @@ def build_argparser():
     sps = {}
     for cmd, desc in subparser_messages.items():
         sps[cmd] = add_subparser(cmd, desc)
+        sps[cmd].add_argument('-g', '--genome-config', default=None)
 
-    sps["build"] = pypiper.add_pypiper_args(sps["build"], groups=None, args=["recover", "config"])
+    sps["build"] = pypiper.add_pypiper_args(sps["build"], groups=None, args=["recover"])
 
     default_config = os.path.splitext(os.path.basename(sys.argv[0]))[0] + ".yaml"
     # Arguments to optimize the interface to looper
@@ -102,7 +72,7 @@ def build_argparser():
         help='Local path or URL to genome sequence file in .fa, .fa.gz, or .2bit format.')
 
     sps["build"].add_argument('-n', '--name', dest='name', required = False,
-        help='Name of the genome to build. If ommitted, refgenie will use'
+        help='Name of the genome to build. If omitted, refgenie will use'
         'the basename of the file specified in --input')
 
     sps["build"].add_argument('-a', '--annotation', dest='annotation', required = False,
@@ -111,32 +81,13 @@ def build_argparser():
     sps["build"].add_argument("-d", "--docker", action="store_true",
         help="Run all commands in the refgenie docker container.")
 
-    # Don't error if RESOURCES is not set.
-    try:
-        # First priority: GENOMES variable
-        genome_folder = os.environ["GENOMES"]
-    except:
-        try:
-            # Second priority: RESOURCES/genomes
-            genome_folder = os.path.join(os.environ["RESOURCES"], "genomes")
-        except:
-            # Otherwise, current directory
-            genome_folder = ""
-
     sps["build"].add_argument('-o', '--outfolder', dest='outfolder', required = False,
         default=genome_folder,
-        help='Path to genomes folder, using the $GENOMES environment variable'
-        ' if set. Currently set to: \'{}\''.format(
-            genome_folder))
-
-    sps["list"].add_argument('-g', '--genome-folder', required = False,
-        default=genome_folder,
-        help='Path to genomes folder, using the $GENOMES environment variable'
-        ' if set. Currently set to: \'{}\''.format(
-            genome_folder))
+        help='Override the default path to genomes folder, which is to '
+        'use the genome_folder attribute in the genome configuration file')
 
     sps["pull"].add_argument('-g', '--genome', default="hg38")
-    sps["pull"].add_argument('-i', '--index', default="bowtie2")
+    sps["pull"].add_argument('-i', '--index', default="bowtie2", nargs='+')
 
 
     genome_config = os.path.join(genome_folder, "refgenie.yaml")
@@ -390,13 +341,17 @@ def main():
     parser = build_argparser()
     args, remaining_args = parser.parse_known_args()
 
+    # All commands need to load the genome config file
+
+    if args.genome_config:
+        rgc = RefGenomeConfiguration(load_genome_config(args.genome_config))
+
     if args.command == "build":
         build_indexes(args)
 
     if args.command == "list":
         print("Local reference genomes")
 
-        rgc = RefGenomeConfiguration(load_yaml(args.genome_config))
 
         print(rgc)
 
