@@ -12,7 +12,7 @@ Refgenie provides a **standard folder structure** for reference genome indexes, 
 
 ## Installing
 
-If you just want to use pre-built refgenie assemblies, just head over to the [download page](/download); you don't even need to install refgenie. If you want to index your own genomes, then you'll need to install refgenie plus your genome indexers of choice. Install refgenie from [GitHub releases](https://github.com/databio/refgenie/releases) or from PyPI with `pip`:
+If you just want to use pre-built refgenie assemblies, just head over to the [download page](download.md); you don't even need to install refgenie. If you want to index your own genomes, then you'll need to install refgenie plus your genome indexers of choice. Install refgenie from [GitHub releases](https://github.com/databio/refgenie/releases) or from PyPI with `pip`:
 
 
 ```console
@@ -25,7 +25,7 @@ Update with:
 pip install --user --upgrade refgenie
 ```
 
-After that, you'll need to [install the genome indexers](/install) -- but first, you can confirm that `refgenie` is functioning:
+After that, you'll need to [install the genome indexers](install.md) -- but first, you can confirm that `refgenie` is functioning:
 
 ## Quick start
 
@@ -41,4 +41,4 @@ If the `refgenie` executable in not automatically in your `$PATH`, add the follo
 export PATH=~/.local/bin:$PATH
 ```
 
-Next, [install the genome indexers](/install).
+Next, [install the genome indexers](install.md).

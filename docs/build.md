@@ -9,7 +9,7 @@ Indexing your own reference genome is as easy as 1-2-3:
 ## Customizing indexes
 
 
-Refgenie currently builds indexes for bowtie2, hisat2, bismark (for DNA methylation), and others. You can find the complete list in the [config file](src/refgenie.yaml). These are all optional; you only have to build indexes for ones you intend to use. You can also add more later. If you don't pass along a configuration file to `refgenie`, it will simply use this one, building these indexes. If you want to toggle some of them, you may choose which indexes you want to include by toggling them. Just duplicate and edit the config file and pass it to refenie like this:
+Refgenie currently builds indexes for bowtie2, hisat2, bismark (for DNA methylation), and others. You can find the complete list in the [config file](https://github.com/databio/refgenie/blob/dev/refgenie/refgenie.yaml). These are all optional; you only have to build indexes for ones you intend to use. You can also add more later. If you don't pass along a configuration file to `refgenie`, it will simply use this one, building these indexes. If you want to toggle some of them, you may choose which indexes you want to include by toggling them. Just duplicate and edit the config file and pass it to refenie like this:
 
 ```
 wget https://raw.githubusercontent.com/databio/refgenie/master/refgenie/refgenie.yaml
