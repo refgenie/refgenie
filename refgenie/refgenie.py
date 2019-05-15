@@ -339,26 +339,26 @@ def main():
 
     # All commands need to load the genome config file
 
-    if not args.genome_config:
-         parser.print_help()
-         sys.exit(1)
-
     rgc = RefGenomeConfiguration(load_genome_config(args.genome_config))
+
+    if not rgc:
+        parser.print_help()
+        print("Can't load genome configuration file")
+        sys.exit(1)
+    
+    if not args.command:
+        parser.print_help()
+        print("No command given")
+        sys.exit(1)
+
 
 
     if args.command == "build":
         build_indexes(args)
 
     if args.command == "list":
-        print("Local reference genomes")
-
-
-        print(rgc)
-
-        print("Genomes: {}".format(rgc.list_genomes()))
-        print("Indexes:\n{}".format(rgc.list_indexes()))
-
-        print(rgc.to_yaml())
+        print("Local genomes: {}".format(rgc.list_genomes()))
+        print("Local assets:\n{}".format(rgc.list_assets()))
 
 
     if args.command == "pull":
