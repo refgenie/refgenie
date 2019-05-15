@@ -2,7 +2,6 @@
 
 
 from argparse import ArgumentParser
-import attmap
 import pypiper
 import yaml
 import os
