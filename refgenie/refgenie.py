@@ -11,7 +11,7 @@ import sys
 import urllib
 from ._version import __version__
 
-class RefGenomeConfiguration(attmap.PathExAttMap):
+class RefGenomeConfiguration(attmap.OrdPathExAttMap):
 
     def get_index(self, genome_name, index_name):
         if not genome_name in self.refgenomes:
