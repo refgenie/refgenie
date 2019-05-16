@@ -12,7 +12,7 @@ Refgenie provides a **standard folder structure** for reference genome indexes, 
 
 ## Example
 
-Download aligner indexes and other resources for your genome of interest right from the command-line:
+### Downloading aligner indexes and assets for a reference genome:
 
 
 ```console
@@ -21,7 +21,7 @@ refgenie pull --genome hg38 --asset bowtie2
 
 Response:
 ```console
-Pulling genome: hg38; assets: bowtie2
+Pulling assets 'bowtie2' from genome 'hg38'.
 Downloading URL: http://.../asset/hg38/bowtie2
 Download complete: /path/to/genome/hg38/bowtie2.tar
 Unpacked archive at: /path/to/genome/hg38/bowtie2_index
@@ -32,7 +32,8 @@ Pull many assets at once:
 refgenie pull --genome mm10 --asset kallisto TSS_enrichment mappability
 ```
 
-Or, build your own indexes:
+### Building your own indexes and assets for a reference genome
+
 
 ```console
 refgenie build --input hg38.fa.gz

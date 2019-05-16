@@ -10,7 +10,14 @@ import sys
 import urllib
 from ._version import __version__
 
-from refgenconf import load_genome_config, RefGenomeConfiguration
+from refgenconf import select_genome_config, RefGenomeConfiguration
+
+# This establishes the API with the server
+refgenie_server_api = {
+    "list_available_genomes": "/genomes",
+    'list_assets_by_genome': "/genome/{genome}",
+    'download_asset': "/asset/{genome}/{asset}",
+}
 
 
 def is_url(url):
@@ -303,18 +310,18 @@ def load_yaml(filename):
     return data
 
 
-def pull_index(rgc, genome, assets):
+def pull_index(rgc, genome, assets, genome_config_path):
 
     import urllib.request
     import shutil
 
-    print("Pulling assets '{}' from genome '{}'".format(", ".join(assets)), genome)
+    print("Pulling assets '{}' from genome '{}'".format(", ".join(assets), genome))
     if not isinstance(assets, list):
         assets = [assets]
 
     for asset in assets:
         try:
-            url = "{base}/asset/{genome}/{asset}".format(base=rgc.genome_server, genome=genome, asset=asset)
+            url = "{base}/asset/{genome}/{asset}".format(base=rgc.to_dict()["genome_server"], genome=genome, asset=asset)
 
             # local file to save as
             file_name = "{genome_folder}/{genome}/{asset}.tar".format(
@@ -344,7 +351,8 @@ def pull_index(rgc, genome, assets):
                 if file_name.endswith(".tar"):
                     import tarfile
                     with tarfile.open(file_name) as tf:
-                        tf.extractall(path=os.path.dirname(file_name))
+                        x = tf.extractall(path=os.path.dirname(file_name))
+                        print(x)
 
                 if file_name.endswith(".tgz"):
                     import tarfile
@@ -353,19 +361,28 @@ def pull_index(rgc, genome, assets):
 
                 print("Unpackaged archive into: {}".format(os.path.dirname(file_name)))
 
+                # Write to config file
+                # TODO: Figure out how we want to handle the asset_key to folder_name
+                # mapping. Do we want to require that asset_key == folder_name?
+                # I guess we allow it to differ, but we keep it that way within refgenie?
+                # Right now they are identical:
+                asset_key = asset
+                folder_name = asset
+                print("Writing genome config file: {}".format(genome_config_path))
+                rgc.genomes[genome][asset_key] = folder_name
+                rgc.write(genome_config_path)
+
         except urllib.error.HTTPError as e:
             print(e)
             print("File not found on server")
         except ConnectionRefusedError as e:
             print(e)
-            print("Server {} refused download. Check your internet settings".format(rgc.genome_server))
+            print("Server {} refused download. Check your internet settings".format(rgc.to_dict()["genome_server"]))
             pass
         except FileNotFoundError as e:
             print(e)
             print("Local genomes folder '{}' not found.".format(rgc.genome_folder))
             pass
-
-        # TODO: Check that the server returned a tarball, and not an error code
 
 
 
@@ -378,7 +395,8 @@ def main():
 
     # All commands need to load the genome config file
 
-    rgc = RefGenomeConfiguration(load_genome_config(args.genome_config))
+    genome_config_path = select_genome_config(args.genome_config)
+    rgc = RefGenomeConfiguration(genome_config_path)
 
     if not rgc:
         parser.print_help()
@@ -391,16 +409,15 @@ def main():
         sys.exit(1)
 
 
-
     if args.command == "build":
         build_indexes(args)
 
     if args.command == "list":
-        print("Local genomes: {}".format(rgc.list_genomes()))
-        print("Local assets:\n{}".format(rgc.list_assets()))
+        print("Local genomes: {}".format(rgc.genomes_str()))
+        print("Local assets:\n{}".format(rgc.assets_str()))
 
     if args.command == "pull":
-        pull_index(rgc, args.genome, args.asset)
+        pull_index(rgc, args.genome, args.asset, genome_config_path)
 
 if __name__ == '__main__':
     try:
