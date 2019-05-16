@@ -303,13 +303,6 @@ def build_indexes(args):
     pm.stop_pipeline()
 
 
-def load_yaml(filename):
-    import yaml
-    with open(filename, 'r') as f:
-        data = yaml.load(f, yaml.SafeLoader)
-    return data
-
-
 def pull_index(rgc, genome, assets, genome_config_path):
 
     import urllib.request
