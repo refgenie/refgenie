@@ -2,12 +2,14 @@
 
 
 from argparse import ArgumentParser
-import pypiper
-import yaml
+import json
 import os
+import pypiper
 import re
 import sys
 import urllib
+import yaml
+import attmap
 from ._version import __version__
 
 from refgenconf import select_genome_config, RefGenomeConfiguration
@@ -377,7 +379,16 @@ def pull_index(rgc, genome, assets, genome_config_path):
             print("Local genomes folder '{}' not found.".format(rgc.genome_folder))
             pass
 
+def avail(rgc):
+    """ What's available? """
 
+    url = "{base}/assets".format(base=rgc.to_dict()["genome_server"])
+    print("Querying available assets from server: {url}".format(url=url))
+    with urllib.request.urlopen(url) as response:
+        encoding = response.info().get_content_charset('utf8')
+        data = json.loads(response.read().decode(encoding))
+        avail_rgc = attmap.AttMap(data)
+        print(avail_rgc.to_yaml())
 
 def main():
     """ Primary workflow """
@@ -411,6 +422,9 @@ def main():
 
     if args.command == "pull":
         pull_index(rgc, args.genome, args.asset, genome_config_path)
+
+    if args.command == "avail":
+        avail(rgc)
 
 if __name__ == '__main__':
     try:
