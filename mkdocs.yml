@@ -13,6 +13,7 @@ nav:
     
   - How-to guides:    
     - Download pre-built indexes: download.md
+    - Installing genome indexers: install_indexers.md
     - Build genome indexes: build.md
   - Reference:
     - Recipes: recipes.md
