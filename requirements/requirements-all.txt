@@ -1,1 +1,2 @@
 refgenconf
+ubiquerg>=0.2
