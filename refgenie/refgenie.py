@@ -13,6 +13,7 @@ import attmap
 from ._version import __version__
 
 from refgenconf import select_genome_config, RefGenomeConfiguration
+from ubiquerg import is_url
 
 # This establishes the API with the server
 refgenie_server_api = {
@@ -20,10 +21,6 @@ refgenie_server_api = {
     'list_assets_by_genome': "/genome/{genome}",
     'download_asset': "/asset/{genome}/{asset}",
 }
-
-
-def is_url(url):
-    return urllib.parse(url).scheme != ""
 
 
 class _VersionInHelpParser(ArgumentParser):
