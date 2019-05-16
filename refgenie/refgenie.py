@@ -60,10 +60,11 @@ def build_argparser():
             cmd, description=description, help=description)
 
     subparser_messages = {
-        "build": "Build genome indexes",
+        "init": "Initialize a genome configuration.",
         "list": "List available local genomes.",
-        "pull": "Download indexes.",
         "avail": "List available genomes and indexes on server.",
+        "pull": "Download indexes.",
+        "build": "Build genome indexes",
     }
 
     parser.add_argument('-c', '--genome-config', dest="genome_config")
@@ -71,6 +72,9 @@ def build_argparser():
     sps = {}
     for cmd, desc in subparser_messages.items():
         sps[cmd] = add_subparser(cmd, desc)
+
+    sps["init"].add_argument('-s', '--genome-server', default="http://localhost")
+
 
     sps["build"] = pypiper.add_pypiper_args(sps["build"], groups=None, args=["recover"])
 
@@ -390,6 +394,26 @@ def avail(rgc):
         avail_rgc = attmap.AttMap(data)
         print(avail_rgc.to_yaml())
 
+
+def refgenie_init(genome_config_path, genome_server="http://localhost"):
+    """ Initialize genome config """
+
+    # Set up default 
+    rgc = RefGenomeConfiguration({})
+    rgc.genome_folder = os.path.dirname(genome_config_path)
+    rgc.genome_server = genome_server
+    rgc.genomes = None
+
+    print(rgc)
+
+    if genome_config_path and not os.path.exists(genome_config_path):
+        rgc.write(genome_config_path)
+        print("Wrote new refgenie genome configuration file: {}".format(genome_config_path))
+    else:
+        print("Can't initialize, file exists: {} ".format(genome_config_path))
+
+
+
 def main():
     """ Primary workflow """
 
@@ -397,8 +421,20 @@ def main():
     parser = build_argparser()
     args, remaining_args = parser.parse_known_args()
 
-    # All commands need to load the genome config file
+    print(args)
 
+    if not args.command:
+        parser.print_help()
+        print("No command given")
+        sys.exit(1)
+
+
+    if args.command == "init":
+        print("Initializing refgenie genome configuration")
+        refgenie_init(args.genome_config, args.genome_server)
+        sys.exit(0)
+
+    
     genome_config_path = select_genome_config(args.genome_config)
     rgc = RefGenomeConfiguration(genome_config_path)
 
@@ -406,12 +442,6 @@ def main():
         parser.print_help()
         print("Can't load genome configuration file")
         sys.exit(1)
-    
-    if not args.command:
-        parser.print_help()
-        print("No command given")
-        sys.exit(1)
-
 
     if args.command == "build":
         build_indexes(args)
