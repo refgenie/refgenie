@@ -2,6 +2,7 @@
 
 
 from argparse import ArgumentParser
+from collections import OrderedDict
 import json
 import os
 import pypiper
@@ -350,8 +351,7 @@ def pull_index(rgc, genome, assets, genome_config_path):
                 if file_name.endswith(".tar"):
                     import tarfile
                     with tarfile.open(file_name) as tf:
-                        x = tf.extractall(path=os.path.dirname(file_name))
-                        print(x)
+                        tf.extractall(path=os.path.dirname(file_name))
 
                 if file_name.endswith(".tgz"):
                     import tarfile
@@ -368,7 +368,14 @@ def pull_index(rgc, genome, assets, genome_config_path):
                 asset_key = asset
                 folder_name = asset
                 print("Writing genome config file: {}".format(genome_config_path))
+                if not hasattr(rgc, "genomes") or not rgc.genomes:
+                    # if it's the first genome
+                    rgc.genomes = attmap.PathExAttMap()
+                if not hasattr(rgc.genomes, genome):
+                    # it's the first asset for this genome
+                    rgc.genomes[genome] = attmap.PathExAttMap()
                 rgc.genomes[genome][asset_key] = folder_name
+                print(rgc)
                 rgc.write(genome_config_path)
 
         except urllib.error.HTTPError as e:
@@ -399,10 +406,11 @@ def refgenie_init(genome_config_path, genome_server="http://localhost"):
     """ Initialize genome config """
 
     # Set up default 
-    rgc = RefGenomeConfiguration({})
-    rgc.genome_folder = os.path.dirname(genome_config_path)
-    rgc.genome_server = genome_server
-    rgc.genomes = None
+    rgc = RefGenomeConfiguration(OrderedDict({
+        "genome_folder": os.path.dirname(genome_config_path),
+        "genome_server": genome_server,
+        "genomes": None
+        }))
 
     print(rgc)
 
