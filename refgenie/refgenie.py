@@ -60,9 +60,9 @@ def build_argparser():
     subparser_messages = {
         "init": "Initialize a genome configuration.",
         "list": "List available local genomes.",
-        "avail": "List available genomes and indexes on server.",
-        "pull": "Download indexes.",
-        "build": "Build genome indexes",
+        "listr": "List available genomes and assets on server.",
+        "pull": "Download assets.",
+        "build": "Build genome assets",
     }
 
     parser.add_argument('-c', '--genome-config', dest="genome_config")
@@ -387,7 +387,7 @@ def pull_index(rgc, genome, assets, genome_config_path):
             print("Local genomes folder '{}' not found.".format(rgc.genome_folder))
             pass
 
-def avail(rgc):
+def list_remote(rgc):
     """ What's available? """
 
     url = "{base}/assets".format(base=rgc.to_dict()["genome_server"])
@@ -395,8 +395,8 @@ def avail(rgc):
     with urllib.request.urlopen(url) as response:
         encoding = response.info().get_content_charset('utf8')
         data = json.loads(response.read().decode(encoding))
-        avail_rgc = attmap.AttMap(data)
-        print(avail_rgc.to_yaml())
+        remote_rgc = attmap.AttMap(data)
+        print(remote_rgc.to_yaml())
 
 
 def refgenie_init(genome_config_path, genome_server="http://localhost"):
@@ -458,8 +458,8 @@ def main():
     if args.command == "pull":
         pull_index(rgc, args.genome, args.asset, genome_config_path)
 
-    if args.command == "avail":
-        avail(rgc)
+    if args.command == "listr":
+        list_remote(rgc)
 
 if __name__ == '__main__':
     try:
