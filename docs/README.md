@@ -1,19 +1,19 @@
 
-# <img src="img/refgenie_logo.svg" class="img-header"> genome index manager
+# <img src="img/refgenie_logo.svg" class="img-header"> reference genome manager
 
 [![PEP compatible](http://pepkit.github.io/img/PEP-compatible-green.svg)](http://pepkit.github.io)
 
 ## What is refgenie?
 
-Refgenie is full-service reference genome resource manager. It provides a command-line and python interface to download pre-built genome assets like indexes from a central server. It can also build custom genome indexes for any `fasta` file, maintaining a standardized folder structure for reference genome files.
+Refgenie is full-service reference genome manager. It provides a command-line and python interface to download pre-built genome assets like indexes from a central server. It can also build assets for custom genomes, making it easy to have a single folder structure for reference genome files.
 
 ## What makes refgenie better?
 
 Refgenie specifies a *standard* folder structure, so that alignment tools can easily swap from one genome to another. There are other similar projects, but Refgenie has a few advantages:
 
-1. **It provides a command-line interface to download resources**. Think of *Refgenie Server* as `GitHub` for reference genomes. You just type `refgenie pull -g hg38 -a bowtie2...` and you have standard indexes.
+1. **It provides a command-line interface to download individual resources**. Think of it as `GitHub` for reference genomes. You just type `refgenie pull -g hg38 -a bowtie2...` and you have standard indexes.
 
-2. **It's scripted**. In case you need resources for a custom genome, refgenie provides a `build` function, so users can create their own assembly index packages from any genome source.
+2. **It's scripted**. In case you need resources *not* on the server, such as for a custom genome, refgenie provides a `build` function to create you own from any genome source.
 
 3. **It includes a python API**. For tool developers, you can do `cfg = refgenie.RefGenConf(file)` and then use a python object to reference standard locations for any genome asset, *e.g.*, `cfg.hg38.bowtie2_index`.
 
@@ -45,6 +45,6 @@ refgenie pull --genome mm10 --asset kallisto TSS_enrichment mappability
 
 
 ```console
-refgenie build --input hg38.fa.gz
+refgenie build --input hg38.fa.gz --asset bowtie2_index
 ```
 

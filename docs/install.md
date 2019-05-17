@@ -19,7 +19,7 @@ See if your install worked by invoking `refgenie` from the command line:
 refgenie -h
 ```
 
-If the `refgenie` executable in not in your `$PATH`, add this line to your `.bashrc` or `.profile` (or `.bash_profile` on MACOS):
+If the `refgenie` executable in not in your `$PATH`, append this to your `.bashrc` or `.profile` (or `.bash_profile` on MACOS):
 
 ```console
 export PATH=~/.local/bin:$PATH

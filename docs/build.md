@@ -3,7 +3,7 @@
 Indexing your own reference genome is as easy as 1-2-3:
 
 1. Install refgenie
-2. [Install genome indexers](/install) or the [docker image](#docker).
+2. Choose one: either [install genome indexers](/install) or the [docker image](#docker).
 3. Run refgenie with: `refgenie -i INPUT_FILE.fa`. (INPUT_FILE is a fasta file of your reference genome, and can be either a local file or a URL)
 
 ## Customizing indexes

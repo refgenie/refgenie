@@ -1,6 +1,28 @@
 # Download pre-indexed reference genomes
 
-Most users won't need to become familiar with refgenie because you can just download the pre-indexed archives and use those. These archives are built for common genomes. These are `tar gzipped` files, so **you will need to unarchive them after downloading**. The complete collection is listed at [http://big.databio.org/refgenomes/](http://big.databio.org/refgenomes/):
+## Latest builds
+
+The latest genome assets are now available for modular download, either by using the `refgenie` command-line interface, or by browsing on the web. You can browse and download files manually at [refgenomes.databio.org](http://refgenomes.databio.org), but `refgenie` will download and manage these for you automatically. You do this by simply running `refgenie` from the command line.
+
+List all available genomes and assets:
+
+Access [http://refgenomes.databio.org](http://refgenomes.databio.org/assets) or use the CLI to *list remote assets*:
+
+```
+refgenie listr
+```
+
+Now, you can download the specific asset of your choice with:
+
+```
+refgenie pull -g GENOME -a ASSET
+```
+Where `GENOME` refers to a genome key (*e.g.* hg38) and `ASSET` refers to one or more specific asset keys (*e.g.* bowtie2_index).
+
+
+## Older builds
+
+For earlier versions of refgenie, there was no `refgenie pull` command, so users would just download the pre-indexed archives and use those. These archives are built for common genomes. These are `tar gzipped` files, so **you will need to unarchive them after downloading**. The complete collection is listed at [http://big.databio.org/refgenomes/](http://big.databio.org/refgenomes/):
 
 ## Mirror 1:
 
