@@ -307,7 +307,7 @@ def build_indexes(args):
     pm.stop_pipeline()
 
 
-def pull_index(rgc, genome, assets, genome_config_path):
+def pull_asset(rgc, genome, assets, genome_config_path):
 
     import urllib.request
     import shutil
@@ -456,7 +456,7 @@ def main():
         print("Local assets:\n{}".format(rgc.assets_str()))
 
     if args.command == "pull":
-        pull_index(rgc, args.genome, args.asset, genome_config_path)
+        pull_asset(rgc, args.genome, args.asset, genome_config_path)
 
     if args.command == "listr":
         list_remote(rgc)
