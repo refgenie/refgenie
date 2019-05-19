@@ -9,7 +9,6 @@ import pypiper
 import re
 import sys
 import urllib
-import yaml
 import attmap
 from ._version import __version__
 
@@ -45,7 +44,6 @@ def build_argparser():
             description=banner,
             epilog=additional_description)
 
-
     parser.add_argument(
             "-V", "--version",
             action="version",
@@ -72,15 +70,10 @@ def build_argparser():
         sps[cmd] = add_subparser(cmd, desc)
 
     sps["init"].add_argument('-s', '--genome-server', default="http://localhost")
-
-
     sps["build"] = pypiper.add_pypiper_args(sps["build"], groups=None, args=["recover"])
 
-    default_config = os.path.splitext(os.path.basename(sys.argv[0]))[0] + ".yaml"
-    # Arguments to optimize the interface to looper
-
     # Add any pipeline-specific arguments
-    sps["build"].add_argument('-i', '--input', dest='input', required = True,
+    sps["build"].add_argument('-i', '--input', dest='input', required=True,
         help='Local path or URL to genome sequence file in .fa, .fa.gz, or .2bit format.')
 
     sps["build"].add_argument('-n', '--name', dest='name', required = False,
@@ -118,7 +111,8 @@ def copy_or_download_file(input_string, outfolder):
         cmd = "wget -O " + result_file + " " + input_string
     else:
         cmd = "cp " + input_string + " " + result_file
-    return([result_file, cmd])
+    return [result_file, cmd]
+
 
 def convert_file(input_file, output_file, conversions):
     """
@@ -159,7 +153,7 @@ def build_indexes(args):
     print("Using genome name: {}".format(genome_name))
     outfolder = os.path.join(args.outfolder, genome_name)
     outfolder = os.path.abspath(outfolder)
-    print("Output to: " , genome_name, args.outfolder, outfolder)
+    print("Output to: ", genome_name, args.outfolder, outfolder)
 
     print(default_config_file())
 
@@ -175,7 +169,7 @@ def build_indexes(args):
             args.config_file = default_config_file()
 
     pm = pypiper.PipelineManager(name="refgenie", outfolder=outfolder, args=args)
-    ngstk = pypiper.NGSTk(pm = pm)
+    tk = pypiper.NGSTk(pm=pm)
     tools = pm.config.tools  # Convenience alias
     index = pm.config.index
     param = pm.config.param
@@ -183,7 +177,7 @@ def build_indexes(args):
     #pm.make_sure_path_exists(outfolder)
     conversions = {}
     conversions[".2bit"] = "twoBitToFa {INPUT} {OUTPUT}"
-    conversions[".gz"] = ngstk.ziptool + " -cd {INPUT} > {OUTPUT}"
+    conversions[".gz"] = tk.ziptool + " -cd {INPUT} > {OUTPUT}"
 
     # Copy fasta file to genome folder structure
     local_raw_fasta = genome_name + ".fa"
@@ -234,17 +228,16 @@ def build_indexes(args):
         pm.run(cmd, annotation_file_unzipped)
 
     #   cmd = "cp " + args.annotation + " " + annotation_file
-    #   cmd2 = ngstk.ziptool + " -d " + annotation_file 
+    #   cmd2 = tk.ziptool + " -d " + annotation_file 
     #   pm.run([cmd, cmd2], annotation_file_unzipped)
 
     else:
         print("* No GTF gene annotations provided. Skipping this step.")
 
-
     # Bowtie indexes
     if index.bowtie2:
         folder = os.path.join(outfolder, "indexed_bowtie2")
-        ngstk.make_dir(folder)
+        tk.make_dir(folder)
         target = os.path.join(folder, "completed.flag")
         cmd1 = "ln -sf ../" + local_raw_fasta + " " + folder
         cmd2 = tools.bowtie2build + " " + raw_fasta + " " + os.path.join(folder, genome_name)
@@ -254,7 +247,7 @@ def build_indexes(args):
     # Bismark index - bowtie2
     if index.bismark_bt2:
         folder = os.path.join(outfolder, "indexed_bismark_bt2")
-        ngstk.make_dir(folder)
+        tk.make_dir(folder)
         target = os.path.join(folder, "completed.flag")
         cmd1 = "ln -sf ../" + local_raw_fasta + " " + folder
         cmd2 = tools.bismark_genome_preparation + " --bowtie2 " + folder
@@ -264,7 +257,7 @@ def build_indexes(args):
     # Bismark index - bowtie1
     if index.bismark_bt1:
         folder = os.path.join(outfolder, "indexed_bismark_bt1")
-        ngstk.make_dir(folder)
+        tk.make_dir(folder)
         target = os.path.join(folder, "completed.flag")
         cmd1 = "ln -sf ../" + local_raw_fasta + " " + folder
         cmd2 = tools.bismark_genome_preparation + " " + folder
@@ -274,7 +267,7 @@ def build_indexes(args):
     # Epilog meth calling
     if index.epilog:
         folder = os.path.join(outfolder, "indexed_epilog")
-        ngstk.make_dir(folder)
+        tk.make_dir(folder)
         target = os.path.join(folder, "completed.flag")
         cmd1 = "ln -sf ../" + local_raw_fasta + " " + folder
         cmd2 = tools.epilog_indexer + " -i " + raw_fasta
@@ -286,7 +279,7 @@ def build_indexes(args):
 
     if index.hisat2:
         folder = os.path.join(outfolder, "indexed_hisat2")
-        ngstk.make_dir(folder)
+        tk.make_dir(folder)
         target = os.path.join(folder, "completed.flag")
         cmd1 = "ln -sf ../" + local_raw_fasta + " " + folder
         cmd2 = tools.hisat2build + " " + raw_fasta + " " + os.path.join(folder, genome_name)
@@ -297,7 +290,7 @@ def build_indexes(args):
     # So it doesn't make sense to run these at the same time as the others.
     if index.kallisto:
         folder = os.path.join(outfolder, "indexed_kallisto")
-        ngstk.make_dir(folder)
+        tk.make_dir(folder)
         target = os.path.join(folder, "completed.flag")
         cmd2 = tools.kallisto + " index -i " + os.path.join(folder, genome_name + "_kallisto_index.idx")
         cmd2 += " " + raw_fasta
@@ -387,6 +380,7 @@ def pull_asset(rgc, genome, assets, genome_config_path):
             print("Local genomes folder '{}' not found.".format(rgc.genome_folder))
             pass
 
+
 def list_remote(rgc):
     """ What's available? """
 
@@ -422,7 +416,6 @@ def refgenie_init(genome_config_path, genome_server="http://localhost"):
 def main():
     """ Primary workflow """
 
-
     parser = build_argparser()
     args, remaining_args = parser.parse_known_args()
 
@@ -433,13 +426,11 @@ def main():
         print("No command given")
         sys.exit(1)
 
-
     if args.command == "init":
         print("Initializing refgenie genome configuration")
         refgenie_init(args.genome_config, args.genome_server)
         sys.exit(0)
 
-    
     genome_config_path = select_genome_config(args.genome_config)
     rgc = RefGenomeConfiguration(genome_config_path)
 
@@ -460,6 +451,7 @@ def main():
 
     if args.command == "listr":
         list_remote(rgc)
+
 
 if __name__ == '__main__':
     try:
