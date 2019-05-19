@@ -10,10 +10,13 @@ import re
 import sys
 import urllib
 import attmap
+import logmuse
 from ._version import __version__
 
 from refgenconf import select_genome_config, RefGenomeConfiguration
 from ubiquerg import is_url
+
+_LOGGER = None
 
 # This establishes the API with the server
 refgenie_server_api = {
@@ -150,23 +153,16 @@ def build_indexes(args):
         for strike in [".fasta.gz$", ".fa.gz$", ".fasta$", ".fa$", ".gz$", ".2bit$"]:
             genome_name = re.sub(strike, "", genome_name)
 
-    print("Using genome name: {}".format(genome_name))
-    outfolder = os.path.join(args.outfolder, genome_name)
-    outfolder = os.path.abspath(outfolder)
-    print("Output to: ", genome_name, args.outfolder, outfolder)
+    _LOGGER.info("Using genome name: {}".format(genome_name))
+    outfolder = os.path.abspath(os.path.join(args.outfolder, genome_name))
+    _LOGGER.info("Output to: {} {} {}".format(genome_name, args.outfolder, outfolder))
 
-    print(default_config_file())
+    _LOGGER.debug("Default config file: {}".format(default_config_file()))
 
-    config_file = args.config_file
-    import logging
-    if config_file:
-        if os.path.isfile(config_file):
-            #looks good!
-            pass
-        else:
-            logging.debug("Config file path isn't a file: {}".
-                          format(config_file))
-            args.config_file = default_config_file()
+    if args.config_file and not os.path.isfile(args.config_file):
+        _LOGGER.debug("Config file path isn't a file: {}".
+                      format(args.config_file))
+        args.config_file = default_config_file()
 
     pm = pypiper.PipelineManager(name="refgenie", outfolder=outfolder, args=args)
     tk = pypiper.NGSTk(pm=pm)
@@ -183,8 +179,6 @@ def build_indexes(args):
     local_raw_fasta = genome_name + ".fa"
     raw_fasta = os.path.join(outfolder, local_raw_fasta)
 
-    input_file = os.path.join(outfolder, os.path.basename(args.input))
-
     input_file, cmd = copy_or_download_file(args.input, outfolder)
     pm.run(cmd, input_file)
 
@@ -198,7 +192,7 @@ def build_indexes(args):
         # cmd += " -v " + of + ":" + of
         # cmd += " nsheff/refgenie"
         # container = pm.checkprint(cmd).rstrip()
-        # print("Using docker container: " + container)
+        # _LOGGER.info("Using docker container: " + container)
         # pm.atexit_register(remove_container, container)
 
     cmd = convert_file(input_file, raw_fasta, conversions)
@@ -232,7 +226,7 @@ def build_indexes(args):
     #   pm.run([cmd, cmd2], annotation_file_unzipped)
 
     else:
-        print("* No GTF gene annotations provided. Skipping this step.")
+        _LOGGER.debug("* No GTF gene annotations provided. Skipping this step.")
 
     # Bowtie indexes
     if index.bowtie2:
@@ -305,7 +299,7 @@ def pull_asset(rgc, genome, assets, genome_config_path):
     import urllib.request
     import shutil
 
-    print("Pulling assets '{}' from genome '{}'".format(", ".join(assets), genome))
+    _LOGGER.info("Pulling assets '{}' from genome '{}'".format(", ".join(assets), genome))
     if not isinstance(assets, list):
         assets = [assets]
 
@@ -320,17 +314,17 @@ def pull_asset(rgc, genome, assets, genome_config_path):
                 asset=asset)
 
             # Download the file from `url` and save it locally under `file_name`:
-            print("Downloading URL: {}".format(url))
+            _LOGGER.info("Downloading URL: {}".format(url))
 
             if not os.path.exists(os.path.dirname(file_name)):
-                print("Directory {} does not exist, creating it...".format(os.path.dirname(file_name)))
+                _LOGGER.debug("Directory {} does not exist, creating it...".format(os.path.dirname(file_name)))
                 os.mkdir(os.path.dirname(file_name))
 
             with urllib.request.urlopen(url) as response:
 
                 with open(file_name, 'wb') as out_file:
                     shutil.copyfileobj(response, out_file)
-            print("Download complete: {}".format(file_name))
+            _LOGGER.info("Download complete: {}".format(file_name))
 
             # successfully downloaded and moved tarball; untar it
             # TODO: Make this a CLI option
@@ -348,7 +342,7 @@ def pull_asset(rgc, genome, assets, genome_config_path):
                     with tarfile.open(file_name) as tf:
                         tf.extractall(path=os.path.dirname(file_name))
 
-                print("Unpackaged archive into: {}".format(os.path.dirname(file_name)))
+                _LOGGER.debug("Unpackaged archive into: {}".format(os.path.dirname(file_name)))
 
                 # Write to config file
                 # TODO: Figure out how we want to handle the asset_key to folder_name
@@ -357,7 +351,7 @@ def pull_asset(rgc, genome, assets, genome_config_path):
                 # Right now they are identical:
                 asset_key = asset
                 folder_name = asset
-                print("Writing genome config file: {}".format(genome_config_path))
+                _LOGGER.info("Writing genome config file: {}".format(genome_config_path))
                 if not hasattr(rgc, "genomes") or not rgc.genomes:
                     # if it's the first genome
                     rgc.genomes = attmap.PathExAttMap()
@@ -365,19 +359,18 @@ def pull_asset(rgc, genome, assets, genome_config_path):
                     # it's the first asset for this genome
                     rgc.genomes[genome] = attmap.PathExAttMap()
                 rgc.genomes[genome][asset_key] = folder_name
-                print(rgc)
+                _LOGGER.debug("rgc: {}".format(rgc))
                 rgc.write(genome_config_path)
 
         except urllib.error.HTTPError as e:
-            print(e)
-            print("File not found on server")
+            _LOGGER.error("File not found on server: {}".format(e))
         except ConnectionRefusedError as e:
-            print(e)
-            print("Server {} refused download. Check your internet settings".format(rgc.to_dict()["genome_server"]))
+            _LOGGER.error(str(e))
+            _LOGGER.error("Server {} refused download. Check your internet settings".format(rgc.to_dict()["genome_server"]))
             pass
         except FileNotFoundError as e:
-            print(e)
-            print("Local genomes folder '{}' not found.".format(rgc.genome_folder))
+            _LOGGER.error(str(e))
+            _LOGGER.error("Local genomes folder '{}' not found.".format(rgc.genome_folder))
             pass
 
 
@@ -385,12 +378,12 @@ def list_remote(rgc):
     """ What's available? """
 
     url = "{base}/assets".format(base=rgc.to_dict()["genome_server"])
-    print("Querying available assets from server: {url}".format(url=url))
+    _LOGGER.info("Querying available assets from server: {url}".format(url=url))
     with urllib.request.urlopen(url) as response:
         encoding = response.info().get_content_charset('utf8')
         data = json.loads(response.read().decode(encoding))
         remote_rgc = attmap.AttMap(data)
-        print(remote_rgc.to_yaml())
+        _LOGGER.debug("remote_rgc: {}".format(remote_rgc.to_yaml()))
 
 
 def refgenie_init(genome_config_path, genome_server="http://localhost"):
@@ -403,31 +396,33 @@ def refgenie_init(genome_config_path, genome_server="http://localhost"):
         "genomes": None
         }))
 
-    print(rgc)
+    _LOGGER.debug("RGC: {}".format(rgc))
 
     if genome_config_path and not os.path.exists(genome_config_path):
         rgc.write(genome_config_path)
-        print("Wrote new refgenie genome configuration file: {}".format(genome_config_path))
+        _LOGGER.info("Wrote new refgenie genome configuration file: {}".format(genome_config_path))
     else:
-        print("Can't initialize, file exists: {} ".format(genome_config_path))
+        _LOGGER.warning("Can't initialize, file exists: {} ".format(genome_config_path))
 
 
 
 def main():
     """ Primary workflow """
 
-    parser = build_argparser()
+    parser = logmuse.add_logging_options(build_argparser())
     args, remaining_args = parser.parse_known_args()
+    global _LOGGER
+    _LOGGER = logmuse.logger_via_cli(args)
 
-    print(args)
+    _LOGGER.debug("Args: {}".format(args))
 
     if not args.command:
         parser.print_help()
-        print("No command given")
+        _LOGGER.error("No command given")
         sys.exit(1)
 
     if args.command == "init":
-        print("Initializing refgenie genome configuration")
+        _LOGGER.info("Initializing refgenie genome configuration")
         refgenie_init(args.genome_config, args.genome_server)
         sys.exit(0)
 
@@ -436,15 +431,15 @@ def main():
 
     if not rgc:
         parser.print_help()
-        print("Can't load genome configuration file")
+        _LOGGER.error("Can't load genome configuration file")
         sys.exit(1)
 
     if args.command == "build":
         build_indexes(args)
 
     if args.command == "list":
-        print("Local genomes: {}".format(rgc.genomes_str()))
-        print("Local assets:\n{}".format(rgc.assets_str()))
+        _LOGGER.info("Local genomes: {}".format(rgc.genomes_str()))
+        _LOGGER.info("Local assets:\n{}".format(rgc.assets_str()))
 
     if args.command == "pull":
         pull_asset(rgc, args.genome, args.asset, genome_config_path)
@@ -457,7 +452,7 @@ if __name__ == '__main__':
     try:
         sys.exit(main())
     except KeyboardInterrupt:
-        print("Program canceled by user!")
+        _LOGGER.info("Program canceled by user!")
         sys.exit(1)
 
 
