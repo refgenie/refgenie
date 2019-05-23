@@ -383,7 +383,7 @@ def list_remote(rgc):
         encoding = response.info().get_content_charset('utf8')
         data = json.loads(response.read().decode(encoding))
         remote_rgc = attmap.AttMap(data)
-        _LOGGER.debug("remote_rgc: {}".format(remote_rgc.to_yaml()))
+        _LOGGER.info("remote_rgc: {}".format(remote_rgc.to_yaml()))
 
 
 def refgenie_init(genome_config_path, genome_server="http://localhost"):
