@@ -382,8 +382,9 @@ def list_remote(rgc):
     with urllib.request.urlopen(url) as response:
         encoding = response.info().get_content_charset('utf8')
         data = json.loads(response.read().decode(encoding))
-        remote_rgc = attmap.AttMap(data)
-        _LOGGER.info("remote_rgc: {}".format(remote_rgc.to_yaml()))
+        remote_rgc = RefGenomeConfiguration(OrderedDict({"genomes": attmap.AttMap(data)}))
+        _LOGGER.info("Remote genomes: {}".format(remote_rgc.genomes_str()))
+        _LOGGER.info("Remote assets:\n{}".format(remote_rgc.assets_str()))
 
 
 def refgenie_init(genome_config_path, genome_server="http://localhost"):
