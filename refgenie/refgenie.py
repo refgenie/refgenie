@@ -13,7 +13,7 @@ import attmap
 import logmuse
 from ._version import __version__
 
-from refgenconf import select_genome_config, RefGenomeConfiguration
+from refgenconf import select_genome_config, RefGenomeConfiguration, CONFIG_ASSET_PATH_KEY
 from ubiquerg import is_url
 
 _LOGGER = None
@@ -305,7 +305,7 @@ def pull_asset(rgc, genome, assets, genome_config_path):
 
     for asset in assets:
         try:
-            url = "{base}/asset/{genome}/{asset}".format(base=rgc.to_dict()["genome_server"], genome=genome, asset=asset)
+            url = "{base}/asset/{genome}/{asset}/archive".format(base=rgc.to_dict()["genome_server"], genome=genome, asset=asset)
 
             # local file to save as
             file_name = "{genome_folder}/{genome}/{asset}.tar".format(
@@ -331,17 +331,10 @@ def pull_asset(rgc, genome, assets, genome_config_path):
             unpack = True
 
             if unpack:
-
-                if file_name.endswith(".tar"):
+                if file_name.endswith(".tar") or file_name.endswith(".tgz"):
                     import tarfile
                     with tarfile.open(file_name) as tf:
                         tf.extractall(path=os.path.dirname(file_name))
-
-                if file_name.endswith(".tgz"):
-                    import tarfile
-                    with tarfile.open(file_name) as tf:
-                        tf.extractall(path=os.path.dirname(file_name))
-
                 _LOGGER.debug("Unpackaged archive into: {}".format(os.path.dirname(file_name)))
 
                 # Write to config file
@@ -352,13 +345,9 @@ def pull_asset(rgc, genome, assets, genome_config_path):
                 asset_key = asset
                 folder_name = asset
                 _LOGGER.info("Writing genome config file: {}".format(genome_config_path))
-                if not hasattr(rgc, "genomes") or not rgc.genomes:
-                    # if it's the first genome
-                    rgc.genomes = attmap.PathExAttMap()
-                if not hasattr(rgc.genomes, genome):
-                    # it's the first asset for this genome
-                    rgc.genomes[genome] = attmap.PathExAttMap()
-                rgc.genomes[genome][asset_key] = folder_name
+                # use the asset attribute 'path' instead of 'folder_name' here; the asset attributes need to be pulled first.
+                # see issue: https://github.com/databio/refgenie/issues/23
+                rgc.update_genomes(genome, asset_key, {CONFIG_ASSET_PATH_KEY: folder_name})
                 _LOGGER.debug("rgc: {}".format(rgc))
                 rgc.write(genome_config_path)
 
