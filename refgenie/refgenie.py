@@ -13,7 +13,8 @@ import attmap
 import logmuse
 from ._version import __version__
 
-from refgenconf import select_genome_config, RefGenomeConfiguration, CONFIG_ASSET_PATH_KEY
+from refgenconf import select_genome_config, RefGenomeConfiguration
+from refgenconf.const import *
 from ubiquerg import is_url
 
 _LOGGER = None
@@ -305,7 +306,7 @@ def pull_asset(rgc, genome, assets, genome_config_path):
 
     for asset in assets:
         try:
-            url = "{base}/asset/{genome}/{asset}/archive".format(base=rgc.to_dict()["genome_server"], genome=genome, asset=asset)
+            url = "{base}/asset/{genome}/{asset}/archive".format(base=rgc.to_dict()[CFG_SERVER_KEY], genome=genome, asset=asset)
 
             # local file to save as
             file_name = "{genome_folder}/{genome}/{asset}.tar".format(
@@ -347,7 +348,7 @@ def pull_asset(rgc, genome, assets, genome_config_path):
                 _LOGGER.info("Writing genome config file: {}".format(genome_config_path))
                 # use the asset attribute 'path' instead of 'folder_name' here; the asset attributes need to be pulled first.
                 # see issue: https://github.com/databio/refgenie/issues/23
-                rgc.update_genomes(genome, asset_key, {CONFIG_ASSET_PATH_KEY: folder_name})
+                rgc.update_genomes(genome, asset_key, {CFG_ASSET_PATH_KEY: folder_name})
                 _LOGGER.debug("rgc: {}".format(rgc))
                 rgc.write(genome_config_path)
 
@@ -371,7 +372,7 @@ def list_remote(rgc):
     with urllib.request.urlopen(url) as response:
         encoding = response.info().get_content_charset('utf8')
         data = json.loads(response.read().decode(encoding))
-        remote_rgc = RefGenomeConfiguration(OrderedDict({"genomes": attmap.AttMap(data)}))
+        remote_rgc = RefGenomeConfiguration(OrderedDict({CFG_GENOMES_KEY: attmap.AttMap(data)}))
         _LOGGER.info("Remote genomes: {}".format(remote_rgc.genomes_str()))
         _LOGGER.info("Remote assets:\n{}".format(remote_rgc.assets_str()))
 
@@ -381,9 +382,9 @@ def refgenie_init(genome_config_path, genome_server="http://localhost"):
 
     # Set up default 
     rgc = RefGenomeConfiguration(OrderedDict({
-        "genome_folder": os.path.dirname(genome_config_path),
-        "genome_server": genome_server,
-        "genomes": None
+        CFG_FOLDER_KEY: os.path.dirname(genome_config_path),
+        CFG_SERVER_KEY: genome_server,
+        CFG_GENOMES_KEY: None
         }))
 
     _LOGGER.debug("RGC: {}".format(rgc))
