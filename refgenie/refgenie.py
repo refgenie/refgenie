@@ -356,7 +356,7 @@ def pull_asset(rgc, genome, assets, genome_config_path):
             _LOGGER.error("File not found on server: {}".format(e))
         except ConnectionRefusedError as e:
             _LOGGER.error(str(e))
-            _LOGGER.error("Server {} refused download. Check your internet settings".format(rgc.to_dict()["genome_server"]))
+            _LOGGER.error("Server {} refused download. Check your internet settings".format(rgc.to_dict()[CFG_SERVER_KEY]))
             pass
         except FileNotFoundError as e:
             _LOGGER.error(str(e))
@@ -367,7 +367,7 @@ def pull_asset(rgc, genome, assets, genome_config_path):
 def list_remote(rgc):
     """ What's available? """
 
-    url = "{base}/assets".format(base=rgc.to_dict()["genome_server"])
+    url = "{base}/assets".format(base=rgc.to_dict()[CFG_SERVER_KEY])
     _LOGGER.info("Querying available assets from server: {url}".format(url=url))
     with urllib.request.urlopen(url) as response:
         encoding = response.info().get_content_charset('utf8')
