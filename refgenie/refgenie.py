@@ -13,7 +13,7 @@ import attmap
 import logmuse
 from ._version import __version__
 
-from refgenconf import select_genome_config, RefGenomeConfiguration
+from refgenconf import select_genome_config, RefGenConf
 from refgenconf.const import *
 from ubiquerg import is_url
 
@@ -372,7 +372,7 @@ def list_remote(rgc):
     with urllib.request.urlopen(url) as response:
         encoding = response.info().get_content_charset('utf8')
         data = json.loads(response.read().decode(encoding))
-        remote_rgc = RefGenomeConfiguration(OrderedDict({CFG_GENOMES_KEY: attmap.AttMap(data)}))
+        remote_rgc = RefGenConf(OrderedDict({CFG_GENOMES_KEY: attmap.AttMap(data)}))
         _LOGGER.info("Remote genomes: {}".format(remote_rgc.genomes_str()))
         _LOGGER.info("Remote assets:\n{}".format(remote_rgc.assets_str()))
 
@@ -381,7 +381,7 @@ def refgenie_init(genome_config_path, genome_server="http://localhost"):
     """ Initialize genome config """
 
     # Set up default 
-    rgc = RefGenomeConfiguration(OrderedDict({
+    rgc = RefGenConf(OrderedDict({
         CFG_FOLDER_KEY: os.path.dirname(genome_config_path),
         CFG_SERVER_KEY: genome_server,
         CFG_GENOMES_KEY: None
@@ -418,7 +418,7 @@ def main():
         sys.exit(0)
 
     genome_config_path = select_genome_config(args.genome_config)
-    rgc = RefGenomeConfiguration(genome_config_path)
+    rgc = RefGenConf(genome_config_path)
 
     if not rgc:
         parser.print_help()
