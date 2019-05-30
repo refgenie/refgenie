@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-from argparse import ArgumentParser
+import argparse
 from collections import OrderedDict
 from requests import get
 from json import loads
@@ -29,7 +29,7 @@ refgenie_server_api = {
 }
 
 
-class _VersionInHelpParser(ArgumentParser):
+class _VersionInHelpParser(argparse.ArgumentParser):
     def format_help(self):
         """ Add version information to help text. """
         return "version: {}\n".format(__version__) + \
@@ -98,7 +98,8 @@ def build_argparser():
 
     sps["pull"].add_argument('-g', '--genome', default="hg38")
     sps["pull"].add_argument('-a', '--asset', default="bowtie2", nargs='+')
-    sps["pull"].add_argument("-u", "--unpack", action="store_false", help="Unpack the downloaded archives.")
+    sps["pull"].add_argument("-u", "--unpack", action="store_true", help="Unpack the downloaded archives.",
+                             dest="unpack")
 
     return parser
 
