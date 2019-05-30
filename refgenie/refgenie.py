@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-import argparse
+from argparse import ArgumentParser
 from collections import OrderedDict
 from requests import get
 from json import loads
@@ -17,7 +17,7 @@ from ._version import __version__
 
 from refgenconf import select_genome_config, RefGenConf
 from refgenconf.const import *
-from ubiquerg import is_url, query_yes_no
+from ubiquerg import is_url, query_yes_no, checksum
 
 _LOGGER = None
 
@@ -29,7 +29,7 @@ refgenie_server_api = {
 }
 
 
-class _VersionInHelpParser(argparse.ArgumentParser):
+class _VersionInHelpParser(ArgumentParser):
     def format_help(self):
         """ Add version information to help text. """
         return "version: {}\n".format(__version__) + \
@@ -359,8 +359,15 @@ def pull_asset(rgc, genome, assets, genome_config_path, unpack):
                     shutil.copyfileobj(response, out_file)
             _LOGGER.info("Download complete: {}".format(file_name))
 
-            # successfully downloaded and moved tarball; untar it
+            local_checksum = checksum(file_name)
+            remote_checksum = archive_attrs["archive_checksum"]
+            if local_checksum == remote_checksum:
+                _LOGGER.debug("checked MD5 checksums are identical: '{}'".format(remote_checksum))
+            else:
+                _LOGGER.error("The archive MD5 checksum ({}) is not identical with its server counterpart ({})".format(
+                    local_checksum, remote_checksum))
 
+            # successfully downloaded and moved tarball; untar it
             if unpack:
                 if file_name.endswith(".tar") or file_name.endswith(".tgz"):
                     import tarfile
