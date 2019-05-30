@@ -3,7 +3,9 @@
 
 from argparse import ArgumentParser
 from collections import OrderedDict
-import json
+from requests import get
+from json import loads
+from re import sub
 import os
 import pypiper
 import re
@@ -15,7 +17,7 @@ from ._version import __version__
 
 from refgenconf import select_genome_config, RefGenConf
 from refgenconf.const import *
-from ubiquerg import is_url
+from ubiquerg import is_url, query_yes_no
 
 _LOGGER = None
 
@@ -45,15 +47,15 @@ def build_argparser():
     additional_description = "\nhttps://refgenie.databio.org"
 
     parser = _VersionInHelpParser(
-            description=banner,
-            epilog=additional_description)
+        description=banner,
+        epilog=additional_description)
 
     parser.add_argument(
-            "-V", "--version",
-            action="version",
-            version="%(prog)s {v}".format(v=__version__))
+        "-V", "--version",
+        action="version",
+        version="%(prog)s {v}".format(v=__version__))
 
-    subparsers = parser.add_subparsers(dest="command") 
+    subparsers = parser.add_subparsers(dest="command")
 
     def add_subparser(cmd, description):
         return subparsers.add_parser(
@@ -78,22 +80,22 @@ def build_argparser():
 
     # Add any pipeline-specific arguments
     sps["build"].add_argument('-i', '--input', dest='input', required=True,
-        help='Local path or URL to genome sequence file in .fa, .fa.gz, or .2bit format.')
+                              help='Local path or URL to genome sequence file in .fa, .fa.gz, or .2bit format.')
 
-    sps["build"].add_argument('-n', '--name', dest='name', required = False,
-        help='Name of the genome to build. If omitted, refgenie will use'
-        'the basename of the file specified in --input')
+    sps["build"].add_argument('-n', '--name', dest='name', required=False,
+                              help='Name of the genome to build. If omitted, refgenie will use'
+                                   'the basename of the file specified in --input')
 
-    sps["build"].add_argument('-a', '--annotation', dest='annotation', required = False,
-        help='Path to GTF gene annotation file')
+    sps["build"].add_argument('-a', '--annotation', dest='annotation', required=False,
+                              help='Path to GTF gene annotation file')
 
     sps["build"].add_argument("-d", "--docker", action="store_true",
-        help="Run all commands in the refgenie docker container.")
+                              help="Run all commands in the refgenie docker container.")
 
-    sps["build"].add_argument('-o', '--outfolder', dest='outfolder', required = False,
-        default=None,
-        help='Override the default path to genomes folder, which is to '
-        'use the genome_folder attribute in the genome configuration file')
+    sps["build"].add_argument('-o', '--outfolder', dest='outfolder', required=False,
+                              default=None,
+                              help='Override the default path to genomes folder, which is to '
+                                   'use the genome_folder attribute in the genome configuration file')
 
     sps["pull"].add_argument('-g', '--genome', default="hg38")
     sps["pull"].add_argument('-a', '--asset', default="bowtie2", nargs='+')
@@ -103,7 +105,7 @@ def build_argparser():
 
 def copy_or_download_file(input_string, outfolder):
     """
-    Given an input file, which can be a local file or a URL, and output folder, 
+    Given an input file, which can be a local file or a URL, and output folder,
     this downloads or copies the file into the output folder.
     @param input_string: Can be either a URL or a path to a local file
     @type input_string: str
@@ -129,7 +131,7 @@ def convert_file(input_file, output_file, conversions):
     ext = os.path.splitext(input_file)[1]
     if ext in conversions:
         cmd = conversions[ext].format(**form)
-        return(cmd)
+        return (cmd)
     else:
         # No conversion available/necessary.
         return None
@@ -138,14 +140,13 @@ def convert_file(input_file, output_file, conversions):
 def default_config_file():
     """
     Path to default compute environment settings file.
-    
+
     :return str: Path to default compute settings file
     """
     return os.path.join(os.path.dirname(__file__), "refgenie.yaml")
 
 
 def build_indexes(args):
-
     if args.name:
         genome_name = args.name
     else:
@@ -171,7 +172,7 @@ def build_indexes(args):
     index = pm.config.index
     param = pm.config.param
 
-    #pm.make_sure_path_exists(outfolder)
+    # pm.make_sure_path_exists(outfolder)
     conversions = {}
     conversions[".2bit"] = "twoBitToFa {INPUT} {OUTPUT}"
     conversions[".gz"] = tk.ziptool + " -cd {INPUT} > {OUTPUT}"
@@ -223,7 +224,7 @@ def build_indexes(args):
         pm.run(cmd, annotation_file_unzipped)
 
     #   cmd = "cp " + args.annotation + " " + annotation_file
-    #   cmd2 = tk.ziptool + " -d " + annotation_file 
+    #   cmd2 = tk.ziptool + " -d " + annotation_file
     #   pm.run([cmd, cmd2], annotation_file_unzipped)
 
     else:
@@ -267,7 +268,7 @@ def build_indexes(args):
         cmd1 = "ln -sf ../" + local_raw_fasta + " " + folder
         cmd2 = tools.epilog_indexer + " -i " + raw_fasta
         cmd2 += " -o " + os.path.join(folder, genome_name + "_" + param.epilog.context + ".tsv")
-        cmd2 += " -s " + param.epilog.context  #context
+        cmd2 += " -s " + param.epilog.context  # context
         cmd2 += " -t"
         cmd3 = "touch " + target
         pm.run([cmd1, cmd2, cmd3], target, container=pm.container)
@@ -295,8 +296,30 @@ def build_indexes(args):
     pm.stop_pipeline()
 
 
-def pull_asset(rgc, genome, assets, genome_config_path):
+def _download_json(url):
+    try:
+        _LOGGER.debug("Downloading JSON data; querying URL: '{}'".format(url))
+        server_resp = get(url)
+        if (server_resp.ok):
+            json_data = loads(server_resp.content)
+    except Exception as e:
+        _LOGGER.warning("There was a problem querying the URL: '{}'. Got: {}:{}".format(url, e.__class__.__name__, e))
+        json_data = None
+    return json_data
 
+
+def _is_large_archive(size):
+    _LOGGER.debug("Checking archive size: '{}'".format(size))
+    if size.endswith("TB"):
+        return True
+    if size.endswith("GB"):
+        size_numeric = float("".join(list(filter(lambda x: x in '0123456789.', size))))
+        if size_numeric > 5:
+            return True
+    return False
+
+
+def pull_asset(rgc, genome, assets, genome_config_path):
     import urllib.request
     import shutil
 
@@ -306,7 +329,8 @@ def pull_asset(rgc, genome, assets, genome_config_path):
 
     for asset in assets:
         try:
-            url = "{base}/asset/{genome}/{asset}/archive".format(base=rgc.to_dict()[CFG_SERVER_KEY], genome=genome, asset=asset)
+            url_json = "{base}/asset/{genome}/{asset}".format(base=rgc[CFG_SERVER_KEY], genome=genome, asset=asset)
+            url = url_json + "/archive"
 
             # local file to save as
             file_name = "{genome_folder}/{genome}/{asset}.tar".format(
@@ -316,6 +340,13 @@ def pull_asset(rgc, genome, assets, genome_config_path):
 
             # Download the file from `url` and save it locally under `file_name`:
             _LOGGER.info("Downloading URL: {}".format(url))
+            archive_attrs = _download_json(url_json)
+            if archive_attrs is not None:
+                _LOGGER.info("'{}/{}' archive size: {}".format(genome, asset, archive_attrs["archive_size"]))
+                if _is_large_archive(archive_attrs["archive_size"]):
+                    if not query_yes_no("Are you sure you want to download this large archive?"):
+                        _LOGGER.info("pull action aborted by user")
+                        return 1
 
             if not os.path.exists(os.path.dirname(file_name)):
                 _LOGGER.debug("Directory {} does not exist, creating it...".format(os.path.dirname(file_name)))
@@ -356,7 +387,7 @@ def pull_asset(rgc, genome, assets, genome_config_path):
             _LOGGER.error("File not found on server: {}".format(e))
         except ConnectionRefusedError as e:
             _LOGGER.error(str(e))
-            _LOGGER.error("Server {} refused download. Check your internet settings".format(rgc.to_dict()[CFG_SERVER_KEY]))
+            _LOGGER.error("Server {} refused download. Check your internet settings".format(rgc[CFG_SERVER_KEY]))
             pass
         except FileNotFoundError as e:
             _LOGGER.error(str(e))
@@ -367,11 +398,11 @@ def pull_asset(rgc, genome, assets, genome_config_path):
 def list_remote(rgc):
     """ What's available? """
 
-    url = "{base}/assets".format(base=rgc.to_dict()[CFG_SERVER_KEY])
-    _LOGGER.info("Querying available assets from server: {url}".format(url=url))
+    url = "{base}/assets".format(base=rgc[CFG_SERVER_KEY])
+    _LOGGER.info("Querying available assets from server: '{url}'".format(url=url))
     with urllib.request.urlopen(url) as response:
         encoding = response.info().get_content_charset('utf8')
-        data = json.loads(response.read().decode(encoding))
+        data = loads(response.read().decode(encoding))
         remote_rgc = RefGenConf(OrderedDict({CFG_GENOMES_KEY: attmap.AttMap(data)}))
         _LOGGER.info("Remote genomes: {}".format(remote_rgc.genomes_str()))
         _LOGGER.info("Remote assets:\n{}".format(remote_rgc.assets_str()))
@@ -385,7 +416,7 @@ def refgenie_init(genome_config_path, genome_server="http://localhost"):
         CFG_FOLDER_KEY: os.path.dirname(genome_config_path),
         CFG_SERVER_KEY: genome_server,
         CFG_GENOMES_KEY: None
-        }))
+    }))
 
     _LOGGER.debug("RGC: {}".format(rgc))
 
@@ -394,7 +425,6 @@ def refgenie_init(genome_config_path, genome_server="http://localhost"):
         _LOGGER.info("Wrote new refgenie genome configuration file: {}".format(genome_config_path))
     else:
         _LOGGER.warning("Can't initialize, file exists: {} ".format(genome_config_path))
-
 
 
 def main():
