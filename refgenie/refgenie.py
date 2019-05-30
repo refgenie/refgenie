@@ -84,21 +84,21 @@ def build_argparser():
 
     sps["build"].add_argument('-n', '--name', dest='name', required=False,
                               help='Name of the genome to build. If omitted, refgenie will use'
-                                   'the basename of the file specified in --input')
+                                   'the basename of the file specified in --input.')
 
     sps["build"].add_argument('-a', '--annotation', dest='annotation', required=False,
-                              help='Path to GTF gene annotation file')
+                              help='Path to GTF gene annotation file.')
 
     sps["build"].add_argument("-d", "--docker", action="store_true",
                               help="Run all commands in the refgenie docker container.")
 
-    sps["build"].add_argument('-o', '--outfolder', dest='outfolder', required=False,
-                              default=None,
+    sps["build"].add_argument('-o', '--outfolder', dest='outfolder', required=False, default=None,
                               help='Override the default path to genomes folder, which is to '
-                                   'use the genome_folder attribute in the genome configuration file')
+                                   'use the genome_folder attribute in the genome configuration file.')
 
     sps["pull"].add_argument('-g', '--genome', default="hg38")
     sps["pull"].add_argument('-a', '--asset', default="bowtie2", nargs='+')
+    sps["pull"].add_argument("-u", "--unpack", action="store_false", help="Unpack the downloaded archives.")
 
     return parser
 
@@ -319,7 +319,7 @@ def _is_large_archive(size):
     return False
 
 
-def pull_asset(rgc, genome, assets, genome_config_path):
+def pull_asset(rgc, genome, assets, genome_config_path, unpack):
     import urllib.request
     import shutil
 
@@ -359,8 +359,6 @@ def pull_asset(rgc, genome, assets, genome_config_path):
             _LOGGER.info("Download complete: {}".format(file_name))
 
             # successfully downloaded and moved tarball; untar it
-            # TODO: Make this a CLI option
-            unpack = True
 
             if unpack:
                 if file_name.endswith(".tar") or file_name.endswith(".tgz"):
@@ -463,7 +461,7 @@ def main():
         _LOGGER.info("Local assets:\n{}".format(rgc.assets_str()))
 
     if args.command == "pull":
-        pull_asset(rgc, args.genome, args.asset, genome_config_path)
+        pull_asset(rgc, args.genome, args.asset, genome_config_path, args.unpack)
 
     if args.command == "listr":
         list_remote(rgc)
