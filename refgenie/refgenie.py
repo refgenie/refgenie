@@ -298,10 +298,16 @@ def build_indexes(args):
 
 
 def _download_json(url):
+    """
+    Safely connects to the provided API endpoint and downloads the JSON formatted data
+
+    :param str url: server API endpoint
+    :return dict: served data
+    """
     try:
         _LOGGER.debug("Downloading JSON data; querying URL: '{}'".format(url))
         server_resp = get(url)
-        if (server_resp.ok):
+        if server_resp.ok:
             json_data = loads(server_resp.content)
     except Exception as e:
         _LOGGER.warning("There was a problem querying the URL: '{}'. Got: {}:{}".format(url, e.__class__.__name__, e))
@@ -310,6 +316,12 @@ def _download_json(url):
 
 
 def _is_large_archive(size):
+    """
+    Determines if the file is large based on a string formatted as follows: 15.4GB
+
+    :param str size:  size string
+    :return bool: the decision
+    """
     _LOGGER.debug("Checking archive size: '{}'".format(size))
     if size.endswith("TB"):
         return True
@@ -343,6 +355,7 @@ def pull_asset(rgc, genome, assets, genome_config_path, unpack):
             _LOGGER.info("Downloading URL: {}".format(url))
             archive_attrs = _download_json(url_json)
             if archive_attrs is not None:
+                # check server archive size, and if larger than 5GB -- get confirmation
                 _LOGGER.info("'{}/{}' archive size: {}".format(genome, asset, archive_attrs["archive_size"]))
                 if _is_large_archive(archive_attrs["archive_size"]):
                     if not query_yes_no("Are you sure you want to download this large archive?"):
@@ -354,11 +367,11 @@ def pull_asset(rgc, genome, assets, genome_config_path, unpack):
                 os.mkdir(os.path.dirname(file_name))
 
             with urllib.request.urlopen(url) as response:
-
                 with open(file_name, 'wb') as out_file:
                     shutil.copyfileobj(response, out_file)
             _LOGGER.info("Download complete: {}".format(file_name))
 
+            # get the checksum of the downloaded archive and compare with the server equivalent
             local_checksum = checksum(file_name)
             remote_checksum = archive_attrs["archive_checksum"]
             if local_checksum == remote_checksum:
