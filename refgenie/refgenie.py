@@ -2,15 +2,16 @@
 
 from argparse import ArgumentParser
 from collections import OrderedDict
-from requests import get
 from json import loads
 import os
-import pypiper
 import re
 import sys
-import logmuse
+
 from ._version import __version__
 
+import logmuse
+import pypiper
+import requests
 from refgenconf import select_genome_config, RefGenConf
 from refgenconf.const import *
 from ubiquerg import is_url
@@ -304,7 +305,7 @@ def _download_json(url):
     """
     try:
         _LOGGER.debug("Downloading JSON data; querying URL: '{}'".format(url))
-        server_resp = get(url)
+        server_resp = requests.get(url)
         if server_resp.ok:
             json_data = loads(server_resp.content)
     except Exception as e:
