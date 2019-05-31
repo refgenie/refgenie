@@ -296,23 +296,6 @@ def build_indexes(args):
     pm.stop_pipeline()
 
 
-def _is_large_archive(size):
-    """
-    Determines if the file is large based on a string formatted as follows: 15.4GB
-
-    :param str size:  size string
-    :return bool: the decision
-    """
-    _LOGGER.debug("Checking archive size: '{}'".format(size))
-    if size.endswith("TB"):
-        return True
-    if size.endswith("GB"):
-        size_numeric = float("".join(list(filter(lambda x: x in '0123456789.', size))))
-        if size_numeric > 5:
-            return True
-    return False
-
-
 def refgenie_init(genome_config_path, genome_server="http://localhost"):
     """ Initialize genome config """
 
