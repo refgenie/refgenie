@@ -332,88 +332,6 @@ def _is_large_archive(size):
     return False
 
 
-def pull_asset(rgc, genome, assets, genome_config_path, unpack):
-    import urllib.request
-    import shutil
-
-    _LOGGER.info("Pulling assets '{}' from genome '{}'".format(", ".join(assets), genome))
-    if not isinstance(assets, list):
-        assets = [assets]
-
-    for asset in assets:
-        try:
-            url_json = "{base}/asset/{genome}/{asset}".format(base=rgc[CFG_SERVER_KEY], genome=genome, asset=asset)
-            url = url_json + "/archive"
-
-            # local file to save as
-            file_name = "{genome_folder}/{genome}/{asset}.tar".format(
-                genome_folder=rgc.genome_folder,
-                genome=genome,
-                asset=asset)
-
-            # Download the file from `url` and save it locally under `file_name`:
-            _LOGGER.info("Downloading URL: {}".format(url))
-            archive_attrs = _download_json(url_json)
-            if archive_attrs is not None:
-                # check server archive size, and if larger than 5GB -- get confirmation
-                _LOGGER.info("'{}/{}' archive size: {}".format(genome, asset, archive_attrs["archive_size"]))
-                if _is_large_archive(archive_attrs["archive_size"]):
-                    if not query_yes_no("Are you sure you want to download this large archive?"):
-                        _LOGGER.info("pull action aborted by user")
-                        return 1
-
-            if not os.path.exists(os.path.dirname(file_name)):
-                _LOGGER.debug("Directory {} does not exist, creating it...".format(os.path.dirname(file_name)))
-                os.mkdir(os.path.dirname(file_name))
-
-            with urllib.request.urlopen(url) as response:
-                with open(file_name, 'wb') as out_file:
-                    shutil.copyfileobj(response, out_file)
-            _LOGGER.info("Download complete: {}".format(file_name))
-
-            # get the checksum of the downloaded archive and compare with the server equivalent
-            local_checksum = checksum(file_name)
-            remote_checksum = archive_attrs["archive_checksum"]
-            if local_checksum == remote_checksum:
-                _LOGGER.debug("checked MD5 checksums are identical: '{}'".format(remote_checksum))
-            else:
-                _LOGGER.error("The archive MD5 checksum ({}) is not identical with its server counterpart ({})".format(
-                    local_checksum, remote_checksum))
-
-            # successfully downloaded and moved tarball; untar it
-            if unpack:
-                if file_name.endswith(".tar") or file_name.endswith(".tgz"):
-                    import tarfile
-                    with tarfile.open(file_name) as tf:
-                        tf.extractall(path=os.path.dirname(file_name))
-                _LOGGER.debug("Unpackaged archive into: {}".format(os.path.dirname(file_name)))
-
-                # Write to config file
-                # TODO: Figure out how we want to handle the asset_key to folder_name
-                # mapping. Do we want to require that asset_key == folder_name?
-                # I guess we allow it to differ, but we keep it that way within refgenie?
-                # Right now they are identical:
-                asset_key = asset
-                folder_name = asset
-                _LOGGER.info("Writing genome config file: {}".format(genome_config_path))
-                # use the asset attribute 'path' instead of 'folder_name' here; the asset attributes need to be pulled first.
-                # see issue: https://github.com/databio/refgenie/issues/23
-                rgc.update_genomes(genome, asset_key, {CFG_ASSET_PATH_KEY: folder_name})
-                _LOGGER.debug("rgc: {}".format(rgc))
-                rgc.write(genome_config_path)
-
-        except urllib.error.HTTPError as e:
-            _LOGGER.error("File not found on server: {}".format(e))
-        except ConnectionRefusedError as e:
-            _LOGGER.error(str(e))
-            _LOGGER.error("Server {} refused download. Check your internet settings".format(rgc[CFG_SERVER_KEY]))
-            pass
-        except FileNotFoundError as e:
-            _LOGGER.error(str(e))
-            _LOGGER.error("Local genomes folder '{}' not found.".format(rgc.genome_folder))
-            pass
-
-
 def list_remote(rgc):
     """ What's available? """
 
@@ -482,7 +400,7 @@ def main():
         _LOGGER.info("Local assets:\n{}".format(rgc.assets_str()))
 
     if args.command == "pull":
-        pull_asset(rgc, args.genome, args.asset, genome_config_path, args.unpack)
+        rgc.pull_asset(args.genome, args.asset, genome_config_path, args.unpack)
 
     if args.command == "listr":
         list_remote(rgc)
