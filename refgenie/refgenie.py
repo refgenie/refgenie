@@ -1,17 +1,13 @@
 #!/usr/bin/env python
 
-
 from argparse import ArgumentParser
 from collections import OrderedDict
 from requests import get
 from json import loads
-from re import sub
 import os
 import pypiper
 import re
 import sys
-import urllib
-import attmap
 import logmuse
 from ._version import __version__
 
@@ -19,7 +15,9 @@ from refgenconf import select_genome_config, RefGenConf
 from refgenconf.const import *
 from ubiquerg import is_url, query_yes_no, checksum
 
+
 _LOGGER = None
+
 
 # This establishes the API with the server
 refgenie_server_api = {
@@ -351,6 +349,16 @@ def refgenie_init(genome_config_path, genome_server="http://localhost"):
         _LOGGER.warning("Can't initialize, file exists: {} ".format(genome_config_path))
 
 
+def _exec_list(rgc, remote):
+    if remote:
+        pfx = "Remote"
+        assemblies, assets = rgc.list_remote()
+    else:
+        pfx = "Local"
+        assemblies, assets = rgc.genomes_str(), rgc.assets_str()
+    return pfx, assemblies, assets
+
+
 def main():
     """ Primary workflow """
 
@@ -382,15 +390,13 @@ def main():
     if args.command == "build":
         build_indexes(args)
 
-    if args.command == "list":
-        _LOGGER.info("Local genomes: {}".format(rgc.genomes_str()))
-        _LOGGER.info("Local assets:\n{}".format(rgc.assets_str()))
-
     if args.command == "pull":
         rgc.pull_asset(args.genome, args.asset, genome_config_path, args.unpack)
 
-    if args.command == "listr":
-        rgc.list_remote()
+    elif args.command in ["list", "listr"]:
+        pfx, genomes, assets = _exec_list(rgc, args.command == "listr")
+        _LOGGER.info("{} genomes: {}".format(pfx, genomes))
+        _LOGGER.info("{} assets:\n{}".format(pfx, assets))
 
 
 if __name__ == '__main__':
