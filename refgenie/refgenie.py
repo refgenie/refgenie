@@ -296,24 +296,6 @@ def build_indexes(args):
     pm.stop_pipeline()
 
 
-def _download_json(url):
-    """
-    Safely connects to the provided API endpoint and downloads the JSON formatted data
-
-    :param str url: server API endpoint
-    :return dict: served data
-    """
-    try:
-        _LOGGER.debug("Downloading JSON data; querying URL: '{}'".format(url))
-        server_resp = requests.get(url)
-        if server_resp.ok:
-            json_data = loads(server_resp.content)
-    except Exception as e:
-        _LOGGER.warning("There was a problem querying the URL: '{}'. Got: {}:{}".format(url, e.__class__.__name__, e))
-        json_data = None
-    return json_data
-
-
 def _is_large_archive(size):
     """
     Determines if the file is large based on a string formatted as follows: 15.4GB
