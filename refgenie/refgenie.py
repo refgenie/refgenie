@@ -332,19 +332,6 @@ def _is_large_archive(size):
     return False
 
 
-def list_remote(rgc):
-    """ What's available? """
-
-    url = "{base}/assets".format(base=rgc[CFG_SERVER_KEY])
-    _LOGGER.info("Querying available assets from server: '{url}'".format(url=url))
-    with urllib.request.urlopen(url) as response:
-        encoding = response.info().get_content_charset('utf8')
-        data = loads(response.read().decode(encoding))
-        remote_rgc = RefGenConf(OrderedDict({CFG_GENOMES_KEY: attmap.AttMap(data)}))
-        _LOGGER.info("Remote genomes: {}".format(remote_rgc.genomes_str()))
-        _LOGGER.info("Remote assets:\n{}".format(remote_rgc.assets_str()))
-
-
 def refgenie_init(genome_config_path, genome_server="http://localhost"):
     """ Initialize genome config """
 
@@ -403,7 +390,7 @@ def main():
         rgc.pull_asset(args.genome, args.asset, genome_config_path, args.unpack)
 
     if args.command == "listr":
-        list_remote(rgc)
+        rgc.list_remote()
 
 
 if __name__ == '__main__':
