@@ -3,7 +3,7 @@ __all__ = ["RefgenieError", "MissingGenomeConfigError"]
 from refgenconf import CFG_ENV_VARS
 
 
-class RefgenieError(object):
+class RefgenieError(Exception):
     pass
 
 
