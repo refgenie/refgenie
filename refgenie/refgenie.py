@@ -2,16 +2,15 @@
 
 from argparse import ArgumentParser
 from collections import OrderedDict
-from json import loads
 import os
 import re
 import sys
 
 from ._version import __version__
+from .exceptions import MissingGenomeConfigError
 
 import logmuse
 import pypiper
-import requests
 from refgenconf import select_genome_config, RefGenConf
 from refgenconf.const import *
 from ubiquerg import is_url
@@ -346,12 +345,10 @@ def main():
         sys.exit(0)
 
     genome_config_path = select_genome_config(args.genome_config)
-    rgc = RefGenConf(genome_config_path)
+    if genome_config_path is None:
+        raise MissingGenomeConfigError(args.genome_config)
 
-    if not rgc:
-        parser.print_help()
-        _LOGGER.error("Can't load genome configuration file")
-        sys.exit(1)
+    rgc = RefGenConf(genome_config_path)
 
     if args.command == "build":
         build_indexes(args)
