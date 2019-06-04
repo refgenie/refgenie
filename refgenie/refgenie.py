@@ -74,7 +74,7 @@ def build_argparser():
         sps[cmd] = add_subparser(cmd, desc)
 
     sps["init"].add_argument('-s', '--genome-server', default="http://localhost")
-    sps["build"] = pypiper.add_pypiper_args(sps["build"], groups=None, args=["recover"])
+    sps["build"] = pypiper.add_pypiper_args(sps["build"], groups=None, args=["recover", "config"])
 
     # Add any pipeline-specific arguments
     sps["build"].add_argument('-i', '--input', dest='input', required=True,
