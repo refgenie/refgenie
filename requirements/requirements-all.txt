@@ -2,3 +2,4 @@ attmap>=0.12.3
 logmuse>=0.1
 refgenconf
 ubiquerg>=0.2
+yacman>=0.3.0

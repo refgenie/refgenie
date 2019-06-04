@@ -145,7 +145,12 @@ def default_config_file():
     return os.path.join(os.path.dirname(__file__), "refgenie.yaml")
 
 
-def build_indexes(args):
+def refgenie_build(rgc, args):
+    """
+    Runs the refgenie build recipe.
+    """
+
+
     if args.name:
         genome_name = args.name
     else:
@@ -155,6 +160,12 @@ def build_indexes(args):
             genome_name = re.sub(strike, "", genome_name)
 
     _LOGGER.info("Using genome name: {}".format(genome_name))
+
+    if not hasattr(args, "outfolder") or not args.outfolder:
+        # Default to genome_folder
+        _LOGGER.debug("No outfolder provided, using genome config.")
+        args.outfolder = rgc.genome_folder
+
     outfolder = os.path.abspath(os.path.join(args.outfolder, genome_name))
     _LOGGER.info("Output to: {} {} {}".format(genome_name, args.outfolder, outfolder))
 
@@ -231,37 +242,50 @@ def build_indexes(args):
 
     # Bowtie indexes
     if index.bowtie2:
-        folder = os.path.join(outfolder, "indexed_bowtie2")
+        asset_key = "indexed_bowtie2"
+        folder = os.path.join(outfolder, asset_key)
         tk.make_dir(folder)
         target = os.path.join(folder, "completed.flag")
         cmd1 = "ln -sf ../" + local_raw_fasta + " " + folder
         cmd2 = tools.bowtie2build + " " + raw_fasta + " " + os.path.join(folder, genome_name)
         cmd3 = "touch " + target
         pm.run([cmd1, cmd2, cmd3], target, container=pm.container)
+        # Add index information to rgc
+        rgc.update_genomes(genome_name, asset_key, { "path": os.path.relpath(folder, rgc.genome_folder)})
+
+        # Write the updated refgenie genome configuration
+        rgc.write()
 
     # Bismark index - bowtie2
     if index.bismark_bt2:
-        folder = os.path.join(outfolder, "indexed_bismark_bt2")
+        asset_key = "indexed_bismark_bt2"
+        folder = os.path.join(outfolder, asset_key)
         tk.make_dir(folder)
         target = os.path.join(folder, "completed.flag")
         cmd1 = "ln -sf ../" + local_raw_fasta + " " + folder
         cmd2 = tools.bismark_genome_preparation + " --bowtie2 " + folder
         cmd3 = "touch " + target
         pm.run([cmd1, cmd2, cmd3], target, container=pm.container)
+        rgc.update_genomes(genome_name, asset_key, { "path": os.path.relpath(folder, rgc.genome_folder)})
+        rgc.write()
 
     # Bismark index - bowtie1
     if index.bismark_bt1:
-        folder = os.path.join(outfolder, "indexed_bismark_bt1")
+        asset_key = "indexed_bismark_bt1"
+        folder = os.path.join(outfolder, asset_key)
         tk.make_dir(folder)
         target = os.path.join(folder, "completed.flag")
         cmd1 = "ln -sf ../" + local_raw_fasta + " " + folder
         cmd2 = tools.bismark_genome_preparation + " " + folder
         cmd3 = "touch " + target
         pm.run([cmd1, cmd2, cmd3], target, container=pm.container)
+        rgc.update_genomes(genome_name, asset_key, { "path": os.path.relpath(folder, rgc.genome_folder)})
+        rgc.write()
 
     # Epilog meth calling
     if index.epilog:
-        folder = os.path.join(outfolder, "indexed_epilog")
+        asset_key = "indexed_epilog"
+        folder = os.path.join(outfolder, asset_key)
         tk.make_dir(folder)
         target = os.path.join(folder, "completed.flag")
         cmd1 = "ln -sf ../" + local_raw_fasta + " " + folder
@@ -271,26 +295,34 @@ def build_indexes(args):
         cmd2 += " -t"
         cmd3 = "touch " + target
         pm.run([cmd1, cmd2, cmd3], target, container=pm.container)
+        rgc.update_genomes(genome_name, asset_key, { "path": os.path.relpath(folder, rgc.genome_folder)})
+        rgc.write()
 
     if index.hisat2:
-        folder = os.path.join(outfolder, "indexed_hisat2")
+        asset_key = "indexed_hisat2"
+        folder = os.path.join(outfolder, asset_key)
         tk.make_dir(folder)
         target = os.path.join(folder, "completed.flag")
         cmd1 = "ln -sf ../" + local_raw_fasta + " " + folder
         cmd2 = tools.hisat2build + " " + raw_fasta + " " + os.path.join(folder, genome_name)
         cmd3 = "touch " + target
         pm.run([cmd1, cmd2, cmd3], target, container=pm.container)
+        rgc.update_genomes(genome_name, asset_key, { "path": os.path.relpath(folder, rgc.genome_folder)})
+        rgc.write()
 
     # Kallisto should index transcriptome
     # So it doesn't make sense to run these at the same time as the others.
     if index.kallisto:
-        folder = os.path.join(outfolder, "indexed_kallisto")
+        asset_key = "indexed_kallisto"
+        folder = os.path.join(outfolder, asset_key)
         tk.make_dir(folder)
         target = os.path.join(folder, "completed.flag")
         cmd2 = tools.kallisto + " index -i " + os.path.join(folder, genome_name + "_kallisto_index.idx")
         cmd2 += " " + raw_fasta
         cmd3 = "touch " + target
         pm.run([cmd2, cmd3], target, container=pm.container)
+        rgc.update_genomes(genome_name, asset_key, { "path": os.path.relpath(folder, rgc.genome_folder)})
+        rgc.write()
 
     pm.stop_pipeline()
 
@@ -324,6 +356,9 @@ def _exec_list(rgc, remote):
     return pfx, assemblies, assets
 
 
+
+
+
 def main():
     """ Primary workflow """
 
@@ -351,7 +386,7 @@ def main():
     rgc = RefGenConf(genome_config_path)
 
     if args.command == "build":
-        build_indexes(args)
+        refgenie_build(rgc, args)
 
     if args.command == "pull":
         rgc.pull_asset(args.genome, args.asset, genome_config_path, args.unpack)
