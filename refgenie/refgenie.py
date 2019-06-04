@@ -82,7 +82,7 @@ def build_argparser():
 
     sps["build"].add_argument('-n', '--name', dest='name', required=False,
                               help='Name of the genome to build. If omitted, refgenie will use'
-                                   'the basename of the file specified in --input.')
+                                   ' the basename of the file specified in --input.')
 
     sps["build"].add_argument('-a', '--annotation', dest='annotation', required=False,
                               help='Path to GTF gene annotation file.')

@@ -15,7 +15,8 @@ class MissingGenomeConfigError(RefgenieError):
 
         :param str conf_file: path attempted to be used as genome config file
         """
-        msg = "Try setting an environment variable to a local config file: " \
+        msg = "You must provide a config file either as an argument " \
+              "or via an environment variable: " \
               "{}".format(CFG_ENV_VARS)
         if conf_file:
             msg = "Not a file {} -- {}.".format(conf_file, msg)
