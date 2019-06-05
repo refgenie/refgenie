@@ -1,13 +1,15 @@
-__all__ = ["RefgenieError", "MissingGenomeConfigError"]
-
 from refgenconf import CFG_ENV_VARS
+
+__all__ = ["RefgenieError", "MissingGenomeConfigError"]
 
 
 class RefgenieError(Exception):
+    """ Base refegnie exception type """
     pass
 
 
 class MissingGenomeConfigError(RefgenieError):
+    """ Exception for when a genome config filepath doesn't point to a file. """
 
     def __init__(self, conf_file=None):
         """
