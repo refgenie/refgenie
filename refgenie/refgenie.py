@@ -333,7 +333,8 @@ def refgenie_init(genome_config_path, genome_server="http://localhost"):
     # Set up default 
     rgc = RefGenConf(OrderedDict({
         CFG_FOLDER_KEY: os.path.dirname(os.path.abspath(genome_config_path)),
-        CFG_SERVER_KEY: genome_server
+        CFG_SERVER_KEY: genome_server,
+        CFG_GENOMES_KEY: None
     }))
 
     _LOGGER.debug("RGC: {}".format(rgc))
