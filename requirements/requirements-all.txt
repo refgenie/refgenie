@@ -1,5 +1,5 @@
-attmap>=0.12.3
-logmuse>=0.1
+attmap>=0.12.4
+logmuse>=0.2
 refgenconf
-ubiquerg>=0.2
+ubiquerg>=0.4.1
 yacman>=0.3.0
