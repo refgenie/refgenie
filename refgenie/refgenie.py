@@ -103,7 +103,7 @@ def build_argparser():
 
     sps[PULL_CMD].add_argument('-g', '--genome', default="hg38")
     sps[PULL_CMD].add_argument('-a', '--asset', default="bowtie2", nargs='+')
-    sps[PULL_CMD].add_argument("-u", "--no-untar", action="store_true", help="Preserve downloaded tarballs.")
+    sps[PULL_CMD].add_argument("-u", "--no-untar", action="store_true", help="Do not extract tarballs.")
 
     return parser
 
