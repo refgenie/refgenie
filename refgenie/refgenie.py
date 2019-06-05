@@ -106,9 +106,9 @@ def copy_or_download_file(input_string, outfolder):
     """
     Given an input file, which can be a local file or a URL, and output folder,
     this downloads or copies the file into the output folder.
-    @param input_string: Can be either a URL or a path to a local file
-    @type input_string: str
-    @param outfolder: Where to store the result.
+    
+    :param str input_string: Can be either a URL or a path to a local file
+    :param str outfolder: Where to store the result.
     """
     result_file = os.path.join(outfolder, os.path.basename(input_string))
 
@@ -122,15 +122,15 @@ def copy_or_download_file(input_string, outfolder):
 def convert_file(input_file, output_file, conversions):
     """
     Given an input file, output file, and a list of conversions, gives the appropriate output file.
-    @param output_file: Path to local output file you want to create
-    @param conversions: A dictionary of shell commands to convert files of a given type.
-    @type conversions: dict
+    
+    :param str output_file: Path to local output file you want to create
+    :param dict conversions: A dictionary of shell commands to convert files of a given type.
     """
     form = {"INPUT": input_file, "OUTPUT": output_file}
     ext = os.path.splitext(input_file)[1]
     if ext in conversions:
         cmd = conversions[ext].format(**form)
-        return (cmd)
+        return cmd
     else:
         # No conversion available/necessary.
         return None
@@ -148,8 +148,10 @@ def default_config_file():
 def refgenie_build(rgc, args):
     """
     Runs the refgenie build recipe.
+    
+    :param refgenconf.RefGenConf rgc: genome configuration instance
+    :param argparse.Namespace args: parsed command-line options/arguments
     """
-
 
     if args.name:
         genome_name = args.name
@@ -240,6 +242,9 @@ def refgenie_build(rgc, args):
     else:
         _LOGGER.debug("* No GTF gene annotations provided. Skipping this step.")
 
+    def path_data(root, c):
+        return {"path": os.path.relpath(root, c.genome_folder)}
+        
     # Bowtie indexes
     if index.bowtie2:
         asset_key = "indexed_bowtie2"
@@ -251,7 +256,7 @@ def refgenie_build(rgc, args):
         cmd3 = "touch " + target
         pm.run([cmd1, cmd2, cmd3], target, container=pm.container)
         # Add index information to rgc
-        rgc.update_genomes(genome_name, asset_key, { "path": os.path.relpath(folder, rgc.genome_folder)})
+        rgc.update_genomes(genome_name, asset_key, path_data(folder, rgc))
 
         # Write the updated refgenie genome configuration
         rgc.write()
@@ -266,7 +271,7 @@ def refgenie_build(rgc, args):
         cmd2 = tools.bismark_genome_preparation + " --bowtie2 " + folder
         cmd3 = "touch " + target
         pm.run([cmd1, cmd2, cmd3], target, container=pm.container)
-        rgc.update_genomes(genome_name, asset_key, { "path": os.path.relpath(folder, rgc.genome_folder)})
+        rgc.update_genomes(genome_name, asset_key, path_data(folder, rgc))
         rgc.write()
 
     # Bismark index - bowtie1
@@ -279,7 +284,7 @@ def refgenie_build(rgc, args):
         cmd2 = tools.bismark_genome_preparation + " " + folder
         cmd3 = "touch " + target
         pm.run([cmd1, cmd2, cmd3], target, container=pm.container)
-        rgc.update_genomes(genome_name, asset_key, { "path": os.path.relpath(folder, rgc.genome_folder)})
+        rgc.update_genomes(genome_name, asset_key, path_data(folder, rgc))
         rgc.write()
 
     # Epilog meth calling
@@ -295,7 +300,7 @@ def refgenie_build(rgc, args):
         cmd2 += " -t"
         cmd3 = "touch " + target
         pm.run([cmd1, cmd2, cmd3], target, container=pm.container)
-        rgc.update_genomes(genome_name, asset_key, { "path": os.path.relpath(folder, rgc.genome_folder)})
+        rgc.update_genomes(genome_name, asset_key, path_data(folder, rgc))
         rgc.write()
 
     if index.hisat2:
@@ -307,7 +312,7 @@ def refgenie_build(rgc, args):
         cmd2 = tools.hisat2build + " " + raw_fasta + " " + os.path.join(folder, genome_name)
         cmd3 = "touch " + target
         pm.run([cmd1, cmd2, cmd3], target, container=pm.container)
-        rgc.update_genomes(genome_name, asset_key, { "path": os.path.relpath(folder, rgc.genome_folder)})
+        rgc.update_genomes(genome_name, asset_key, path_data(folder, rgc))
         rgc.write()
 
     # Kallisto should index transcriptome
@@ -321,14 +326,20 @@ def refgenie_build(rgc, args):
         cmd2 += " " + raw_fasta
         cmd3 = "touch " + target
         pm.run([cmd2, cmd3], target, container=pm.container)
-        rgc.update_genomes(genome_name, asset_key, { "path": os.path.relpath(folder, rgc.genome_folder)})
+        rgc.update_genomes(genome_name, asset_key, path_data(folder, rgc))
         rgc.write()
 
     pm.stop_pipeline()
 
 
 def refgenie_init(genome_config_path, genome_server="http://localhost"):
-    """ Initialize genome config """
+    """
+    Initialize a genome config file.
+    
+    :param str genome_config_path: path to genome configuration file to 
+        create/initialize
+    :param st genome_server: URL for a server
+    """
 
     # Set up default 
     rgc = RefGenConf(OrderedDict({
@@ -354,9 +365,6 @@ def _exec_list(rgc, remote):
         pfx = "Local"
         assemblies, assets = rgc.genomes_str(), rgc.assets_str()
     return pfx, assemblies, assets
-
-
-
 
 
 def main():
