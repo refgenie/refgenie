@@ -103,8 +103,7 @@ def build_argparser():
 
     sps[PULL_CMD].add_argument('-g', '--genome', default="hg38")
     sps[PULL_CMD].add_argument('-a', '--asset', default="bowtie2", nargs='+')
-    sps[PULL_CMD].add_argument("-u", "--unpack", action="store_true", help="Unpack the downloaded archives.",
-                             dest="unpack")
+    sps[PULL_CMD].add_argument("-u", "--no-untar", action="store_true", help="Preserve downloaded tarballs.")
 
     return parser
 
@@ -410,7 +409,7 @@ def main():
             _LOGGER.error("Insufficient permissions to write to genome folder: "
                           "{}".format(outdir))
         else:
-            rgc.pull_asset(args.genome, args.asset, genome_config_path, args.unpack)
+            rgc.pull_asset(args.genome, args.asset, genome_config_path, unpack=not args.no_untar)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         pfx, genomes, assets = _exec_list(rgc, args.command == LIST_REMOTE_CMD)
