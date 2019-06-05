@@ -11,7 +11,7 @@ You can find a list of indexers you may choose from in the [refgenie config file
 If you don't want to install all those indexers (and I don't blame you), then you may be interested in my docker image on DockerHub (nsheff/refgenie) that has all of these packages pre-installed, so you can run the complete indexer without worrying about paths and packages. Just clone this repo and run it with the `-d` flag. For example:
 
 ```
-~/code/refgenie/src/refgenie.py --input rn6.fa --outfolder $HOME -d
+~/code/refgenie/refgenie/refgenie.py --input rn6.fa --outfolder $HOME -d
 ```
 
 ### Building the container
