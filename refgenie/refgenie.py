@@ -172,8 +172,12 @@ def refgenie_build(rgc, args):
         args.outfolder = rgc.genome_folder
 
     outfolder = os.path.abspath(os.path.join(args.outfolder, genome_name))
-    _LOGGER.info("Output to: {} {} {}".format(genome_name, args.outfolder, outfolder))
+    if not _writeable(outfolder):
+        _LOGGER.error("Insufficient permissions to write to output folder: {}".
+                      format(outfolder))
+        return
 
+    _LOGGER.info("Output to: {} {} {}".format(genome_name, args.outfolder, outfolder))
     _LOGGER.debug("Default config file: {}".format(default_config_file()))
 
     if args.config_file and not os.path.isfile(args.config_file):
@@ -401,12 +405,23 @@ def main():
         refgenie_build(rgc, args)
 
     if args.command == PULL_CMD:
-        rgc.pull_asset(args.genome, args.asset, genome_config_path, args.unpack)
+        outdir = rgc.genome_folder
+        if not _writeable(outdir):
+            _LOGGER.error("Insufficient permissions to write to genome folder: "
+                          "{}".format(outdir))
+        else:
+            rgc.pull_asset(args.genome, args.asset, genome_config_path, args.unpack)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         pfx, genomes, assets = _exec_list(rgc, args.command == LIST_REMOTE_CMD)
         _LOGGER.info("{} genomes: {}".format(pfx, genomes))
         _LOGGER.info("{} assets:\n{}".format(pfx, assets))
+
+
+def _writeable(outdir):
+    outdir = "." if outdir == "" else outdir
+    return (os.access(outdir, os.W_OK) and os.access(outdir, os.X_OK)) \
+        if os.path.exists(outdir) else _writeable(os.path.dirname(outdir))
 
 
 if __name__ == '__main__':
