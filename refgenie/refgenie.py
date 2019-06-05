@@ -19,6 +19,12 @@ from ubiquerg import is_url
 
 _LOGGER = None
 
+BUILD_CMD = "build"
+INIT_CMD = "init"
+PULL_CMD = "pull"
+LIST_LOCAL_CMD = "list"
+LIST_REMOTE_CMD = "listr"
+
 
 # This establishes the API with the server
 refgenie_server_api = {
@@ -61,11 +67,11 @@ def build_argparser():
             cmd, description=description, help=description)
 
     subparser_messages = {
-        "init": "Initialize a genome configuration.",
-        "list": "List available local genomes.",
-        "listr": "List available genomes and assets on server.",
-        "pull": "Download assets.",
-        "build": "Build genome assets",
+        INIT_CMD: "Initialize a genome configuration.",
+        LIST_LOCAL_CMD: "List available local genomes.",
+        LIST_REMOTE_CMD: "List available genomes and assets on server.",
+        PULL_CMD: "Download assets.",
+        BUILD_CMD: "Build genome assets",
     }
 
     parser.add_argument('-c', '--genome-config', dest="genome_config")
@@ -74,30 +80,30 @@ def build_argparser():
     for cmd, desc in subparser_messages.items():
         sps[cmd] = add_subparser(cmd, desc)
 
-    sps["init"].add_argument('-s', '--genome-server', default="http://localhost")
-    sps["build"] = pypiper.add_pypiper_args(sps["build"], groups=None, args=["recover", "config"])
+    sps[INIT_CMD].add_argument('-s', '--genome-server', default="http://localhost")
+    sps[BUILD_CMD] = pypiper.add_pypiper_args(sps[BUILD_CMD], groups=None, args=["recover", "config"])
 
     # Add any pipeline-specific arguments
-    sps["build"].add_argument('-i', '--input', dest='input', required=True,
+    sps[BUILD_CMD].add_argument('-i', '--input', dest='input', required=True,
                               help='Local path or URL to genome sequence file in .fa, .fa.gz, or .2bit format.')
 
-    sps["build"].add_argument('-n', '--name', dest='name', required=False,
+    sps[BUILD_CMD].add_argument('-n', '--name', dest='name', required=False,
                               help='Name of the genome to build. If omitted, refgenie will use'
                                    ' the basename of the file specified in --input.')
 
-    sps["build"].add_argument('-a', '--annotation', dest='annotation', required=False,
+    sps[BUILD_CMD].add_argument('-a', '--annotation', dest='annotation', required=False,
                               help='Path to GTF gene annotation file.')
 
-    sps["build"].add_argument("-d", "--docker", action="store_true",
+    sps[BUILD_CMD].add_argument("-d", "--docker", action="store_true",
                               help="Run all commands in the refgenie docker container.")
 
-    sps["build"].add_argument('-o', '--outfolder', dest='outfolder', required=False, default=None,
+    sps[BUILD_CMD].add_argument('-o', '--outfolder', dest='outfolder', required=False, default=None,
                               help='Override the default path to genomes folder, which is to '
                                    'use the genome_folder attribute in the genome configuration file.')
 
-    sps["pull"].add_argument('-g', '--genome', default="hg38")
-    sps["pull"].add_argument('-a', '--asset', default="bowtie2", nargs='+')
-    sps["pull"].add_argument("-u", "--unpack", action="store_true", help="Unpack the downloaded archives.",
+    sps[PULL_CMD].add_argument('-g', '--genome', default="hg38")
+    sps[PULL_CMD].add_argument('-a', '--asset', default="bowtie2", nargs='+')
+    sps[PULL_CMD].add_argument("-u", "--unpack", action="store_true", help="Unpack the downloaded archives.",
                              dest="unpack")
 
     return parser
@@ -384,7 +390,7 @@ def main():
         _LOGGER.error("No command given")
         sys.exit(1)
 
-    if args.command == "init":
+    if args.command == INIT_CMD:
         _LOGGER.info("Initializing refgenie genome configuration")
         refgenie_init(args.genome_config, args.genome_server)
         sys.exit(0)
@@ -395,14 +401,14 @@ def main():
 
     rgc = RefGenConf(genome_config_path)
 
-    if args.command == "build":
+    if args.command == BUILD_CMD:
         refgenie_build(rgc, args)
 
-    if args.command == "pull":
+    if args.command == PULL_CMD:
         rgc.pull_asset(args.genome, args.asset, genome_config_path, args.unpack)
 
-    elif args.command in ["list", "listr"]:
-        pfx, genomes, assets = _exec_list(rgc, args.command == "listr")
+    elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
+        pfx, genomes, assets = _exec_list(rgc, args.command == LIST_REMOTE_CMD)
         _LOGGER.info("{} genomes: {}".format(pfx, genomes))
         _LOGGER.info("{} assets:\n{}".format(pfx, assets))
 
