@@ -134,13 +134,9 @@ def convert_file(input_file, output_file, conversions):
     :param dict conversions: A dictionary of shell commands to convert files of a given type.
     """
     form = {"INPUT": input_file, "OUTPUT": output_file}
-    ext = os.path.splitext(input_file)[1]
+    _, ext = os.path.splitext(input_file)
     if ext in conversions:
-        cmd = conversions[ext].format(**form)
-        return cmd
-    else:
-        # No conversion available/necessary.
-        return None
+        return conversions[ext].format(**form)
 
 
 def default_config_file():
