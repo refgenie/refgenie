@@ -11,6 +11,7 @@ from .exceptions import MissingGenomeConfigError
 
 import logmuse
 import pypiper
+import refgenconf
 from refgenconf import select_genome_config, RefGenConf
 from refgenconf.const import *
 from ubiquerg import is_url
@@ -244,7 +245,7 @@ def refgenie_build(rgc, args):
 
     def path_data(root, c):
         return {"path": os.path.relpath(root, c.genome_folder)}
-        
+
     # Bowtie indexes
     if index.bowtie2:
         asset_key = "indexed_bowtie2"
@@ -374,6 +375,7 @@ def main():
     args, remaining_args = parser.parse_known_args()
     global _LOGGER
     _LOGGER = logmuse.logger_via_cli(args)
+    logmuse.logger_via_cli(args, name=refgenconf.__name__)
 
     _LOGGER.debug("Args: {}".format(args))
 
@@ -411,5 +413,3 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         _LOGGER.info("Program canceled by user!")
         sys.exit(1)
-
-
