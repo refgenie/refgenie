@@ -80,7 +80,7 @@ def build_argparser():
     for cmd, desc in subparser_messages.items():
         sps[cmd] = add_subparser(cmd, desc)
 
-    sps[INIT_CMD].add_argument('-s', '--genome-server', default="http://localhost")
+    sps[INIT_CMD].add_argument('-s', '--genome-server', default="http://refgenomes.databio.org/")
     sps[BUILD_CMD] = pypiper.add_pypiper_args(sps[BUILD_CMD], groups=None, args=["recover", "config"])
 
     # Add any pipeline-specific arguments
