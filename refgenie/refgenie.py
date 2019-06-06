@@ -83,7 +83,7 @@ def build_argparser():
 
     sps[INIT_CMD].add_argument('-s', '--genome-server', default=DEFAULT_SERVER,
                 help="URL to use for the genome_server attribute in config file."
-                " Defaults: {}".format(DEFAULT_SERVER))
+                " Defaults : {}".format(DEFAULT_SERVER))
     sps[BUILD_CMD] = pypiper.add_pypiper_args(sps[BUILD_CMD], groups=None, args=["recover", "config"])
 
     # Add any pipeline-specific arguments
@@ -376,6 +376,18 @@ def _exec_list(rgc, remote):
     return pfx, assemblies, assets
 
 
+def perm_check(file_to_check, message_tag):
+    if not file_to_check:
+        msg = "You must provide a path to {}".format(message_tag)
+        _LOGGER.error(msg)
+        raise ValueError(msg)
+
+    if not os.access(file_to_check, os.X_OK):
+        _LOGGER.error("Insufficient permissions to write to {}: "
+                      "{}".format(message_tag, file_to_check))
+
+
+
 def main():
     """ Primary workflow """
 
@@ -394,6 +406,7 @@ def main():
 
     if args.command == INIT_CMD:
         _LOGGER.info("Initializing refgenie genome configuration")
+        perm_check(args.genome_config, "genome config file")
         refgenie_init(args.genome_config, args.genome_server)
         sys.exit(0)
 
@@ -408,6 +421,7 @@ def main():
 
     if args.command == PULL_CMD:
         outdir = rgc.genome_folder
+        perm_check(outdir, "genome folder")
         if not _writeable(outdir):
             _LOGGER.error("Insufficient permissions to write to genome folder: "
                           "{}".format(outdir))
