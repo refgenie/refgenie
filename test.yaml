@@ -1,5 +1,5 @@
 genome_folder: /ext/yeti/genomes
-genome_server: http://localhost
+genome_server: http://refgenomes.databio.org
 genomes:
   hg38:
     bowtie2: indexed_bowtie2
