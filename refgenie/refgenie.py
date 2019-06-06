@@ -24,6 +24,7 @@ INIT_CMD = "init"
 PULL_CMD = "pull"
 LIST_LOCAL_CMD = "list"
 LIST_REMOTE_CMD = "listr"
+DEFAULT_SERVER = "http://refgenomes.databio.org/"
 
 
 # This establishes the API with the server
@@ -80,7 +81,7 @@ def build_argparser():
     for cmd, desc in subparser_messages.items():
         sps[cmd] = add_subparser(cmd, desc)
 
-    sps[INIT_CMD].add_argument('-s', '--genome-server', default="http://refgenomes.databio.org/")
+    sps[INIT_CMD].add_argument('-s', '--genome-server', default=DEFAULT_SERVER)
     sps[BUILD_CMD] = pypiper.add_pypiper_args(sps[BUILD_CMD], groups=None, args=["recover", "config"])
 
     # Add any pipeline-specific arguments
@@ -338,7 +339,7 @@ def refgenie_build(rgc, args):
     pm.stop_pipeline()
 
 
-def refgenie_init(genome_config_path, genome_server="http://refgenomes.databio.org/"):
+def refgenie_init(genome_config_path, genome_server=DEFAULT_SERVER):
     """
     Initialize a genome config file.
     
