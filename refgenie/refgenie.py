@@ -104,8 +104,8 @@ def build_argparser():
                               help='Override the default path to genomes folder, which is to '
                                    'use the genome_folder attribute in the genome configuration file.')
 
-    sps[PULL_CMD].add_argument('-g', '--genome', default="hg38")
-    sps[PULL_CMD].add_argument('-a', '--asset', default="bowtie2", nargs='+')
+    sps[PULL_CMD].add_argument('-g', '--genome', default=None, required=True)
+    sps[PULL_CMD].add_argument('-a', '--asset', default=None, nargs='+', required=True)
     sps[PULL_CMD].add_argument("-u", "--no-untar", action="store_true", help="Do not extract tarballs.")
 
     return parser
