@@ -338,7 +338,7 @@ def refgenie_build(rgc, args):
     pm.stop_pipeline()
 
 
-def refgenie_init(genome_config_path, genome_server="http://localhost"):
+def refgenie_init(genome_config_path, genome_server="http://refgenomes.databio.org/"):
     """
     Initialize a genome config file.
     
