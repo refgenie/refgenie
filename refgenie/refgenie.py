@@ -7,7 +7,7 @@ import re
 import sys
 
 from ._version import __version__
-from .exceptions import MissingGenomeConfigError
+from .exceptions import MissingGenomeConfigError, MissingGenomeFolderError
 
 import logmuse
 import pypiper
@@ -417,10 +417,14 @@ def main():
         _LOGGER.info("{} assets:\n{}".format(pfx, assets))
 
 
+def _raise_missing_dir(outdir):
+    raise MissingGenomeFolderError(outdir)
+
+
 def _writeable(outdir):
     outdir = "." if outdir == "" else outdir
     return (os.access(outdir, os.W_OK) and os.access(outdir, os.X_OK)) \
-        if os.path.exists(outdir) else _writeable(os.path.dirname(outdir))
+        if os.path.exists(outdir) else _raise_missing_dir(outdir)
 
 
 if __name__ == '__main__':
