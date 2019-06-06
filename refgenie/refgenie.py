@@ -81,7 +81,9 @@ def build_argparser():
     for cmd, desc in subparser_messages.items():
         sps[cmd] = add_subparser(cmd, desc)
 
-    sps[INIT_CMD].add_argument('-s', '--genome-server', default=DEFAULT_SERVER)
+    sps[INIT_CMD].add_argument('-s', '--genome-server', default=DEFAULT_SERVER,
+                help="URL to use for the genome_server attribute in config file."
+                " Defaults: {}".format(DEFAULT_SERVER))
     sps[BUILD_CMD] = pypiper.add_pypiper_args(sps[BUILD_CMD], groups=None, args=["recover", "config"])
 
     # Add any pipeline-specific arguments
