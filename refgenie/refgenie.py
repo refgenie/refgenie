@@ -81,7 +81,9 @@ def build_argparser():
     for cmd, desc in subparser_messages.items():
         sps[cmd] = add_subparser(cmd, desc)
 
-    sps[INIT_CMD].add_argument('-s', '--genome-server', default=DEFAULT_SERVER)
+    sps[INIT_CMD].add_argument('-s', '--genome-server', default=DEFAULT_SERVER,
+                help="URL to use for the genome_server attribute in config file."
+                " Defaults : {}".format(DEFAULT_SERVER))
     sps[BUILD_CMD] = pypiper.add_pypiper_args(sps[BUILD_CMD], groups=None, args=["recover", "config"])
 
     # Add any pipeline-specific arguments
@@ -102,8 +104,8 @@ def build_argparser():
                               help='Override the default path to genomes folder, which is to '
                                    'use the genome_folder attribute in the genome configuration file.')
 
-    sps[PULL_CMD].add_argument('-g', '--genome', default="hg38")
-    sps[PULL_CMD].add_argument('-a', '--asset', default="bowtie2", nargs='+')
+    sps[PULL_CMD].add_argument('-g', '--genome', default=None, required=True)
+    sps[PULL_CMD].add_argument('-a', '--asset', default=None, nargs='+', required=True)
     sps[PULL_CMD].add_argument("-u", "--no-untar", action="store_true", help="Do not extract tarballs.")
 
     return parser
@@ -374,6 +376,18 @@ def _exec_list(rgc, remote):
     return pfx, assemblies, assets
 
 
+def perm_check(file_to_check, message_tag):
+    if not file_to_check:
+        msg = "You must provide a path to {}".format(message_tag)
+        _LOGGER.error(msg)
+        raise ValueError(msg)
+
+    if not os.access(file_to_check, os.X_OK):
+        _LOGGER.error("Insufficient permissions to write to {}: "
+                      "{}".format(message_tag, file_to_check))
+
+
+
 def main():
     """ Primary workflow """
 
@@ -392,6 +406,7 @@ def main():
 
     if args.command == INIT_CMD:
         _LOGGER.info("Initializing refgenie genome configuration")
+        perm_check(args.genome_config, "genome config file")
         refgenie_init(args.genome_config, args.genome_server)
         sys.exit(0)
 
@@ -406,6 +421,7 @@ def main():
 
     if args.command == PULL_CMD:
         outdir = rgc.genome_folder
+        perm_check(outdir, "genome folder")
         if not _writeable(outdir):
             _LOGGER.error("Insufficient permissions to write to genome folder: "
                           "{}".format(outdir))
