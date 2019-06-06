@@ -25,13 +25,13 @@ class MissingGenomeConfigError(RefgenieError):
         super(MissingGenomeConfigError, self).__init__(msg)
 
 
-class MissingGenomeFolderError(RefgenieError):
-    def __init__(self, genome_folder):
+class MissingFolderError(RefgenieError):
+    def __init__(self, folder):
         """
         Create the error message.
 
-        :param str genome_folder: path attempted to be used as genome folder
+        :param str folder: path attempted to be used as folder to save a file to
         """
-        msg = "The specified genome folder does not exist: {}".format(genome_folder)
-        super(MissingGenomeFolderError, self).__init__(msg)
+        msg = "The specified folder does not exist: {}".format(folder)
+        super(MissingFolderError, self).__init__(msg)
 

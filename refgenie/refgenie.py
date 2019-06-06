@@ -7,7 +7,7 @@ import re
 import sys
 
 from ._version import __version__
-from .exceptions import MissingGenomeConfigError, MissingGenomeFolderError
+from .exceptions import MissingGenomeConfigError, MissingFolderError
 
 import logmuse
 import pypiper
@@ -418,7 +418,7 @@ def main():
 
 
 def _raise_missing_dir(outdir):
-    raise MissingGenomeFolderError(outdir)
+    raise MissingFolderError(outdir)
 
 
 def _writeable(outdir):
