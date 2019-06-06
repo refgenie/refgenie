@@ -34,7 +34,8 @@ setup(
     name='refgenie',
     packages=["refgenie"],
     version=version,
-    description='A standardized reference genome indexer',
+    description='Refgenie creates a standardized folder structure for reference genome files and indexes. '
+                'You can download pre-built genomes or build your own for any fasta file',
     long_description=long_description,
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -53,8 +54,7 @@ setup(
     keywords="bioinformatics, sequencing, ngs",
     package_data={"refgenie": [os.path.join("refgenie", "*")]},
     include_package_data=True,
-    url='https://github.com/databio/refgenie',
-    author='Nathan Sheffield',
-    author_email='nathan@code.databio.org',
+    url='http://refgenie.databio.org',
+    author=u'Nathan Sheffield, Vince Reuter, Michal Stolarczyk',
     **extra
 )
