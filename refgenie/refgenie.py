@@ -75,11 +75,11 @@ def build_argparser():
         BUILD_CMD: "Build genome assets",
     }
 
-    parser.add_argument('-c', '--genome-config', dest="genome_config")
-
     sps = {}
     for cmd, desc in subparser_messages.items():
         sps[cmd] = add_subparser(cmd, desc)
+        sps[cmd].add_argument('-c', '--genome-config', dest="genome_config")
+
 
     sps[INIT_CMD].add_argument('-s', '--genome-server', default=DEFAULT_SERVER,
                 help="URL to use for the genome_server attribute in config file."
