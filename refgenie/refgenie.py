@@ -387,7 +387,6 @@ def perm_check(file_to_check, message_tag):
                       "{}".format(message_tag, file_to_check))
 
 
-
 def main():
     """ Primary workflow """
 
@@ -406,7 +405,7 @@ def main():
 
     if args.command == INIT_CMD:
         _LOGGER.info("Initializing refgenie genome configuration")
-        perm_check(args.genome_config, "genome config file")
+        _writeable(os.path.dirname(args.genome_config))
         refgenie_init(args.genome_config, args.genome_server)
         sys.exit(0)
 
