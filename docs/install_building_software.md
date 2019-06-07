@@ -1,6 +1,6 @@
 # Installing Genome indexers
 
-Once you've installed refgenie (with `pip install refgenie`), you'll also need the indexers installed. Refgenie expects to find in your PATH any indexer tools you need for the various aligners. You'll need to follow the instructions for each of these individually. You could find some basic ideas for how to install these programatically in the [dockerfile](https://github.com/databio/refgenie/blob/dev/containers/Dockerfile_refgenie).
+ Refgenie expects to find in your PATH any tools needed for building the asset you want to build. You'll need to follow the instructions for each of these individually. You could find some basic ideas for how to install these programatically in the [dockerfile](https://github.com/databio/refgenie/blob/dev/containers/Dockerfile_refgenie).
 
 ## List of indexers
 

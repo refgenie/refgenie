@@ -7,15 +7,16 @@ pypi_name: refgenie
 nav:
   - Getting Started: 
     - Introduction: README.md
-    - Installing: install.md
-    - Hello world: hello-world.md
+    - Installing refgenie: install.md
     - Use cases: use-cases.md
     
-  - How-to guides:    
-    - Download pre-built indexes: download.md
-    - Installing genome indexers: install_indexers.md
-    - Build genome indexes: build.md
+  - How-to guides:
+    - Manage local assets: local.md
+    - Download pre-built assets: download.md
+    - Build genome assets: build.md
+    - Refgenie from within python: refgenconf.md
   - Reference:
+    - Python API: autodoc_build/refgenconf.md
     - Recipes: recipes.md
     - Usage: usage.md
     - Support: support.md
@@ -25,5 +26,8 @@ nav:
 theme: databio
 
 plugins:
-  - databio
-  - search
+- databio:
+    autodoc_build: "docs/autodoc_build"
+    autodoc_package: "refgenconf"
+    no_top_level: true
+- search

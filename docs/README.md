@@ -5,17 +5,17 @@
 
 ## What is refgenie?
 
-Refgenie is full-service reference genome manager. It provides a command-line and python interface to download pre-built genome assets like indexes from a central server. It can also build assets for custom genomes, making it easy to have a single folder structure for reference genome files.
+Refgenie is full-service reference genome manager. It provides command-line and python interfaces to download pre-built genome assets like indexes. It can also build assets for custom genomes.
 
 ## What makes refgenie better?
 
-Refgenie specifies a *standard* folder structure, so that alignment tools can easily swap from one genome to another. There are other similar projects, but Refgenie has a few advantages:
+Refgenie provides programmatic access to a standard genome folder structure, so that software can easily swap from one genome to another. There are other similar projects, but Refgenie has a few advantages:
 
 1. **It provides a command-line interface to download individual resources**. Think of it as `GitHub` for reference genomes. You just type `refgenie pull -g hg38 -a bowtie2_index`.
 
 2. **It's scripted**. In case you need resources *not* on the server, such as for a custom genome, refgenie provides a `build` function to create your own: `refgenie build -i custom.fa.gz -a bowtie2_index`.
 
-3. **It includes a python API**. For tool developers, you use `cfg = refgenie.RefGenConf(genomes.yaml)` to get a python object with paths to any genome asset, *e.g.*, `cfg.hg38.bowtie2_index`.
+3. **It includes a python API**. For tool developers, you use `cfg = refgenie.RefGenConf("genomes.yaml")` to get a python object with paths to any genome asset, *e.g.*, `cfg.hg38.bowtie2_index`.
 
 
 

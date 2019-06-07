@@ -1,12 +1,10 @@
 # Download pre-indexed reference genomes
 
-## Latest builds
+## Introduction
 
-The latest genome assets are now available for modular download, either by using the `refgenie` command-line interface, or by browsing on the web. You can browse and download files manually at [refgenomes.databio.org](http://refgenomes.databio.org), but `refgenie` will download and manage these for you automatically. You do this by simply running `refgenie` from the command line.
+The latest genome assets are now available for modular download. It's possible to download [pre-built refgenie assemblies](download.md) manually at [refgenomes.databio.org](http://refgenomes.databio.org), but it's easier to install and use the `refgenie` command-line interface because `refgenie` will download and manage these for you automatically. You do this by simply running `refgenie` from the command line.
 
-List all available genomes and assets:
-
-Access [http://refgenomes.databio.org](http://refgenomes.databio.org/assets) or use the CLI to *list remote assets*:
+The `listr` command *lists remote assets*:
 
 ```
 refgenie listr
@@ -19,8 +17,10 @@ refgenie pull -g GENOME -a ASSET
 ```
 Where `GENOME` refers to a genome key (*e.g.* hg38) and `ASSET` refers to one or more specific asset keys (*e.g.* bowtie2_index).
 
+That's it! Easy.
 
-## Older builds
+<!-- 
+## Older builds (deprecated)
 
 For earlier versions of refgenie, there was no `refgenie pull` command, so users would just download the pre-indexed archives and use those. These archives are built for common genomes. These are `tar gzipped` files, so **you will need to unarchive them after downloading**. The complete collection is listed at [http://big.databio.org/refgenomes/](http://big.databio.org/refgenomes/):
 
@@ -43,4 +43,4 @@ For earlier versions of refgenie, there was no `refgenie pull` command, so users
 ```
 wget http://big.databio.org/refgenomes/hg38_chr22.tgz
 tar -xf hg38_chr22.tgz
-```
+``` -->
