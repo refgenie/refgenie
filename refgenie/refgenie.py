@@ -24,7 +24,7 @@ INIT_CMD = "init"
 PULL_CMD = "pull"
 LIST_LOCAL_CMD = "list"
 LIST_REMOTE_CMD = "listr"
-DEFAULT_SERVER = "http://refgenomes.databio.org/"
+DEFAULT_SERVER = "http://refgenomes.databio.org"
 
 
 # This establishes the API with the server
