@@ -52,3 +52,12 @@ genomes:
 ```
 
 Any relative paths in the asset `path` attributes are considered relative to the genome config file.
+
+So, for example:
+
+```
+genomes:
+  hg38:                <--------------- that's the genome key.
+    bowtie2:           <--------------- that's the asset key.
+      path: blahblah   <--------------- relative to genome config. returned by get_asset('hg38', 'bowtie2'). 
+```
