@@ -14,9 +14,10 @@ genomes:
   hg38:
     bowtie2_index:
       path: indexed_bowtie2
+      asset_description: ...
     hisat2_index: 
       path: indexed_hisat2
-    indexed_bowtie2: indexed_bowtie2
+      asset_description: ...
   mm10:
       bowtie2_index:
         path: indexed_bowtie2
@@ -32,34 +33,24 @@ genomes:
 
 ```
 
-## Top-level attributes
+## Details of config attributes
 
-### genome_folder
-
-### genome_server
-
-### genome_archive
-
-### genomes
-
-Here you have a list of genomes, each genome has a list of assets...
-
-```yaml
-genomes:
-  genome_name:
-  	asset1:
-  	  path: path_to_asset
-  	  asset_description: ...
-
-```
-
-Any relative paths in the asset `path` attributes are considered relative to the genome config file.
+- **genome_folder**: Path to parent folder refgenie-managed assets.
+- **genome_server**: URL to a refgenieserver instance (currently only 1 URL allowed).
+- **genome_archive**: (optional; used by refgenieserver) Path to folder where asset archives will be stored.
+ - **genomes**: A list of genomes, each genome has a list of assets. Any relative paths in the asset `path` attributes are considered relative to the genome config file.
 
 So, for example:
 
 ```yaml
 genomes:
-  hg38:                <--------------- that's the genome key.
-    bowtie2:           <--------------- that's the asset key.
-      path: blahblah   <--------------- relative to genome config. 
+  hg38:                <---- genome key
+    bowtie2:           <---- asset key
+      path: blahblah   <---- relative to genome config
+      asset_description: freeform text (currently manual)
+      asset_checksum: 12345
+      asset_size: 15MB
+      archive_size: 12MB
 ```
+
+For genomes that are managed by refgenie (that is, they were built or pulled with `refgenie`), these asset attributes will be automatically populated. You can edit them and refgenie will respect your edits (unless you re-build or re-pull the asset, which will overwrite those fields). You can also add your own assets and refgenie won't touch them. For more info, see [using external assets](external_assets.md).
