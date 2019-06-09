@@ -111,7 +111,7 @@ def build_argparser():
     sps[PULL_CMD].add_argument("-u", "--no-untar", action="store_true", help="Do not extract tarballs.")
 
     sps[GET_ASSET_CMD].add_argument('-g', '--genome', default=None, required=True)
-    sps[GET_ASSET_CMD].add_argument('-a', '--asset', default=None, required=True)
+    sps[GET_ASSET_CMD].add_argument('-a', '--asset', nargs=1, default=None, required=True)
 
     return parser
 
