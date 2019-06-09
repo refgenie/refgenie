@@ -3,6 +3,7 @@
 
 [![PEP compatible](http://pepkit.github.io/img/PEP-compatible-green.svg)](http://pepkit.github.io)
 
+
 ## What is refgenie?
 
 Refgenie is full-service reference genome manager. It provides command-line and python interfaces to download pre-built genome assets like indexes. It can also build assets for custom genomes.
@@ -19,7 +20,7 @@ Refgenie provides programmatic access to a standard genome folder structure, so 
 
 
 
-## Example
+## Quick example
 
 ### Downloading indexes and assets for a reference genome
 
@@ -41,6 +42,8 @@ Pull many assets at once:
 refgenie pull --genome mm10 --asset kallisto TSS_enrichment mappability
 ```
 
+See [further reading on downloading assets](download.md).
+
 ### Building your own indexes and assets for a reference genome
 
 
@@ -48,3 +51,6 @@ refgenie pull --genome mm10 --asset kallisto TSS_enrichment mappability
 refgenie build --input hg38.fa.gz --asset bowtie2_index
 ```
 
+See [further reading on building assets](build.md).
+
+If you want to read more about the motivation behind refgenie and the software engineering that makes refgenie work, proceed next to the [overview](overview.md).

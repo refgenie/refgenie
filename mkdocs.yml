@@ -7,8 +7,8 @@ pypi_name: refgenie
 nav:
   - Getting Started: 
     - Introduction: README.md
+    - Overview: overview.md
     - Installing refgenie: install.md
-    - Use cases: use-cases.md
     
   - How-to guides:
     - Manage local assets: local.md
