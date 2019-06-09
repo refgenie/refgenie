@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The latest genome assets are now available for modular download. It's possible to download [pre-built refgenie assemblies](download.md) manually at [refgenomes.databio.org](http://refgenomes.databio.org), but it's easier to install and use the `refgenie` command-line interface because `refgenie` will download and manage these for you automatically. You do this by simply running `refgenie` from the command line.
+It's possible to download [pre-built refgenie assemblies](download.md) manually at [refgenomes.databio.org](http://refgenomes.databio.org), but it's easier to install and use the `refgenie` command-line interface to download and organize these for you automatically. You do this by simply running `refgenie` from the command line.
 
 The `listr` command *lists remote assets*:
 
@@ -15,7 +15,7 @@ Now, you can download the specific asset of your choice with:
 ```
 refgenie pull -g GENOME -a ASSET
 ```
-Where `GENOME` refers to a genome key (*e.g.* hg38) and `ASSET` refers to one or more specific asset keys (*e.g.* bowtie2_index).
+Where `GENOME` refers to a genome key (*e.g.* hg38) and `ASSET` refers to one or more specific asset keys (*e.g.* bowtie2_index). To see more details, consult the usage docs by running `refgenie pull --help`.
 
 That's it! Easy.
 

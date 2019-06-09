@@ -12,12 +12,14 @@ genome_server: http://refgenomes.databio.org
 genome_archive: /path/to/archived/genomes
 genomes:
   hg38:
-    bowtie2: indexed_bowtie2
-    hisat2: indexed_hisat2
+    bowtie2_index:
+      path: indexed_bowtie2
+    hisat2_index: 
+      path: indexed_hisat2
     indexed_bowtie2: indexed_bowtie2
   mm10:
-    indexes:
-      bowtie2: indexed_bowtie2
+      bowtie2_index:
+        path: indexed_bowtie2
   rCRS:
     bowtie2_index:
       path: indexed_bowtie2
@@ -55,9 +57,9 @@ Any relative paths in the asset `path` attributes are considered relative to the
 
 So, for example:
 
-```
+```yaml
 genomes:
   hg38:                <--------------- that's the genome key.
     bowtie2:           <--------------- that's the asset key.
-      path: blahblah   <--------------- relative to genome config. returned by get_asset('hg38', 'bowtie2'). 
+      path: blahblah   <--------------- relative to genome config. 
 ```
