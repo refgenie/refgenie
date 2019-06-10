@@ -120,12 +120,9 @@ def copy_or_download_file(input_string, outfolder):
     :param str outfolder: Where to store the result.
     """
     result_file = os.path.join(outfolder, os.path.basename(input_string))
-
-    if is_url(input_string):
-        cmd = "wget -O " + result_file + " " + input_string
-    else:
-        cmd = "cp " + input_string + " " + result_file
-    return [result_file, cmd]
+    parts = ["wget -O", result_file, input_string] \
+        if is_url(input_string) else ["cp", input_string, result_file]
+    return result_file, " ".join(parts)
 
 
 def convert_file(input_file, output_file, conversions):
