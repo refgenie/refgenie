@@ -82,36 +82,52 @@ def build_argparser():
         sps[cmd] = add_subparser(cmd, desc)
         sps[cmd].add_argument('-c', '--genome-config', dest="genome_config")
 
-
     sps[INIT_CMD].add_argument('-s', '--genome-server', default=DEFAULT_SERVER,
                 help="URL to use for the genome_server attribute in config file."
                 " Defaults : {}".format(DEFAULT_SERVER))
-    sps[BUILD_CMD] = pypiper.add_pypiper_args(sps[BUILD_CMD], groups=None, args=["recover", "config"])
+    sps[BUILD_CMD] = pypiper.add_pypiper_args(
+        sps[BUILD_CMD], groups=None, args=["recover", "config"])
 
     # Add any pipeline-specific arguments
-    sps[BUILD_CMD].add_argument('-i', '--input', dest='input', required=True,
-                              help='Local path or URL to genome sequence file in .fa, .fa.gz, or .2bit format.')
+    sps[BUILD_CMD].add_argument(
+        '-i', '--input', dest='input', required=True,
+        help='Local path or URL to genome sequence file in .fa, .fa.gz, '
+             'or .2bit format.')
 
-    sps[BUILD_CMD].add_argument('-n', '--name', dest='name', required=False,
-                              help='Name of the genome to build. If omitted, refgenie will use'
-                                   ' the basename of the file specified in --input.')
+    sps[BUILD_CMD].add_argument(
+        '-n', '--name', dest='name', required=False,
+        help='Name of the genome to build. If omitted, refgenie will use the '
+             'basename of the file specified in --input.')
 
-    sps[BUILD_CMD].add_argument('-a', '--annotation', dest='annotation', required=False,
-                              help='Path to GTF gene annotation file.')
+    sps[BUILD_CMD].add_argument(
+        '-a', '--annotation', dest='annotation', required=False,
+        help='Path to GTF gene annotation file.')
 
-    sps[BUILD_CMD].add_argument("-d", "--docker", action="store_true",
-                              help="Run all commands in the refgenie docker container.")
+    sps[BUILD_CMD].add_argument(
+        "-d", "--docker", action="store_true",
+        help="Run all commands in the refgenie docker container.")
 
-    sps[BUILD_CMD].add_argument('-o', '--outfolder', dest='outfolder', required=False, default=None,
-                              help='Override the default path to genomes folder, which is to '
-                                   'use the genome_folder attribute in the genome configuration file.')
+    sps[BUILD_CMD].add_argument(
+        '-o', '--outfolder', dest='outfolder', required=False, default=None,
+        help='Override the default path to genomes folder, which is to use the '
+             'genome_folder attribute in the genome configuration file.')
 
-    sps[PULL_CMD].add_argument('-g', '--genome', default=None, required=True)
-    sps[PULL_CMD].add_argument('-a', '--asset', default=None, nargs='+', required=True)
-    sps[PULL_CMD].add_argument("-u", "--no-untar", action="store_true", help="Do not extract tarballs.")
+    sps[PULL_CMD].add_argument(
+        '-g', '--genome', default=None, required=True,
+        help="Reference assembly ID")
+    sps[PULL_CMD].add_argument(
+        '-a', '--asset', default=None, nargs='+', required=True,
+        help="Name of asset, a key in a genome config file")
+    sps[PULL_CMD].add_argument(
+        "-u", "--no-untar", action="store_true",
+        help="Do not extract tarballs.")
 
-    sps[GET_ASSET_CMD].add_argument('-g', '--genome', default=None, required=True)
-    sps[GET_ASSET_CMD].add_argument('-a', '--asset', nargs=1, default=None, required=True)
+    sps[GET_ASSET_CMD].add_argument(
+        '-g', '--genome', default=None, required=True,
+        help="Name of asset, a key in a genome config file")
+    sps[GET_ASSET_CMD].add_argument(
+        '-a', '--asset', nargs=1, default=None, required=True,
+        help="Name of asset, a key in a genome config file")
 
     return parser
 
@@ -123,6 +139,7 @@ def copy_or_download_file(input_string, outfolder):
     
     :param str input_string: Can be either a URL or a path to a local file
     :param str outfolder: Where to store the result.
+    :return str, str: output/result file and command
     """
     result_file = os.path.join(outfolder, os.path.basename(input_string))
     parts = ["wget -O", result_file, input_string] \
