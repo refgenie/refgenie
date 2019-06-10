@@ -24,6 +24,7 @@ INIT_CMD = "init"
 PULL_CMD = "pull"
 LIST_LOCAL_CMD = "list"
 LIST_REMOTE_CMD = "listr"
+GET_ASSET_CMD = "seek"
 DEFAULT_SERVER = "http://refgenomes.databio.org"
 
 
@@ -73,6 +74,7 @@ def build_argparser():
         LIST_REMOTE_CMD: "List available genomes and assets on server.",
         PULL_CMD: "Download assets.",
         BUILD_CMD: "Build genome assets",
+        GET_ASSET_CMD: "Get the path to a local asset"
     }
 
     sps = {}
@@ -107,6 +109,9 @@ def build_argparser():
     sps[PULL_CMD].add_argument('-g', '--genome', default=None, required=True)
     sps[PULL_CMD].add_argument('-a', '--asset', default=None, nargs='+', required=True)
     sps[PULL_CMD].add_argument("-u", "--no-untar", action="store_true", help="Do not extract tarballs.")
+
+    sps[GET_ASSET_CMD].add_argument('-g', '--genome', default=None, required=True)
+    sps[GET_ASSET_CMD].add_argument('-a', '--asset', nargs=1, default=None, required=True)
 
     return parser
 
@@ -414,6 +419,10 @@ def main():
 
     if args.command == BUILD_CMD:
         refgenie_build(rgc, args)
+
+    if args.command == GET_ASSET_CMD:
+        _LOGGER.debug("getting asset: '{}/{}'".format(args.genome, args.asset))
+        return rgc.get_asset(args.genome, args.asset)
 
     if args.command == PULL_CMD:
         outdir = rgc.genome_folder

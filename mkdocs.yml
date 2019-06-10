@@ -7,19 +7,22 @@ pypi_name: refgenie
 nav:
   - Getting Started: 
     - Introduction: README.md
+    - Overview: overview.md
     - Installing refgenie: install.md
-    - Use cases: use-cases.md
     
   - How-to guides:
     - Manage local assets: local.md
     - Download pre-built assets: download.md
     - Build genome assets: build.md
-    - Refgenie from within python: refgenconf.md
+    - Use refgenie from python: refgenconf.md
+    - Use external assets: external_assets.md
+    - Run my own server: refgenieserver.md
   - Reference:
     - Python API: autodoc_build/refgenconf.md
     - Genome confuration file: genome_config.md
     - Recipes: recipes.md
     - Usage: usage.md
+    - FAQ: faq.md
     - Support: support.md
     - Contributing: contributing.md
     - Changelog: changelog.md

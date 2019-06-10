@@ -1,6 +1,6 @@
 # Building genome indexes with refgenie
 
-Once you've [installed refgenie](/install), you can use `refgenie pull` to [download pre-built assets](/download) without installing any additional software. If you want to build your own, you'll also need to install the building software for the asset you want to build. You have two choices to get that software, you can either [install building software natively](#install_building_software_natively), or use a [docker image](#docker).
+Once you've [installed refgenie](install.md), you can use `refgenie pull` to [download pre-built assets](download.md) without installing any additional software. If you want to build your own, you'll also need to install the building software for the asset you want to build. You have two choices to get that software, you can either [install building software natively](#install_building_software_natively), or use a [docker image](#docker).
 
 Once you're set up with all the additional software, you simply run `refgenie build`, passing it any necessary input files called for by the asset recipe. Further documentation on building specific assets is forthcoming.
 
