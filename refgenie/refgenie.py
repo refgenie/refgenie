@@ -88,46 +88,38 @@ def build_argparser():
     sps[BUILD_CMD] = pypiper.add_pypiper_args(
         sps[BUILD_CMD], groups=None, args=["recover", "config"])
 
-    # Add any pipeline-specific arguments
+    # Add any arguments specific to subcommands.
+
     sps[BUILD_CMD].add_argument(
         '-i', '--input', dest='input', required=True,
         help='Local path or URL to genome sequence file in .fa, .fa.gz, '
              'or .2bit format.')
-
     sps[BUILD_CMD].add_argument(
         '-n', '--name', dest='name', required=False,
         help='Name of the genome to build. If omitted, refgenie will use the '
              'basename of the file specified in --input.')
-
     sps[BUILD_CMD].add_argument(
         '-a', '--annotation', dest='annotation', required=False,
         help='Path to GTF gene annotation file.')
-
     sps[BUILD_CMD].add_argument(
         "-d", "--docker", action="store_true",
         help="Run all commands in the refgenie docker container.")
-
     sps[BUILD_CMD].add_argument(
         '-o', '--outfolder', dest='outfolder', required=False, default=None,
         help='Override the default path to genomes folder, which is to use the '
              'genome_folder attribute in the genome configuration file.')
 
-    sps[PULL_CMD].add_argument(
-        '-g', '--genome', default=None, required=True,
-        help="Reference assembly ID")
-    sps[PULL_CMD].add_argument(
-        '-a', '--asset', default=None, nargs='+', required=True,
-        help="Name of asset, a key in a genome config file")
+    for cmd in [PULL_CMD, GET_ASSET_CMD]:
+        sps[cmd].add_argument(
+            "-g", "--genome", required=True,
+            help="Reference assembly ID, e.g. mm10")
+        sps[cmd].add_argument(
+            "-a", "--asset", required=True, nargs=1 if cmd == GET_ASSET_CMD else '+',
+            help="Name of asset, a key in a genome config file")
+
     sps[PULL_CMD].add_argument(
         "-u", "--no-untar", action="store_true",
         help="Do not extract tarballs.")
-
-    sps[GET_ASSET_CMD].add_argument(
-        '-g', '--genome', default=None, required=True,
-        help="Name of asset, a key in a genome config file")
-    sps[GET_ASSET_CMD].add_argument(
-        '-a', '--asset', nargs=1, default=None, required=True,
-        help="Name of asset, a key in a genome config file")
 
     return parser
 
