@@ -42,3 +42,12 @@ export REFGENIE=/path/to/genome_config.yaml
 ```
 
 Add this to your `.bashrc` or `.profile` if you want it to persist. This way, you won't have to specify `-c` to every call. You can always specific `-c` if you want to override the value in the $REFGENIE variable.
+
+# Listing assets
+
+Now you can use the `list` command to show local assets (which will be empty at first) or the `listr` command to show available remote assets:
+
+```
+refgenie list
+refgenie listr
+```

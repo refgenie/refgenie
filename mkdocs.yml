@@ -11,7 +11,6 @@ nav:
     - Install and configure: install.md
     
   - How-to guides:
-    - Manage local assets: local.md
     - Download pre-built assets: download.md
     - Build genome assets: build.md
     - Use refgenie from python: refgenconf.md
