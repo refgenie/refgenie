@@ -16,7 +16,6 @@ from refgenconf import select_genome_config, RefGenConf
 from refgenconf.const import *
 from ubiquerg import is_url
 
-
 _LOGGER = None
 
 BUILD_CMD = "build"
@@ -113,7 +112,7 @@ def build_argparser():
             "-g", "--genome", required=True,
             help="Reference assembly ID, e.g. mm10")
         sps[cmd].add_argument(
-            "-a", "--asset", required=True, nargs=None if cmd == GET_ASSET_CMD else '+',
+            "-a", "--asset", required=True, nargs='+',
             help="Name of asset, a key in a genome config file")
 
     sps[PULL_CMD].add_argument(
@@ -430,7 +429,7 @@ def main():
 
     if args.command == GET_ASSET_CMD:
         _LOGGER.debug("getting asset: '{}/{}'".format(args.genome, args.asset))
-        return rgc.get_asset(args.genome, args.asset)
+        return " ".join([rgc.get_asset(args.genome, asset) for asset in args.asset])
 
     if args.command == PULL_CMD:
         outdir = rgc.genome_folder
