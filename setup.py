@@ -11,9 +11,8 @@ with open("requirements/requirements-all.txt", "r") as reqs_file:
         #DEPENDENCIES.append(line.split("=")[0].rstrip("<>"))
         DEPENDENCIES.append(line)
 
-# Additional keyword arguments for setup().
-extra = {}
-extra["install_requires"] = DEPENDENCIES
+# Additional keyword arguments for setup()
+extra = {"install_requires": DEPENDENCIES}
 
 # 2to3
 if sys.version_info >= (3, ):
