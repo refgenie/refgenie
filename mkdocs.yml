@@ -18,7 +18,7 @@ nav:
     - Run my own server: refgenieserver.md
   - Reference:
     - Python API: autodoc_build/refgenconf.md
-    - Genome confuration file: genome_config.md
+    - Genome configuration file: genome_config.md
     - Recipes: recipes.md
     - Usage: usage.md
     - FAQ: faq.md
