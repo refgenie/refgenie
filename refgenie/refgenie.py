@@ -113,7 +113,7 @@ def build_argparser():
             "-g", "--genome", required=True,
             help="Reference assembly ID, e.g. mm10")
         sps[cmd].add_argument(
-            "-a", "--asset", required=True, nargs=1 if cmd == GET_ASSET_CMD else '+',
+            "-a", "--asset", required=True, nargs=None if cmd == GET_ASSET_CMD else '+',
             help="Name of asset, a key in a genome config file")
 
     sps[PULL_CMD].add_argument(
