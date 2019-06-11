@@ -416,7 +416,7 @@ def main():
 
     if args.command == INIT_CMD:
         _LOGGER.info("Initializing refgenie genome configuration")
-        _writeable(os.path.dirname(args.genome_config))
+        _writeable(os.path.dirname(args.genome_config), strict_exists=True)
         refgenie_init(args.genome_config, args.genome_server)
         sys.exit(0)
 
@@ -436,7 +436,7 @@ def main():
     if args.command == PULL_CMD:
         outdir = rgc.genome_folder
         perm_check(outdir, "genome folder")
-        if not _writeable(outdir):
+        if not _writeable(outdir, strict_exists=True):
             _LOGGER.error("Insufficient permissions to write to genome folder: "
                           "{}".format(outdir))
         else:
@@ -452,10 +452,11 @@ def _raise_missing_dir(outdir):
     raise MissingFolderError(outdir)
 
 
-def _writeable(outdir):
+def _writeable(outdir, strict_exists=False):
     outdir = "." if outdir == "" else outdir
     return (os.access(outdir, os.W_OK) and os.access(outdir, os.X_OK)) \
-        if os.path.exists(outdir) else _raise_missing_dir(outdir)
+        if os.path.exists(outdir) else \
+        (_raise_missing_dir(outdir) if strict_exists else _writeable(os.path.dirname(outdir)))
 
 
 if __name__ == '__main__':
