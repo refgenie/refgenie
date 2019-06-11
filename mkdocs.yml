@@ -8,7 +8,7 @@ nav:
   - Getting Started: 
     - Introduction: README.md
     - Overview: overview.md
-    - Installing refgenie: install.md
+    - Install and configure: install.md
     
   - How-to guides:
     - Manage local assets: local.md
