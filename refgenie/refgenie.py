@@ -391,10 +391,11 @@ def perm_check(file_to_check, message_tag):
         msg = "You must provide a path to {}".format(message_tag)
         _LOGGER.error(msg)
         raise ValueError(msg)
-
     if not os.access(file_to_check, os.X_OK):
         _LOGGER.error("Insufficient permissions to write to {}: "
                       "{}".format(message_tag, file_to_check))
+        return False
+    return True
 
 
 def main():
@@ -434,12 +435,13 @@ def main():
 
     if args.command == PULL_CMD:
         outdir = rgc.genome_folder
-        perm_check(outdir, "genome folder")
-        if not _writeable(outdir, strict_exists=True):
+        if not perm_check(outdir, "genome folder") or \
+                not _writeable(outdir, strict_exists=True):
             _LOGGER.error("Insufficient permissions to write to genome folder: "
                           "{}".format(outdir))
-        else:
-            rgc.pull_asset(args.genome, args.asset, genome_config_path, unpack=not args.no_untar)
+            return
+        rgc.pull_asset(args.genome, args.asset,
+                       genome_config_path, unpack=not args.no_untar)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         pfx, genomes, assets = _exec_list(rgc, args.command == LIST_REMOTE_CMD)
@@ -453,9 +455,11 @@ def _raise_missing_dir(outdir):
 
 def _writeable(outdir, strict_exists=False):
     outdir = "." if outdir == "" else outdir
-    return (os.access(outdir, os.W_OK) and os.access(outdir, os.X_OK)) \
-        if os.path.exists(outdir) else \
-        (_raise_missing_dir(outdir) if strict_exists else _writeable(os.path.dirname(outdir)))
+    if os.path.exists(outdir):
+        return os.access(outdir, os.W_OK) and os.access(outdir, os.X_OK)
+    elif strict_exists:
+        _raise_missing_dir(outdir)
+    return _writeable(os.path.dirname(outdir))
 
 
 if __name__ == '__main__':
