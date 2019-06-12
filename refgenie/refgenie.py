@@ -79,7 +79,7 @@ def build_argparser():
     for cmd, desc in subparser_messages.items():
         sps[cmd] = add_subparser(cmd, desc)
         sps[cmd].add_argument(
-            '-c', '--genome-config', required=True, dest="genome_config",
+            '-c', '--genome-config', dest="genome_config",
             help="Path to local genome configuration file, to read from and/or "
                  "to create or update, depending on the operation")
 
@@ -424,17 +424,18 @@ def main():
         _LOGGER.error("No command given")
         sys.exit(1)
 
+    gencfg = select_genome_config(args.genome_config)
+    if gencfg is None:
+        raise MissingGenomeConfigError(args.genome_config)
+    _LOGGER.info("Determined genome config: {}".format(gencfg))
+
     if args.command == INIT_CMD:
         _LOGGER.info("Initializing refgenie genome configuration")
-        _writeable(os.path.dirname(args.genome_config), strict_exists=True)
-        refgenie_init(args.genome_config, args.genome_server)
+        _writeable(os.path.dirname(gencfg), strict_exists=True)
+        refgenie_init(gencfg, args.genome_server)
         sys.exit(0)
 
-    genome_config_path = select_genome_config(args.genome_config)
-    if genome_config_path is None:
-        raise MissingGenomeConfigError(args.genome_config)
-
-    rgc = RefGenConf(genome_config_path)
+    rgc = RefGenConf(gencfg)
 
     if args.command == BUILD_CMD:
         refgenie_build(rgc, args)
@@ -450,8 +451,7 @@ def main():
             _LOGGER.error("Insufficient permissions to write to genome folder: "
                           "{}".format(outdir))
             return
-        rgc.pull_asset(args.genome, args.asset,
-                       genome_config_path, unpack=not args.no_untar)
+        rgc.pull_asset(args.genome, args.asset, gencfg, unpack=not args.no_untar)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         pfx, genomes, assets = _exec_list(rgc, args.command == LIST_REMOTE_CMD)
