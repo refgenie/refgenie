@@ -6,10 +6,9 @@ Once you're set up with all the additional software, you simply run `refgenie bu
 
 ## Install building software natively
 
-Refgenie expects to find in your PATH any tools needed for building the asset you want to build. You'll need to follow the instructions for each of these individually. You could find some basic ideas for how to install these programatically in the [dockerfile](https://github.com/databio/refgenie/blob/dev/containers/Dockerfile_refgenie).
+Refgenie expects to find in your `PATH` any tools needed for building a desired asset. You'll need to follow the instructions for each of these individually. You could find some basic ideas for how to install these programatically in the [dockerfile](https://github.com/databio/refgenie/blob/dev/containers/Dockerfile_refgenie).
 
-Refgenie knows how to build indexes for bowtie2, hisat2, bismark, and others. You can find the complete list in the [config file](https://github.com/databio/refgenie/blob/dev/refgenie/refgenie.yaml). These are all optional; you only have to build indexes for ones you intend to use. You can also add more later. If you don't pass along a configuration file to `refgenie`, it will simply use this one, building these indexes. If you want to toggle some of them, you may choose which indexes you want to include by toggling them. Just duplicate and edit the config file and pass it to refenie like this:
-
+Refgenie knows how to build indexes for bowtie2, hisat2, bismark, and other common tools. You can find the complete list in the [config file](https://github.com/databio/refgenie/blob/dev/refgenie/refgenie.yaml). These are all optional; you only have to build indexes for ones you intend to use. You can also add more later. If you don't pass along a configuration file to `refgenie`, it will simply use that one, building those indexes. If you want to choose a subset, copy the config file, edit it as desired, and pass it to `refgenie` like this:
 ```
 wget https://raw.githubusercontent.com/databio/refgenie/master/refgenie/refgenie.yaml
 refgenie build -c refgenie.yaml

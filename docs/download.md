@@ -10,7 +10,7 @@ The `listr` command *lists remote assets* to see what's available:
 refgenie listr
 ```
 
-Now, you can download the specific asset of your choice with:
+The `pull` *downloads* the specific asset of your choice:
 
 ```
 refgenie pull -g GENOME -a ASSET
