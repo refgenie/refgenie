@@ -25,5 +25,3 @@ rgc.list_remote()
 ```
 
 See the complete [refgenie python API](/autodoc_build/refgenconf) for details.
-
-
