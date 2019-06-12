@@ -18,6 +18,6 @@ genomes:
       description: Manual annotations from project X
 ```
 
-Now, you can access this asset with `refgenie` the same way you do all other assets... `refgenie list` will include it, at `RefGenConf.get_asset('hg38', 'manual_anno')` will return the path to your annotation.
+Now, you can access this asset with `refgenie` the same way you do all other assets... `refgenie list` will include it, and `RefGenConf.get_asset('hg38', 'manual_anno')` will return the path to your annotation.
 
 The advantage of doing this is that it lets you include *all* your genome-associated resources, including manual ones, within the same framework.
