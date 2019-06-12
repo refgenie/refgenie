@@ -16,7 +16,6 @@ from refgenconf import select_genome_config, RefGenConf
 from refgenconf.const import *
 from ubiquerg import is_url
 
-DEFAULT_SERVER = "http://refgenomes.databio.org"
 _LOGGER = None
 
 BUILD_CMD = "build"
