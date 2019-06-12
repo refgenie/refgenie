@@ -17,12 +17,12 @@ nav:
     - Use external assets: external_assets.md
     - Run my own server: refgenieserver.md
   - Reference:
-    - Python API: autodoc_build/refgenconf.md
     - Genome configuration file: genome_config.md
+    - Glossary: glossary.md
     - Recipes: recipes.md
     - Usage: usage.md
+    - Python API: autodoc_build/refgenconf.md
     - FAQ: faq.md
-    - Glossary: glossary.md
     - Support: support.md
     - Contributing: contributing.md
     - Changelog: changelog.md
