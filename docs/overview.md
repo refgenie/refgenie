@@ -10,7 +10,7 @@ One effort to distribute standard, organized reference sequences and annotation 
 
 ### Functionality
 
-**Refgenie simultaneously provides *structure to manually build assets* while improving modular access to pre-built assets in the same system. Refgenie does this by providing *two ways to obtain genome assets*** (see figure at right)
+Uniformly structuring assets regardless of reference assembly allows both standard and custom software to be used and/or written without regard for idiosyncrasies of a particular context. **Refgenie simultaneously provides *structure to manually build assets* while improving modular access to pre-built assets in the same system. Refgenie does this by providing *two ways to obtain genome assets*** (see figure at right).
   1. Web-based access to individual pre-built assets via web interface or application programming interface (API)
   2. An interface for scripted asset "builds," each of which produces structured output for arbitrary genome inputs. This enables users to either retrieve or produce *identically structured* outputs on demand for *any genome* of interest, including new assemblies, private assemblies, or custom genomes for which a public set of assets cannot exist. 
 
