@@ -386,7 +386,15 @@ def _exec_list(rgc, remote):
     return pfx, assemblies, assets
 
 
-def perm_check(file_to_check, message_tag):
+def perm_check_x(file_to_check, message_tag):
+    """
+    Check X_OK permission on a path, providing according messaging and bool val.
+    
+    :param str file_to_check: path to query for permission
+    :param str message_tag: context for error message if check fails
+    :return bool: os.access(path, X_OK) for the given path
+    :raise ValueError: if there's no filepath to check for permission
+    """
     if not file_to_check:
         msg = "You must provide a path to {}".format(message_tag)
         _LOGGER.error(msg)
@@ -435,7 +443,7 @@ def main():
 
     if args.command == PULL_CMD:
         outdir = rgc.genome_folder
-        if not perm_check(outdir, "genome folder") or \
+        if not perm_check_x(outdir, "genome folder") or \
                 not _writeable(outdir, strict_exists=True):
             _LOGGER.error("Insufficient permissions to write to genome folder: "
                           "{}".format(outdir))
