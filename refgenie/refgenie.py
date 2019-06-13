@@ -440,16 +440,20 @@ def main():
     if args.command == BUILD_CMD:
         refgenie_build(rgc, args)
 
-    if args.command == GET_ASSET_CMD:
+    elif args.command == GET_ASSET_CMD:
         _LOGGER.debug("getting asset: '{}/{}'".format(args.genome, args.asset))
         return " ".join([rgc.get_asset(args.genome, asset) for asset in args.asset])
 
-    if args.command == PULL_CMD:
-        outdir = rgc.genome_folder
-        if not perm_check_x(outdir, "genome folder") or \
-                not _writeable(outdir, strict_exists=True):
-            _LOGGER.error("Insufficient permissions to write to genome folder: "
-                          "{}".format(outdir))
+    elif args.command == PULL_CMD:
+        outdir = rgc[CFG_FOLDER_KEY]
+        if not os.path.exists(outdir):
+            raise MissingFolderError(outdir)
+        target = _key_to_name(CFG_FOLDER_KEY)
+        if not perm_check_x(outdir, target):
+            return
+        if not _single_folder_writeable(outdir):
+            _LOGGER.error("Insufficient permissions to write to {}: "
+                          "{}".format(target, outdir))
             return
         rgc.pull_asset(args.genome, args.asset, gencfg, unpack=not args.no_untar)
 
@@ -459,17 +463,21 @@ def main():
         _LOGGER.info("{} assets:\n{}".format(pfx, assets))
 
 
-def _raise_missing_dir(outdir):
-    raise MissingFolderError(outdir)
+def _key_to_name(k):
+    return k.replace("_", " ")
+
+
+def _single_folder_writeable(d):
+    return os.access(d, os.W_OK) and os.access(d, os.X_OK)
 
 
 def _writeable(outdir, strict_exists=False):
-    outdir = "." if outdir == "" else outdir
+    outdir = outdir or "."
     if os.path.exists(outdir):
-        return os.access(outdir, os.W_OK) and os.access(outdir, os.X_OK)
+        return _single_folder_writeable(outdir)
     elif strict_exists:
-        _raise_missing_dir(outdir)
-    return _writeable(os.path.dirname(outdir))
+        raise MissingFolderError(outdir)
+    return _writeable(os.path.dirname(outdir), strict_exists)
 
 
 if __name__ == '__main__':
