@@ -38,7 +38,7 @@ genomes:
 - **genome_folder**: Path to parent folder refgenie-managed assets.
 - **genome_server**: URL to a refgenieserver instance (currently only 1 URL allowed).
 - **genome_archive**: (optional; used by refgenieserver) Path to folder where asset archives will be stored.
- - **genomes**: A list of genomes, each genome has a list of assets. Any relative paths in the asset `path` attributes are considered relative to the genome config file.
+ - **genomes**: A list of genomes, each genome has a list of assets. Any relative paths in the asset `path` attributes are considered relative to the genome folder in the config file (or the file itself if not folder path is specified), with the genome name as an intervening path component, e.g. `folder/mm10/indexed_bowtie2`.
 
 So, for example:
 
@@ -46,7 +46,7 @@ So, for example:
 genomes:
   hg38:                <---- genome key
     bowtie2:           <---- asset key
-      path: blahblah   <---- relative to genome config
+      path: blahblah   <---- relative to genome folder
       asset_description: freeform text (currently manual)
       asset_checksum: 12345
       asset_size: 15MB

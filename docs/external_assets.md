@@ -8,7 +8,7 @@ The preferred option would be to script your asset building and then allow refge
 
 ## External assets
 
-Refgenie will only change configuration options for assets that it manages. What this means is that you can exploit the refgenie system to manage and access your own assets. For example, say you have an hg38 annotation called *manual_annotation*, which you produced by hand. You can simply put that in your genomes folder (under `hg38/manual_annotation_dir/`), and then add an entry to your genome configuration file:
+Refgenie will only change configuration options for assets that it manages. What this means is that you can exploit the refgenie system to manage and access your own assets. For example, say you have an hg38 annotation called *manual_annotation*, which you produced by hand. You can simply put that in your genomes folder (under `hg38/annotation_folder_dir`), and then add an entry to your genome configuration file:
 
 ```yaml
 genomes:
@@ -18,6 +18,6 @@ genomes:
       description: Manual annotations from project X
 ```
 
-Now, you can access this asset with `refgenie` the same way you do all other assets... `refgenie list` will include it, at `RefGenConf.get_asset('hg38', 'manual_anno')` will return the path to your annotation.
+Now, you can access this asset with `refgenie` the same way you do all other assets... `refgenie list` will include it, and `RefGenConf.get_asset('hg38', 'manual_anno')` will return the path to your annotation.
 
 The advantage of doing this is that it lets you include *all* your genome-associated resources, including manual ones, within the same framework.

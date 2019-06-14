@@ -32,6 +32,5 @@ class MissingFolderError(RefgenieError):
 
         :param str folder: path attempted to be used as folder to save a file to
         """
-        msg = "The specified folder does not exist: {}".format(folder)
-        super(MissingFolderError, self).__init__(msg)
+        super(MissingFolderError, self).__init__(folder)
 

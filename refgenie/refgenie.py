@@ -16,7 +16,6 @@ from refgenconf import select_genome_config, RefGenConf
 from refgenconf.const import *
 from ubiquerg import is_url
 
-DEFAULT_SERVER = "http://refgenomes.databio.org"
 _LOGGER = None
 
 BUILD_CMD = "build"
@@ -79,7 +78,10 @@ def build_argparser():
     sps = {}
     for cmd, desc in subparser_messages.items():
         sps[cmd] = add_subparser(cmd, desc)
-        sps[cmd].add_argument('-c', '--genome-config', dest="genome_config")
+        sps[cmd].add_argument(
+            '-c', '--genome-config', dest="genome_config",
+            help="Path to local genome configuration file, to read from and/or "
+                 "to create or update, depending on the operation")
 
     sps[INIT_CMD].add_argument('-s', '--genome-server', default=DEFAULT_SERVER,
                 help="URL to use for the genome_server attribute in config file."
@@ -386,15 +388,24 @@ def _exec_list(rgc, remote):
     return pfx, assemblies, assets
 
 
-def perm_check(file_to_check, message_tag):
+def perm_check_x(file_to_check, message_tag):
+    """
+    Check X_OK permission on a path, providing according messaging and bool val.
+    
+    :param str file_to_check: path to query for permission
+    :param str message_tag: context for error message if check fails
+    :return bool: os.access(path, X_OK) for the given path
+    :raise ValueError: if there's no filepath to check for permission
+    """
     if not file_to_check:
         msg = "You must provide a path to {}".format(message_tag)
         _LOGGER.error(msg)
         raise ValueError(msg)
-
     if not os.access(file_to_check, os.X_OK):
         _LOGGER.error("Insufficient permissions to write to {}: "
                       "{}".format(message_tag, file_to_check))
+        return False
+    return True
 
 
 def main():
@@ -413,33 +424,38 @@ def main():
         _LOGGER.error("No command given")
         sys.exit(1)
 
+    gencfg = select_genome_config(args.genome_config)
+    if gencfg is None:
+        raise MissingGenomeConfigError(args.genome_config)
+    _LOGGER.info("Determined genome config: {}".format(gencfg))
+
     if args.command == INIT_CMD:
         _LOGGER.info("Initializing refgenie genome configuration")
-        _writeable(os.path.dirname(args.genome_config), strict_exists=True)
-        refgenie_init(args.genome_config, args.genome_server)
+        _writeable(os.path.dirname(gencfg), strict_exists=True)
+        refgenie_init(gencfg, args.genome_server)
         sys.exit(0)
 
-    genome_config_path = select_genome_config(args.genome_config)
-    if genome_config_path is None:
-        raise MissingGenomeConfigError(args.genome_config)
-
-    rgc = RefGenConf(genome_config_path)
+    rgc = RefGenConf(gencfg)
 
     if args.command == BUILD_CMD:
         refgenie_build(rgc, args)
 
-    if args.command == GET_ASSET_CMD:
+    elif args.command == GET_ASSET_CMD:
         _LOGGER.debug("getting asset: '{}/{}'".format(args.genome, args.asset))
         return " ".join([rgc.get_asset(args.genome, asset) for asset in args.asset])
 
-    if args.command == PULL_CMD:
-        outdir = rgc.genome_folder
-        perm_check(outdir, "genome folder")
-        if not _writeable(outdir, strict_exists=True):
-            _LOGGER.error("Insufficient permissions to write to genome folder: "
-                          "{}".format(outdir))
-        else:
-            rgc.pull_asset(args.genome, args.asset, genome_config_path, unpack=not args.no_untar)
+    elif args.command == PULL_CMD:
+        outdir = rgc[CFG_FOLDER_KEY]
+        if not os.path.exists(outdir):
+            raise MissingFolderError(outdir)
+        target = _key_to_name(CFG_FOLDER_KEY)
+        if not perm_check_x(outdir, target):
+            return
+        if not _single_folder_writeable(outdir):
+            _LOGGER.error("Insufficient permissions to write to {}: "
+                          "{}".format(target, outdir))
+            return
+        rgc.pull_asset(args.genome, args.asset, gencfg, unpack=not args.no_untar)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         pfx, genomes, assets = _exec_list(rgc, args.command == LIST_REMOTE_CMD)
@@ -447,15 +463,21 @@ def main():
         _LOGGER.info("{} assets:\n{}".format(pfx, assets))
 
 
-def _raise_missing_dir(outdir):
-    raise MissingFolderError(outdir)
+def _key_to_name(k):
+    return k.replace("_", " ")
+
+
+def _single_folder_writeable(d):
+    return os.access(d, os.W_OK) and os.access(d, os.X_OK)
 
 
 def _writeable(outdir, strict_exists=False):
-    outdir = "." if outdir == "" else outdir
-    return (os.access(outdir, os.W_OK) and os.access(outdir, os.X_OK)) \
-        if os.path.exists(outdir) else \
-        (_raise_missing_dir(outdir) if strict_exists else _writeable(os.path.dirname(outdir)))
+    outdir = outdir or "."
+    if os.path.exists(outdir):
+        return _single_folder_writeable(outdir)
+    elif strict_exists:
+        raise MissingFolderError(outdir)
+    return _writeable(os.path.dirname(outdir), strict_exists)
 
 
 if __name__ == '__main__':
