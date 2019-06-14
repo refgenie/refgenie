@@ -36,6 +36,7 @@ setup(
     description='Refgenie creates a standardized folder structure for reference genome files and indexes. '
                 'You can download pre-built genomes or build your own for any fasta file',
     long_description=long_description,
+    long_description_content_type='text/markdown',
     classifiers=[
         "Development Status :: 4 - Beta",
         "License :: OSI Approved :: BSD License",
