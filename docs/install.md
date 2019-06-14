@@ -1,32 +1,55 @@
-# Installing genome indexers
+# Installing refgenie
 
-Once you've installed refgenie (with `pip install refgenie`), you'll also need the indexers installed. Refgenie expects to find in your PATH any indexer tools you need for the various aligners. You'll need to follow the instructions for each of these individually. You could find some basic ideas for how to install these programatically in the [dockerfile](https://github.com/databio/refgenie/blob/dev/containers/Dockerfile_refgenie).
+Install refgenie from [GitHub releases](https://github.com/databio/refgenie/releases) or from PyPI with `pip`.
 
-## List of indexers
 
-You can find a list of indexers you may choose from in the [refgenie config file](https://github.com/databio/refgenie/blob/dev/refgenie/refgenie.yaml).
-
-## Docker
-
-If you don't want to install all those indexers (and I don't blame you), then you may be interested in my docker image on DockerHub (nsheff/refgenie) that has all of these packages pre-installed, so you can run the complete indexer without worrying about paths and packages. Just clone this repo and run it with the `-d` flag. For example:
-
-```
-~/code/refgenie/src/refgenie.py --input rn6.fa --outfolder $HOME -d
+Into user space...
+```console
+pip install --user refgenie
 ```
 
-### Building the container
-
-You can build the docker container yourself like this:
-
-```
-git clone https://github.com/databio/refgenie.git
-cd refgenie/containers
-make refgenie
+...or into an (active) virtual environment:
+```console
+pip install refgenie
 ```
 
-### Pulling the container
-
+Update with:
+```console
+pip install --user --upgrade refgenie
 ```
-docker pull nsheff/refgenie
+or:
+```console
+pip install --upgrade refgenie
 ```
 
+See if your install worked; from the command line:
+```console
+refgenie -h
+```
+
+If the `refgenie` executable in not in your `$PATH`, append this to your `.bashrc` or `.profile` (or `.bash_profile` on macOS):
+```console
+export PATH=~/.local/bin:$PATH
+```
+
+# Initial configuration
+
+If you're using refgenie for the first time you'll need to initialize your ***genome folder*** and configuration file. Just select a folder where you want your genome assets to live, and then try:
+```console
+refgenie init -c genome_folder/genome_config.yaml
+```
+
+The `refgenie` commands all require knowing where this genome config file is. You can pass it on the command line all the time (using the `-c` parameter), but this gets old. An alternative is to set up the `$REFGENIE` environment variable like so:
+```console
+export REFGENIE=/path/to/genome_config.yaml
+```
+
+Add this to your `.bashrc` or `.profile` if you want it to persist for future command-line sessions. You can always specific `-c` if you want to override the value in the `$REFGENIE` variable on an ad-hoc basis.
+
+# Listing assets
+
+Now you can use the `list` command to show local assets (which will be empty at first) or the `listr` command to show available remote assets:
+```
+refgenie list
+refgenie listr
+```

@@ -11,9 +11,8 @@ with open("requirements/requirements-all.txt", "r") as reqs_file:
         #DEPENDENCIES.append(line.split("=")[0].rstrip("<>"))
         DEPENDENCIES.append(line)
 
-# Additional keyword arguments for setup().
-extra = {}
-extra["install_requires"] = DEPENDENCIES
+# Additional keyword arguments for setup()
+extra = {"install_requires": DEPENDENCIES}
 
 # 2to3
 if sys.version_info >= (3, ):
@@ -34,7 +33,8 @@ setup(
     name='refgenie',
     packages=["refgenie"],
     version=version,
-    description='A standardized reference genome indexer',
+    description='Refgenie creates a standardized folder structure for reference genome files and indexes. '
+                'You can download pre-built genomes or build your own for any fasta file',
     long_description=long_description,
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -53,8 +53,7 @@ setup(
     keywords="bioinformatics, sequencing, ngs",
     package_data={"refgenie": [os.path.join("refgenie", "*")]},
     include_package_data=True,
-    url='https://github.com/databio/refgenie',
-    author='Nathan Sheffield',
-    author_email='nathan@code.databio.org',
+    url='http://refgenie.databio.org',
+    author=u'Nathan Sheffield, Vince Reuter, Michal Stolarczyk',
     **extra
 )
