@@ -12,9 +12,10 @@ from .exceptions import MissingGenomeConfigError, MissingFolderError
 import logmuse
 import pypiper
 import refgenconf
-from refgenconf import select_genome_config, RefGenConf
+from refgenconf import RefGenConf
 from refgenconf.const import *
 from ubiquerg import is_url
+import yacman
 
 _LOGGER = None
 
@@ -424,7 +425,8 @@ def main():
         _LOGGER.error("No command given")
         sys.exit(1)
 
-    gencfg = select_genome_config(args.genome_config)
+    gencfg = yacman.select_config(
+        args.genome_config, CFG_ENV_VARS, on_missing=lambda fp: fp)
     if gencfg is None:
         raise MissingGenomeConfigError(args.genome_config)
     _LOGGER.info("Determined genome config: {}".format(gencfg))
