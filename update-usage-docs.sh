@@ -2,7 +2,7 @@
 cp docs/usage.template usage.template
 #looper --help > USAGE.temp 2>&1
 
-for cmd in "--help" "init --help" "list --help" "listr --help" "pull --help"; do
+for cmd in "--help" "init --help" "list --help" "seek --help" "listr --help" "pull --help"; do
 	echo $cmd
 	echo -e "## \`refgenie $cmd\`" > USAGE_header.temp
 	refgenie $cmd --help > USAGE.temp 2>&1

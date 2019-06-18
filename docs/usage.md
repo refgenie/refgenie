@@ -4,26 +4,26 @@
 
 ```console
 version: 0.4.1
-usage: refgenie [-h] [-V] [--logdev] [--verbosity V] [--silent]
-                {pull,seek,list,build,init,listr} ...
+usage: refgenie [-h] [-V] [--verbosity V] [--silent] [--logdev]
+                {list,listr,pull,init,build,seek} ...
 
 refgenie - builds and manages reference genome assemblies
 
 positional arguments:
-  {pull,seek,list,build,init,listr}
-    pull                Download assets.
-    seek                Get the path to a local asset
+  {list,listr,pull,init,build,seek}
     list                List available local genomes.
-    build               Build genome assets
-    init                Initialize a genome configuration.
     listr               List available genomes and assets on server.
+    pull                Download assets.
+    init                Initialize a genome configuration.
+    build               Build genome assets
+    seek                Get the path to a local asset
 
 optional arguments:
   -h, --help            show this help message and exit
   -V, --version         show program's version number and exit
-  --logdev              Expand content of logging message format.
   --verbosity V         Set logging level (1-5 or logging module level name)
   --silent              Silence logging. Overrides --verbosity.
+  --logdev              Expand content of logging message format.
 
 https://refgenie.databio.org
 ```
@@ -59,6 +59,25 @@ optional arguments:
   -c GENOME_CONFIG, --genome-config GENOME_CONFIG
                         Path to local genome configuration file, to read from
                         and/or to create or update, depending on the operation
+```
+
+## `refgenie seek --help`
+
+```console
+version: 0.4.1
+usage: refgenie seek [-h] [-c GENOME_CONFIG] -g GENOME -a ASSET [ASSET ...]
+
+Get the path to a local asset
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -c GENOME_CONFIG, --genome-config GENOME_CONFIG
+                        Path to local genome configuration file, to read from
+                        and/or to create or update, depending on the operation
+  -g GENOME, --genome GENOME
+                        Reference assembly ID, e.g. mm10
+  -a ASSET [ASSET ...], --asset ASSET [ASSET ...]
+                        Name of asset, a key in a genome config file
 ```
 
 ## `refgenie listr --help`
