@@ -67,14 +67,14 @@ def build_argparser():
         return subparsers.add_parser(
             cmd, description=description, help=description)
 
-    subparser_messages = OrderedDict({
+    subparser_messages = {
         INIT_CMD: "Initialize a genome configuration.",
         LIST_LOCAL_CMD: "List available local genomes.",
         LIST_REMOTE_CMD: "List available genomes and assets on server.",
         PULL_CMD: "Download assets.",
         BUILD_CMD: "Build genome assets",
         GET_ASSET_CMD: "Get the path to a local asset"
-    })
+    }
 
     sps = {}
     for cmd, desc in subparser_messages.items():
