@@ -26,7 +26,7 @@ Refgenie provides programmatic access to a standard genome folder structure, so 
 
 ```console
 pip install --user refgenie
-export REFGENIE='genomes.yaml'
+export REFGENIE='genome_config.yaml'
 refgenie init -c $REFGENIE
 ```
 
