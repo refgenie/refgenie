@@ -79,10 +79,18 @@ def build_argparser():
     sps = {}
     for cmd, desc in subparser_messages.items():
         sps[cmd] = add_subparser(cmd, desc)
-        sps[cmd].add_argument(
+        if cmd != INIT_CMD:
+            sps[cmd].add_argument(
             '-c', '--genome-config', dest="genome_config",
             help="Path to local genome configuration file, to read from and/or "
                  "to create or update, depending on the operation")
+
+    # It's required for init
+    sps[INIT_CMD].add_argument(
+            '-c', '--genome-config', dest="genome_config",
+            help="Path to local genome configuration file, to read from and/or "
+                 "to create or update, depending on the operation",
+                 required=True)
 
     sps[INIT_CMD].add_argument('-s', '--genome-server', default=DEFAULT_SERVER,
                 help="URL to use for the genome_server attribute in config file."

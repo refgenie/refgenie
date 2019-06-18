@@ -1,25 +1,5 @@
 # Package refgenconf Documentation
 
-## Class RefgenconfError
-Base exception type for this package
-
-
-## Class MissingAssetError
-Error type for request of an unavailable genome asset.
-
-
-## Class MissingGenomeError
-Error type for request of unknown genome/assembly.
-
-
-## Class MissingConfigDataError
-Missing required configuration instance items
-
-
-## Class UnboundEnvironmentVariablesError
-Use of environment variable that isn't bound to a value.
-
-
 ## Class RefGenConf
 A sort of oracle of available reference genome assembly assets
 
@@ -86,7 +66,7 @@ def genomes_str(self)
 ### get\_asset
 Get an asset for a particular assembly.
 ```python
-def get_asset(self, genome_name, asset_name, strict_exists=True, check_exist=<function RefGenConf.<lambda> at 0x7f052e703158>)
+def get_asset(self, genome_name, asset_name, strict_exists=True, check_exist=<function RefGenConf.<lambda> at 0x7f3b08b88158>)
 ```
 
 #### Parameters:
@@ -150,7 +130,7 @@ def list_genomes_by_asset(self, asset=None)
 ### list\_remote
 List genomes and assets available remotely.
 ```python
-def list_remote(self, get_url=<function RefGenConf.<lambda> at 0x7f052e703378>)
+def list_remote(self, get_url=<function RefGenConf.<lambda> at 0x7f3b08b88378>)
 ```
 
 #### Parameters:
@@ -168,7 +148,7 @@ def list_remote(self, get_url=<function RefGenConf.<lambda> at 0x7f052e703378>)
 ### pull\_asset
 Download and possibly unpack one or more assets for a given ref gen.
 ```python
-def pull_asset(self, genome, assets, genome_config, unpack=True, get_json_url=<function RefGenConf.<lambda> at 0x7f052e703488>, get_main_url=None)
+def pull_asset(self, genome, assets, genome_config, unpack=True, get_json_url=<function RefGenConf.<lambda> at 0x7f3b08b88488>, get_main_url=None)
 ```
 
 #### Parameters:
@@ -214,8 +194,28 @@ def update_genomes(self, genome, asset=None, data=None)
 
 
 
+## Class MissingConfigDataError
+Missing required configuration instance items
+
+
 ## Class GenomeConfigFormatError
 Exception for invalid genome config file format.
+
+
+## Class UnboundEnvironmentVariablesError
+Use of environment variable that isn't bound to a value.
+
+
+## Class MissingGenomeError
+Error type for request of unknown genome/assembly.
+
+
+## Class RefgenconfError
+Base exception type for this package
+
+
+## Class MissingAssetError
+Error type for request of an unavailable genome asset.
 
 
 ### select\_genome\_config
