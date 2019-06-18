@@ -431,7 +431,7 @@ def main():
         check_exist=not args.command == INIT_CMD,  on_missing=lambda fp: fp)
     if gencfg is None:
         raise MissingGenomeConfigError(args.genome_config)
-    _LOGGER.info("Determined genome config: {}".format(gencfg))
+    _LOGGER.debug("Determined genome config: {}".format(gencfg))
 
     if args.command == INIT_CMD:
         _LOGGER.info("Initializing refgenie genome configuration")
