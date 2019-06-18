@@ -386,7 +386,7 @@ def _exec_list(rgc, remote):
         assemblies, assets = rgc.list_remote()
     else:
         pfx = "Local"
-        assemblies, assets = rgc.genomes_str(), rgc.assets_str()
+        assemblies, assets = rgc.list_local()
     return pfx, assemblies, assets
 
 
