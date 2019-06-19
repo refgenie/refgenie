@@ -1,33 +1,13 @@
 # Installing refgenie
 
-Install refgenie from [GitHub releases](https://github.com/databio/refgenie/releases) or from PyPI with `pip`.
+Install refgenie from [GitHub releases](https://github.com/databio/refgenie/releases) or from PyPI with `pip`:
 
+- `pip install --user refgenie`: install into user space.
+- `pip install --user --upgrade refgenie`: update in user space.
+- `pip install refgenie`: install into an active virtual environment.
+- `pip install --upgrade refgenie`: update in virtual environment.
 
-Into user space...
-```console
-pip install --user refgenie
-```
-
-...or into an (active) virtual environment:
-```console
-pip install refgenie
-```
-
-Update with:
-```console
-pip install --user --upgrade refgenie
-```
-or:
-```console
-pip install --upgrade refgenie
-```
-
-See if your install worked; from the command line:
-```console
-refgenie -h
-```
-
-If the `refgenie` executable in not in your `$PATH`, append this to your `.bashrc` or `.profile` (or `.bash_profile` on macOS):
+See if your install worked by calling `refgenie -h` on the command line. If the `refgenie` executable in not in your `$PATH`, append this to your `.bashrc` or `.profile` (or `.bash_profile` on macOS):
 ```console
 export PATH=~/.local/bin:$PATH
 ```

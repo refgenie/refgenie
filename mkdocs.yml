@@ -9,7 +9,6 @@ nav:
     - Introduction: README.md
     - Overview: overview.md
     - Install and configure: install.md
-    
   - How-to guides:
     - Download pre-built assets: download.md
     - Build genome assets: build.md

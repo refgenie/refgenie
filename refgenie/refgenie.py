@@ -79,10 +79,10 @@ def build_argparser():
     sps = {}
     for cmd, desc in subparser_messages.items():
         sps[cmd] = add_subparser(cmd, desc)
+        # It's required for init
         sps[cmd].add_argument(
-            '-c', '--genome-config', dest="genome_config",
-            help="Path to local genome configuration file, to read from and/or "
-                 "to create or update, depending on the operation")
+            '-c', '--genome-config', required=(cmd == INIT_CMD), dest="genome_config",
+            help="Path to local genome configuration file.")
 
     sps[INIT_CMD].add_argument('-s', '--genome-server', default=DEFAULT_SERVER,
                 help="URL to use for the genome_server attribute in config file."
@@ -385,7 +385,7 @@ def _exec_list(rgc, remote):
         assemblies, assets = rgc.list_remote()
     else:
         pfx = "Local"
-        assemblies, assets = rgc.genomes_str(), rgc.assets_str()
+        assemblies, assets = rgc.list_local()
     return pfx, assemblies, assets
 
 
@@ -426,10 +426,11 @@ def main():
         sys.exit(1)
 
     gencfg = yacman.select_config(
-        args.genome_config, CFG_ENV_VARS, on_missing=lambda fp: fp)
+        args.genome_config, CFG_ENV_VARS,
+        check_exist=not args.command == INIT_CMD,  on_missing=lambda fp: fp)
     if gencfg is None:
         raise MissingGenomeConfigError(args.genome_config)
-    _LOGGER.info("Determined genome config: {}".format(gencfg))
+    _LOGGER.debug("Determined genome config: {}".format(gencfg))
 
     if args.command == INIT_CMD:
         _LOGGER.info("Initializing refgenie genome configuration")
