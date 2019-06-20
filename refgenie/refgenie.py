@@ -211,9 +211,14 @@ def refgenie_build(rgc, args):
     def path_data(root, c):
         return {"path": os.path.relpath(root, c.genome_folder)}
 
+
     asset_build_packages = {
         "fasta": {
-            "relative_path": "fasta/{genome}.fa",
+            "assets": {
+                "fasta": "fasta/{genome}.fa",
+                "fai": "fasta/{genome}.fa.fai",
+                "chrom_sizes": "fasta/{genome}.chrom.sizes",
+            },
             "required_inputs": ["fasta"],
             "command_list": [
                 "cp {fasta} {asset_outfolder}/{genome}.fa",
@@ -222,7 +227,9 @@ def refgenie_build(rgc, args):
             ]
         },
         "bowtie2_index": {
-            "relative_path": "bowtie2_index",
+            "assets": {
+                "bowtie2_index": "bowtie2_index",
+            },       
             "required_inputs": ["fasta"],
             "command_list": [
                 "bowtie2-build {fasta} {asset_outfolder}/{genome}"
@@ -256,7 +263,8 @@ def refgenie_build(rgc, args):
 
         pm.run(command_list_populated, target, container=pm.container)
         # Add index information to rgc
-        rgc.update_genomes(genome, asset_key, {"path": asset_build_package["relative_path"].format(**asset_vars)})
+        for asset_key, relative_path in asset_build_package["assets"].items():
+            rgc.update_genomes(genome, asset_key, {"path": relative_path.format(**asset_vars)})
 
         # Write the updated refgenie genome configuration
         rgc.write()
@@ -272,14 +280,6 @@ def refgenie_build(rgc, args):
     if args.docker:
         # Set up some docker stuff
         pm.get_container("nsheff/refgenie", outfolder)
-        # of = os.path.abspath(outfolder)
-        # outfolder = of
-        # cmd = "docker run -itd"
-        # cmd += " -v " + of + ":" + of
-        # cmd += " nsheff/refgenie"
-        # container = pm.checkprint(cmd).rstrip()
-        # _LOGGER.info("Using docker container: " + container)
-        # pm.atexit_register(remove_container, container)
 
     for asset_key in args.asset:
         if asset_key in asset_build_packages.keys():

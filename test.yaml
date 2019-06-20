@@ -22,3 +22,7 @@ genomes:
       path: bowtie2_index
     fasta:
       path: fasta/test.fa
+    fai:
+      path: fasta/test.fa.fai
+    chrom_sizes:
+      path: fasta/test.chrom.sizes
