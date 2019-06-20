@@ -27,6 +27,8 @@ LIST_REMOTE_CMD = "listr"
 GET_ASSET_CMD = "seek"
 
 
+BUILD_SPECIFIC_ARGS = ('fasta', 'gtf', 'context')
+
 # This establishes the API with the server
 refgenie_server_api = {
     "list_available_genomes": "/genomes",
@@ -116,12 +118,16 @@ def build_argparser():
     # the building. These should eventually move to a more flexible system that
     # doesn't require them to be hard-coded here in order to be recognized
 
-    sps[BUILD_CMD].add_argument(
-        '--fasta', required=False, help=SUPPRESS)
+    for arg in BUILD_SPECIFIC_ARGS:
+        sps[BUILD_CMD].add_argument(
+            "--{arg}".format(arg), required=False, help=SUPPRESS)
+
+    # sps[BUILD_CMD].add_argument(
+    #     '--fasta', required=False, help=SUPPRESS)
     # help='Local path or URL to genome sequence file in .fa, .fa.gz, '
     #          'or .2bit format.'
-    sps[BUILD_CMD].add_argument(
-        '--gtf', required=False, help=SUPPRESS)
+    # sps[BUILD_CMD].add_argument(
+    #        '--gtf', required=False, help=SUPPRESS)
     # help='Path to GTF gene annotation file.'
 
 
@@ -175,7 +181,7 @@ def refgenie_build(rgc, args):
      
     # Build specific args
 
-    specific_args = {k: getattr(args,k) for k in ('fasta', 'gtf')}
+    specific_args = {k: getattr(args,k) for k in BUILD_SPECIFIC_ARGS}
 
 
     if args.genome:
@@ -212,6 +218,11 @@ def refgenie_build(rgc, args):
         return {"path": os.path.relpath(root, c.genome_folder)}
 
 
+
+# This dict provides 'asset packages', which specify recipes (commands) to
+# build assets. Each package can produce one or more assets, which are encoded
+# as relative paths. The package name is often the same as the asset name but
+# it need not be. 
     asset_build_packages = {
         "fasta": {
             "assets": {
@@ -233,11 +244,65 @@ def refgenie_build(rgc, args):
             "required_inputs": ["fasta"],
             "command_list": [
                 "bowtie2-build {fasta} {asset_outfolder}/{genome}"
-                ] },
+                ] 
+        },
+        "hisat2_index": {
+            "assets": {
+                "hisat2_index": "hisat2_index",
+            },       
+            "required_inputs": ["fasta"],
+            "command_list": [
+                "hisat2-build {fasta} {asset_outfolder}/{genome}"
+                ] 
+        },
+        "bismark_bt2_index": {
+            "assets": {
+                "bismark_bt2_index": "bismark_bt2_index",
+            },       
+            "required_inputs": ["fasta"],
+            "command_list": [
+                "ln -sf ../{genome}.fa.gz {asset_outfolder}"
+                "bismark_genome_preparation --bowtie2 {fasta} {asset_outfolder}/{genome}"
+                ] 
+        },
+        "bismark_bt1_index": {
+            "assets": {
+                "bismark_bt1_index": "bismark_bt1_index",
+            },       
+            "required_inputs": ["fasta"],
+            "command_list": [
+                "ln -sf ../{genome}.fa.gz {asset_outfolder}"
+                "bismark_genome_preparation {fasta} {asset_outfolder}/{genome}"
+                ] 
+        },  
         "kallisto_index": {
-            "relative_path": "kallisto_index",
-            "command_list": [] }
+            "required_inputs": ["fasta"],
+            "assets": {
+                "kallisto_index": "kallisto_index"
+                }
+            "command_list": [
+                "kallisto index -i {fasta} {asset_outfolder}/{genome}_kallisto_index.idx"
+                ] 
         }
+        "gtf_anno": {
+            "required_inputs": ["gtf"],
+            "assets": {
+                "gtf_anno": "gtf_anno"
+                }
+            "command_list": [
+                "cp {gtf} {asset_outfolder}/{genome}.gtf",
+                ] 
+        }
+        "epilog_index": {
+            "required_inputs": ["fasta", "context"],
+            "assets": {
+                "epilog_index": "epilog_index"
+                }
+            "command_list": [
+                "epilog index -i {fasta} -o {asset_outfolder}/{genome}_{context}.tsv -s {context} -t"
+                ] 
+        }
+    }
 
 
     def build_asset(genome, asset_key, asset_build_package, specific_args):
