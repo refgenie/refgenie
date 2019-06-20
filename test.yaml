@@ -1,5 +1,4 @@
 genome_folder: /ext/yeti/genomes
-#genome_server: http://refgenomes.databio.org
 genome_server: http://refgenomes.uvasomrc.io
 genomes:
   hg38:
@@ -18,3 +17,8 @@ genomes:
       path: rCRS/indexed_hisat2
     indexed_kallisto:
       path: rCRS/indexed_kallisto
+  test:
+    bowtie2_index:
+      path: bowtie2_index
+    fasta:
+      path: fasta/test.fa
