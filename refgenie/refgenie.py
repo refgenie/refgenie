@@ -120,7 +120,7 @@ def build_argparser():
 
     for arg in BUILD_SPECIFIC_ARGS:
         sps[BUILD_CMD].add_argument(
-            "--{arg}".format(arg), required=False, help=SUPPRESS)
+            "--{arg}".format(arg=arg), required=False, help=SUPPRESS)
 
     # sps[BUILD_CMD].add_argument(
     #     '--fasta', required=False, help=SUPPRESS)
@@ -279,25 +279,25 @@ def refgenie_build(rgc, args):
             "required_inputs": ["fasta"],
             "assets": {
                 "kallisto_index": "kallisto_index"
-                }
+                },
             "command_list": [
                 "kallisto index -i {fasta} {asset_outfolder}/{genome}_kallisto_index.idx"
                 ] 
-        }
+        },
         "gtf_anno": {
             "required_inputs": ["gtf"],
             "assets": {
                 "gtf_anno": "gtf_anno"
-                }
+                },
             "command_list": [
                 "cp {gtf} {asset_outfolder}/{genome}.gtf",
                 ] 
-        }
+        },
         "epilog_index": {
             "required_inputs": ["fasta", "context"],
             "assets": {
                 "epilog_index": "epilog_index"
-                }
+                },
             "command_list": [
                 "epilog index -i {fasta} -o {asset_outfolder}/{genome}_{context}.tsv -s {context} -t"
                 ] 
@@ -311,8 +311,8 @@ def refgenie_build(rgc, args):
         asset_outfolder = os.path.join(outfolder, asset_key)
         asset_vars = {"genome": genome,
                       "asset": asset_key,
-                      "asset_outfolder": asset_outfolder,
-                      **specific_args }
+                      "asset_outfolder": asset_outfolder}
+        asset_vars.update(specific_args)
 
 
         print(str([x.format(**asset_vars) for x in asset_build_package["command_list"]]))
