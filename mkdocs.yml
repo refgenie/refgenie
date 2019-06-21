@@ -18,7 +18,6 @@ nav:
   - Reference:
     - Genome configuration file: genome_config.md
     - Glossary: glossary.md
-    - Recipes: recipes.md
     - Usage: usage.md
     - Python API: autodoc_build/refgenconf.md
     - FAQ: faq.md
