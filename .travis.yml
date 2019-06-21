@@ -8,6 +8,7 @@ os:
 install:
   - pip install .
   - pip install -r requirements/requirements-all.txt
+  - pip install -r requirements/requirements-test.txt  
 script: pytest --remote-data --cov=refgenconf
 branches:
   only:
