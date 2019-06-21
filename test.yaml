@@ -39,3 +39,6 @@ genomes:
       path: fasta/hg38test.fa.fai
     fasta:
       path: fasta/hg38test.fa
+  rCRSd:
+    bowtie2:
+      path: indexed_bowtie2
