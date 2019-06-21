@@ -8,6 +8,7 @@ import sys
 
 from ._version import __version__
 from .exceptions import MissingGenomeConfigError, MissingFolderError
+from .asset_build_packages import asset_build_packages
 
 import logmuse
 import pypiper
@@ -97,6 +98,11 @@ def build_argparser():
     sps[BUILD_CMD].add_argument(
         "-d", "--docker", action="store_true",
         help="Run all commands in the refgenie docker container.")
+
+    sps[BUILD_CMD].add_argument(
+        '-v', '--volumes', nargs="+", required=False, default=None,
+        help='If using docker, also mount these folders as volumes')
+
     sps[BUILD_CMD].add_argument(
         '-o', '--outfolder', dest='outfolder', required=False, default=None,
         help='Override the default path to genomes folder, which is the '
@@ -219,93 +225,19 @@ def refgenie_build(rgc, args):
 
 
 
-# This dict provides 'asset packages', which specify recipes (commands) to
-# build assets. Each package can produce one or more assets, which are encoded
-# as relative paths. The package name is often the same as the asset name but
-# it need not be. 
-    asset_build_packages = {
-        "fasta": {
-            "assets": {
-                "fasta": "fasta/{genome}.fa",
-                "fai": "fasta/{genome}.fa.fai",
-                "chrom_sizes": "fasta/{genome}.chrom.sizes",
-            },
-            "required_inputs": ["fasta"],
-            "command_list": [
-                "cp {fasta} {asset_outfolder}/{genome}.fa",
-                "samtools faidx {asset_outfolder}/{genome}.fa",
-                "cut -f 1,2 {asset_outfolder}/{genome}.fa.fai > {asset_outfolder}/{genome}.chrom.sizes"
-            ]
-        },
-        "bowtie2_index": {
-            "assets": {
-                "bowtie2_index": "bowtie2_index",
-            },       
-            "required_inputs": ["fasta"],
-            "command_list": [
-                "bowtie2-build {fasta} {asset_outfolder}/{genome}"
-                ] 
-        },
-        "hisat2_index": {
-            "assets": {
-                "hisat2_index": "hisat2_index",
-            },       
-            "required_inputs": ["fasta"],
-            "command_list": [
-                "hisat2-build {fasta} {asset_outfolder}/{genome}"
-                ] 
-        },
-        "bismark_bt2_index": {
-            "assets": {
-                "bismark_bt2_index": "bismark_bt2_index",
-            },       
-            "required_inputs": ["fasta"],
-            "command_list": [
-                "ln -sf ../{genome}.fa.gz {asset_outfolder}"
-                "bismark_genome_preparation --bowtie2 {fasta} {asset_outfolder}/{genome}"
-                ] 
-        },
-        "bismark_bt1_index": {
-            "assets": {
-                "bismark_bt1_index": "bismark_bt1_index",
-            },       
-            "required_inputs": ["fasta"],
-            "command_list": [
-                "ln -sf ../{genome}.fa.gz {asset_outfolder}"
-                "bismark_genome_preparation {fasta} {asset_outfolder}/{genome}"
-                ] 
-        },  
-        "kallisto_index": {
-            "required_inputs": ["fasta"],
-            "assets": {
-                "kallisto_index": "kallisto_index"
-                },
-            "command_list": [
-                "kallisto index -i {fasta} {asset_outfolder}/{genome}_kallisto_index.idx"
-                ] 
-        },
-        "gtf_anno": {
-            "required_inputs": ["gtf"],
-            "assets": {
-                "gtf_anno": "gtf_anno"
-                },
-            "command_list": [
-                "cp {gtf} {asset_outfolder}/{genome}.gtf",
-                ] 
-        },
-        "epilog_index": {
-            "required_inputs": ["fasta", "context"],
-            "assets": {
-                "epilog_index": "epilog_index"
-                },
-            "command_list": [
-                "epilog index -i {fasta} -o {asset_outfolder}/{genome}_{context}.tsv -s {context} -t"
-                ] 
-        }
-    }
-
-
     def build_asset(genome, asset_key, asset_build_package, specific_args):
+        """
+        Builds assets with pypiper and updates a genome config file.
+
+        This function actually run the build commands in a given build package,
+        and then update the refgenie config file.
+
+        :param str genome: The assembly key; e.g. 'mm10'.
+        :param str asset_key: The unique asset identifier; e.g. 'bowtie2_index'
+        :param dict asset_build_package: A dict (see examples) specifying lists
+            of required inputs, commands to run, and outputs to register as
+            assets.
+        """
         _LOGGER.debug("Asset build package: " + str(asset_build_package))
 
         asset_outfolder = os.path.join(outfolder, asset_key)
@@ -344,7 +276,11 @@ def refgenie_build(rgc, args):
     container = None
     if args.docker:
         # Set up some docker stuff
-        pm.get_container("nsheff/refgenie", outfolder)
+        if args.volumes:
+            volumes = volumes.append(outfolder)
+        else:
+            volumes = outfolder
+        pm.get_container("nsheff/refgenie", volumes)
 
     for asset_key in args.asset:
         if asset_key in asset_build_packages.keys():
@@ -358,39 +294,39 @@ def refgenie_build(rgc, args):
             _LOGGER.warn("Recipe does not exist for asset '{}'".format(asset_key))
 
 
-    if False:
-        # pm.make_sure_path_exists(outfolder)
-        conversions = {}
-        conversions[".2bit"] = "twoBitToFa {INPUT} {OUTPUT}"
-        conversions[".gz"] = tk.ziptool + " -cd {INPUT} > {OUTPUT}"
+    # if False:
+    #     # pm.make_sure_path_exists(outfolder)
+    #     conversions = {}
+    #     conversions[".2bit"] = "twoBitToFa {INPUT} {OUTPUT}"
+    #     conversions[".gz"] = tk.ziptool + " -cd {INPUT} > {OUTPUT}"
 
-        # Copy fasta file to genome folder structure
-        local_raw_fasta = genome + ".fa"
-        raw_fasta = os.path.join(outfolder, local_raw_fasta)
+    #     # Copy fasta file to genome folder structure
+    #     local_raw_fasta = genome + ".fa"
+    #     raw_fasta = os.path.join(outfolder, local_raw_fasta)
 
-        input_fasta, cmd = copy_or_download_file(args.fasta, outfolder)
-        pm.run(cmd, input_fasta)
+    #     input_fasta, cmd = copy_or_download_file(args.fasta, outfolder)
+    #     pm.run(cmd, input_fasta)
 
-        cmd = convert_file(input_fasta, raw_fasta, conversions)
-        if cmd:
-            pm.run(cmd, raw_fasta, container=pm.container)
+    #     cmd = convert_file(input_fasta, raw_fasta, conversions)
+    #     if cmd:
+    #         pm.run(cmd, raw_fasta, container=pm.container)
 
 
-    # Copy annotation file (if any) to folder structure
-    if args.gtf:
-        annotation_file_unzipped = os.path.join(outfolder, genome + ".gtf")
-        annotation_file, cmd = copy_or_download_file(args.gtf, outfolder)
-        pm.run(cmd, annotation_file)
+    # # Copy annotation file (if any) to folder structure
+    # if args.gtf:
+    #     annotation_file_unzipped = os.path.join(outfolder, genome + ".gtf")
+    #     annotation_file, cmd = copy_or_download_file(args.gtf, outfolder)
+    #     pm.run(cmd, annotation_file)
 
-        cmd = convert_file(annotation_file, annotation_file_unzipped, conversions)
-        pm.run(cmd, annotation_file_unzipped)
+    #     cmd = convert_file(annotation_file, annotation_file_unzipped, conversions)
+    #     pm.run(cmd, annotation_file_unzipped)
 
-    #   cmd = "cp " + args.gtf + " " + annotation_file
-    #   cmd2 = tk.ziptool + " -d " + annotation_file
-    #   pm.run([cmd, cmd2], annotation_file_unzipped)
+    # #   cmd = "cp " + args.gtf + " " + annotation_file
+    # #   cmd2 = tk.ziptool + " -d " + annotation_file
+    # #   pm.run([cmd, cmd2], annotation_file_unzipped)
 
-    else:
-        _LOGGER.debug("* No GTF gene annotations provided. Skipping this step.")
+    # else:
+    #     _LOGGER.debug("* No GTF gene annotations provided. Skipping this step.")
 
 
     # # Bowtie indexes

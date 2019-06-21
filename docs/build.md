@@ -64,7 +64,7 @@ This README describes the sequences:
 
 ```console
 INPUT=ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz
-GTF=ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_23/gencode.v23.primary_assembly.annotation.gtf.gz
+GTF=ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/gencode.v29.primary_assembly.annotation.gtf.gz
 refgenie build -i ${INPUT} -a ${GTF} -n hg38
 ```
 
