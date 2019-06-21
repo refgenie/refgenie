@@ -2,10 +2,9 @@
 
 ## Motivation
 
-Enormous effort goes into assembling and curating reference genomes. Reference assemblies are the starting point for many downstream tools, such as sequence alignment and annotation. Many tools produce independent assets that accompany a genome assembly; for instance, aligners like `bwa` or `bowtie2` must *hash* the genome, creating *indexes* to improve alignment performance. These indexes are typically shared among many pipelines and tools, so it's common practice for a research group to organize a central folder for reference genome assets, which includes indexes and other files like annotations. In addition to saving disk space, this simplifies sharing software among group members. Structuring assets uniformly for every reference assembly allow us to write software that can easily adapt from one reference assembly to the next. However, each group typically does this independently. If we could standardize this across groups, it would make it easier to share scripts and software that relies on a standard organization.
+Reference genome assemblies are the starting point for many downstream tools, such as sequence alignment and annotation. Many tools produce independent assets that accompany a genome assembly; for instance, aligners like `bwa` or `bowtie2` must *hash* the genome, creating *indexes* to improve alignment performance. These indexes are typically shared across tools, so it's common for a research group to organize a central folder for reference genome assets, which includes indexes and other files like annotations. In addition to saving disk space, this simplifies sharing software among group members. Structuring assets uniformly allows software to adapt from one reference assembly to the next. However, each group typically does this independently. If we could standardize this across groups, it would make it easier to share scripts and software that use genome-related resources.
 
-
-One effort to distribute standard, organized reference sequences and annotation files is Illumina's *IGenomes* project, which distributes pre-built archives of common assets for common genomes. This allows multiple groups to share one standard folder organization, but it has a few limitations: IGenomes doesn't provide automated software to produce a standard reference for an arbitrary genome. This is problematic because we often need to align to a custom genome, such as a spike-in control or a personal genome assembly. Furthermore, packaging many resources together in a single archive precludes itemized access to individual genome assets, costing computational resources.
+One effort to distribute standard, organized reference sequences and annotation files is Illumina's *IGenomes* project, which distributes pre-built archives of common assets for common genomes. This allows multiple groups to share one standard, but it has a few limitations: IGenomes doesn't provide software to produce a standard reference for an arbitrary genome. This is problematic because we often need to align to a custom genome, such as a spike-in control or a personal genome assembly. Furthermore, packaging many resources together in a single archive precludes itemized access to individual genome assets, costing computational resources.
 
 <img src="../img/refgenie_interfaces.svg" style="float:right; width:350px">
 
@@ -14,7 +13,9 @@ One effort to distribute standard, organized reference sequences and annotation 
  **Refgenie simultaneously provides structure to manually build assets while improving modular access to pre-built assets in the same system.** Refgenie does this by providing two ways to obtain genome assets (see figure at right).
 
   1. Web-based access to individual pre-built assets via web interface or application programming interface (API)
-  2. An interface for scripted asset "builds," each of which produces structured output for arbitrary genome inputs. This enables users to either retrieve or produce *identically structured* outputs on demand for *any genome* of interest, including new assemblies, private assemblies, or custom genomes for which a public set of assets cannot exist. 
+  2. An interface for scripted asset "builds," each of which produces structured output for arbitrary genome inputs.
+
+This two-pronged approach enables users to either retrieve or produce *identically structured* outputs on demand for *any genome* of interest, including new assemblies, private assemblies, or custom genomes for which a public set of assets cannot exist. 
 
 ## Refgenie ecosystem
 

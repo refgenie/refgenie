@@ -1,29 +1,5 @@
 # Package refgenconf Documentation
 
-## Class MissingAssetError
-Error type for request of an unavailable genome asset.
-
-
-## Class RefgenconfError
-Base exception type for this package
-
-
-## Class MissingGenomeError
-Error type for request of unknown genome/assembly.
-
-
-## Class UnboundEnvironmentVariablesError
-Use of environment variable that isn't bound to a value.
-
-
-## Class GenomeConfigFormatError
-Exception for invalid genome config file format.
-
-
-## Class MissingConfigDataError
-Missing required configuration instance items
-
-
 ## Class RefGenConf
 A sort of oracle of available reference genome assembly assets
 
@@ -31,8 +7,13 @@ A sort of oracle of available reference genome assembly assets
 ### assets\_dict
 Map each assembly name to a list of available asset names.
 ```python
-def assets_dict(self)
+def assets_dict(self, order=None)
 ```
+
+#### Parameters:
+
+- `order` -- ``:  function(str) -> object how to key genome IDs for sort
+
 
 #### Returns:
 
@@ -44,7 +25,7 @@ def assets_dict(self)
 ### assets\_str
 Create a block of text representing genome-to-asset mapping.
 ```python
-def assets_str(self, offset_text='  ', asset_sep='; ', genome_assets_delim=': ')
+def assets_str(self, offset_text='  ', asset_sep='; ', genome_assets_delim=': ', order=None)
 ```
 
 #### Parameters:
@@ -52,6 +33,7 @@ def assets_str(self, offset_text='  ', asset_sep='; ', genome_assets_delim=': ')
 - `offset_text` -- `str`:  text that begins each line of the textrepresentation that's produced
 - `asset_sep` -- `str`:  the delimiter between names of types of assets,within each genome line
 - `genome_assets_delim` -- `str`:  the delimiter to place betweenreference genome assembly name and its list of asset names
+- `order` -- ``:  function(str) -> object how to key genome IDs and assetnames for sort
 
 
 #### Returns:
@@ -61,10 +43,30 @@ def assets_str(self, offset_text='  ', asset_sep='; ', genome_assets_delim=': ')
 
 
 
+### filepath
+Determine path to a particular asset for a particular genome.
+```python
+def filepath(self, genome, asset, ext='.tar')
+```
+
+#### Parameters:
+
+- `genome` -- `str`:  reference genome iD
+- `asset` -- `str`:  asset name
+- `ext` -- `str`:  file extension
+
+
+#### Returns:
+
+`str`:  path to asset for given genome and asset kind/name
+
+
+
+
 ### genomes\_list
 Get a list of this configuration's reference genome assembly IDs.
 ```python
-def genomes_list(self)
+def genomes_list(self, order=None)
 ```
 
 #### Returns:
@@ -77,8 +79,13 @@ def genomes_list(self)
 ### genomes\_str
 Get as single string this configuration's reference genome assembly IDs.
 ```python
-def genomes_str(self)
+def genomes_str(self, order=None)
 ```
+
+#### Parameters:
+
+- `order` -- ``:  function(str) -> object how to key genome IDs for sort
+
 
 #### Returns:
 
@@ -90,7 +97,7 @@ def genomes_str(self)
 ### get\_asset
 Get an asset for a particular assembly.
 ```python
-def get_asset(self, genome_name, asset_name, strict_exists=True, check_exist=<function RefGenConf.<lambda> at 0x7fc96c0d7158>)
+def get_asset(self, genome_name, asset_name, strict_exists=True, check_exist=<function RefGenConf.<lambda> at 0x7f9b5c8f9378>)
 ```
 
 #### Parameters:
@@ -118,12 +125,13 @@ def get_asset(self, genome_name, asset_name, strict_exists=True, check_exist=<fu
 ### list\_assets\_by\_genome
 List types/names of assets that are available for one--or all--genomes.
 ```python
-def list_assets_by_genome(self, genome=None)
+def list_assets_by_genome(self, genome=None, order=None)
 ```
 
 #### Parameters:
 
 - `genome` -- `str | NoneType`:  reference genome assembly ID, optional;if omitted, the full mapping from genome to asset names
+- `order` -- ``:  function(str) -> object how to key genome IDs and assetnames for sort
 
 
 #### Returns:
@@ -136,12 +144,13 @@ def list_assets_by_genome(self, genome=None)
 ### list\_genomes\_by\_asset
 List assemblies for which a particular asset is available.
 ```python
-def list_genomes_by_asset(self, asset=None)
+def list_genomes_by_asset(self, asset=None, order=None)
 ```
 
 #### Parameters:
 
 - `asset` -- `str | NoneType`:  name of type of asset of interest, optional
+- `order` -- ``:  function(str) -> object how to key genome IDs and assetnames for sort
 
 
 #### Returns:
@@ -151,15 +160,34 @@ def list_genomes_by_asset(self, asset=None)
 
 
 
+### list\_local
+List locally available reference genome IDs and assets by ID.
+```python
+def list_local(self, order=None)
+```
+
+#### Parameters:
+
+- `order` -- ``:  function(str) -> object how to key genome IDs and assetnames for sort
+
+
+#### Returns:
+
+`str, str`:  text reps of locally available genomes and assets
+
+
+
+
 ### list\_remote
 List genomes and assets available remotely.
 ```python
-def list_remote(self, get_url=<function RefGenConf.<lambda> at 0x7fc96c0d7378>)
+def list_remote(self, get_url=<function RefGenConf.<lambda> at 0x7f9b5c8f9620>, order=None)
 ```
 
 #### Parameters:
 
 - `get_url` -- `function(refgenconf.RefGenConf) -> str`:  how to determineURL request, given RefGenConf instance
+- `order` -- ``:  function(str) -> object how to key genome IDs and assetnames for sort
 
 
 #### Returns:
@@ -172,7 +200,7 @@ def list_remote(self, get_url=<function RefGenConf.<lambda> at 0x7fc96c0d7378>)
 ### pull\_asset
 Download and possibly unpack one or more assets for a given ref gen.
 ```python
-def pull_asset(self, genome, assets, genome_config, unpack=True, get_json_url=<function RefGenConf.<lambda> at 0x7fc96c0d7488>, get_main_url=None)
+def pull_asset(self, genome, assets, genome_config, unpack=True, force=None, get_json_url=<function RefGenConf.<lambda> at 0x7f9b5c8f9730>, get_main_url=None, build_signal_handler=<function _handle_sigint at 0x7f9b5ce178c8>)
 ```
 
 #### Parameters:
@@ -181,8 +209,10 @@ def pull_asset(self, genome, assets, genome_config, unpack=True, get_json_url=<f
 - `assets` -- `str`:  name(s) of particular asset(s) to fetch
 - `genome_config` -- `str`:  path to genome configuration file to update
 - `unpack` -- `bool`:  whether to unpack a tarball
+- `force` -- `bool | NoneType`:  how to handle case in which asset pathalready exists; null for prompt (on a per-asset basis), False to effectively auto-reply No to the prompt to replace existing file, and True to auto-replay Yes for existing asset replacement.
 - `get_json_url` -- `function(str, str, str) -> str`:  how to build URL fromgenome server URL base, genome, and asset
 - `get_main_url` -- `function(str) -> str`:  how to get archive URL frommain URL
+- `build_signal_handler` -- `function(str) -> function`:  how to createa signal handler to use during the download; the single argument to this function factory is the download filepath
 
 
 #### Returns:
@@ -218,10 +248,34 @@ def update_genomes(self, genome, asset=None, data=None)
 
 
 
+## Class MissingGenomeError
+Error type for request of unknown genome/assembly.
+
+
+## Class MissingConfigDataError
+Missing required configuration instance items
+
+
+## Class UnboundEnvironmentVariablesError
+Use of environment variable that isn't bound to a value.
+
+
+## Class RefgenconfError
+Base exception type for this package
+
+
+## Class GenomeConfigFormatError
+Exception for invalid genome config file format.
+
+
+## Class MissingAssetError
+Error type for request of an unavailable genome asset.
+
+
 ### select\_genome\_config
 Get path to genome configuration file.
 ```python
-def select_genome_config(filename, conf_env_vars=None)
+def select_genome_config(filename, conf_env_vars=None, **kwargs)
 ```
 
 #### Parameters:
@@ -238,4 +292,4 @@ def select_genome_config(filename, conf_env_vars=None)
 
 
 
-**Version Information**: `refgenconf` v0.1.2, generated by `lucidoc` v0.4dev
+**Version Information**: `refgenconf` v0.2.1-dev, generated by `lucidoc` v0.4dev
