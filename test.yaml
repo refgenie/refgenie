@@ -26,3 +26,16 @@ genomes:
       path: fasta/test.fa.fai
     chrom_sizes:
       path: fasta/test.chrom.sizes
+    gtf_anno:
+      path: gtf_anno
+    bismark_bt2_index:
+      path: bismark_bt2_index
+    bismark_bt1_index:
+      path: bismark_bt1_index
+  hg38test:
+    chrom_sizes:
+      path: fasta/hg38test.chrom.sizes
+    fai:
+      path: fasta/hg38test.fa.fai
+    fasta:
+      path: fasta/hg38test.fa

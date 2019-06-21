@@ -12,17 +12,19 @@
 #   will be checked for existence before the commands are executed.
 
 asset_build_packages = {
-    "fastagz": {
+    "fasta": {
+        "description": "Given a gzipped fasta file, produces fasta, fai, and chrom_sizes assets",
         "assets": {
-            "fasta": "fasta/{genome}.fa.gz",
-            "fai": "fasta/{genome}.fa.gz.fai",
+            "fasta": "fasta/{genome}.fa",
+            "fai": "fasta/{genome}.fa.fai",
             "chrom_sizes": "fasta/{genome}.chrom.sizes",
         },
         "required_inputs": ["fasta"],
         "command_list": [
             "cp {fasta} {asset_outfolder}/{genome}.fa.gz",
-            "samtools faidx {asset_outfolder}/{genome}.fa.gz",
-            "cut -f 1,2 {asset_outfolder}/{genome}.fa.gz.fai > {asset_outfolder}/{genome}.chrom.sizes"
+            "gzip -d {asset_outfolder}/{genome}.fa.gz",
+            "samtools faidx {asset_outfolder}/{genome}.fa",
+            "cut -f 1,2 {asset_outfolder}/{genome}.fa.fai > {asset_outfolder}/{genome}.chrom.sizes",
         ]
     },
     "bowtie2_index": {
@@ -31,7 +33,7 @@ asset_build_packages = {
         },       
         "required_inputs": ["fasta"],
         "command_list": [
-            "bowtie2-build {fasta} {asset_outfolder}/{genome}"
+            "bowtie2-build {fasta} {asset_outfolder}/{genome}",
             ] 
     },
     "hisat2_index": {
@@ -44,23 +46,27 @@ asset_build_packages = {
             ] 
     },
     "bismark_bt2_index": {
+        "description": "The fasta asset must be built first for this to work.",
+        "required_assets": ["fasta"],
+        "required_inputs": [],
         "assets": {
             "bismark_bt2_index": "bismark_bt2_index",
         },       
-        "required_inputs": ["fasta"],
         "command_list": [
-            "ln -sf ../{genome}.fa.gz {asset_outfolder}"
-            "bismark_genome_preparation --bowtie2 {fasta} {asset_outfolder}/{genome}"
+            "ln -sf ../fasta/{genome}.fa {asset_outfolder}",
+            "bismark_genome_preparation --bowtie2 {asset_outfolder}"
             ] 
     },
     "bismark_bt1_index": {
+        "description": "The fasta asset must be built first for this to work.",
+        "required_assets": ["fasta"],
+        "required_inputs": [],
         "assets": {
             "bismark_bt1_index": "bismark_bt1_index",
         },       
-        "required_inputs": ["fasta"],
         "command_list": [
-            "ln -sf ../{genome}.fa.gz {asset_outfolder}"
-            "bismark_genome_preparation {fasta} {asset_outfolder}/{genome}"
+            "ln -sf ../fasta/{genome}.fa {asset_outfolder}",
+            "bismark_genome_preparation {asset_outfolder}"
             ] 
     },  
     "kallisto_index": {
@@ -91,3 +97,5 @@ asset_build_packages = {
             ] 
     }
 }
+
+
