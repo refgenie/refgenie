@@ -56,7 +56,7 @@ See [further reading on downloading assets](download.md).
 
 
 ```console
-refgenie build --input hg38.fa.gz --asset kallisto
+refgenie build --genome hg38 --asset kallisto_index --fasta hg38.fa.gz
 ```
 
 See [further reading on building assets](build.md).
