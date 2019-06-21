@@ -349,6 +349,10 @@ def refgenie_build(rgc, args):
     for asset_key in args.asset:
         if asset_key in asset_build_packages.keys():
             asset_build_package = asset_build_packages[asset_key]
+            _LOGGER.debug(specific_args)
+            for required_input in asset_build_package["required_inputs"]:
+                if not specific_args[required_input]:
+                    raise ValueError("Argument '{}' is required to build asset '{}', but not provided".format(required_input, asset_key))
             build_asset(args.genome, asset_key, asset_build_package, specific_args)
         else:
             _LOGGER.warn("Recipe does not exist for asset '{}'".format(asset_key))
