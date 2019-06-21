@@ -20,6 +20,7 @@ asset_build_packages = {
             "chrom_sizes": "fasta/{genome}.chrom.sizes",
         },
         "required_inputs": ["fasta"],
+        "required_assets": [],
         "command_list": [
             "cp {fasta} {asset_outfolder}/{genome}.fa.gz",
             "gzip -d {asset_outfolder}/{genome}.fa.gz",
@@ -30,25 +31,27 @@ asset_build_packages = {
     "bowtie2_index": {
         "assets": {
             "bowtie2_index": "bowtie2_index",
-        },       
-        "required_inputs": ["fasta"],
+        },
+        "required_inputs": [],
+        "required_assets": ["fasta"],
         "command_list": [
-            "bowtie2-build {fasta} {asset_outfolder}/{genome}",
+            "bowtie2-build {asset_outfolder}/../fasta/{genome}.fa {asset_outfolder}/{genome}",
             ] 
     },
     "hisat2_index": {
         "assets": {
             "hisat2_index": "hisat2_index",
-        },       
-        "required_inputs": ["fasta"],
+        },     
+        "required_inputs": [],
+        "required_assets": ["fasta"],
         "command_list": [
-            "hisat2-build {fasta} {asset_outfolder}/{genome}"
+            "hisat2-build {asset_outfolder}/../fasta/{genome}.fa {asset_outfolder}/{genome}"
             ] 
     },
     "bismark_bt2_index": {
         "description": "The fasta asset must be built first for this to work.",
-        "required_assets": ["fasta"],
         "required_inputs": [],
+        "required_assets": ["fasta"],
         "assets": {
             "bismark_bt2_index": "bismark_bt2_index",
         },       
@@ -59,8 +62,8 @@ asset_build_packages = {
     },
     "bismark_bt1_index": {
         "description": "The fasta asset must be built first for this to work.",
-        "required_assets": ["fasta"],
         "required_inputs": [],
+        "required_assets": ["fasta"],
         "assets": {
             "bismark_bt1_index": "bismark_bt1_index",
         },       
@@ -70,16 +73,18 @@ asset_build_packages = {
             ] 
     },  
     "kallisto_index": {
-        "required_inputs": ["fasta"],
+        "required_inputs": [],
+        "required_assets": ["fasta"],
         "assets": {
             "kallisto_index": "kallisto_index"
             },
         "command_list": [
-            "kallisto index -i {fasta} {asset_outfolder}/{genome}_kallisto_index.idx"
+            "kallisto index -i {asset_outfolder}/{genome}_kallisto_index.idx {asset_outfolder}/../fasta/{genome}.fa"
             ] 
     },
     "gtf_anno": {
         "required_inputs": ["gtf"],
+        "required_assets": [],
         "assets": {
             "gtf_anno": "gtf_anno"
             },
@@ -88,12 +93,13 @@ asset_build_packages = {
             ] 
     },
     "epilog_index": {
-        "required_inputs": ["fasta", "context"],
+        "required_inputs": ["context"],
+        "required_assets": ["fasta"],
         "assets": {
             "epilog_index": "epilog_index"
             },
         "command_list": [
-            "epilog index -i {fasta} -o {asset_outfolder}/{genome}_{context}.tsv -s {context} -t"
+            "epilog index -i {asset_outfolder}/../fasta/{genome}.fa -o {asset_outfolder}/{genome}_{context}.tsv -s {context} -t"
             ] 
     }
 }
