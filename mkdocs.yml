@@ -33,3 +33,10 @@ plugins:
     autodoc_package: "refgenconf"
     no_top_level: true
 - search
+
+
+navbar:
+  left:
+  - text: Refgenomes server
+    icon: fa-server
+    href: http://refgenomes.databio.org

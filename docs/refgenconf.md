@@ -24,4 +24,18 @@ Use this to show all available remote assets:
 rgc.list_remote()
 ```
 
-See the complete [refgenie python API](/autodoc_build/refgenconf) for details.
+In a tool, you're probably most interested in using refgenie to locate reference genome assets, for which you want to use the `get_asset` function. For example:
+
+```python
+# identify genome
+genome = "hg38"
+
+# get the local path to bowtie2 indexes:
+bt2idx = rgc.get_asset(genome, "bowtie2_index")
+
+# run bowtie2...
+```
+
+This enables you to write python software that will work on any computing environment without having to worry about passing around brittle environment-specific file paths.
+
+See the complete [refgenie python API](/autodoc_build/refgenconf) for more details.
