@@ -60,4 +60,14 @@ refgenie build --genome hg38 --asset kallisto_index --fasta hg38.fa.gz
 
 See [further reading on building assets](build.md).
 
+### Retrieving paths to refgenie-managed assets
+
+Once you've populated your refgenie with a few assets, it's easy to get paths to them:
+
+```console
+refgenie seek --genome mm10 --asset bowtie2_index
+```
+
+This will return the path to the particular asset of interest, regardless of your computing environment. This gives you an ultra-portable asset manager!
+
 If you want to read more about the motivation behind refgenie and the software engineering that makes refgenie work, proceed next to the [overview](overview.md).
