@@ -26,7 +26,7 @@ PULL_CMD = "pull"
 LIST_LOCAL_CMD = "list"
 LIST_REMOTE_CMD = "listr"
 GET_ASSET_CMD = "seek"
-INSERT_CMD = "insert"
+INSERT_CMD = "add"
 
 
 BUILD_SPECIFIC_ARGS = ('fasta', 'gtf', 'context')
@@ -196,7 +196,7 @@ def get_asset_vars(genome, asset_key, outfolder, specific_args=None):
     return asset_vars
 
 
-def refgenie_insert(rgc, args):
+def refgenie_add(rgc, args):
     outfolder = os.path.abspath(os.path.join(rgc.genome_folder, args.genome))
     asset_vars = get_asset_vars(args.genome, args.asset, outfolder)
     rgc.update_genomes(args.genome, args.asset, {"path": args.path.format(**asset_vars)})
@@ -544,11 +544,11 @@ def main():
 
     elif args.command == INSERT_CMD:
         if len(args.asset) > 1:
-            raise NotImplementedError("Can only insert 1 asset at a time")
+            raise NotImplementedError("Can only add 1 asset at a time")
         else:
             # recast from list to str
             args.asset = args.asset[0]
-        refgenie_insert(rgc, args)
+        refgenie_add(rgc, args)
 
     elif args.command == PULL_CMD:
         outdir = rgc[CFG_FOLDER_KEY]
