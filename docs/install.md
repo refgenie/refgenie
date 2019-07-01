@@ -33,3 +33,11 @@ Now you can use the `list` command to show local assets (which will be empty at 
 refgenie list
 refgenie listr
 ```
+
+# Seeking assets
+
+Use the `seek` command to get paths to local assets you have already built or pulled:
+
+```console
+refgenie seek -g GENOME -a ASSET
+```

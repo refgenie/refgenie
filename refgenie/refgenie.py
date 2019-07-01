@@ -26,6 +26,7 @@ PULL_CMD = "pull"
 LIST_LOCAL_CMD = "list"
 LIST_REMOTE_CMD = "listr"
 GET_ASSET_CMD = "seek"
+INSERT_CMD = "add"
 
 
 BUILD_SPECIFIC_ARGS = ('fasta', 'gtf', 'context')
@@ -75,8 +76,9 @@ def build_argparser():
         LIST_LOCAL_CMD: "List available local genomes.",
         LIST_REMOTE_CMD: "List available genomes and assets on server.",
         PULL_CMD: "Download assets.",
-        BUILD_CMD: "Build genome assets",
-        GET_ASSET_CMD: "Get the path to a local asset"
+        BUILD_CMD: "Build genome assets.",
+        GET_ASSET_CMD: "Get the path to a local asset.",
+        INSERT_CMD: "Insert a local asset into the configuration file."
     }
 
     sps = {}
@@ -108,7 +110,7 @@ def build_argparser():
         help='Override the default path to genomes folder, which is the '
              'genome_folder attribute in the genome configuration file.')
 
-    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD]:
+    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD]:
         sps[cmd].add_argument(
             "-g", "--genome", required=True,
             help="Reference assembly ID, e.g. mm10")
@@ -119,6 +121,10 @@ def build_argparser():
     sps[PULL_CMD].add_argument(
         "-u", "--no-untar", action="store_true",
         help="Do not extract tarballs.")
+
+    sps[INSERT_CMD].add_argument(
+        "-p", "--path", required=True,
+        help="Relative path to asset")
 
     # Finally, arguments to the build command to give the files needed to do
     # the building. These should eventually move to a more flexible system that
@@ -177,6 +183,26 @@ def default_config_file():
     return os.path.join(os.path.dirname(__file__), "refgenie.yaml")
 
 
+def get_asset_vars(genome, asset_key, outfolder, specific_args=None):
+    """
+    Gives a dict with variables used to populate an asset path.
+    """
+    asset_outfolder = os.path.join(outfolder, asset_key)
+    asset_vars = {"genome": genome,
+                  "asset": asset_key,
+                  "asset_outfolder": asset_outfolder}
+    if specific_args:
+        asset_vars.update(specific_args)
+    return asset_vars
+
+
+def refgenie_add(rgc, args):
+    outfolder = os.path.abspath(os.path.join(rgc.genome_folder, args.genome))
+    asset_vars = get_asset_vars(args.genome, args.asset, outfolder)
+    rgc.update_genomes(args.genome, args.asset, {"path": args.path.format(**asset_vars)})
+    # Write the updated refgenie genome configuration
+    rgc.write()
+
 def refgenie_build(rgc, args):
     """
     Runs the refgenie build recipe.
@@ -225,7 +251,7 @@ def refgenie_build(rgc, args):
 
 
 
-    def build_asset(genome, asset_key, asset_build_package, specific_args):
+    def build_asset(genome, asset_key, asset_build_package, outfolder, specific_args):
         """
         Builds assets with pypiper and updates a genome config file.
 
@@ -239,12 +265,7 @@ def refgenie_build(rgc, args):
             assets.
         """
         _LOGGER.debug("Asset build package: " + str(asset_build_package))
-
-        asset_outfolder = os.path.join(outfolder, asset_key)
-        asset_vars = {"genome": genome,
-                      "asset": asset_key,
-                      "asset_outfolder": asset_outfolder}
-        asset_vars.update(specific_args)
+        get_asset_vars(genome, asset_key, outfolder, specific_args)
 
 
         print(str([x.format(**asset_vars) for x in asset_build_package["command_list"]]))
@@ -282,18 +303,24 @@ def refgenie_build(rgc, args):
             volumes = outfolder
         pm.get_container("nsheff/refgenie", volumes)
 
+
     for asset_key in args.asset:
         if asset_key in asset_build_packages.keys():
             asset_build_package = asset_build_packages[asset_key]
             _LOGGER.debug(specific_args)
+            required_inputs = ", ".join(asset_build_package["required_inputs"])
+            _LOGGER.info("Inputs required to build '{}': {}".format(asset_key, required_inputs))
             for required_input in asset_build_package["required_inputs"]:
                 if not specific_args[required_input]:
                     raise ValueError("Argument '{}' is required to build asset '{}', but not provided".format(required_input, asset_key))
 
             for required_asset in asset_build_package["required_assets"]:
-                if not rgc.get_asset(args.genome, required_asset):
-                    raise ValueError("Asset '{}' is required to build asset '{}', but not provided".format(required_input, asset_key))                    
-            build_asset(args.genome, asset_key, asset_build_package, specific_args)
+                try:
+                    if not rgc.get_asset(args.genome, required_asset):
+                        raise ValueError("Asset '{}' is required to build asset '{}', but not provided".format(required_asset, asset_key))                    
+                except refgenconf.exceptions.MissingGenomeError:
+                        raise ValueError("Asset '{}' is required to build asset '{}', but not provided".format(required_asset, asset_key))                    
+            build_asset(args.genome, asset_key, asset_build_package, outfolder, specific_args)
         else:
             _LOGGER.warn("Recipe does not exist for asset '{}'".format(asset_key))
 
@@ -514,6 +541,14 @@ def main():
         _LOGGER.debug("getting asset: '{}/{}'".format(args.genome, args.asset))
         print(" ".join([rgc.get_asset(args.genome, asset) for asset in args.asset]))
         return
+
+    elif args.command == INSERT_CMD:
+        if len(args.asset) > 1:
+            raise NotImplementedError("Can only add 1 asset at a time")
+        else:
+            # recast from list to str
+            args.asset = args.asset[0]
+        refgenie_add(rgc, args)
 
     elif args.command == PULL_CMD:
         outdir = rgc[CFG_FOLDER_KEY]

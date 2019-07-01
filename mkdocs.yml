@@ -13,8 +13,9 @@ nav:
     - Download pre-built assets: download.md
     - Build genome assets: build.md
     - Use refgenie from python: refgenconf.md
+    - Use refgenie with iGenomes: igenomes.md
     - Use external assets: external_assets.md
-    - Run my own server: refgenieserver.md
+    - Run my own asset server: refgenieserver.md
   - Reference:
     - Genome configuration file: genome_config.md
     - Glossary: glossary.md
@@ -33,3 +34,10 @@ plugins:
     autodoc_package: "refgenconf"
     no_top_level: true
 - search
+
+
+navbar:
+  left:
+  - text: Refgenomes server
+    icon: fa-server
+    href: http://refgenomes.databio.org

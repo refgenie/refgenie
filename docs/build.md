@@ -2,7 +2,7 @@
 
 Once you've [installed refgenie](install.md), you can use `refgenie pull` to [download pre-built assets](download.md) without installing any additional software. However, you may need to use the `build` function for genomes or assets that are not available on the server. 
 
-If you want to build assets, you'll need to install the building software for the asset you want to build. You have two choices to get that software, you can either [install building software natively](#install_building_software_natively), or use a [docker image](#docker). Once you're set up with all the additional software, you simply run `refgenie build`, passing it any necessary input arguments called for by the asset recipe.
+If you want to build assets, you'll need to install the building software for the asset you want to build. You have two choices to get that software: you can either install building software natively, or use a docker image. Once you're set up, you simply run `refgenie build`, passing it any necessary input arguments called for by the asset recipe.
 
 ## Install building software natively
 
