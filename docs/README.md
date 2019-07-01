@@ -34,20 +34,19 @@ refgenie listr
 ### Downloading indexes and assets for a reference genome
 
 ```console
-refgenie pull --genome hg38 --asset bowtie2
+refgenie pull --genome hg38 --asset bowtie2_index
 ```
 
 Response:
 ```console
-Starting pull for 'hg38/bowtie2'
-'hg38/bowtie2' archive size: 3.5GB
-Downloading URL: http://refgenomes.databio.org/asset/hg38/bowtie2/archive
-...
+Starting pull for 'hg38/bowtie2_index'
+'hg38/bowtie2_index' archive size: 3.5GB
+Downloading URL: http://refgenomes.databio.org/asset/hg38/bowtie2/archive ...
 ```
 
 Pull many assets at once:
 ```console
-refgenie pull --genome mm10 --asset kallisto TSS_enrichment mappability
+refgenie pull --genome mm10 --asset bowtie2_index hisat2_index
 ```
 
 See [further reading on downloading assets](download.md).
