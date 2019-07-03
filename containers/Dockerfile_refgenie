@@ -53,3 +53,10 @@ MAINTAINER Nathan Sheffield <nathan@code.databio.org>
 # UCSC twoBitToFa
 	ADD includes/twoBitToFa bin/twoBitToFa
 	RUN apt-get install -y libpng-dev
+
+# bwa
+	RUN wget -O ~/bwa-0.7.17.tar.bz2 https://github.com/lh3/bwa/releases/download/v0.7.17/bwa-0.7.17.tar.bz2
+	RUN tar -xf ~/bwa-0.7.17.tar.bz2
+	run cd /bwa-0.7.17 && make
+	ENV PATH="/bwa-0.7.17:${PATH}"
+	

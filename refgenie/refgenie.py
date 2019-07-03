@@ -73,12 +73,12 @@ def build_argparser():
 
     subparser_messages = {
         INIT_CMD: "Initialize a genome configuration.",
-        LIST_LOCAL_CMD: "List available local genomes.",
-        LIST_REMOTE_CMD: "List available genomes and assets on server.",
+        LIST_LOCAL_CMD: "List available local assets.",
+        LIST_REMOTE_CMD: "List available remote assets.",
         PULL_CMD: "Download assets.",
         BUILD_CMD: "Build genome assets.",
         GET_ASSET_CMD: "Get the path to a local asset.",
-        INSERT_CMD: "Insert a local asset into the configuration file."
+        INSERT_CMD: "Add local asset to the config file."
     }
 
     sps = {}

@@ -38,6 +38,17 @@ asset_build_packages = {
             "bowtie2-build {asset_outfolder}/../fasta/{genome}.fa {asset_outfolder}/{genome}",
             ] 
     },
+    "bwa_index": {
+        "assets": {
+            "bwa_index": "bwa_index",
+        },
+        "required_inputs": [],
+        "required_assets": ["fasta"],
+        "command_list": [
+            "ln -sf ../fasta/{genome}.fa {asset_outfolder}",
+            "bwa index {asset_outfolder}/{genome}.fa",
+            ] 
+    },    
     "hisat2_index": {
         "assets": {
             "hisat2_index": "hisat2_index",
