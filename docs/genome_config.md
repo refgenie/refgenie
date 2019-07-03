@@ -25,11 +25,11 @@ genomes:
     bowtie2_index:
       path: indexed_bowtie2
     indexed_bowtie2:
-      path: rCRS/indexed_bowtie2
+      path: indexed_bowtie2
     indexed_hisat2:
-      path: rCRS/indexed_hisat2
+      path: indexed_hisat2
     indexed_kallisto:
-      path: rCRS/indexed_kallisto
+      path: indexed_kallisto
 
 ```
 
