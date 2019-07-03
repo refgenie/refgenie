@@ -59,4 +59,3 @@ MAINTAINER Nathan Sheffield <nathan@code.databio.org>
 	RUN tar -xf ~/bwa-0.7.17.tar.bz2
 	run cd /bwa-0.7.17 && make
 	ENV PATH="/bwa-0.7.17:${PATH}"
-	

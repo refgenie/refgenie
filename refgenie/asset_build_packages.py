@@ -21,6 +21,7 @@ asset_build_packages = {
         },
         "required_inputs": ["fasta"],
         "required_assets": [],
+        "container": "databio/refgenie",
         "command_list": [
             "cp {fasta} {asset_outfolder}/{genome}.fa.gz",
             "gzip -d {asset_outfolder}/{genome}.fa.gz",
@@ -34,6 +35,7 @@ asset_build_packages = {
         },
         "required_inputs": [],
         "required_assets": ["fasta"],
+        "container": "databio/refgenie",
         "command_list": [
             "bowtie2-build {asset_outfolder}/../fasta/{genome}.fa {asset_outfolder}/{genome}",
             ] 
@@ -44,6 +46,7 @@ asset_build_packages = {
         },
         "required_inputs": [],
         "required_assets": ["fasta"],
+        "container": "databio/refgenie",
         "command_list": [
             "ln -sf ../fasta/{genome}.fa {asset_outfolder}",
             "bwa index {asset_outfolder}/{genome}.fa",
@@ -55,6 +58,7 @@ asset_build_packages = {
         },     
         "required_inputs": [],
         "required_assets": ["fasta"],
+        "container": "databio/refgenie",
         "command_list": [
             "hisat2-build {asset_outfolder}/../fasta/{genome}.fa {asset_outfolder}/{genome}"
             ] 
@@ -63,6 +67,7 @@ asset_build_packages = {
         "description": "The fasta asset must be built first for this to work.",
         "required_inputs": [],
         "required_assets": ["fasta"],
+        "container": "databio/refgenie",
         "assets": {
             "bismark_bt2_index": "bismark_bt2_index",
         },       
@@ -75,6 +80,7 @@ asset_build_packages = {
         "description": "The fasta asset must be built first for this to work.",
         "required_inputs": [],
         "required_assets": ["fasta"],
+        "container": "databio/refgenie",
         "assets": {
             "bismark_bt1_index": "bismark_bt1_index",
         },       
@@ -86,6 +92,7 @@ asset_build_packages = {
     "kallisto_index": {
         "required_inputs": [],
         "required_assets": ["fasta"],
+        "container": "databio/refgenie",
         "assets": {
             "kallisto_index": "kallisto_index"
             },
@@ -96,6 +103,7 @@ asset_build_packages = {
     "gtf_anno": {
         "required_inputs": ["gtf"],
         "required_assets": [],
+        "container": "databio/refgenie",
         "assets": {
             "gtf_anno": "gtf_anno"
             },
@@ -106,6 +114,7 @@ asset_build_packages = {
     "epilog_index": {
         "required_inputs": ["context"],
         "required_assets": ["fasta"],
+        "container": "databio/refgenie",
         "assets": {
             "epilog_index": "epilog_index"
             },

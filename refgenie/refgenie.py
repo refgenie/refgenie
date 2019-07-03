@@ -265,10 +265,10 @@ def refgenie_build(rgc, args):
             assets.
         """
         _LOGGER.debug("Asset build package: " + str(asset_build_package))
-        get_asset_vars(genome, asset_key, outfolder, specific_args)
+        asset_vars = get_asset_vars(genome, asset_key, outfolder, specific_args)
+        asset_outfolder = os.path.join(outfolder, asset_key)
 
-
-        print(str([x.format(**asset_vars) for x in asset_build_package["command_list"]]))
+        _LOGGER.debug(str([x.format(**asset_vars) for x in asset_build_package["command_list"]]))
 
         tk.make_dir(asset_outfolder)
         target = os.path.join(asset_outfolder, "build_complete.flag")
@@ -301,7 +301,6 @@ def refgenie_build(rgc, args):
             volumes = volumes.append(outfolder)
         else:
             volumes = outfolder
-        pm.get_container("nsheff/refgenie", volumes)
 
 
     for asset_key in args.asset:
@@ -320,7 +319,10 @@ def refgenie_build(rgc, args):
                         raise ValueError("Asset '{}' is required to build asset '{}', but not provided".format(required_asset, asset_key))                    
                 except refgenconf.exceptions.MissingGenomeError:
                         raise ValueError("Asset '{}' is required to build asset '{}', but not provided".format(required_asset, asset_key))                    
+            if args.docker:
+                pm.get_container(asset_build_package["container"], volumes)
             build_asset(args.genome, asset_key, asset_build_package, outfolder, specific_args)
+            _LOGGER.info("Finished building asset '{}'".formati(asset_key))
         else:
             _LOGGER.warn("Recipe does not exist for asset '{}'".format(asset_key))
 
