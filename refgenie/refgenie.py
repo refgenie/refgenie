@@ -511,7 +511,7 @@ def main():
     global _LOGGER
     _LOGGER = logmuse.logger_via_cli(args)
     logmuse.logger_via_cli(args, name=refgenconf.__name__)
-
+    _LOGGER.info("refgenie {}".format(__version__))
     _LOGGER.debug("Args: {}".format(args))
 
     if not args.command:
