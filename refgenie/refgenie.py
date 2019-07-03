@@ -322,7 +322,7 @@ def refgenie_build(rgc, args):
             if args.docker:
                 pm.get_container(asset_build_package["container"], volumes)
             build_asset(args.genome, asset_key, asset_build_package, outfolder, specific_args)
-            _LOGGER.info("Finished building asset '{}'".formati(asset_key))
+            _LOGGER.info("Finished building asset '{}'".format(asset_key))
         else:
             _LOGGER.warn("Recipe does not exist for asset '{}'".format(asset_key))
 

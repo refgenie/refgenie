@@ -94,10 +94,21 @@ asset_build_packages = {
         "required_assets": ["fasta"],
         "container": "databio/refgenie",
         "assets": {
-            "kallisto_index": "kallisto_index"
+            "kallisto_index": "{asset_outfolder}/{genome}_kallisto_index.idx"
             },
         "command_list": [
             "kallisto index -i {asset_outfolder}/{genome}_kallisto_index.idx {asset_outfolder}/../fasta/{genome}.fa"
+            ] 
+    },
+    "salmon_index": {
+        "required_inputs": [],
+        "required_assets": ["fasta"],
+        "container": "combinelab/salmon",
+        "assets": {
+            "salmon_index": "salmon_index"
+            },
+        "command_list": [
+            "salmon index -k 31 -i {asset_outfolder} -t {asset_outfolder}/../fasta/{genome}.fa"
             ] 
     },
     "gtf_anno": {
