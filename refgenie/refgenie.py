@@ -203,6 +203,7 @@ def refgenie_add(rgc, args):
     # Write the updated refgenie genome configuration
     rgc.write()
 
+
 def refgenie_build(rgc, args):
     """
     Runs the refgenie build recipe.
@@ -214,7 +215,6 @@ def refgenie_build(rgc, args):
     # Build specific args
 
     specific_args = {k: getattr(args,k) for k in BUILD_SPECIFIC_ARGS}
-
 
     if args.genome:
         genome = args.genome
@@ -248,7 +248,6 @@ def refgenie_build(rgc, args):
 
     def path_data(root, c):
         return {"path": os.path.relpath(root, c.genome_folder)}
-
 
 
     def build_asset(genome, asset_key, asset_build_package, outfolder, specific_args):
@@ -287,7 +286,6 @@ def refgenie_build(rgc, args):
         # Write the updated refgenie genome configuration
         rgc.write()
 
-
     pm = pypiper.PipelineManager(name="refgenie", outfolder=outfolder, args=args)
     tk = pypiper.NGSTk(pm=pm)
     tools = pm.config.tools  # Convenience alias
@@ -301,7 +299,6 @@ def refgenie_build(rgc, args):
             volumes = volumes.append(outfolder)
         else:
             volumes = outfolder
-
 
     for asset_key in args.asset:
         if asset_key in asset_build_packages.keys():
@@ -570,8 +567,8 @@ def main():
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD)
-        _LOGGER.info("{} genomes:{}".format(pfx, genomes))
-        _LOGGER.info("{} recipes:{}".format(pfx, recipes))
+        _LOGGER.info("{} genomes: {}".format(pfx, genomes))
+        _LOGGER.info("{} recipes: {}".format(pfx, recipes))
         _LOGGER.info("{} assets:\n{}".format(pfx, assets))
 
 
