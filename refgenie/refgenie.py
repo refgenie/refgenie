@@ -476,12 +476,13 @@ def _exec_list(rgc, remote):
     if remote:
         pfx = "Remote"
         assemblies, assets = rgc.list_remote()
+        recipes = None  # Not implemented
     else:
         pfx = "Local"
         assemblies, assets = rgc.list_local()
+        # also get recipes
+        recipes = ", ".join(list(asset_build_packages.keys()))
 
-    # also get recipes
-    recipes = ", ".join(list(asset_build_packages.keys()))
     return pfx, assemblies, assets, recipes
 
 
@@ -568,7 +569,8 @@ def main():
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD)
         _LOGGER.info("{} genomes: {}".format(pfx, genomes))
-        _LOGGER.info("{} recipes: {}".format(pfx, recipes))
+        if args.command != LIST_REMOTE_CMD:  # Not implemented yet
+            _LOGGER.info("{} recipes: {}".format(pfx, recipes))
         _LOGGER.info("{} assets:\n{}".format(pfx, assets))
 
 
