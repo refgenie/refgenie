@@ -29,17 +29,16 @@ export REFGENIE='genome_config.yaml'
 refgenie init -c $REFGENIE
 ```
 
-### Downloading indexes and assets for a remote reference genome
+### Download indexes and assets for a remote reference genome
 
-First, view available assets:
+First, view available remote assets:
 
 ```console
-refgenie listr  # Lists available remote assets
+refgenie listr
 ```
 
 Response:
 ```console
-refgenie 0.4.5
 Querying available assets from server: http://refgenomes.databio.org/assets
 Remote genomes: hg19, hg19_cdna, hg38, hg38_cdna
 Remote assets:
@@ -62,23 +61,18 @@ Starting pull for 'hg38/bowtie2_index'
 Downloading URL: http://refgenomes.databio.org/asset/hg38/bowtie2/archive ...
 ```
 
-Pull many assets at once:
-```console
-refgenie pull --genome mm10 --asset bowtie2_index hisat2_index
-```
+See [further reading on downloading assets](pull.md).
 
-See [further reading on downloading assets](download.md).
-
-### Building your own indexes and assets for a custom reference genome
+### Build your own indexes and assets for a custom reference genome
 
 
 ```console
-refgenie build --genome hg38 --asset kallisto_index --fasta hg38.fa.gz
+refgenie build --genome mygenome --asset bwa_index --fasta mygenome.fa.gz
 ```
 
 See [further reading on building assets](build.md).
 
-### Retrieving paths to refgenie-managed assets
+### Retrieve paths to refgenie-managed assets
 
 Once you've populated your refgenie with a few assets, it's easy to get paths to them:
 
@@ -86,6 +80,6 @@ Once you've populated your refgenie with a few assets, it's easy to get paths to
 refgenie seek --genome mm10 --asset bowtie2_index
 ```
 
-This will return the path to the particular asset of interest, regardless of your computing environment. This gives you an ultra-portable asset manager!
+This will return the path to the particular asset of interest, regardless of your computing environment. This gives you an ultra-portable asset manager! See [further reading on retrieving asset paths](seek.md).
 
 If you want to read more about the motivation behind refgenie and the software engineering that makes refgenie work, proceed next to the [overview](overview.md).

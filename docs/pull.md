@@ -6,20 +6,27 @@ Use the `refgenie` command-line interface to download and organize genome assets
 
 The `listr` command *lists remote assets* to see what's available:
 
-```
+```console
 refgenie listr
 ```
 
 The `pull` *downloads* the specific asset of your choice:
 
-```
+```console
 refgenie pull -g GENOME -a ASSET
 ```
 Where `GENOME` refers to a genome key (*e.g.* hg38) and `ASSET` refers to one or more specific asset keys (*e.g.* bowtie2_index). For example:
 
-```
+```console
 refgenie pull -g hg38 -a bowtie2_index
 ```
+
+You can also pull many assets at once:
+
+```console
+refgenie pull --genome mm10 --asset bowtie2_index hisat2_index
+```
+
 
 To see more details, consult the usage docs by running `refgenie pull --help`.
 

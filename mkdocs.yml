@@ -10,11 +10,12 @@ nav:
     - Overview: overview.md
     - Install and configure: install.md
   - How-to guides:
-    - Download pre-built assets: download.md
+    - Download pre-built assets: pull.md
     - Build genome assets: build.md
+    - Retrieve paths to assets: seek.md
     - Use refgenie from python: refgenconf.md
     - Use refgenie with iGenomes: igenomes.md
-    - Use external assets: external_assets.md
+    - Use custom assets: external_assets.md
     - Run my own asset server: refgenieserver.md
   - Reference:
     - Genome configuration file: genome_config.md
@@ -22,7 +23,7 @@ nav:
     - Usage: usage.md
     - Python API: autodoc_build/refgenconf.md
     - FAQ: faq.md
-    - Support: support.md
+    - Support: https://github.com/databio/refgenie/issues
     - Contributing: contributing.md
     - Changelog: changelog.md
 

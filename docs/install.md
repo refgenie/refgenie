@@ -15,21 +15,24 @@ export PATH=~/.local/bin:$PATH
 # Initial configuration
 
 If you're using refgenie for the first time you'll need to initialize your ***genome folder*** and configuration file. Just select a folder where you want your genome assets to live, and then try:
+
 ```console
 refgenie init -c genome_folder/genome_config.yaml
 ```
 
 The `refgenie` commands all require knowing where this genome config file is. You can pass it on the command line all the time (using the `-c` parameter), but this gets old. An alternative is to set up the `$REFGENIE` environment variable like so:
+
 ```console
 export REFGENIE=/path/to/genome_config.yaml
 ```
 
-Add this to your `.bashrc` or `.profile` if you want it to persist for future command-line sessions. You can always specific `-c` if you want to override the value in the `$REFGENIE` variable on an ad-hoc basis.
+Refgenie will automatically use the config file in this environmental variable if it exists. Add this to your `.bashrc` or `.profile` if you want it to persist for future command-line sessions. You can always specify `-c` if you want to override the value in the `$REFGENIE` variable on an ad-hoc basis.
 
 # Listing assets
 
 Now you can use the `list` command to show local assets (which will be empty at first) or the `listr` command to show available remote assets:
-```
+
+```console
 refgenie list
 refgenie listr
 ```
