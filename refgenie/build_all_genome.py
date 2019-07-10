@@ -4,13 +4,12 @@ from ubiquerg import expandpath
 import os
 import argparse
 import divvy
-import sys
 
 parser = argparse.ArgumentParser(description='Builds submission scripts for all assets for a genome')
 parser.add_argument('-g', '--genome', dest="genome", type=str, help='genome to build the submission scripts for')
 parser.add_argument('-p', '--path', dest="path", type=str, help='path to the desired submission directory location')
-parser.add_argument('-pt', '--partition', dest="PARTITION", type=str, help='partition in SLURM submission script', default="largemem")
-parser.add_argument('-m', '--mem', dest="MEM", type=str, help='mem in SLURM submission script', default="100000")
+parser.add_argument('-pt', '--partition', dest="PARTITION", type=str, help='partition in SLURM submission script', default="standard")
+parser.add_argument('-m', '--mem', dest="MEM", type=str, help='mem in SLURM submission script', default="200000")
 parser.add_argument('-t', '--time', dest="TIME", type=str, help='time in SLURM submission script', default="10:00:00")
 parser.add_argument('-c', '--cores', dest="CORES", type=str, help='cpus-per-task in SLURM submission script', default="4")
 parser.add_argument('-o', '--output', dest="LOGFILE", type=str, help='output in SLURM submission script', default=None)
@@ -63,8 +62,7 @@ for asset in asset_build_packages:
         req_str = " ".join(_req_input_to_args(req_input))
     else:
         req_str = ""
-    cmd = cmd_template.format(g=genome, a=asset, req_input_str=req_str)
-    data["CODE"] = cmd
+    data["CODE"] = cmd_template.format(g=genome, a=asset, req_input_str=req_str)
     data["LOGFILE"] = asset + ".log"
     data["JOBNAME"] = asset + "Build"
     dcc.write_script(sub_script, data)
