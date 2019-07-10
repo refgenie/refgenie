@@ -1,10 +1,8 @@
 # Refgenie genome configuration file
 
-Refgenie will read and write a genome configuration file in yaml format.
+Refgenie will read and write a genome configuration file in yaml format. In general, you shouldn't need to mess with the config file. You create one with `refgenie init -c genome_config.yaml`, then you add assets using either `refgenie pull` or `refgenie build`. You can also add your own custom assets with `refgenie add`, which is explained in [using external assets](external_assets.md).  Refgenie will use the config file to remember what assets are available and where they are.
 
-In the future, you shouldn't need to really worry about it... you use `refgenie init` to create a file, then `refgenie pull` and `refgenie build` will populate it as necessary.
-
-But for now we need to document it and you might have to (or want to) edit some things by hand. Here's an example file to get you started: 
+But here's how the config file works, in case for some reason you do need to edit some things by hand. Here's an example file to get you started: 
 
 ```yaml
 genome_folder: /path/to/active/genomes
