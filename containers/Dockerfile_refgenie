@@ -62,4 +62,4 @@ MAINTAINER Nathan Sheffield <nathan@code.databio.org>
 
 # STAR 2.7.1a
     RUN wget -O ~/STAR.tar.gz https://github.com/alexdobin/STAR/archive/2.7.1a.tar.gz && tar -xf ~/STAR.tar.gz && cd STAR-2.7.1a/source && make STAR
-    ENV PATH="/STAR-2.7.1a:${PATH}"
+    ENV PATH="/STAR-2.7.1a/source:${PATH}"
