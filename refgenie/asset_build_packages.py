@@ -132,6 +132,18 @@ asset_build_packages = {
         "command_list": [
             "epilog index -i {asset_outfolder}/../fasta/{genome}.fa -o {asset_outfolder}/{genome}_{context}.tsv -s {context} -t"
             ] 
+    },
+    "star_index": {
+        "required_inputs": [],
+        "required_assets": ["fasta"],
+        "container": "databio/refgenie",
+        "assets": {
+            "star_index": "star_index"
+        },
+        "command_list": [
+            "mkdir -p {asset_outfolder}",
+            "STAR --runThreadN 16 --runMode genomeGenerate --genomeDir {asset_outfolder} --genomeFastaFiles {asset_outfolder}/../fasta/{genome}.fa "
+        ]
     }
 }
 
