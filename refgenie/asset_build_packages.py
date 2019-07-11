@@ -167,7 +167,7 @@ asset_build_packages = {
         "required_assets": [GENE_ANNO_NAME],
         #"container": "databio/refgenie",
         "command_list": [
-            "zcat {{asset_outfolder}}/{{genome}}_{annsfile} | awk {awk_cmd} | LC_COLLATE=C sort -k1,1 -k2,2n -u > {{asset_outfolder}}{{genome}}_TSS.tsv".
+            "gunzip -c {{asset_outfolder}}/{{genome}}_{annsfile} | awk {awk_cmd} | LC_COLLATE=C sort -k1,1 -k2,2n -u > {{asset_outfolder}}{{genome}}_TSS.tsv".
                 format(annsfile=GENE_ANNO_FILE_NAME, awk_cmd=TSS_AWK)
         ]
     }
