@@ -199,7 +199,7 @@ def get_asset_vars(genome, asset_key, outfolder, specific_args=None):
 def refgenie_add(rgc, args):
     outfolder = os.path.abspath(os.path.join(rgc.genome_folder, args.genome))
     asset_vars = get_asset_vars(args.genome, args.asset, outfolder)
-    rgc.update_genomes(args.genome, args.asset, {"path": args.path.format(**asset_vars)})
+    rgc.update_assets(args.genome, args.asset, {"path": args.path.format(**asset_vars)})
     # Write the updated refgenie genome configuration
     rgc.write()
 
@@ -280,7 +280,7 @@ def refgenie_build(rgc, args):
         pm.run(command_list_populated, target, container=pm.container)
         # Add index information to rgc
         for asset_key, relative_path in asset_build_package["assets"].items():
-            rgc.update_genomes(genome, asset_key, {"path": relative_path.format(**asset_vars)})
+            rgc.update_assets(genome, asset_key, {"path": relative_path.format(**asset_vars)})
 
         # Write the updated refgenie genome configuration
         rgc.write()
@@ -321,7 +321,7 @@ def refgenie_build(rgc, args):
     pm.stop_pipeline()
 
 
-def refgenie_init(genome_config_path, genome_server=DEFAULT_SERVER):
+def refgenie_init(genome_config_path, genome_server=DEFAULT_SERVER, config_version=REQ_CFG_VERSION):
     """
     Initialize a genome config file.
     
@@ -332,6 +332,7 @@ def refgenie_init(genome_config_path, genome_server=DEFAULT_SERVER):
 
     # Set up default 
     rgc = RefGenConf(OrderedDict({
+        CFG_VERSION_KEY: config_version,
         CFG_FOLDER_KEY: os.path.dirname(os.path.abspath(genome_config_path)),
         CFG_SERVER_KEY: genome_server,
         CFG_GENOMES_KEY: None
