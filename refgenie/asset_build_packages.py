@@ -99,7 +99,8 @@ asset_build_packages = {
         "required_assets": ["fasta"],
         "container": "databio/refgenie",
         "assets": {
-            "kallisto_index": "{asset_outfolder}/{genome}_kallisto_index.idx"
+            # "kallisto_index": "{asset_outfolder}/{genome}_kallisto_index.idx"
+            "kallisto_index": "kallisto_index"
             },
         "command_list": [
             "kallisto index -i {asset_outfolder}/{genome}_kallisto_index.idx {asset_outfolder}/../fasta/{genome}.fa"
