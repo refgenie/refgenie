@@ -9,8 +9,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
     - Added `config_version` entry
     - Added `assets` section in `genomes` section
     
+- recipes can now include container images
+
 ### Added
 - `genomes` can have attributes, like description
+- Added recipes for new assets `salmon`, `bwa`, `star`, `gene_anno`, and `tss_annotation`.
 
 ## [0.4.4] - 2019-07-01
 ### Added
