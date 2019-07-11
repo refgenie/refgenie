@@ -29,7 +29,7 @@ GET_ASSET_CMD = "seek"
 INSERT_CMD = "add"
 
 
-BUILD_SPECIFIC_ARGS = ('fasta', 'gtf', 'context')
+BUILD_SPECIFIC_ARGS = ('fasta', 'gtf', 'context', 'annogene')
 
 # This establishes the API with the server
 refgenie_server_api = {
@@ -211,10 +211,9 @@ def refgenie_build(rgc, args):
     :param refgenconf.RefGenConf rgc: genome configuration instance
     :param argparse.Namespace args: parsed command-line options/arguments
     """
-     
-    # Build specific args
 
-    specific_args = {k: getattr(args,k) for k in BUILD_SPECIFIC_ARGS}
+    # Build specific args
+    specific_args = {k: getattr(args, k) for k in BUILD_SPECIFIC_ARGS}
 
     if args.genome:
         genome = args.genome
@@ -288,11 +287,7 @@ def refgenie_build(rgc, args):
 
     pm = pypiper.PipelineManager(name="refgenie", outfolder=outfolder, args=args)
     tk = pypiper.NGSTk(pm=pm)
-    tools = pm.config.tools  # Convenience alias
-    index = pm.config.index
-    param = pm.config.param
 
-    container = None
     if args.docker:
         # Set up some docker stuff
         if args.volumes:

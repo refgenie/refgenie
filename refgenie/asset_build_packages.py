@@ -150,19 +150,21 @@ asset_build_packages = {
             "STAR --runThreadN 16 --runMode genomeGenerate --genomeDir {asset_outfolder} --genomeFastaFiles {asset_outfolder}/../fasta/{genome}.fa "
         ]
     },
-    "gene_annotation": {
-        "required_inputs": ["refgene"],
+    GENE_ANNO_NAME: {
+        "required_inputs": ["annogene"],
         "required_assets": [],
+        #"container": "databio/refgenie",
         "assets": {
             GENE_ANNO_NAME: GENE_ANNO_NAME
         },
         "command_list": [
-            "cp {{refgene}} {{asset_outfolder}}/{{genome}}_{annsfile}.format".format(annsfile=GENE_ANNO_FILE_NAME)
+            "cp {{annogene}} {{asset_outfolder}}/{{genome}}_{annsfile}".format(annsfile=GENE_ANNO_FILE_NAME)
         ]
     },
     "TSS_annotation": {
         "required_inputs": [],
         "required_assets": [GENE_ANNO_NAME],
+        #"container": "databio/refgenie",
         "command_list": [
             "zcat {{asset_outfolder}}/{{genome}}_{annsfile} | awk {awk_cmd} | LC_COLLATE=C sort -k1,1 -k2,2n -u > {{asset_outfolder}}{{genome}}_TSS.tsv".
                 format(annsfile=GENE_ANNO_FILE_NAME, awk_cmd=TSS_AWK)
