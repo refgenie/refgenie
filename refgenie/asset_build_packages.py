@@ -11,6 +11,11 @@
 #   provided via the CLI. These should be listed as 'required_inputs' and
 #   will be checked for existence before the commands are executed.
 
+
+TSS_AWK = "'{if($4==\"+\"){print $3\"\t\"$5\"\t\"$5\"\t\"$4\"\t\"$13}else{print $3\"\t\"$6\"\t\"$6\"\t\"$4\"\t\"$13}}'"
+GENE_ANNO_FILE_NAME = "refGene.txt"
+GENE_ANNO_NAME = "gene_anno"
+
 asset_build_packages = {
     "fasta": {
         "description": "Given a gzipped fasta file, produces fasta, fai, and chrom_sizes assets",
@@ -143,6 +148,24 @@ asset_build_packages = {
         "command_list": [
             "mkdir -p {asset_outfolder}",
             "STAR --runThreadN 16 --runMode genomeGenerate --genomeDir {asset_outfolder} --genomeFastaFiles {asset_outfolder}/../fasta/{genome}.fa "
+        ]
+    },
+    "gene_annotation": {
+        "required_inputs": ["refgene"],
+        "required_assets": [],
+        "assets": {
+            GENE_ANNO_NAME: GENE_ANNO_NAME
+        },
+        "command_list": [
+            "cp {{refgene}} {{asset_outfolder}}/{{genome}}_{annsfile}.format".format(annsfile=GENE_ANNO_FILE_NAME)
+        ]
+    },
+    "TSS_annotation": {
+        "required_inputs": [],
+        "required_assets": [GENE_ANNO_NAME],
+        "command_list": [
+            "zcat {{asset_outfolder}}/{{genome}}_{annsfile} | awk {awk_cmd} | LC_COLLATE=C sort -k1,1 -k2,2n -u > {{asset_outfolder}}{{genome}}_TSS.tsv".
+                format(annsfile=GENE_ANNO_FILE_NAME, awk_cmd=TSS_AWK)
         ]
     }
 }
