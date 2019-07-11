@@ -2,6 +2,19 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
+## [0.5.0] - 2019-07-11
+### Changed
+- `refgenie build` uses dict-like recipies for build instructions
+- Major genome configuration file format changes
+    - Added `config_version` entry
+    - Added `assets` section in `genomes` section
+    
+- recipes can now include container images
+
+### Added
+- `genomes` can have attributes, like description
+- Added recipes for new assets `salmon`, `bwa`, `star`, `gene_anno`, and `tss_annotation`.
+
 ## [0.4.4] - 2019-07-01
 ### Added
 - `add` subcommand

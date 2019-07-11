@@ -29,7 +29,7 @@ GET_ASSET_CMD = "seek"
 INSERT_CMD = "add"
 
 
-BUILD_SPECIFIC_ARGS = ('fasta', 'gtf', 'context')
+BUILD_SPECIFIC_ARGS = ('fasta', 'gtf', 'context', 'annogene')
 
 # This establishes the API with the server
 refgenie_server_api = {
@@ -73,12 +73,12 @@ def build_argparser():
 
     subparser_messages = {
         INIT_CMD: "Initialize a genome configuration.",
-        LIST_LOCAL_CMD: "List available local genomes.",
-        LIST_REMOTE_CMD: "List available genomes and assets on server.",
+        LIST_LOCAL_CMD: "List available local assets.",
+        LIST_REMOTE_CMD: "List available remote assets.",
         PULL_CMD: "Download assets.",
         BUILD_CMD: "Build genome assets.",
         GET_ASSET_CMD: "Get the path to a local asset.",
-        INSERT_CMD: "Insert a local asset into the configuration file."
+        INSERT_CMD: "Add local asset to the config file."
     }
 
     sps = {}
@@ -199,9 +199,10 @@ def get_asset_vars(genome, asset_key, outfolder, specific_args=None):
 def refgenie_add(rgc, args):
     outfolder = os.path.abspath(os.path.join(rgc.genome_folder, args.genome))
     asset_vars = get_asset_vars(args.genome, args.asset, outfolder)
-    rgc.update_genomes(args.genome, args.asset, {"path": args.path.format(**asset_vars)})
+    rgc.update_assets(args.genome, args.asset, {"path": args.path.format(**asset_vars)})
     # Write the updated refgenie genome configuration
     rgc.write()
+
 
 def refgenie_build(rgc, args):
     """
@@ -210,11 +211,9 @@ def refgenie_build(rgc, args):
     :param refgenconf.RefGenConf rgc: genome configuration instance
     :param argparse.Namespace args: parsed command-line options/arguments
     """
-     
+
     # Build specific args
-
-    specific_args = {k: getattr(args,k) for k in BUILD_SPECIFIC_ARGS}
-
+    specific_args = {k: getattr(args, k) for k in BUILD_SPECIFIC_ARGS}
 
     if args.genome:
         genome = args.genome
@@ -250,7 +249,6 @@ def refgenie_build(rgc, args):
         return {"path": os.path.relpath(root, c.genome_folder)}
 
 
-
     def build_asset(genome, asset_key, asset_build_package, outfolder, specific_args):
         """
         Builds assets with pypiper and updates a genome config file.
@@ -265,10 +263,10 @@ def refgenie_build(rgc, args):
             assets.
         """
         _LOGGER.debug("Asset build package: " + str(asset_build_package))
-        get_asset_vars(genome, asset_key, outfolder, specific_args)
+        asset_vars = get_asset_vars(genome, asset_key, outfolder, specific_args)
+        asset_outfolder = os.path.join(outfolder, asset_key)
 
-
-        print(str([x.format(**asset_vars) for x in asset_build_package["command_list"]]))
+        _LOGGER.debug(str([x.format(**asset_vars) for x in asset_build_package["command_list"]]))
 
         tk.make_dir(asset_outfolder)
         target = os.path.join(asset_outfolder, "build_complete.flag")
@@ -282,27 +280,20 @@ def refgenie_build(rgc, args):
         pm.run(command_list_populated, target, container=pm.container)
         # Add index information to rgc
         for asset_key, relative_path in asset_build_package["assets"].items():
-            rgc.update_genomes(genome, asset_key, {"path": relative_path.format(**asset_vars)})
+            rgc.update_assets(genome, asset_key, {"path": relative_path.format(**asset_vars)})
 
         # Write the updated refgenie genome configuration
         rgc.write()
 
-
     pm = pypiper.PipelineManager(name="refgenie", outfolder=outfolder, args=args)
     tk = pypiper.NGSTk(pm=pm)
-    tools = pm.config.tools  # Convenience alias
-    index = pm.config.index
-    param = pm.config.param
 
-    container = None
     if args.docker:
         # Set up some docker stuff
         if args.volumes:
             volumes = volumes.append(outfolder)
         else:
             volumes = outfolder
-        pm.get_container("nsheff/refgenie", volumes)
-
 
     for asset_key in args.asset:
         if asset_key in asset_build_packages.keys():
@@ -320,135 +311,17 @@ def refgenie_build(rgc, args):
                         raise ValueError("Asset '{}' is required to build asset '{}', but not provided".format(required_asset, asset_key))                    
                 except refgenconf.exceptions.MissingGenomeError:
                         raise ValueError("Asset '{}' is required to build asset '{}', but not provided".format(required_asset, asset_key))                    
+            if args.docker:
+                pm.get_container(asset_build_package["container"], volumes)
             build_asset(args.genome, asset_key, asset_build_package, outfolder, specific_args)
+            _LOGGER.info("Finished building asset '{}'".format(asset_key))
         else:
             _LOGGER.warn("Recipe does not exist for asset '{}'".format(asset_key))
-
-
-    # if False:
-    #     # pm.make_sure_path_exists(outfolder)
-    #     conversions = {}
-    #     conversions[".2bit"] = "twoBitToFa {INPUT} {OUTPUT}"
-    #     conversions[".gz"] = tk.ziptool + " -cd {INPUT} > {OUTPUT}"
-
-    #     # Copy fasta file to genome folder structure
-    #     local_raw_fasta = genome + ".fa"
-    #     raw_fasta = os.path.join(outfolder, local_raw_fasta)
-
-    #     input_fasta, cmd = copy_or_download_file(args.fasta, outfolder)
-    #     pm.run(cmd, input_fasta)
-
-    #     cmd = convert_file(input_fasta, raw_fasta, conversions)
-    #     if cmd:
-    #         pm.run(cmd, raw_fasta, container=pm.container)
-
-
-    # # Copy annotation file (if any) to folder structure
-    # if args.gtf:
-    #     annotation_file_unzipped = os.path.join(outfolder, genome + ".gtf")
-    #     annotation_file, cmd = copy_or_download_file(args.gtf, outfolder)
-    #     pm.run(cmd, annotation_file)
-
-    #     cmd = convert_file(annotation_file, annotation_file_unzipped, conversions)
-    #     pm.run(cmd, annotation_file_unzipped)
-
-    # #   cmd = "cp " + args.gtf + " " + annotation_file
-    # #   cmd2 = tk.ziptool + " -d " + annotation_file
-    # #   pm.run([cmd, cmd2], annotation_file_unzipped)
-
-    # else:
-    #     _LOGGER.debug("* No GTF gene annotations provided. Skipping this step.")
-
-
-    # # Bowtie indexes
-    # if index.bowtie2:
-    #     asset_key = "indexed_bowtie2"
-    #     folder = os.path.join(outfolder, asset_key)
-    #     tk.make_dir(folder)
-    #     target = os.path.join(folder, "completed.flag")
-    #     cmd1 = "ln -sf ../" + local_raw_fasta + " " + folder
-    #     cmd2 = tools.bowtie2build + " " + raw_fasta + " " + os.path.join(folder, genome)
-    #     cmd3 = "touch " + target
-    #     pm.run([cmd1, cmd2, cmd3], target, container=pm.container)
-    #     # Add index information to rgc
-    #     rgc.update_genomes(genome, asset_key, path_data(folder, rgc))
-
-    #     # Write the updated refgenie genome configuration
-    #     rgc.write()
-
-
-    # # Bismark index - bowtie2
-    # if index.bismark_bt2:
-    #     asset_key = "indexed_bismark_bt2"
-    #     folder = os.path.join(outfolder, asset_key)
-    #     tk.make_dir(folder)
-    #     target = os.path.join(folder, "completed.flag")
-    #     cmd1 = "ln -sf ../" + local_raw_fasta + " " + folder
-    #     cmd2 = tools.bismark_genome_preparation + " --bowtie2 " + folder
-    #     cmd3 = "touch " + target
-    #     pm.run([cmd1, cmd2, cmd3], target, container=pm.container)
-    #     rgc.update_genomes(genome, asset_key, path_data(folder, rgc))
-    #     rgc.write()
-
-    # # Bismark index - bowtie1
-    # if index.bismark_bt1:
-    #     asset_key = "indexed_bismark_bt1"
-    #     folder = os.path.join(outfolder, asset_key)
-    #     tk.make_dir(folder)
-    #     target = os.path.join(folder, "completed.flag")
-    #     cmd1 = "ln -sf ../" + local_raw_fasta + " " + folder
-    #     cmd2 = tools.bismark_genome_preparation + " " + folder
-    #     cmd3 = "touch " + target
-    #     pm.run([cmd1, cmd2, cmd3], target, container=pm.container)
-    #     rgc.update_genomes(genome, asset_key, path_data(folder, rgc))
-    #     rgc.write()
-
-    # # Epilog meth calling
-    # if index.epilog:
-    #     asset_key = "indexed_epilog"
-    #     folder = os.path.join(outfolder, asset_key)
-    #     tk.make_dir(folder)
-    #     target = os.path.join(folder, "completed.flag")
-    #     cmd1 = "ln -sf ../" + local_raw_fasta + " " + folder
-    #     cmd2 = tools.epilog_indexer + " -i " + raw_fasta
-    #     cmd2 += " -o " + os.path.join(folder, genome + "_" + param.epilog.context + ".tsv")
-    #     cmd2 += " -s " + param.epilog.context  # context
-    #     cmd2 += " -t"
-    #     cmd3 = "touch " + target
-    #     pm.run([cmd1, cmd2, cmd3], target, container=pm.container)
-    #     rgc.update_genomes(genome, asset_key, path_data(folder, rgc))
-    #     rgc.write()
-
-    # if index.hisat2:
-    #     asset_key = "indexed_hisat2"
-    #     folder = os.path.join(outfolder, asset_key)
-    #     tk.make_dir(folder)
-    #     target = os.path.join(folder, "completed.flag")
-    #     cmd1 = "ln -sf ../" + local_raw_fasta + " " + folder
-    #     cmd2 = tools.hisat2build + " " + raw_fasta + " " + os.path.join(folder, genome)
-    #     cmd3 = "touch " + target
-    #     pm.run([cmd1, cmd2, cmd3], target, container=pm.container)
-    #     rgc.update_genomes(genome, asset_key, path_data(folder, rgc))
-    #     rgc.write()
-
-    # # Kallisto should index transcriptome
-    # # So it doesn't make sense to run these at the same time as the others.
-    # if index.kallisto:
-    #     asset_key = "indexed_kallisto"
-    #     folder = os.path.join(outfolder, asset_key)
-    #     tk.make_dir(folder)
-    #     target = os.path.join(folder, "completed.flag")
-    #     cmd2 = tools.kallisto + " index -i " + os.path.join(folder, genome + "_kallisto_index.idx")
-    #     cmd2 += " " + raw_fasta
-    #     cmd3 = "touch " + target
-    #     pm.run([cmd2, cmd3], target, container=pm.container)
-    #     rgc.update_genomes(genome, asset_key, path_data(folder, rgc))
-    #     rgc.write()
 
     pm.stop_pipeline()
 
 
-def refgenie_init(genome_config_path, genome_server=DEFAULT_SERVER):
+def refgenie_init(genome_config_path, genome_server=DEFAULT_SERVER, config_version=REQ_CFG_VERSION):
     """
     Initialize a genome config file.
     
@@ -459,6 +332,7 @@ def refgenie_init(genome_config_path, genome_server=DEFAULT_SERVER):
 
     # Set up default 
     rgc = RefGenConf(OrderedDict({
+        CFG_VERSION_KEY: config_version,
         CFG_FOLDER_KEY: os.path.dirname(os.path.abspath(genome_config_path)),
         CFG_SERVER_KEY: genome_server,
         CFG_GENOMES_KEY: None
@@ -477,10 +351,14 @@ def _exec_list(rgc, remote):
     if remote:
         pfx = "Remote"
         assemblies, assets = rgc.list_remote()
+        recipes = None  # Not implemented
     else:
         pfx = "Local"
         assemblies, assets = rgc.list_local()
-    return pfx, assemblies, assets
+        # also get recipes
+        recipes = ", ".join(list(asset_build_packages.keys()))
+
+    return pfx, assemblies, assets, recipes
 
 
 def perm_check_x(file_to_check, message_tag):
@@ -511,7 +389,7 @@ def main():
     global _LOGGER
     _LOGGER = logmuse.logger_via_cli(args)
     logmuse.logger_via_cli(args, name=refgenconf.__name__)
-
+    _LOGGER.info("refgenie {}".format(__version__))
     _LOGGER.debug("Args: {}".format(args))
 
     if not args.command:
@@ -564,8 +442,10 @@ def main():
         rgc.pull_asset(args.genome, args.asset, gencfg, unpack=not args.no_untar)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
-        pfx, genomes, assets = _exec_list(rgc, args.command == LIST_REMOTE_CMD)
+        pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD)
         _LOGGER.info("{} genomes: {}".format(pfx, genomes))
+        if args.command != LIST_REMOTE_CMD:  # Not implemented yet
+            _LOGGER.info("{} recipes: {}".format(pfx, recipes))
         _LOGGER.info("{} assets:\n{}".format(pfx, assets))
 
 

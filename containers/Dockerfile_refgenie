@@ -53,3 +53,13 @@ MAINTAINER Nathan Sheffield <nathan@code.databio.org>
 # UCSC twoBitToFa
 	ADD includes/twoBitToFa bin/twoBitToFa
 	RUN apt-get install -y libpng-dev
+
+# bwa
+	RUN wget -O ~/bwa-0.7.17.tar.bz2 https://github.com/lh3/bwa/releases/download/v0.7.17/bwa-0.7.17.tar.bz2
+	RUN tar -xf ~/bwa-0.7.17.tar.bz2
+	run cd /bwa-0.7.17 && make
+	ENV PATH="/bwa-0.7.17:${PATH}"
+
+# STAR 2.7.1a
+    RUN wget -O ~/STAR.tar.gz https://github.com/alexdobin/STAR/archive/2.7.1a.tar.gz && tar -xf ~/STAR.tar.gz && cd STAR-2.7.1a/source && make STAR
+    ENV PATH="/STAR-2.7.1a/source:${PATH}"
