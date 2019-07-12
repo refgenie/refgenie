@@ -20,9 +20,10 @@ If you want to, you could also just edit the config file by hand by adding this 
 ```yaml
 genomes:
   hg38:
-    manual_anno:
-      path: annotation_folder_dir
-      description: Manual annotations from project X
+    assets:
+      manual_anno:
+        path: annotation_folder_dir
+        description: Manual annotations from project X
 ```
 
 Now, you can access this asset with `refgenie` the same way you do all other assets... `refgenie list` will include it, `refgenie seek -g gh38 -a manual_anno` will retrieve the path, and from within python, `RefGenConf.get_asset('hg38', 'manual_anno')` will also work. The advantage of doing this is that it lets you include *all* your genome-associated resources, including manual ones, within the same framework.

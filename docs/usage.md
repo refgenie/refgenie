@@ -3,28 +3,28 @@
 ## `refgenie --help`
 
 ```console
-version: 0.4.5-dev
-usage: refgenie [-h] [-V] [--silent] [--logdev] [--verbosity V]
-                {pull,add,build,listr,list,init,seek} ...
+version: 0.5.0
+usage: refgenie [-h] [-V] [--verbosity V] [--logdev] [--silent]
+                {listr,add,list,build,pull,seek,init} ...
 
 refgenie - builds and manages reference genome assemblies
 
 positional arguments:
-  {pull,add,build,listr,list,init,seek}
-    pull                Download assets.
-    add                 Insert a local asset into the configuration file.
+  {listr,add,list,build,pull,seek,init}
+    listr               List available remote assets.
+    add                 Add local asset to the config file.
+    list                List available local assets.
     build               Build genome assets.
-    listr               List available genomes and assets on server.
-    list                List available local genomes.
-    init                Initialize a genome configuration.
+    pull                Download assets.
     seek                Get the path to a local asset.
+    init                Initialize a genome configuration.
 
 optional arguments:
   -h, --help            show this help message and exit
   -V, --version         show program's version number and exit
-  --silent              Silence logging. Overrides --verbosity.
-  --logdev              Expand content of logging message format.
   --verbosity V         Set logging level (1-5 or logging module level name)
+  --logdev              Expand content of logging message format.
+  --silent              Silence logging. Overrides --verbosity.
 
 https://refgenie.databio.org
 ```
@@ -32,7 +32,7 @@ https://refgenie.databio.org
 ## `refgenie init --help`
 
 ```console
-version: 0.4.5-dev
+version: 0.5.0
 usage: refgenie init [-h] -c GENOME_CONFIG [-s GENOME_SERVER]
 
 Initialize a genome configuration.
@@ -49,10 +49,10 @@ optional arguments:
 ## `refgenie list --help`
 
 ```console
-version: 0.4.5-dev
+version: 0.5.0
 usage: refgenie list [-h] [-c GENOME_CONFIG]
 
-List available local genomes.
+List available local assets.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -63,7 +63,7 @@ optional arguments:
 ## `refgenie seek --help`
 
 ```console
-version: 0.4.5-dev
+version: 0.5.0
 usage: refgenie seek [-h] [-c GENOME_CONFIG] -g GENOME -a ASSET [ASSET ...]
 
 Get the path to a local asset.
@@ -82,10 +82,10 @@ optional arguments:
 ## `refgenie listr --help`
 
 ```console
-version: 0.4.5-dev
+version: 0.5.0
 usage: refgenie listr [-h] [-c GENOME_CONFIG]
 
-List available genomes and assets on server.
+List available remote assets.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -96,7 +96,7 @@ optional arguments:
 ## `refgenie pull --help`
 
 ```console
-version: 0.4.5-dev
+version: 0.5.0
 usage: refgenie pull [-h] [-c GENOME_CONFIG] -g GENOME -a ASSET [ASSET ...]
                      [-u]
 
@@ -117,11 +117,11 @@ optional arguments:
 ## `refgenie add --help`
 
 ```console
-version: 0.4.5-dev
+version: 0.5.0
 usage: refgenie add [-h] [-c GENOME_CONFIG] -g GENOME -a ASSET [ASSET ...] -p
                     PATH
 
-Insert a local asset into the configuration file.
+Add local asset to the config file.
 
 optional arguments:
   -h, --help            show this help message and exit

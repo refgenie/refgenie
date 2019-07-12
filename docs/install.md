@@ -37,10 +37,28 @@ refgenie list
 refgenie listr
 ```
 
+# Populate some assets
+
+Next you need to populate your genome folder with a few assets. You can either `pull` existing assets or `build` your own. Refgenie will manage them the same way. As an example, let's pull a bowtie2 index for a small genome, the human mitochondrial genome (it's called `rCRSd`, the "Revised Cambridge Reference Sequence" on our server).
+
+```console
+refgenie pull -g rCRSd -a bowtie2_index
+```
+
+You can also read more about [building refgenie assets](build.md).
+
 # Seeking assets
 
-Use the `seek` command to get paths to local assets you have already built or pulled:
+Use the `seek` command to get paths to local assets you have already built or pulled. For example, the one we just pulled:
+
+```console
+refgenie pull -g rCRSd -a bowtie2_index
+```
+
+Or, more generally:
 
 ```console
 refgenie seek -g GENOME -a ASSET
 ```
+
+That's it! Explore the HOW-TO guides in the navigation bar for further details about what you can do with these functions.
