@@ -119,7 +119,7 @@ Get as single string this configuration's reference genome assembly IDs.
 
 
 ```python
-def get_asset(self, genome_name, asset_name, strict_exists=True, check_exist=<function RefGenConf.<lambda> at 0x7ff741bea268>)
+def get_asset(self, genome_name, asset_name, strict_exists=True, check_exist=<function RefGenConf.<lambda> at 0x7fb5257931e0>)
 ```
 
 Get an asset for a particular assembly.
@@ -199,7 +199,7 @@ List locally available reference genome IDs and assets by ID.
 
 
 ```python
-def list_remote(self, get_url=<function RefGenConf.<lambda> at 0x7ff741bea510>, order=None)
+def list_remote(self, get_url=<function RefGenConf.<lambda> at 0x7fb525793488>, order=None)
 ```
 
 List genomes and assets available remotely.
@@ -217,7 +217,7 @@ List genomes and assets available remotely.
 
 
 ```python
-def pull_asset(self, genome, assets, genome_config, unpack=True, force=None, get_json_url=<function RefGenConf.<lambda> at 0x7ff741bea620>, get_main_url=None, build_signal_handler=<function _handle_sigint at 0x7ff741c6ba60>)
+def pull_asset(self, genome, assets, genome_config, unpack=True, force=None, get_json_url=<function RefGenConf.<lambda> at 0x7fb525793598>, get_main_url=None, build_signal_handler=<function _handle_sigint at 0x7fb5258069d8>)
 ```
 
 Download and possibly unpack one or more assets for a given ref gen.

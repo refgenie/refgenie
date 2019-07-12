@@ -10,24 +10,30 @@ genome_server: http://refgenomes.databio.org
 genome_archive: /path/to/archived/genomes
 genomes:
   hg38:
-    bowtie2_index:
-      path: indexed_bowtie2
-      asset_description: ...
-    hisat2_index: 
-      path: indexed_hisat2
-      asset_description: ...
+    genome_description: ...
+    assets:
+      bowtie2_index:
+        path: indexed_bowtie2
+        asset_description: ...
+      hisat2_index: 
+        path: indexed_hisat2
+        asset_description: ...
   mm10:
+    genome_description: ...
+    assets:
       bowtie2_index:
         path: indexed_bowtie2
   rCRS:
-    bowtie2_index:
-      path: indexed_bowtie2
-    indexed_bowtie2:
-      path: indexed_bowtie2
-    indexed_hisat2:
-      path: indexed_hisat2
-    indexed_kallisto:
-      path: indexed_kallisto
+    genome_description: ...
+    assets:
+      bowtie2_index:
+        path: indexed_bowtie2
+      indexed_bowtie2:
+        path: indexed_bowtie2
+      indexed_hisat2:
+        path: indexed_hisat2
+      indexed_kallisto:
+        path: indexed_kallisto
 
 ```
 
@@ -52,3 +58,7 @@ genomes:
 ```
 
 For genomes that are managed by refgenie (that is, they were built or pulled with `refgenie`), these asset attributes will be automatically populated. You can edit them and refgenie will respect your edits (unless you re-build or re-pull the asset, which will overwrite those fields). You can also add your own assets and refgenie won't touch them. For more info, see [using external assets](external_assets.md).
+
+## Genome config versions
+
+Up to version `0.4.4`, refgenie used a config file version that lacked the `assets` level in the hierarchy (so, assets were listed directly under the genome). Starting with version `0.5.0`, we moved the assets down a layer to accommodate other genome-level attributes we intend to use in the future (like a description, checksums, other provenance information). Earlier refgenie config files will need to be updated. 
