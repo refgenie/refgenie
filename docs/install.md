@@ -52,7 +52,7 @@ You can also read more about [building refgenie assets](build.md).
 Use the `seek` command to get paths to local assets you have already built or pulled. For example, the one we just pulled:
 
 ```console
-refgenie pull -g rCRSd -a bowtie2_index
+refgenie seek -g rCRSd -a bowtie2_index
 ```
 
 Or, more generally:
