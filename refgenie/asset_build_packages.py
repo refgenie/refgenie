@@ -11,11 +11,6 @@
 #   provided via the CLI. These should be listed as 'required_inputs' and
 #   will be checked for existence before the commands are executed.
 
-
-TSS_AWK = "'{if($4==\"+\"){print $3\"\t\"$5\"\t\"$5\"\t\"$4\"\t\"$13}else{print $3\"\t\"$6\"\t\"$6\"\t\"$4\"\t\"$13}}'"
-GENE_ANNO_FILE_NAME = "refGene.txt"
-GENE_ANNO_NAME = "gene_anno"
-
 asset_build_packages = {
     "fasta": {
         "description": "Given a gzipped fasta file, produces fasta, fai, and chrom_sizes assets",
@@ -122,11 +117,22 @@ asset_build_packages = {
         "required_assets": [],
         "container": "databio/refgenie",
         "assets": {
-            "gtf_anno": "gtf_anno"
+            "gtf_anno": "gtf_anno/{genome}.gtf.gz"
             },
         "command_list": [
-            "cp {gtf} {asset_outfolder}/{genome}.gtf",
+            "cp {gtf} {asset_outfolder}/{genome}.gtf.gz",
             ] 
+    },
+    "gene_anno": {
+        "required_inputs": ["refgene"],
+        "required_assets": [],
+        #"container": "databio/refgenie",
+        "assets": {
+            "gene_anno": "gene_anno/{genome}_refGene.txt.gz"
+            },
+        "command_list": [
+            "cp {refgene} {asset_outfolder}/{genome}_refGene.txt.gz"
+            ]
     },
     "epilog_index": {
         "required_inputs": ["context"],
@@ -145,31 +151,72 @@ asset_build_packages = {
         "container": "databio/refgenie",
         "assets": {
             "star_index": "star_index"
-        },
+            },
         "command_list": [
             "mkdir -p {asset_outfolder}",
             "STAR --runThreadN 16 --runMode genomeGenerate --genomeDir {asset_outfolder} --genomeFastaFiles {asset_outfolder}/../fasta/{genome}.fa "
-        ]
+            ]
     },
-    GENE_ANNO_NAME: {
-        "required_inputs": ["annogene"],
-        "required_assets": [],
-        #"container": "databio/refgenie",
-        "assets": {
-            GENE_ANNO_NAME: GENE_ANNO_NAME
-        },
-        "command_list": [
-            "cp {{annogene}} {{asset_outfolder}}/{{genome}}_{annsfile}".format(annsfile=GENE_ANNO_FILE_NAME)
-        ]
-    },
-    "TSS_annotation": {
+    "tss_annotation": {
         "required_inputs": [],
-        "required_assets": [GENE_ANNO_NAME],
+        "required_assets": ["gene_anno"],
+        "assets": {
+            "tss_annotation": "tss_annotation/{genome}_TSS.bed"
+            },
         #"container": "databio/refgenie",
         "command_list": [
-            "gunzip -c {{asset_outfolder}}/{{genome}}_{annsfile} | awk {awk_cmd} | LC_COLLATE=C sort -k1,1 -k2,2n -u > {{asset_outfolder}}{{genome}}_TSS.tsv".
-                format(annsfile=GENE_ANNO_FILE_NAME, awk_cmd=TSS_AWK)
-        ]
+            "gzip -dc {asset_outfolder}/../gene_anno/{genome}_refGene.txt.gz | awk '{{if($4==\"+\"){{print $3\"\t\"$5\"\t\"$5\"\t\"$13\"\t.\t\"$4}}else{{print $3\"\t\"$6\"\t\"$6\"\t\"$13\"\t.\t\"$4}}}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_TSS.bed"
+            ]
+    },
+    "exon_annotation": {
+        "required_inputs": [],
+        "required_assets": ["gene_anno"],
+        "assets": {
+            "exon_annotation": "exon_annotation/{genome}_exons.bed"
+            },
+        "command_list": [
+            "gzip -dc {asset_outfolder}/../gene_anno/{genome}_refGene.txt.gz | awk -v OFS='\t' '$9>1' | awk -v OFS='\t' '{{ n = split($10, a, \",\"); split($11, b, \",\"); for(i=1; i<n; ++i) print $3, a[i], b[i], $13, i, $4 }}' | awk -v OFS='\t' '$6==\"+\" && $5!=1 {{print $0}} $6==\"-\" {{print $0}}' | awk '$4!=prev4 && prev6==\"-\" {{prev4=$4; prev6=$6; delete line[NR-1]; idx-=1}} {{line[++idx]=$0; prev4=$4; prev6=$6}} END {{for (x=1; x<=idx; x++) print line[x]}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_exons.bed"
+            ]
+    },
+    "intron_annotation": {
+        "required_inputs": [],
+        "required_assets": ["gene_anno"],
+        "assets": {
+            "intron_annotation": "intron_annotation/{genome}_introns.bed"
+            },
+        "command_list": [
+            "gzip -dc {asset_outfolder}/../gene_anno/{genome}_refGene.txt.gz | awk -v OFS='\t' '$9>1' | awk -F'\t' '{{ exonCount=int($9);split($10,exonStarts,\"[,]\"); split($11,exonEnds,\"[,]\"); for(i=1;i<exonCount;i++) {{printf(\"%s\\t%s\\t%s\\t%s\\t%d\\t%s\\n\",$3,exonEnds[i],exonStarts[i+1],$13,($3==\"+\"?i:exonCount-i),$4);}}}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_introns.bed"
+            ]
+    },
+    "pre_mRNA_annotation": {
+        "required_inputs": [],
+        "required_assets": ["gene_anno"],
+        "assets": {
+            "pre_mRNA_annotation": "pre_mRNA_annotation/{genome}_pre-mRNA.bed"
+            },
+        "command_list": [
+            "gzip -dc {asset_outfolder}/../gene_anno/{genome}_refGene.txt.gz | grep 'cmpl' | awk  '{{print $3\"\t\"$5\"\t\"$6\"\t\"$13\"\t.\t\"$4}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u >  {asset_outfolder}/{genome}_pre-mRNA.bed"
+            ]
+    },
+    "pi_tss": {
+        "required_inputs": [],
+        "required_assets": ["gtf_anno"],
+        "assets": {
+            "pi_tss": "pi_tss/{genome}_PI_TSS.bed"
+            },
+        "command_list": [
+            "gzip -dc {asset_outfolder}/../gtf_anno/{genome}.gtf.gz | grep 'exon_number \"1\"' | sed 's/^/chr/' | awk -v OFS='\t' '{{print $1, $4, $5, $20, $14, $7}}' | sed 's/\";//g' | sed 's/\"//g' | awk '{{if($6==\"+\"){{print $1\"\t\"$2+20\"\t\"$3+120\"\t\"$4\"\t\"$5\"\t\"$6}}else{{print $1\"\t\"$3-120\"\t\"$3-20\"\t\"$4\"\t\"$5\"\t\"$6}}}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_PI_TSS.bed"
+            ]
+    },
+    "pi_body": {
+        "required_inputs": [],
+        "required_assets": ["gtf_anno"],
+        "assets": {
+            "pi_body": "pi_tss/{genome}_PI_gene_body.bed"
+            },
+        "command_list": [
+            "gzip -dc {asset_outfolder}/../gtf_anno/{genome}.gtf.gz | awk '$3 == \"gene\"' | sed 's/^/chr/' | awk -v OFS='\t' '{{print $1,$4,$5,$14,$6,$7}}' | sed 's/\";//g' | sed 's/\"//g' | awk '$4!=\"Metazoa_SRP\"' | awk '$4!=\"U3\"' | awk '$4!=\"7SK\"'  | awk '($3-$2)>200' | awk '{{if($6==\"+\"){{print $1\"\t\"$2+500\"\t\"$3\"\t\"$4\"\t\"$5\"\t\"$6}}else{{print $1\"\t\"$2\"\t\"$3-500\"\t\"$4\"\t\"$5\"\t\"$6}}}}' | awk '$3>$2' | LC_COLLATE=C sort -k4 -u > {asset_outfolder}/{genome}_PI_gene_body.bed"
+            ]
     }
 }
 
