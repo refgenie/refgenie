@@ -113,6 +113,7 @@ asset_build_packages = {
             ] 
     },
     "gtf_anno": {
+        "description": "Given a GTF file (must be downloaded), create a GTF annotation asset.  GTF provides access to all annotated transcripts which make up an Ensembl gene set.",
         "required_inputs": ["gtf"],
         "required_assets": [],
         "container": "databio/refgenie",
@@ -124,6 +125,7 @@ asset_build_packages = {
             ] 
     },
     "reg_anno": {
+        "description": "Given a GTF regulatory file (must be downloaded), create a regulatory annotation asset.",
         "required_inputs": ["gff"],
         "required_assets": [],
         "container": "databio/refgenie",
@@ -135,6 +137,7 @@ asset_build_packages = {
             ] 
     },
     "gene_anno": {
+        "description": "Given a refGene file (must be downloaded), create a gene annotation asset.",
         "required_inputs": ["refgene"],
         "required_assets": [],
         #"container": "databio/refgenie",
@@ -169,6 +172,7 @@ asset_build_packages = {
             ]
     },
     "tss_annotation": {
+        "description": "Using a gene annotation file, create a TSS annotation asset.",
         "required_inputs": [],
         "required_assets": ["gene_anno"],
         "assets": {
@@ -180,6 +184,7 @@ asset_build_packages = {
             ]
     },
     "exon_annotation": {
+        "description": "Using a gene annotation file, create an exon (no first exons) annotation asset.",
         "required_inputs": [],
         "required_assets": ["gene_anno"],
         "assets": {
@@ -191,6 +196,7 @@ asset_build_packages = {
             ]
     },
     "intron_annotation": {
+        "description": "Using a gene annotation file, create an intron annotation asset.",
         "required_inputs": [],
         "required_assets": ["gene_anno"],
         "assets": {
@@ -202,6 +208,7 @@ asset_build_packages = {
             ]
     },
     "pre_mRNA_annotation": {
+        "description": "Using a gene annotation file, create a premature mRNA annotation asset.",
         "required_inputs": [],
         "required_assets": ["gene_anno"],
         "assets": {
@@ -213,6 +220,7 @@ asset_build_packages = {
             ]
     },
     "pi_tss": {
+        "description": "Using a GTF annotation file, create a pause index *all* possible TSS annotation asset.",
         "required_inputs": [],
         "required_assets": ["gtf_anno"],
         "assets": {
@@ -224,6 +232,7 @@ asset_build_packages = {
             ]
     },
     "pi_body": {
+        "description": "Using a GTF annotation file, create a pause index *all* possible gene body annotation asset.",
         "required_inputs": [],
         "required_assets": ["gtf_anno"],
         "assets": {
@@ -235,6 +244,7 @@ asset_build_packages = {
             ]
     },
     "feat_annotation": {
+        "description": "Using a GTF annotation file and a regulatory annotation asset, create a combined genomic feature annotation asset.",
         "assets": {
             "exons": "feat_annotation/{genome}_exons.bed",
             "introns": "feat_annotation/{genome}_introns.bed",
