@@ -29,7 +29,7 @@ GET_ASSET_CMD = "seek"
 INSERT_CMD = "add"
 
 
-BUILD_SPECIFIC_ARGS = ('fasta', 'gtf', 'context', 'refgene')
+BUILD_SPECIFIC_ARGS = ('fasta', 'gtf', 'gff', 'context', 'refgene')
 
 # This establishes the API with the server
 refgenie_server_api = {
