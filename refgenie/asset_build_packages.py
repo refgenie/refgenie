@@ -228,7 +228,7 @@ asset_build_packages = {
             },
         "container": "databio/refgenie",
         "command_list": [
-            "gzip -dc {asset_outfolder}/../gtf_anno/{genome}.gtf.gz | grep 'exon_number \"1\"' | sed 's/^/chr/' | awk -v OFS='\t' '{{print $1, $4, $5, $20, $14, $7}}' | sed 's/\";//g' | sed 's/\"//g' | awk '{{if($6==\"+\"){{print $1\"\t\"$2+20\"\t\"$3+120\"\t\"$4\"\t\"$5\"\t\"$6}}else{{print $1\"\t\"$3-120\"\t\"$3-20\"\t\"$4\"\t\"$5\"\t\"$6}}}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_PI_TSS.bed"
+            "gzip -dc {asset_outfolder}/../gtf_anno/{genome}.gtf.gz | grep 'exon_number \"1\"' | sed 's/^/chr/' | awk -v OFS='\t' '{{print $1, $4, $5, $20, $14, $7}}' | sed 's/\";//g' | sed 's/\"//g' | awk '{{if($6==\"+\"){{print $1\"\t\"$2+20\"\t\"$2+120\"\t\"$4\"\t\"$5\"\t\"$6}}else{{print $1\"\t\"$3-120\"\t\"$3-20\"\t\"$4\"\t\"$5\"\t\"$6}}}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_PI_TSS.bed"
             ]
     },
     "pi_body": {
