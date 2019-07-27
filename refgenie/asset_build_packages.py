@@ -236,7 +236,7 @@ asset_build_packages = {
         "required_inputs": [],
         "required_assets": ["gtf_anno"],
         "assets": {
-            "pi_body": "pi_tss/{genome}_PI_gene_body.bed"
+            "pi_body": "pi_body/{genome}_PI_gene_body.bed"
             },
         "container": "databio/refgenie",
         "command_list": [
