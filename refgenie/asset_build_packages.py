@@ -258,13 +258,6 @@ asset_build_packages = {
     "feat_annotation": {
         "description": "Using a GTF annotation asset and a regulatory annotation asset, create a combined genomic feature annotation asset.",
         "assets": {
-            "exons": "feat_annotation/{genome}_exons.bed",
-            "introns": "feat_annotation/{genome}_introns.bed",
-            "utr5": "feat_annotation/{genome}_5utr.bed",
-            "utr3": "feat_annotation/{genome}_3utr.bed",
-            "promoter": "feat_annotation/{genome}_promoter.bed",
-            "promoter_flanking": "feat_annotation/{genome}_promoter_flanking.bed",
-            "enhancer": "feat_annotation/{genome}_enhancer.bed",
             "feat_annotation": "{asset_outfolder}/{genome}_annotations.bed.gz"
             },
         "required_inputs": [],
@@ -279,6 +272,7 @@ asset_build_packages = {
             "gzip -dc {asset_outfolder}/../reg_anno/{genome}.gff.gz | awk '$3==\"promoter_flanking_region\"' | awk -v OFS='\t' '{{print \"chr\"$1, $4, $5, \"Promoter Flanking Region\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u > {asset_outfolder}/{genome}_promoter_flanking.bed",
             "gzip -dc {asset_outfolder}/../reg_anno/{genome}.gff.gz | awk '$3==\"enhancer\"' | awk -v OFS='\t' '{{print \"chr\"$1, $4, $5, \"Enhancer\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u > {asset_outfolder}/{genome}_enhancer.bed",
             "cat {asset_outfolder}/{genome}_enhancer.bed {asset_outfolder}/{genome}_promoter.bed {asset_outfolder}/{genome}_promoter_flanking.bed {asset_outfolder}/{genome}_5utr.bed {asset_outfolder}/{genome}_3utr.bed {asset_outfolder}/{genome}_exons.bed {asset_outfolder}/{genome}_introns.bed | awk -F'\t' '!seen[$1, $2, $3]++' | env LC_COLLATE=C sort -k4d -k1.4,1V -k2,2n -s > {asset_outfolder}/{genome}_annotations.bed",
+            "rm -f {asset_outfolder}/{genome}_enhancer.bed {asset_outfolder}/{genome}_promoter.bed {asset_outfolder}/{genome}_promoter_flanking.bed {asset_outfolder}/{genome}_5utr.bed {asset_outfolder}/{genome}_3utr.bed {asset_outfolder}/{genome}_exons.bed {asset_outfolder}/{genome}_introns.bed",
             "gzip {asset_outfolder}/{genome}_annotations.bed"
             ]
     }
