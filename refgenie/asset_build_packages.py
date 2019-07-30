@@ -112,18 +112,30 @@ asset_build_packages = {
             "salmon index -k 31 -i {asset_outfolder} -t {asset_outfolder}/../fasta/{genome}.fa"
             ] 
     },
-    "gtf_anno": {
+    "gencode_gtf": {
         "description": "Given a GTF file (must be downloaded), create a GTF annotation asset.  GTF provides access to all annotated transcripts which make up an Ensembl gene set.",
         "required_inputs": ["gtf"],
         "required_assets": [],
         "container": "databio/refgenie",
         "assets": {
-            "gtf_anno": "gtf_anno/{genome}.gtf.gz"
+            "gencode_gtf": "gencode_gtf/{genome}.gtf.gz"
             },
         "command_list": [
             "cp {gtf} {asset_outfolder}/{genome}.gtf.gz",
             ] 
     },
+    "ensembl_gtf": {
+        "description": "Given a GTF file (must be downloaded), create a GTF annotation asset.  GTF provides access to all annotated transcripts which make up an Ensembl gene set.",
+        "required_inputs": ["gtf"],
+        "required_assets": [],
+        "container": "databio/refgenie",
+        "assets": {
+            "ensembl_gtf": "ensembl_gtf/{genome}.gtf.gz"
+            },
+        "command_list": [
+            "cp {gtf} {asset_outfolder}/{genome}.gtf.gz",
+            ] 
+    },    
     "reg_anno": {
         "description": "Given a GTF regulatory file (must be downloaded), create a regulatory annotation asset.",
         "required_inputs": ["gff"],
@@ -222,25 +234,25 @@ asset_build_packages = {
     "pi_tss": {
         "description": "Using a GTF annotation asset, create a pause index *all* possible TSS annotation asset.",
         "required_inputs": [],
-        "required_assets": ["gtf_anno"],
+        "required_assets": ["ensembl_gtf"],
         "assets": {
             "pi_tss": "pi_tss/{genome}_PI_TSS.bed"
             },
         "container": "databio/refgenie",
         "command_list": [
-            "gzip -dc {asset_outfolder}/../gtf_anno/{genome}.gtf.gz | grep 'exon_number \"1\"' | sed 's/^/chr/' | awk -v OFS='\t' '{{print $1, $4, $5, $20, $14, $7}}' | sed 's/\";//g' | sed 's/\"//g' | awk '{{if($6==\"+\"){{print $1\"\t\"$2+20\"\t\"$2+120\"\t\"$4\"\t\"$5\"\t\"$6}}else{{print $1\"\t\"$3-120\"\t\"$3-20\"\t\"$4\"\t\"$5\"\t\"$6}}}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_PI_TSS.bed"
+            "gzip -dc {asset_outfolder}/../ensembl_gtf/{genome}.gtf.gz | grep 'exon_number \"1\";' | sed 's/^/chr/' | awk -v OFS='\t' '{{print $1, $4, $5, $20, $14, $7}}' | sed 's/\";//g' | sed 's/\"//g' | awk '{{if($6==\"+\"){{print $1\"\t\"$2+20\"\t\"$2+120\"\t\"$4\"\t\"$5\"\t\"$6}}else{{print $1\"\t\"$3-120\"\t\"$3-20\"\t\"$4\"\t\"$5\"\t\"$6}}}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_PI_TSS.bed"
             ]
     },
     "pi_body": {
         "description": "Using a GTF annotation asset, create a pause index *all* possible gene body annotation asset.",
         "required_inputs": [],
-        "required_assets": ["gtf_anno"],
+        "required_assets": ["ensembl_gtf"],
         "assets": {
             "pi_body": "pi_body/{genome}_PI_gene_body.bed"
             },
         "container": "databio/refgenie",
         "command_list": [
-            "gzip -dc {asset_outfolder}/../gtf_anno/{genome}.gtf.gz | awk '$3 == \"gene\"' | sed 's/^/chr/' | awk -v OFS='\t' '{{print $1,$4,$5,$14,$6,$7}}' | sed 's/\";//g' | sed 's/\"//g' | awk '$4!=\"Metazoa_SRP\"' | awk '$4!=\"U3\"' | awk '$4!=\"7SK\"'  | awk '($3-$2)>200' | awk '{{if($6==\"+\"){{print $1\"\t\"$2+500\"\t\"$3\"\t\"$4\"\t\"$5\"\t\"$6}}else{{print $1\"\t\"$2\"\t\"$3-500\"\t\"$4\"\t\"$5\"\t\"$6}}}}' | awk '$3>$2' | LC_COLLATE=C sort -k4 -u > {asset_outfolder}/{genome}_PI_gene_body.bed"
+            "gzip -dc {asset_outfolder}/../ensembl_gtf/{genome}.gtf.gz | awk '$3 == \"gene\"' | sed 's/^/chr/' | awk -v OFS='\t' '{{print $1,$4,$5,$14,$6,$7}}' | sed 's/\";//g' | sed 's/\"//g' | awk '$4!=\"Metazoa_SRP\"' | awk '$4!=\"U3\"' | awk '$4!=\"7SK\"'  | awk '($3-$2)>200' | awk '{{if($6==\"+\"){{print $1\"\t\"$2+500\"\t\"$3\"\t\"$4\"\t\"$5\"\t\"$6}}else{{print $1\"\t\"$2\"\t\"$3-500\"\t\"$4\"\t\"$5\"\t\"$6}}}}' | awk '$3>$2' | LC_COLLATE=C sort -k4 -u > {asset_outfolder}/{genome}_PI_gene_body.bed"
             ]
     },
     "feat_annotation": {
@@ -256,13 +268,13 @@ asset_build_packages = {
             "feat_annotation": "{asset_outfolder}/{genome}_annotations.bed.gz"
             },
         "required_inputs": [],
-        "required_assets": ["gtf_anno", "reg_anno"],
+        "required_assets": ["ensembl_gtf", "reg_anno"],
         "container": "databio/refgenie",
         "command_list": [
-            "gzip -dc {asset_outfolder}/../gtf_anno/{genome}.gtf.gz | awk '$3==\"exon\"' | grep -v 'pseudogene' | awk -v OFS='\t' '{{print \"chr\"$1, $4-1, $5, \"Exon\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u > {asset_outfolder}/{genome}_exons.bed",
-            "gzip -dc {asset_outfolder}/../gtf_anno/{genome}.gtf.gz | awk '$3==\"exon\"' | grep -v 'pseudogene' | awk -v OFS='\t' '{{ split($20, a, \"\\\"\"); print \"chr\"$1, $4-1, $5, a[2], $6, $7}}' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u | awk 'seen[$4]++ && seen[$4] > 1' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3nr | env LC_COLLATE=C sort -k1,1 -k2,2n -u | env LC_COLLATE=C sort -k1,1 -k3,3n -u | awk -v OFS='\t' '{{if($4==prev4){{new2=prev3+1;}} {{prev4=$4; prev3=$3; print $1, new2, $2-1, \"Intron\", $5, $6}}}}' | awk -F'\t' '$2' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_introns.bed",
-            "gzip -dc {asset_outfolder}/../gtf_anno/{genome}.gtf.gz | awk '$3==\"three_prime_utr\"' | grep -v 'pseudogene' | awk -v OFS='\t' '{{print \"chr\"$1, $4-1, $5, \"3\'\\\'\' UTR\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_3utr.bed",
-            "gzip -dc {asset_outfolder}/../gtf_anno/{genome}.gtf.gz | awk '$3==\"five_prime_utr\"' | grep -v 'pseudogene' | awk -v OFS='\t' '{{print \"chr\"$1, $4-1, $5, \"5\'\\\'\' UTR\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_5utr.bed",
+            "gzip -dc {asset_outfolder}/../ensembl_gtf/{genome}.gtf.gz | awk '$3==\"exon\"' | grep -v 'pseudogene' | awk -v OFS='\t' '{{print \"chr\"$1, $4-1, $5, \"Exon\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u > {asset_outfolder}/{genome}_exons.bed",
+            "gzip -dc {asset_outfolder}/../ensembl_gtf/{genome}.gtf.gz | awk '$3==\"exon\"' | grep -v 'pseudogene' | awk -v OFS='\t' '{{ split($20, a, \"\\\"\"); print \"chr\"$1, $4-1, $5, a[2], $6, $7}}' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u | awk 'seen[$4]++ && seen[$4] > 1' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3nr | env LC_COLLATE=C sort -k1,1 -k2,2n -u | env LC_COLLATE=C sort -k1,1 -k3,3n -u | awk -v OFS='\t' '{{if($4==prev4){{new2=prev3+1;}} {{prev4=$4; prev3=$3; print $1, new2, $2-1, \"Intron\", $5, $6}}}}' | awk -F'\t' '$2' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_introns.bed",
+            "gzip -dc {asset_outfolder}/../ensembl_gtf/{genome}.gtf.gz | awk '$3==\"three_prime_utr\"' | grep -v 'pseudogene' | awk -v OFS='\t' '{{print \"chr\"$1, $4-1, $5, \"3\'\\\'\' UTR\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_3utr.bed",
+            "gzip -dc {asset_outfolder}/../ensembl_gtf/{genome}.gtf.gz | awk '$3==\"five_prime_utr\"' | grep -v 'pseudogene' | awk -v OFS='\t' '{{print \"chr\"$1, $4-1, $5, \"5\'\\\'\' UTR\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_5utr.bed",
             "gzip -dc {asset_outfolder}/../reg_anno/{genome}.gff.gz | awk '$3==\"promoter\"' | awk -v OFS='\t' '{{print \"chr\"$1, $4, $5, \"Promoter\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u > {asset_outfolder}/{genome}_promoter.bed",
             "gzip -dc {asset_outfolder}/../reg_anno/{genome}.gff.gz | awk '$3==\"promoter_flanking_region\"' | awk -v OFS='\t' '{{print \"chr\"$1, $4, $5, \"Promoter Flanking Region\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u > {asset_outfolder}/{genome}_promoter_flanking.bed",
             "gzip -dc {asset_outfolder}/../reg_anno/{genome}.gff.gz | awk '$3==\"enhancer\"' | awk -v OFS='\t' '{{print \"chr\"$1, $4, $5, \"Enhancer\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u > {asset_outfolder}/{genome}_enhancer.bed",
