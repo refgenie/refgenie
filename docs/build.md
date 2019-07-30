@@ -46,9 +46,9 @@ The bismark index assets doesn't require any input, but does require that you've
 refgenie build -g test -a bismark_bt2_index -d -R
 ```
 
-### gtf_anno
+### gencode_gtf
 
-The get_anno asset just copies over a GTF annotation file, such as one provided by gencode.
+The gencode_gtf asset just copies over a GTF annotation file provided by gencode.
 
 - hg19: ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz
 - hg38: GTF=ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/gencode.v29.primary_assembly.annotation.gtf.gz
@@ -56,11 +56,17 @@ The get_anno asset just copies over a GTF annotation file, such as one provided 
 
 Build the asset like:
 ```
-refgenie build -g hg19 -a gtf_anno --gtf ${GTF}
+refgenie build -g hg19 -a gencode_gtf --gtf ${GTF}
 ```
 
-That should be enough to get you started. More documentation with specifics about each individual asset will be forthcoming.
+### ensembl_gtf
 
+The ensembl_gtf asset is a copy of the ENSEMBL annotation file. You could build it like this:
+
+```
+wget ftp://ftp.ensembl.org/pub/release-97/gtf/homo_sapiens/Homo_sapiens.GRCh38.97.gtf.gz
+refgenie build -g hg38 -a ensembl_gtf --gtf Homo_sapiens.GRCh38.97.gtf.gz
+```
 
 ## Install building software natively
 
