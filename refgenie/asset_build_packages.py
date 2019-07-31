@@ -148,13 +148,13 @@ asset_build_packages = {
             "cp {gff} {asset_outfolder}/{genome}.gff.gz",
             ] 
     },
-    "gene_anno": {
+    "refgene_anno": {
         "description": "Given a refGene file (must be downloaded), create a gene annotation asset.",
         "required_inputs": ["refgene"],
         "required_assets": [],
         "container": "databio/refgenie",
         "assets": {
-            "gene_anno": "gene_anno/{genome}_refGene.txt.gz"
+            "refgene_anno": "refgene_anno/{genome}_refGene.txt.gz"
             },
         "command_list": [
             "cp {refgene} {asset_outfolder}/{genome}_refGene.txt.gz"
@@ -186,49 +186,49 @@ asset_build_packages = {
     "tss_annotation": {
         "description": "Using a gene annotation asset, create a TSS annotation asset.",
         "required_inputs": [],
-        "required_assets": ["gene_anno"],
+        "required_assets": ["refgene_anno"],
         "assets": {
             "tss_annotation": "tss_annotation/{genome}_TSS.bed"
             },
         "container": "databio/refgenie",
         "command_list": [
-            "gzip -dc {asset_outfolder}/../gene_anno/{genome}_refGene.txt.gz | awk '{{if($4==\"+\"){{print $3\"\t\"$5\"\t\"$5\"\t\"$13\"\t.\t\"$4}}else{{print $3\"\t\"$6\"\t\"$6\"\t\"$13\"\t.\t\"$4}}}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_TSS.bed"
+            "gzip -dc {asset_outfolder}/../refgene_anno/{genome}_refGene.txt.gz | awk '{{if($4==\"+\"){{print $3\"\t\"$5\"\t\"$5\"\t\"$13\"\t.\t\"$4}}else{{print $3\"\t\"$6\"\t\"$6\"\t\"$13\"\t.\t\"$4}}}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_TSS.bed"
             ]
     },
     "exon_annotation": {
         "description": "Using a gene annotation asset, create an exon (no first exons) annotation asset.",
         "required_inputs": [],
-        "required_assets": ["gene_anno"],
+        "required_assets": ["refgene_anno"],
         "assets": {
             "exon_annotation": "exon_annotation/{genome}_exons.bed"
             },
         "container": "databio/refgenie",
         "command_list": [
-            "gzip -dc {asset_outfolder}/../gene_anno/{genome}_refGene.txt.gz | awk -v OFS='\t' '$9>1' | awk -v OFS='\t' '{{ n = split($10, a, \",\"); split($11, b, \",\"); for(i=1; i<n; ++i) print $3, a[i], b[i], $13, i, $4 }}' | awk -v OFS='\t' '$6==\"+\" && $5!=1 {{print $0}} $6==\"-\" {{print $0}}' | awk '$4!=prev4 && prev6==\"-\" {{prev4=$4; prev6=$6; delete line[NR-1]; idx-=1}} {{line[++idx]=$0; prev4=$4; prev6=$6}} END {{for (x=1; x<=idx; x++) print line[x]}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_exons.bed"
+            "gzip -dc {asset_outfolder}/../refgene_anno/{genome}_refGene.txt.gz | awk -v OFS='\t' '$9>1' | awk -v OFS='\t' '{{ n = split($10, a, \",\"); split($11, b, \",\"); for(i=1; i<n; ++i) print $3, a[i], b[i], $13, i, $4 }}' | awk -v OFS='\t' '$6==\"+\" && $5!=1 {{print $0}} $6==\"-\" {{print $0}}' | awk '$4!=prev4 && prev6==\"-\" {{prev4=$4; prev6=$6; delete line[NR-1]; idx-=1}} {{line[++idx]=$0; prev4=$4; prev6=$6}} END {{for (x=1; x<=idx; x++) print line[x]}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_exons.bed"
             ]
     },
     "intron_annotation": {
         "description": "Using a gene annotation asset, create an intron annotation asset.",
         "required_inputs": [],
-        "required_assets": ["gene_anno"],
+        "required_assets": ["refgene_anno"],
         "assets": {
             "intron_annotation": "intron_annotation/{genome}_introns.bed"
             },
         "container": "databio/refgenie",
         "command_list": [
-            "gzip -dc {asset_outfolder}/../gene_anno/{genome}_refGene.txt.gz | awk -v OFS='\t' '$9>1' | awk -F'\t' '{{ exonCount=int($9);split($10,exonStarts,\"[,]\"); split($11,exonEnds,\"[,]\"); for(i=1;i<exonCount;i++) {{printf(\"%s\\t%s\\t%s\\t%s\\t%d\\t%s\\n\",$3,exonEnds[i],exonStarts[i+1],$13,($3==\"+\"?i:exonCount-i),$4);}}}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_introns.bed"
+            "gzip -dc {asset_outfolder}/../refgene_anno/{genome}_refGene.txt.gz | awk -v OFS='\t' '$9>1' | awk -F'\t' '{{ exonCount=int($9);split($10,exonStarts,\"[,]\"); split($11,exonEnds,\"[,]\"); for(i=1;i<exonCount;i++) {{printf(\"%s\\t%s\\t%s\\t%s\\t%d\\t%s\\n\",$3,exonEnds[i],exonStarts[i+1],$13,($3==\"+\"?i:exonCount-i),$4);}}}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_introns.bed"
             ]
     },
     "pre_mRNA_annotation": {
         "description": "Using a gene annotation asset, create a premature mRNA annotation asset.",
         "required_inputs": [],
-        "required_assets": ["gene_anno"],
+        "required_assets": ["refgene_anno"],
         "assets": {
             "pre_mRNA_annotation": "pre_mRNA_annotation/{genome}_pre-mRNA.bed"
             },
         "container": "databio/refgenie",
         "command_list": [
-            "gzip -dc {asset_outfolder}/../gene_anno/{genome}_refGene.txt.gz | grep 'cmpl' | awk  '{{print $3\"\t\"$5\"\t\"$6\"\t\"$13\"\t.\t\"$4}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u >  {asset_outfolder}/{genome}_pre-mRNA.bed"
+            "gzip -dc {asset_outfolder}/../refgene_anno/{genome}_refGene.txt.gz | grep 'cmpl' | awk  '{{print $3\"\t\"$5\"\t\"$6\"\t\"$13\"\t.\t\"$4}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u >  {asset_outfolder}/{genome}_pre-mRNA.bed"
             ]
     },
     "pi_tss": {
