@@ -10,7 +10,7 @@ At the moment the building functionality is under rapid development and may chan
 
 Each asset requires some input. For many of the built-in recipes, this is just a FASTA file. Below, we go through the assets you can build and how to build them.
 
-## Examples for assets you can build
+## Examples for top-level assets you can build
 
 ### fasta
 
@@ -30,6 +30,30 @@ refgenie build -g test -a fasta --fasta rCRS.fa.gz
 refgenie seek -g test -a fasta
 ```
 
+### refgene_anno
+A refgene annotation file is used to build several other derived assets.
+
+```
+wget -O hg38_TSS_full.txt.gz http://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/refGene.txt.gz
+refgenie build -g hg38 -a refgene_anno --gtf rCRS.fa.gz
+```
+
+### gencode_gtf
+
+The gencode_gtf asset just copies over a GTF annotation file provided by gencode.
+
+- hg19: ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz
+- hg38: GTF=ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/gencode.v29.primary_assembly.annotation.gtf.gz
+- mm10: ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_mouse/release_M12/gencode.vM12.primary_assembly.annotation.gtf.gz
+
+Build the asset like:
+```
+refgenie build -g hg19 -a gencode_gtf --gtf ${GTF}
+```
+
+
+## Examples for derived assets you can build
+
 ### bowtie2 index
 
 The bowtie2_index asset doesn't require any input, but does require that you've already built the `fasta` asset. So, first build the fasta asset for your genome of interest, and then you just build the `bowtie2_index` asset with no other requirements:
@@ -46,18 +70,6 @@ The bismark index assets doesn't require any input, but does require that you've
 refgenie build -g test -a bismark_bt2_index -d -R
 ```
 
-### gencode_gtf
-
-The gencode_gtf asset just copies over a GTF annotation file provided by gencode.
-
-- hg19: ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz
-- hg38: GTF=ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/gencode.v29.primary_assembly.annotation.gtf.gz
-- mm10: ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_mouse/release_M12/gencode.vM12.primary_assembly.annotation.gtf.gz
-
-Build the asset like:
-```
-refgenie build -g hg19 -a gencode_gtf --gtf ${GTF}
-```
 
 ### ensembl_gtf
 
