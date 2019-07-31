@@ -182,10 +182,10 @@ asset_build_packages = {
         "container": "databio/refgenie",
         "assets": {
             "refgene_anno": "refgene_anno/{genome}_refGene.txt.gz",
-            "tss_annotation": "refgene_anno/{genome}_TSS.bed",
-            "exon_annotation": "refgene_anno/{genome}_exons.bed",
-            "intron_annotation": "refgene_anno/{genome}_introns.bed",
-            "pre_mRNA_annotation": "refgene_anno/{genome}_pre-mRNA.bed"
+            "refgene_tss": "refgene_anno/{genome}_TSS.bed",
+            "refgene_exon": "refgene_anno/{genome}_exons.bed",
+            "refgene_intron": "refgene_anno/{genome}_introns.bed",
+            "refgene_pre_mRNA": "refgene_anno/{genome}_pre-mRNA.bed"
             },
         "command_list": [
             "cp {refgene} {asset_outfolder}/{genome}_refGene.txt.gz",
