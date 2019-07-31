@@ -199,7 +199,7 @@ def get_asset_vars(genome, asset_key, outfolder, specific_args=None):
 def refgenie_add(rgc, args):
     outfolder = os.path.abspath(os.path.join(rgc.genome_folder, args.genome))
     asset_vars = get_asset_vars(args.genome, args.asset, outfolder)
-    rgc.update_assets(args.genome, args.asset, {"path": args.path.format(**asset_vars)})
+    rgc.update_assets(args.genome, args.asset, {CFG_ASSET_PATH_KEY: args.path.format(**asset_vars)})
     # Write the updated refgenie genome configuration
     rgc.write()
 
@@ -246,7 +246,7 @@ def refgenie_build(rgc, args):
         args.config_file = default_config_file()
 
     def path_data(root, c):
-        return {"path": os.path.relpath(root, c.genome_folder)}
+        return {CFG_ASSET_PATH_KEY: os.path.relpath(root, c.genome_folder)}
 
 
     def build_asset(genome, asset_key, asset_build_package, outfolder, specific_args):
@@ -278,9 +278,13 @@ def refgenie_build(rgc, args):
         _LOGGER.debug("Command list populated: " + str(command_list_populated))
 
         pm.run(command_list_populated, target, container=pm.container)
-        # Add index information to rgc
+        try:
+            asset_desc = asset_build_package["description"]
+        except KeyError:
+            asset_desc = "NA"
         for asset_key, relative_path in asset_build_package["assets"].items():
-            rgc.update_assets(genome, asset_key, {"path": relative_path.format(**asset_vars)})
+            rgc.update_assets(genome, asset_key, {CFG_ASSET_PATH_KEY: relative_path.format(**asset_vars),
+                                                  CFG_ASSET_DESC_KEY: asset_desc})
 
         # Write the updated refgenie genome configuration
         rgc.write()
