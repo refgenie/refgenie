@@ -34,8 +34,8 @@ refgenie seek -g test -a fasta
 A refgene annotation file is used to build several other derived assets.
 
 ```
-wget -O hg38_TSS_full.txt.gz http://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/refGene.txt.gz
-refgenie build -g hg38 -a refgene_anno --gtf rCRS.fa.gz
+wget http://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/refGene.txt.gz
+refgenie build -g hg38 -a refgene_anno --refgene refGene.txt.gz
 ```
 
 ### gencode_gtf
@@ -51,6 +51,14 @@ Build the asset like:
 refgenie build -g hg19 -a gencode_gtf --gtf ${GTF}
 ```
 
+### ensembl_rb
+
+This is the ensembl regulatory build. It requires an input `gff` file.
+
+```
+wget ftp://ftp.ensembl.org/pub/release-97/regulation/homo_sapiens/homo_sapiens.GRCh38.Regulatory_Build.regulatory_features.20190329.gff.gz
+refgenie build -g hg19 -a ensembl_rb --gff homo_sapiens.GRCh38.Regulatory_Build.regulatory_features.20190329.gff.gz
+```
 
 ## Examples for derived assets you can build
 

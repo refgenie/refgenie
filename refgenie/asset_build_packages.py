@@ -198,7 +198,7 @@ asset_build_packages = {
     "feat_annotation": {
         "description": "Using a Ensembl GTF annotation asset and an Ensembl regulatory build annotation asset, create a combined genomic feature annotation asset.",
         "assets": {
-            "feat_annotation": "{asset_outfolder}/{genome}_annotations.bed.gz"
+            "feat_annotation": "feat_annotation/{genome}_annotations.bed.gz"
             },
         "required_inputs": [],
         "required_assets": ["ensembl_gtf", "ensembl_rb"],
