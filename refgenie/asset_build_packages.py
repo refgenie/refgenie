@@ -188,7 +188,7 @@ asset_build_packages = {
         ASSETS: {
             "gencode_gtf": {
                 PTH: "gencode_gtf/{genome}.gtf.gz",
-                ASSET_DESC: "GTF provides access to all annotated transcripts which make up an Ensembl gene set"
+                ASSET_DESC: "Gencode GTF provides access to all gene features with high accuracy based on biological evidence."
             }
         },
         CMD_LST: [
@@ -201,18 +201,17 @@ asset_build_packages = {
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
         ASSETS: {
-            # TODO: add asset descriptions
             "ensembl_gtf": {
                 PTH: "ensembl_gtf/{genome}.gtf.gz",
-                ASSET_DESC: ""
+                ASSET_DESC: "Ensembl GTF provides access to all annotated transcripts which make up an Ensembl gene set"
             },
             "ensembl_tss": {
                 PTH: "ensembl_gtf/{genome}_ensembl_TSS.bed",
-                ASSET_DESC: ""
+                ASSET_DESC: "Ensembl transcription start sites (TSSs) derived from an Ensembl GTF annotation."
             },
             "ensembl_gene_body": {
                 PTH: "ensembl_gtf/{genome}_ensembl_gene_body.bed",
-                ASSET_DESC: ""
+                ASSET_DESC: "Ensembl gene bodies derived from an Ensembl GTF annotation."
             }
         },
         CMD_LST: [
@@ -227,10 +226,9 @@ asset_build_packages = {
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
         ASSETS: {
-            # TODO: add asset descriptions
             "ensembl_rb": {
                 PTH: "ensembl_rb/{genome}.gff.gz",
-                ASSET_DESC: ""
+                ASSET_DESC: "A genome-wide set of regions that are likely to be involved in gene regulation."
             }
         },
         CMD_LST: [
@@ -243,26 +241,25 @@ asset_build_packages = {
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
         ASSETS: {
-            # TODO: add asset descriptions
             "refgene_anno": {
                 PTH: "refgene_anno/{genome}_refGene.txt.gz",
-                ASSET_DESC: ""
+                ASSET_DESC: "Specifies known human protein-coding and non-protein-coding genes taken from the NCBI RNA reference sequences collection (RefSeq)."
             },
             "refgene_tss": {
                 PTH: "refgene_anno/{genome}_TSS.bed",
-                ASSET_DESC: ""
+                ASSET_DESC: "Transcription start sites (TSSs) derived from the refGene annotation asset."
             },
             "refgene_exon": {
                 PTH: "refgene_anno/{genome}_exons.bed",
-                ASSET_DESC: ""
+                ASSET_DESC: "Exons derived from the refGene annotation asset."
             },
             "refgene_intron": {
                 PTH: "refgene_anno/{genome}_introns.bed",
-                ASSET_DESC: ""
+                ASSET_DESC: "Introns derived from the refGene annotation asset."
             },
             "refgene_pre_mRNA": {
                 PTH: "refgene_anno/{genome}_pre-mRNA.bed",
-                ASSET_DESC: ""
+                ASSET_DESC: "Premature mRNA from complete genes derived from the refGene annotation asset"
             }
         },
         CMD_LST: [
@@ -276,10 +273,9 @@ asset_build_packages = {
     "feat_annotation": {
         DESC: "Using a Ensembl GTF annotation asset and an Ensembl regulatory build annotation asset, create a combined genomic feature annotation asset.",
         ASSETS: {
-            # TODO: add asset descriptions
             "feat_annotation": {
                 PTH: "feat_annotation/{genome}_annotations.bed.gz",
-                ASSET_DESC: ""
+                ASSET_DESC: "Genomic features including enhancers, promoters, promoter flanking, 5' UTR, 3' UTR, exons, and introns derived from Ensembl GTF and Ensembl regulatory build (rb) assets."
             }
         },
         REQ_IN: [],
