@@ -2,6 +2,7 @@
 
 from argparse import ArgumentParser, SUPPRESS
 from collections import OrderedDict
+from shutil import rmtree
 import os
 import re
 import sys
@@ -13,9 +14,9 @@ from .asset_build_packages import *
 import logmuse
 import pypiper
 import refgenconf
-from refgenconf import RefGenConf
+from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError
 from refgenconf.const import *
-from ubiquerg import is_url
+from ubiquerg import is_url, query_yes_no
 import yacman
 
 _LOGGER = None
@@ -27,6 +28,7 @@ LIST_LOCAL_CMD = "list"
 LIST_REMOTE_CMD = "listr"
 GET_ASSET_CMD = "seek"
 INSERT_CMD = "add"
+REMOVE_CMD = "remove"
 
 BUILD_SPECIFIC_ARGS = ('fasta', 'gtf', 'gff', 'context', 'refgene')
 
@@ -77,7 +79,8 @@ def build_argparser():
         PULL_CMD: "Download assets.",
         BUILD_CMD: "Build genome assets.",
         GET_ASSET_CMD: "Get the path to a local asset.",
-        INSERT_CMD: "Add local asset to the config file."
+        INSERT_CMD: "Add local asset to the config file.",
+        REMOVE_CMD: "Remove a local asset."
     }
 
     sps = {}
@@ -109,14 +112,14 @@ def build_argparser():
         help='Override the default path to genomes folder, which is the '
              'genome_folder attribute in the genome configuration file.')
 
-    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
+    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, LIST_LOCAL_CMD, LIST_REMOTE_CMD, REMOVE_CMD]:
         # genome is not required for listing actions
         sps[cmd].add_argument(
             "-g", "--genome", required=cmd not in (LIST_REMOTE_CMD, LIST_LOCAL_CMD),
             help="Reference assembly ID, e.g. mm10")
-    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD]:
+    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD]:
         sps[cmd].add_argument(
-            "-a", "--asset", required=True, nargs='+',
+            "-a", "--asset", required=not cmd == REMOVE_CMD, nargs='+',
             help="Name of one or more assets (keys in genome config file)")
 
     sps[PULL_CMD].add_argument(
@@ -444,6 +447,32 @@ def main():
         if args.command != LIST_REMOTE_CMD:  # Not implemented yet
             _LOGGER.info("{} recipes: {}".format(pfx, recipes))
         _LOGGER.info("{} assets:\n{}".format(pfx, assets))
+
+    elif args.command == REMOVE_CMD:
+        assets = rgc.list_assets_by_genome(args.genome) if args.asset is None else args.asset
+        for asset in assets:
+            try:
+                rgc.get_asset(args.genome, asset)
+            except (MissingAssetError, MissingGenomeError):
+                _LOGGER.info("Asset {}/{} does not exist".format(args.genome, asset))
+                return
+        if len(assets) > 1:
+            if not query_yes_no("Remove {} assets for genome: {}?".format(len(assets), args.genome)):
+                return
+        else:
+            query_yes_no("Remove {}/{}?".format(args.genome, assets[0]))
+        removed = []
+        for asset in assets:
+            asset_dir = os.path.abspath(os.path.join(rgc.genome_folder, args.genome, asset))
+            asset_archive = asset_dir + ".tar"
+            if os.path.isfile(asset_archive):
+                os.remove(asset_archive)
+                removed.append(asset_archive)
+            if os.path.isdir(asset_dir):
+                rmtree(asset_dir)
+                rgc.remove_assets(args.genome, asset).write()
+                removed.append(asset_dir)
+        _LOGGER.info("Successfully removed entities:\n- {}".format("\n- ".join(removed)))
 
 
 def _key_to_name(k):
