@@ -8,7 +8,7 @@ import sys
 
 from ._version import __version__
 from .exceptions import MissingGenomeConfigError, MissingFolderError
-from .asset_build_packages import asset_build_packages
+from .asset_build_packages import *
 
 import logmuse
 import pypiper
@@ -248,7 +248,6 @@ def refgenie_build(rgc, args):
     def path_data(root, c):
         return {CFG_ASSET_PATH_KEY: os.path.relpath(root, c.genome_folder)}
 
-
     def build_asset(genome, asset_key, asset_build_package, outfolder, specific_args):
         """
         Builds assets with pypiper and updates a genome config file.
@@ -266,11 +265,11 @@ def refgenie_build(rgc, args):
         asset_vars = get_asset_vars(genome, asset_key, outfolder, specific_args)
         asset_outfolder = os.path.join(outfolder, asset_key)
 
-        _LOGGER.debug(str([x.format(**asset_vars) for x in asset_build_package["command_list"]]))
+        _LOGGER.debug(str([x.format(**asset_vars) for x in asset_build_package[CMD_LST]]))
 
         tk.make_dir(asset_outfolder)
         target = os.path.join(asset_outfolder, "build_complete.flag")
-        command_list_populated = [x.format(**asset_vars) for x in asset_build_package["command_list"]]
+        command_list_populated = [x.format(**asset_vars) for x in asset_build_package[CMD_LST]]
 
         touch_target = "touch {target}".format(target=target)
         command_list_populated.append(touch_target)
@@ -278,13 +277,12 @@ def refgenie_build(rgc, args):
         _LOGGER.debug("Command list populated: " + str(command_list_populated))
 
         pm.run(command_list_populated, target, container=pm.container)
-        try:
-            asset_desc = asset_build_package["description"]
-        except KeyError:
-            asset_desc = "NA"
-        for asset_key, relative_path in asset_build_package["assets"].items():
-            rgc.update_assets(genome, asset_key, {CFG_ASSET_PATH_KEY: relative_path.format(**asset_vars),
-                                                  CFG_ASSET_DESC_KEY: asset_desc})
+
+        for asset in asset_build_package[ASSETS].keys():
+            rgc.update_assets(genome, asset, {
+                CFG_ASSET_PATH_KEY: asset_build_package[ASSETS][asset][PTH].format(**asset_vars),
+                CFG_ASSET_DESC_KEY: asset_build_package[ASSETS][asset][ASSET_DESC]
+            })
 
         # Write the updated refgenie genome configuration
         rgc.write()
@@ -303,20 +301,20 @@ def refgenie_build(rgc, args):
         if asset_key in asset_build_packages.keys():
             asset_build_package = asset_build_packages[asset_key]
             _LOGGER.debug(specific_args)
-            required_inputs = ", ".join(asset_build_package["required_inputs"])
+            required_inputs = ", ".join(asset_build_package[REQ_IN])
             _LOGGER.info("Inputs required to build '{}': {}".format(asset_key, required_inputs))
-            for required_input in asset_build_package["required_inputs"]:
+            for required_input in asset_build_package[REQ_IN]:
                 if not specific_args[required_input]:
                     raise ValueError("Argument '{}' is required to build asset '{}', but not provided".format(required_input, asset_key))
 
-            for required_asset in asset_build_package["required_assets"]:
+            for required_asset in asset_build_package[REQ_ASSETS]:
                 try:
                     if not rgc.get_asset(args.genome, required_asset):
                         raise ValueError("Asset '{}' is required to build asset '{}', but not provided".format(required_asset, asset_key))                    
                 except refgenconf.exceptions.MissingGenomeError:
                         raise ValueError("Asset '{}' is required to build asset '{}', but not provided".format(required_asset, asset_key))                    
             if args.docker:
-                pm.get_container(asset_build_package["container"], volumes)
+                pm.get_container(asset_build_package[CONT], volumes)
             build_asset(args.genome, asset_key, asset_build_package, outfolder, specific_args)
             _LOGGER.info("Finished building asset '{}'".format(asset_key))
         else:
