@@ -30,4 +30,10 @@ Now we can `seek` any of those assets:
 refgenie seek -c igenome_config.yaml -g ce10 --asset bowtie2_index
 ```
 
+Or `remove` unwanted/faulty ones:
+
+```console
+refgenie remove -g ce10 --asset bowtie2_index
+```
+
 This way you can configure refgenie to use your iGenomes assets, so you can wean yourself off of the iGenomes hard structure and transition to the refgenie-managed path system.

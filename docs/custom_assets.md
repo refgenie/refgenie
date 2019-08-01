@@ -10,8 +10,16 @@ The preferred option would be to script your asset building and then allow refge
 
 You can add additional assets with the `refgenie add` command. Just provide the genome, asset, and path *relative to the genome folder*. What this means is that you can exploit the refgenie system to manage and access your own assets. For example, say you have an hg38 annotation called *manual_annotation*, which you produced by hand. You can simply put that in your genomes folder (under `hg38/annotation_folder_dir`), and then add an entry to your genome configuration file:
 
-```
+```console
 refgenie add -g hg38 -a manual_anno --path annotation_folder_dir
+```
+
+## Remove assets
+
+You can easily remove assets from both disk and config file with:
+
+```console
+refgenie add -g hg38 -a bowtie2_index
 ```
 
 If you want to, you could also just edit the config file by hand by adding this kind of information:
