@@ -48,8 +48,15 @@ The gencode_gtf asset just copies over a GTF annotation file provided by gencode
 
 Build the asset like:
 ```
-refgenie build -g hg19 -a gencode_gtf --gtf ${GTF}
+wget ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/gencode.v29.primary_assembly.annotation.gtf.gz
+refgenie build -g hg19 -a gencode_gtf --gtf gencode.v29.primary_assembly.annotation.gtf.gz
 ```
+
+
+### ensembl_gtf
+
+wget ftp://ftp.ensembl.org/pub/release-97/gtf/homo_sapiens/Homo_sapiens.GRCh38.97.gtf.gz
+refgenie build -g hg19 -a ensembl_gtf --gtf Homo_sapiens.GRCh38.97.gtf.gz
 
 ### ensembl_rb
 
