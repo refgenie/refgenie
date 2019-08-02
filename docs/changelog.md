@@ -2,6 +2,15 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
+## [0.5.1] - unreleased
+
+### Added
+- `list` and `listr` subcommand results can be restricted to a specific genome with `-g/--genome` options
+- `remove` subcommand
+- Added recipes for new assets: `refgene_anno`, `ensembl_gtf` and `feat_annotation`
+- `build` populates the `asset_description` field in the config with corresponding value from the recipe
+
+
 ## [0.5.0] - 2019-07-11
 ### Changed
 - `refgenie build` uses dict-like recipies for build instructions
