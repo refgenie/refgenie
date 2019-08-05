@@ -7,8 +7,11 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 - `list` and `listr` subcommand results can be restricted to a specific genome with `-g/--genome` options
 - `remove` subcommand will remove an asset from disk and config
-- Added recipes for new assets: `refgene_anno`, `ensembl_gtf` and `feat_annotation`
+- Added recipes for new assets: `ensembl_gtf` and `feat_annotation`
 - `build` now populates the `asset_description` field in the config with corresponding value from the recipe
+
+### Changed
+- changed some asset locations; `tss_annotation` is now named `refgene_tss` or `ensembl_tss` and is built by the `refgene_anno` or `ensembl_gtf` assets. Renamed `gene_anno` to `refgene_anno`.
 
 
 ## [0.5.0] - 2019-07-11
