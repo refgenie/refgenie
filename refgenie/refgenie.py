@@ -29,6 +29,7 @@ LIST_REMOTE_CMD = "listr"
 GET_ASSET_CMD = "seek"
 INSERT_CMD = "add"
 REMOVE_CMD = "remove"
+GETSEQ_CMD = "getseq"
 
 BUILD_SPECIFIC_ARGS = ('fasta', 'gtf', 'gff', 'context', 'refgene')
 
@@ -80,7 +81,8 @@ def build_argparser():
         BUILD_CMD: "Build genome assets.",
         GET_ASSET_CMD: "Get the path to a local asset.",
         INSERT_CMD: "Add local asset to the config file.",
-        REMOVE_CMD: "Remove a local asset."
+        REMOVE_CMD: "Remove a local asset.",
+        GETSEQ_CMD: "Get sequences from a genome"
     }
 
     sps = {}
@@ -112,11 +114,15 @@ def build_argparser():
         help='Override the default path to genomes folder, which is the '
              'genome_folder attribute in the genome configuration file.')
 
-    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, LIST_LOCAL_CMD, LIST_REMOTE_CMD, REMOVE_CMD]:
+    # add 'genome' argument to many commands
+    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, LIST_LOCAL_CMD,
+                 LIST_REMOTE_CMD, REMOVE_CMD, GETSEQ_CMD]:
         # genome is not required for listing actions
         sps[cmd].add_argument(
             "-g", "--genome", required=cmd not in (LIST_REMOTE_CMD, LIST_LOCAL_CMD),
             help="Reference assembly ID, e.g. mm10")
+
+    # add 'asset' argument to many commands
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD]:
         sps[cmd].add_argument(
             "-a", "--asset", required=not cmd == REMOVE_CMD, nargs='+',
@@ -129,6 +135,11 @@ def build_argparser():
     sps[INSERT_CMD].add_argument(
         "-p", "--path", required=True,
         help="Relative path to asset")
+
+    sps[GETSEQ_CMD].add_argument(
+        "-l", "--locus", required=True,
+        help="Coordinates to retrieve sequence for; such has 'chr1:50000-50200'.")
+
 
     # Finally, arguments to the build command to give the files needed to do
     # the building. These should eventually move to a more flexible system that
@@ -347,6 +358,24 @@ def refgenie_init(genome_config_path, genome_server=DEFAULT_SERVER, config_versi
         _LOGGER.warning("Can't initialize, file exists: {} ".format(genome_config_path))
 
 
+def refgenie_getseq(rgc, genome, locus):
+    """
+    Something like the refget protocol.
+    """
+
+    from pyfaidx import Fasta
+    fa = Fasta(rgc.get_asset(genome, "fasta"))
+    locus_split = locus.split(":")
+
+    if len(locus_split)> 1:
+        start, end = locus_split[1].split("-")
+        _LOGGER.debug("chr: '{}', start: '{}', end: '{}'".format(locus_split[0], start, end))
+        print(fa[locus_split[0]][int(start):int(end)])
+    else:
+        print(fa[locus_split[0]])
+
+
+
 def _exec_list(rgc, remote, genome):
     if remote:
         pfx = "Remote"
@@ -389,7 +418,7 @@ def main():
     global _LOGGER
     _LOGGER = logmuse.logger_via_cli(args)
     logmuse.logger_via_cli(args, name=refgenconf.__name__)
-    _LOGGER.info("refgenie {}".format(__version__))
+    _LOGGER.debug("refgenie {}".format(__version__))
     _LOGGER.debug("Args: {}".format(args))
 
     if not args.command:
@@ -447,6 +476,9 @@ def main():
         if args.command != LIST_REMOTE_CMD:  # Not implemented yet
             _LOGGER.info("{} recipes: {}".format(pfx, recipes))
         _LOGGER.info("{} assets:\n{}".format(pfx, assets))
+
+    elif args.command == GETSEQ_CMD:
+        refgenie_getseq(rgc, args.genome, args.locus)
 
     elif args.command == REMOVE_CMD:
         assets = rgc.list_assets_by_genome(args.genome) if args.asset is None else args.asset
