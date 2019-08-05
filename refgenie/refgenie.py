@@ -7,6 +7,8 @@ import os
 import re
 import sys
 
+import hashlib
+
 from ._version import __version__
 from .exceptions import MissingGenomeConfigError, MissingFolderError
 from .asset_build_packages import *
@@ -210,6 +212,32 @@ def refgenie_add(rgc, args):
     rgc.write()
 
 
+def hash_collection(fa_file, checksum_func=hashlib.md5):
+    _LOGGER.info("Hashing {}".format(fa_file))
+    import pyfaidx
+    try:
+        fa_object = pyfaidx.Fasta(fa_file)
+    except pyfaidx.UnsupportedCompressionFormat:
+        os.system("gunzip {}".format(fa_file))
+        fa_file_unzipped = fa_file.replace(".gz", "")
+        fa_object = pyfaidx.Fasta(fa_file_unzipped)
+        os.system("gzip {}".format(fa_file_unzipped))
+
+    contents = {}
+    for k in fa_object.keys():
+        print(k)
+        contents[k] = checksum_func(str(fa_object[k]).encode()).hexdigest()
+    collection_checksum = checksum_func(";".join([":".join(i) for i in contents.items()]).encode()).hexdigest()
+    return collection_checksum, contents
+
+def refgenie_initg(rgc, genome, collection_checksum, contents):
+    rgc.update_genomes(genome, {
+            "checksum": collection_checksum,
+            "contents": contents
+        })
+    rgc.write()
+
+
 def refgenie_build(rgc, args):
     """
     Runs the refgenie build recipe.
@@ -311,7 +339,6 @@ def refgenie_build(rgc, args):
                     raise ValueError(
                         "Argument '{}' is required to build asset '{}', but not provided".format(required_input,
                                                                                                  asset_key))
-
             for required_asset in asset_build_package[REQ_ASSETS]:
                 try:
                     if not rgc.get_asset(args.genome, required_asset):
@@ -324,6 +351,18 @@ def refgenie_build(rgc, args):
                                                                                               asset_key))
             if args.docker:
                 pm.get_container(asset_build_package[CONT], volumes)
+
+            # If the asset is a fasta, we first init the asset
+            if asset_key == 'fasta':
+                _LOGGER.info("Initializing genome...")
+                collection_checksum, contents = hash_collection(specific_args["fasta"])
+                if genome in rgc.genomes and "checksum" in rgc.genomes[genome] and collection_checksum != rgc.genomes[genome]["checksum"]:
+                    _LOGGER.info("Checksum doesn't match")
+                    return False
+                else:
+                    refgenie_initg(rgc, genome, collection_checksum, contents)
+
+
             build_asset(args.genome, asset_key, asset_build_package, outfolder, specific_args)
             _LOGGER.info("Finished building asset '{}'".format(asset_key))
         else:
