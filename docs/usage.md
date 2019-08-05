@@ -4,27 +4,28 @@
 
 ```console
 version: 0.5.0
-usage: refgenie [-h] [-V] [--verbosity V] [--logdev] [--silent]
-                {listr,add,list,build,pull,seek,init} ...
+usage: refgenie [-h] [-V] [--silent] [--verbosity V] [--logdev]
+                {init,list,listr,pull,build,seek,add,remove} ...
 
 refgenie - builds and manages reference genome assemblies
 
 positional arguments:
-  {listr,add,list,build,pull,seek,init}
-    listr               List available remote assets.
-    add                 Add local asset to the config file.
-    list                List available local assets.
-    build               Build genome assets.
-    pull                Download assets.
-    seek                Get the path to a local asset.
+  {init,list,listr,pull,build,seek,add,remove}
     init                Initialize a genome configuration.
+    list                List available local assets.
+    listr               List available remote assets.
+    pull                Download assets.
+    build               Build genome assets.
+    seek                Get the path to a local asset.
+    add                 Add local asset to the config file.
+    remove              Remove a local asset.
 
 optional arguments:
   -h, --help            show this help message and exit
   -V, --version         show program's version number and exit
+  --silent              Silence logging. Overrides --verbosity.
   --verbosity V         Set logging level (1-5 or logging module level name)
   --logdev              Expand content of logging message format.
-  --silent              Silence logging. Overrides --verbosity.
 
 https://refgenie.databio.org
 ```
@@ -135,3 +136,22 @@ optional arguments:
   -p PATH, --path PATH  Relative path to asset
 ```
 
+## `refgenie remove --help`
+
+```console
+version: 0.5.0
+usage: refgenie remove [-h] [-c GENOME_CONFIG] -g GENOME
+                       [-a ASSET [ASSET ...]]
+
+Remove a local asset.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -c GENOME_CONFIG, --genome-config GENOME_CONFIG
+                        Path to local genome configuration file.
+  -g GENOME, --genome GENOME
+                        Reference assembly ID, e.g. mm10
+  -a ASSET [ASSET ...], --asset ASSET [ASSET ...]
+                        Name of one or more assets (keys in genome config
+                        file)
+```
