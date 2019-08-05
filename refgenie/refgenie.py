@@ -213,11 +213,22 @@ def refgenie_add(rgc, args):
 
 
 def hash_collection(fa_file, checksum_func=hashlib.md5):
+    """
+    Generate collection-level sequence checksums. 
+
+    This will use the refget checksums for individual sequences, concatenating
+    them with sequence identifiers, and then re-hashing them. This creates a
+    uniquely identifying checksum for a collection of sequences.
+    """
     _LOGGER.info("Hashing {}".format(fa_file))
     import pyfaidx
     try:
         fa_object = pyfaidx.Fasta(fa_file)
     except pyfaidx.UnsupportedCompressionFormat:
+        # pyfaidx can handle bgzip but not gzip; so we just hack it here and
+        # unzip the file for checksumming, then rezip it for the rest of the
+        # asset build. TODO: streamline this to avoid repeated
+        # compress/decompress
         os.system("gunzip {}".format(fa_file))
         fa_file_unzipped = fa_file.replace(".gz", "")
         fa_object = pyfaidx.Fasta(fa_file_unzipped)
@@ -231,6 +242,13 @@ def hash_collection(fa_file, checksum_func=hashlib.md5):
     return collection_checksum, contents
 
 def refgenie_initg(rgc, genome, collection_checksum, contents):
+    """
+    Initializing a genome means adding `checksum` and `contents` attributes in
+    the genome config file. This should perhaps be  a function in refgenconf,
+    but not a CLI-hook.
+
+    :param rgc:
+    """
     rgc.update_genomes(genome, {
             "checksum": collection_checksum,
             "contents": contents
