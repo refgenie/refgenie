@@ -227,8 +227,8 @@ def hash_collection(fa_file, checksum_func=hashlib.md5):
     except pyfaidx.UnsupportedCompressionFormat:
         # pyfaidx can handle bgzip but not gzip; so we just hack it here and
         # unzip the file for checksumming, then rezip it for the rest of the
-        # asset build. TODO: streamline this to avoid repeated
-        # compress/decompress
+        # asset build.
+        # TODO: streamline this to avoid repeated compress/decompress
         os.system("gunzip {}".format(fa_file))
         fa_file_unzipped = fa_file.replace(".gz", "")
         fa_object = pyfaidx.Fasta(fa_file_unzipped)
@@ -241,6 +241,7 @@ def hash_collection(fa_file, checksum_func=hashlib.md5):
     collection_checksum = checksum_func(";".join([":".join(i) for i in contents.items()]).encode()).hexdigest()
     return collection_checksum, contents
 
+
 def refgenie_initg(rgc, genome, collection_checksum, contents):
     """
     Initializing a genome means adding `checksum` and `contents` attributes in
@@ -250,8 +251,8 @@ def refgenie_initg(rgc, genome, collection_checksum, contents):
     :param rgc:
     """
     rgc.update_genomes(genome, {
-            "checksum": collection_checksum,
-            "contents": contents
+            CFG_CHECKSUM_KEY: collection_checksum,
+            CFG_CONTENTS_KEY: contents
         })
     rgc.write()
 
@@ -374,12 +375,12 @@ def refgenie_build(rgc, args):
             if asset_key == 'fasta':
                 _LOGGER.info("Initializing genome...")
                 collection_checksum, contents = hash_collection(specific_args["fasta"])
-                if genome in rgc.genomes and "checksum" in rgc.genomes[genome] and collection_checksum != rgc.genomes[genome]["checksum"]:
+                if genome in rgc.genomes and "checksum" in rgc.genomes[genome] \
+                        and collection_checksum != rgc.genomes[genome]["checksum"]:
                     _LOGGER.info("Checksum doesn't match")
                     return False
                 else:
                     refgenie_initg(rgc, genome, collection_checksum, contents)
-
 
             build_asset(args.genome, asset_key, asset_build_package, outfolder, specific_args)
             _LOGGER.info("Finished building asset '{}'".format(asset_key))
@@ -395,7 +396,8 @@ def refgenie_init(genome_config_path, genome_server=DEFAULT_SERVER, config_versi
 
     :param str genome_config_path: path to genome configuration file to
         create/initialize
-    :param st genome_server: URL for a server
+    :param str genome_server: URL for a server
+    :param str config_version: config version name, e.g. 0.2
     """
 
     # Set up default
@@ -424,13 +426,12 @@ def refgenie_getseq(rgc, genome, locus):
     fa = Fasta(rgc.get_asset(genome, "fasta"))
     locus_split = locus.split(":")
 
-    if len(locus_split)> 1:
+    if len(locus_split) > 1:
         start, end = locus_split[1].split("-")
         _LOGGER.debug("chr: '{}', start: '{}', end: '{}'".format(locus_split[0], start, end))
         print(fa[locus_split[0]][int(start):int(end)])
     else:
         print(fa[locus_split[0]])
-
 
 
 def _exec_list(rgc, remote, genome):
