@@ -19,6 +19,7 @@ import refgenconf
 from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError
 from refgenconf.const import *
 from ubiquerg import is_url, query_yes_no
+from ubiquerg.system import is_writable
 import yacman
 
 _LOGGER = None
@@ -214,7 +215,7 @@ def refgenie_add(rgc, args):
 
 def hash_collection(fa_file, checksum_func=hashlib.md5):
     """
-    Generate collection-level sequence checksums. 
+    Generate collection-level sequence checksums.
 
     This will use the refget checksums for individual sequences, concatenating
     them with sequence identifiers, and then re-hashing them. This creates a
@@ -236,7 +237,7 @@ def hash_collection(fa_file, checksum_func=hashlib.md5):
 
     contents = {}
     for k in fa_object.keys():
-        print(k)
+        _LOGGER.info(k)
         contents[k] = checksum_func(str(fa_object[k]).encode()).hexdigest()
     collection_checksum = checksum_func(";".join([":".join(i) for i in contents.items()]).encode()).hexdigest()
     return collection_checksum, contents
@@ -244,17 +245,33 @@ def hash_collection(fa_file, checksum_func=hashlib.md5):
 
 def refgenie_initg(rgc, genome, collection_checksum, contents):
     """
-    Initializing a genome means adding `checksum` and `contents` attributes in
-    the genome config file. This should perhaps be  a function in refgenconf,
-    but not a CLI-hook.
+    Initializing a genome means adding `checksum` and `contents` attributes in the genome config file.
+    This should perhaps be a function in refgenconf, but not a CLI-hook.
 
-    :param rgc:
+    This function updates the provided RefGenConf object with the genome(collection)-level checksum and saves the
+    individual checksums to a TSV file in the fasta asset dicertory.
+
+    :param refgenconf.RefGenConf rgc: genome configuration object
+    :param str genome: name of the genome
+    :param str collection_checksum: genome checksum
+    :param dict contents: checksums of individual contents, e.g. chromosomes
     """
     rgc.update_genomes(genome, {
             CFG_CHECKSUM_KEY: collection_checksum,
-            CFG_CONTENTS_KEY: contents
         })
     rgc.write()
+    fasta_parent = os.path.join(rgc[CFG_FOLDER_KEY], genome, "fasta")
+    if is_writable(fasta_parent):
+        import csv
+        output_file = os.path.join(fasta_parent, "{}_{}.tsv".format(genome, CFG_CONTENTS_KEY))
+        with open(output_file, "w") as contents_file:
+            wr = csv.writer(contents_file, delimiter="\t")
+            for key, val in contents.items():
+                wr.writerow([key, val])
+        _LOGGER.debug("contents saved to: {}".format(output_file))
+    else:
+        _LOGGER.warning("Cound not save the genome contents hashes. "
+                        "The directory '{}' os not writable".format(fasta_parent))
 
 
 def refgenie_build(rgc, args):
@@ -375,14 +392,15 @@ def refgenie_build(rgc, args):
             if asset_key == 'fasta':
                 _LOGGER.info("Initializing genome...")
                 collection_checksum, contents = hash_collection(specific_args["fasta"])
-                if genome in rgc.genomes and "checksum" in rgc.genomes[genome] \
-                        and collection_checksum != rgc.genomes[genome]["checksum"]:
+                if genome in rgc.genomes and CFG_CHECKSUM_KEY in rgc.genomes[genome]\
+                        and collection_checksum != rgc.genomes[genome][CFG_CHECKSUM_KEY]:
                     _LOGGER.info("Checksum doesn't match")
                     return False
-                else:
-                    refgenie_initg(rgc, genome, collection_checksum, contents)
-
             build_asset(args.genome, asset_key, asset_build_package, outfolder, specific_args)
+            if asset_key == "fasta":
+                # refgenie_initg saves a tsv file to the fasta asset dir, so this needs to happen after the asset
+                # build because the directory does not exist prior to the building
+                refgenie_initg(rgc, genome, collection_checksum, contents)
             _LOGGER.info("Finished building asset '{}'".format(asset_key))
         else:
             _LOGGER.warn("Recipe does not exist for asset '{}'".format(asset_key))
