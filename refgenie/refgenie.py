@@ -6,8 +6,11 @@ from shutil import rmtree
 import os
 import re
 import sys
+import csv
 
 import hashlib
+import pyfaidx
+
 
 from ._version import __version__
 from .exceptions import MissingGenomeConfigError, MissingFolderError
@@ -222,7 +225,6 @@ def hash_collection(fa_file, checksum_func=hashlib.md5):
     uniquely identifying checksum for a collection of sequences.
     """
     _LOGGER.info("Hashing {}".format(fa_file))
-    import pyfaidx
     try:
         fa_object = pyfaidx.Fasta(fa_file)
     except pyfaidx.UnsupportedCompressionFormat:
@@ -262,7 +264,6 @@ def refgenie_initg(rgc, genome, collection_checksum, contents):
     rgc.write()
     fasta_parent = os.path.join(rgc[CFG_FOLDER_KEY], genome, "fasta")
     if is_writable(fasta_parent):
-        import csv
         output_file = os.path.join(fasta_parent, "{}_{}.tsv".format(genome, CFG_CONTENTS_KEY))
         with open(output_file, "w") as contents_file:
             wr = csv.writer(contents_file, delimiter="\t")
@@ -440,8 +441,7 @@ def refgenie_getseq(rgc, genome, locus):
     Something like the refget protocol.
     """
 
-    from pyfaidx import Fasta
-    fa = Fasta(rgc.get_asset(genome, "fasta"))
+    fa = pyfaidx.Fasta(rgc.get_asset(genome, "fasta"))
     locus_split = locus.split(":")
 
     if len(locus_split) > 1:
