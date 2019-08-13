@@ -571,7 +571,8 @@ def main():
             query_yes_no("Remove {}/{}?".format(args.genome, assets[0]))
         removed = []
         for asset in assets:
-            asset_dir = os.path.abspath(os.path.join(rgc.genome_folder, args.genome, asset))
+            asset_dir = os.path.abspath(os.path.join(rgc.get_asset(args.genome, asset), os.pardir))
+            _LOGGER.info("asset dir: " + asset_dir)
             asset_archive = asset_dir + ".tar"
             if os.path.isfile(asset_archive):
                 os.remove(asset_archive)
