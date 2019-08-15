@@ -241,7 +241,7 @@ def refgenie_initg(rgc, genome, collection_checksum, content_checksums):
         output_file = os.path.join(fasta_parent, "{}_{}.tsv".format(genome, CFG_CONTENTS_KEY))
         with open(output_file, "w") as contents_file:
             wr = csv.writer(contents_file, delimiter="\t")
-            for key, val in contents.items():
+            for key, val in content_checksums.items():
                 wr.writerow([key, val])
         _LOGGER.debug("content checksums saved to: {}".format(output_file))
     else:
