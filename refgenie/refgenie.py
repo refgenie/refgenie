@@ -128,18 +128,22 @@ def build_argparser():
                  LIST_REMOTE_CMD, REMOVE_CMD, GETSEQ_CMD]:
         # genome is not required for listing actions
         sps[cmd].add_argument(
-            "-g", "--genome", required=cmd not in (LIST_REMOTE_CMD, LIST_LOCAL_CMD),
+            "-g", "--genome", required=cmd not in (PULL_CMD, LIST_REMOTE_CMD, LIST_LOCAL_CMD),
             help="Reference assembly ID, e.g. mm10")
 
     # add 'asset' argument to many commands
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD]:
         sps[cmd].add_argument(
-            "-a", "--asset", required=not cmd == REMOVE_CMD, nargs='+',
+            "-a", "--asset", required=cmd not in [PULL_CMD, REMOVE_CMD], nargs='+',
             help="Name of one or more assets (keys in genome config file)")
 
     sps[PULL_CMD].add_argument(
         "-u", "--no-untar", action="store_true",
         help="Do not extract tarballs.")
+
+    sps[PULL_CMD].add_argument(
+        "registry_path", type=str, nargs='?',
+        help="Registry path string that identifies an asset (e.g. hg38/bowtie2_index:1.0.0)")
 
     sps[INSERT_CMD].add_argument(
         "-p", "--path", required=True,
@@ -159,6 +163,41 @@ def build_argparser():
             "--{arg}".format(arg=arg), required=False, help=SUPPRESS)
 
     return parser
+
+def parse_registry_path(rpstring):
+    # A registry path is a string that is kind of like a URL, providing a unique
+    # identifier for a particular asset.
+    # This commented regex is the same without protocol
+    # ^(?:([0-9a-zA-Z_-]+)\/)?([0-9a-zA-Z_-]+)(?::([0-9a-zA-Z_.-]+))?$
+    regex = "^(?:([0-9a-zA-Z_-]+)(?:::|:\/\/))?(?:([0-9a-zA-Z_-]+)\/)?([0-9a-zA-Z_-]+)(?::([0-9a-zA-Z_.-]+))?$"
+    # This regex matches strings like:
+    # protocol://namespace/item:version
+    # or: protocol::namespace/item:version
+    # The names 'protocol', 'namespace', 'item', and 'version' are generic and
+    # you can use this function for whatever you like in this format... The
+    # regex can handle any of these missing and will parse correctly into the
+    # same element
+    # For instance, you can leave the version or protocol or both off:
+    # ucsc://hg38/bowtie2_index
+    # hg38/bowtie2_index
+    # With no delimiters, it will match the item name:
+    # bowtie2_index
+
+    res = re.match(regex, rpstring)
+    if not res:
+        return None
+    # position 0: parent namespace
+    # position 1: namespace
+    # position 2: primary name
+    # position 3: version
+    captures = res.groups()
+    parsed_identifier = {
+        "protocol": captures[0],
+        "namespace": captures[1],
+        "item": captures[2],
+        "version": captures[3]
+    }
+    return parsed_identifier
 
 
 def copy_or_download_file(input_string, outfolder):
@@ -508,6 +547,20 @@ def main():
         refgenie_add(rgc, args)
 
     elif args.command == PULL_CMD:
+
+        # check for registry_path format?
+        if args.registry_path:
+            _LOGGER.debug("Found registry_path: {}".format(args.registry_path))
+            parsed_registry_path = parse_identifier_string(args.registry_path)
+            genome = parsed_registry_path["namespace"]
+            asset = parsed_registry_path["item"]
+            version = parsed_registry_path["version"]
+        else:
+            # Old way
+            genome = args.genome
+            asset = args.asset
+            version = None
+
         outdir = rgc[CFG_FOLDER_KEY]
         if not os.path.exists(outdir):
             raise MissingFolderError(outdir)
@@ -518,7 +571,7 @@ def main():
             _LOGGER.error("Insufficient permissions to write to {}: "
                           "{}".format(target, outdir))
             return
-        rgc.pull_asset(args.genome, args.asset, gencfg, unpack=not args.no_untar)
+        rgc.pull_asset(genome, asset, gencfg, unpack=not args.no_untar)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
