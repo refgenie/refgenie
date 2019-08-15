@@ -1,17 +1,19 @@
 # TO be imported from refget package when it is finished
 # from refget import fasta_checksum
 
-import base64
 import hashlib
 import binascii
+import pyfaidx
+import os
+
 
 def trunc512_digest(seq, offset=24):
     digest = hashlib.sha512(seq.encode()).digest()
     hex_digest = binascii.hexlify(digest[:offset])
     return hex_digest.decode()
 
+
 def parse_fasta(fa_file):
-    _LOGGER.info("Hashing {}".format(fa_file))
     try:
         fa_object = pyfaidx.Fasta(fa_file)
     except pyfaidx.UnsupportedCompressionFormat:
@@ -24,6 +26,7 @@ def parse_fasta(fa_file):
         fa_object = pyfaidx.Fasta(fa_file_unzipped)
         os.system("gzip {}".format(fa_file_unzipped))
     return fa_object
+
 
 def fasta_checksum(fa_file, checksum_function=trunc512_digest):
     """
