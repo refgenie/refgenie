@@ -1,6 +1,16 @@
 # TO be imported from refget package when it is finished
+# from refget import fasta_checksum
 
-def parse_fasta(self, fa_file):
+import base64
+import hashlib
+import binascii
+
+def trunc512_digest(seq, offset=24):
+    digest = hashlib.sha512(seq.encode()).digest()
+    hex_digest = binascii.hexlify(digest[:offset])
+    return hex_digest.decode()
+
+def parse_fasta(fa_file):
     _LOGGER.info("Hashing {}".format(fa_file))
     try:
         fa_object = pyfaidx.Fasta(fa_file)
@@ -15,14 +25,14 @@ def parse_fasta(self, fa_file):
         os.system("gzip {}".format(fa_file_unzipped))
     return fa_object
 
-def fasta_checksum(self, fa_file):
+def fasta_checksum(fa_file, checksum_function=trunc512_digest):
     """
     Just calculate checksum of fasta file without loading it.
     """
     fa_object = parse_fasta(fa_file)
     content_checksums = {}
     for k in fa_object.keys():
-        content_checksums[k] = self.checksum_function(str(fa_object[k]))
+        content_checksums[k] = checksum_function(str(fa_object[k]))
     collection_string = ";".join([":".join(i) for i in content_checksums.items()])
-    collection_checksum = self.load_seq(collection_string)
+    collection_checksum = checksum_function(collection_string)
     return collection_checksum, content_checksums
