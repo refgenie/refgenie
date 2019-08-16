@@ -500,7 +500,7 @@ def main():
                     a["genome"] = args.genome
                 else:
                     _LOGGER.error("Asset lacks a genome: {}".format(a["asset"]))
-                    Sys.exit(1)
+                    sys.exit(1)
             else:
                 if args.genome and args.genome != a["genome"]:
                     _LOGGER.warn("Genome specified twice for asset '{}'.".format(
@@ -509,10 +509,10 @@ def main():
     else:
         if args.command in GENOME_ONLY_REQUIRED and not args.genome:
             parser.error("You must provide either a genome or a registry path")
-            Sys.exit(1)
+            sys.exit(1)
         if args.command in ASSET_REQUIRED:
             parser.error("You must provide an asset registry path")
-            Sys.exit(1)
+            sys.exit(1)
         
     if args.command == INIT_CMD:
         _LOGGER.info("Initializing refgenie genome configuration")
@@ -523,14 +523,14 @@ def main():
     rgc = RefGenConf(gencfg)
 
     if args.command == BUILD_CMD:
-        if not all([x["genome"]==asset_list[0]["genome"] for x in asset_list]):
+        if not all([x["genome"] == asset_list[0]["genome"] for x in asset_list]):
             _LOGGER.error("Build can only build assets from one genome")
-            Sys.exit(1)
+            sys.exit(1)
         refgenie_build(rgc, asset_list[0]["genome"], asset_list, args)
 
     elif args.command == GET_ASSET_CMD:
         for a in asset_list:
-            _LOGGER.debug("getting asset: '{}/{}:{}'".format(a["genome"], a["asset"], a["seek_key"], a["tag"]))
+            _LOGGER.debug("getting asset: '{}/{}.{}:{}'".format(a["genome"], a["asset"], a["seek_key"], a["tag"]))
             print(rgc.get_asset(a["genome"], a["asset"], a["seek_key"], a["tag"]))
         return
 
@@ -553,7 +553,7 @@ def main():
             return
 
         for a in asset_list:
-            rgc.pull_asset(a["genome"], a["asset"], a["tag"], gencfg, 
+            rgc.pull_asset(a["genome"], a["asset"], a["tag"], gencfg,
                            unpack=not args.no_untar)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
