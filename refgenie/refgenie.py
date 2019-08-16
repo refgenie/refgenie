@@ -369,15 +369,8 @@ def refgenie_build(rgc, genome, asset_list, args):
                         and collection_checksum != rgc.genomes[genome][CFG_CHECKSUM_KEY]:
                     _LOGGER.info("Checksum doesn't match")
                     return False
-
-            build_asset(args.genome, asset_key, asset_tag, 
-                        asset_build_package, outfolder, specific_args)
-
-            if asset_key == "fasta":
-                # refgenie_initg saves a tsv file to the fasta asset dir, so
-                # this needs to happen after the asset build because the
-                # directory does not exist prior to the building
                 refgenie_initg(rgc, genome, collection_checksum, content_checksums)
+            build_asset(genome, asset_key, asset_tag, asset_build_package, outfolder, specific_args)
             _LOGGER.info("Finished building asset '{}'".format(asset_key))
         else:
             _LOGGER.warn("Recipe does not exist for asset '{}'".format(asset_key))
