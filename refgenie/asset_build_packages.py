@@ -25,18 +25,9 @@ asset_build_packages = {
     "fasta": {
         DESC: "Given a gzipped fasta file, produces fasta, fai, and chrom_sizes assets",
         ASSETS: {
-            "fasta": {
-                PTH: "fasta/{genome}.fa",
-                ASSET_DESC: "Sequences in the FASTA format"
-            },
-            "fai": {
-                PTH: "fasta/{genome}.fa.fai",
-                ASSET_DESC: "Indexed fasta file, produced with samtools faidx"
-            },
-            "chrom_sizes": {
-                PTH: "fasta/{genome}.chrom.sizes",
-                ASSET_DESC: "Chromosome sizes file"
-            }
+            "fasta": "{genome}.fa",
+            "fai": "{genome}.fa.fai",
+            "chrom_sizes": "{genome}.chrom.sizes"
         },
         REQ_IN: ["fasta"],
         REQ_ASSETS: [],
@@ -50,10 +41,7 @@ asset_build_packages = {
     },
     "bowtie2_index": {
         ASSETS: {
-            "bowtie2_index": {
-                PTH: "bowtie2_index",
-                ASSET_DESC: "Genome index for bowtie, produced with bowtie-build"
-            }
+            "bowtie2_index": "."
         },
         REQ_IN: [],
         REQ_ASSETS: ["fasta"],
@@ -64,10 +52,7 @@ asset_build_packages = {
     },
     "bwa_index": {
         ASSETS: {
-            "bwa_index": {
-                PTH: "bwa_index",
-                ASSET_DESC: "Genome index for Burrows-Wheeler Alignment Tool, produced with bwa index"
-            }
+            "bwa_index": "."
         },
         REQ_IN: [],
         REQ_ASSETS: ["fasta"],
@@ -79,11 +64,8 @@ asset_build_packages = {
     },    
     "hisat2_index": {
         ASSETS: {
-            "hisat2_index": {
-                PTH: "hisat2_index",
-                ASSET_DESC: "Genome index for HISAT2, produced with hisat2-build"
-            }
-        },     
+            "hisat2_index": "."
+        },
         REQ_IN: [],
         REQ_ASSETS: ["fasta"],
         CONT: "databio/refgenie",
@@ -97,11 +79,8 @@ asset_build_packages = {
         REQ_ASSETS: ["fasta"],
         CONT: "databio/refgenie",
         ASSETS: {
-            "bismark_bt2_index": {
-                PTH: "bismark_bt2_index",
-                ASSET_DESC: "Genome index for Bisulfite-Seq applications, produced by bismark_genome_preparation using bowtie2"
-            }
-        },       
+            "bismark_bt2_index": "."
+        },
         CMD_LST: [
             "ln -sf ../fasta/{genome}.fa {asset_outfolder}",
             "bismark_genome_preparation --bowtie2 {asset_outfolder}"
@@ -113,11 +92,8 @@ asset_build_packages = {
         REQ_ASSETS: ["fasta"],
         CONT: "databio/refgenie",
         ASSETS: {
-            "bismark_bt1_index": {
-                PTH: "bismark_bt1_index",
-                ASSET_DESC: "Genome index for Bisulfite-Seq applications, produced by bismark_genome_preparation using bowtie"
-            }
-        },       
+            "bismark_bt1_index": "."
+        },
         CMD_LST: [
             "ln -sf ../fasta/{genome}.fa {asset_outfolder}",
             "bismark_genome_preparation {asset_outfolder}"
@@ -128,10 +104,7 @@ asset_build_packages = {
         REQ_ASSETS: ["fasta"],
         CONT: "databio/refgenie",
         ASSETS: {
-            "kallisto_index": {
-                PTH: "kallisto_index",
-                ASSET_DESC: "Genome index for kallisto, produced with kallisto index"
-            }
+            "kallisto_index": "."
         },
         CMD_LST: [
             "kallisto index -i {asset_outfolder}/{genome}_kallisto_index.idx {asset_outfolder}/../fasta/{genome}.fa"
@@ -142,10 +115,7 @@ asset_build_packages = {
         REQ_ASSETS: ["fasta"],
         CONT: "combinelab/salmon",
         ASSETS: {
-            "salmon_index": {
-                PTH: "salmon_index",
-                ASSET_DESC: "Transcriptome index for salmon, produced with salmon index"
-            }
+            "salmon_index": "."
         },
         CMD_LST: [
             "salmon index -k 31 -i {asset_outfolder} -t {asset_outfolder}/../fasta/{genome}.fa"
@@ -156,10 +126,7 @@ asset_build_packages = {
         REQ_ASSETS: ["fasta"],
         CONT: "databio/refgenie",
         ASSETS: {
-            "epilog_index": {
-                PTH: "epilog_index",
-                ASSET_DESC: "Genome index for CpG sites, produced by the epilog DNA methylation caller"
-            }
+            "epilog_index": "."
         },
         CMD_LST: [
             "epilog index -i {asset_outfolder}/../fasta/{genome}.fa -o {asset_outfolder}/{genome}_{context}.tsv -s {context} -t"
@@ -170,10 +137,7 @@ asset_build_packages = {
         REQ_ASSETS: ["fasta"],
         CONT: "databio/refgenie",
         ASSETS: {
-            "star_index": {
-                PTH: "star_index",
-                ASSET_DESC: "Genome index for STAR RNA-seq aligner, produced with STAR --runMode genomeGenerate"
-            }
+            "star_index": "."
         },
         CMD_LST: [
             "mkdir -p {asset_outfolder}",
@@ -186,10 +150,7 @@ asset_build_packages = {
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
         ASSETS: {
-            "gencode_gtf": {
-                PTH: "gencode_gtf/{genome}.gtf.gz",
-                ASSET_DESC: "Gencode GTF provides access to all gene features with high accuracy based on biological evidence."
-            }
+            "gencode_gtf": "{genome}.gtf.gz"
         },
         CMD_LST: [
             "cp {gtf} {asset_outfolder}/{genome}.gtf.gz"
@@ -201,18 +162,9 @@ asset_build_packages = {
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
         ASSETS: {
-            "ensembl_gtf": {
-                PTH: "ensembl_gtf/{genome}.gtf.gz",
-                ASSET_DESC: "Ensembl GTF provides access to all annotated transcripts which make up an Ensembl gene set"
-            },
-            "ensembl_tss": {
-                PTH: "ensembl_gtf/{genome}_ensembl_TSS.bed",
-                ASSET_DESC: "Ensembl transcription start sites (TSSs) derived from an Ensembl GTF annotation."
-            },
-            "ensembl_gene_body": {
-                PTH: "ensembl_gtf/{genome}_ensembl_gene_body.bed",
-                ASSET_DESC: "Ensembl gene bodies derived from an Ensembl GTF annotation."
-            }
+            "ensembl_gtf": "{genome}.gtf.gz",
+            "ensembl_tss": "{genome}_ensembl_TSS.bed",
+            "ensembl_gene_body": "{genome}_ensembl_gene_body.bed",
         },
         CMD_LST: [
             "cp {gtf} {asset_outfolder}/{genome}.gtf.gz",
@@ -226,10 +178,7 @@ asset_build_packages = {
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
         ASSETS: {
-            "ensembl_rb": {
-                PTH: "ensembl_rb/{genome}.gff.gz",
-                ASSET_DESC: "A genome-wide set of regions that are likely to be involved in gene regulation."
-            }
+            "ensembl_rb": "{genome}.gff.gz"
         },
         CMD_LST: [
             "cp {gff} {asset_outfolder}/{genome}.gff.gz"
@@ -241,26 +190,11 @@ asset_build_packages = {
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
         ASSETS: {
-            "refgene_anno": {
-                PTH: "refgene_anno/{genome}_refGene.txt.gz",
-                ASSET_DESC: "Specifies known human protein-coding and non-protein-coding genes taken from the NCBI RNA reference sequences collection (RefSeq)."
-            },
-            "refgene_tss": {
-                PTH: "refgene_anno/{genome}_TSS.bed",
-                ASSET_DESC: "Transcription start sites (TSSs) derived from the refGene annotation asset."
-            },
-            "refgene_exon": {
-                PTH: "refgene_anno/{genome}_exons.bed",
-                ASSET_DESC: "Exons derived from the refGene annotation asset."
-            },
-            "refgene_intron": {
-                PTH: "refgene_anno/{genome}_introns.bed",
-                ASSET_DESC: "Introns derived from the refGene annotation asset."
-            },
-            "refgene_pre_mRNA": {
-                PTH: "refgene_anno/{genome}_pre-mRNA.bed",
-                ASSET_DESC: "Premature mRNA from complete genes derived from the refGene annotation asset"
-            }
+            "refgene_anno": "{genome}_refGene.txt.gz",
+            "refgene_tss": "{genome}_TSS.bed",
+            "refgene_exon": "{genome}_exons.bed",
+            "refgene_intron": "{genome}_introns.bed",
+            "refgene_pre_mRNA": "{genome}_pre-mRNA.bed",
         },
         CMD_LST: [
             "cp {refgene} {asset_outfolder}/{genome}_refGene.txt.gz",
@@ -273,10 +207,7 @@ asset_build_packages = {
     "feat_annotation": {
         DESC: "Using a Ensembl GTF annotation asset and an Ensembl regulatory build annotation asset, create a combined genomic feature annotation asset.",
         ASSETS: {
-            "feat_annotation": {
-                PTH: "feat_annotation/{genome}_annotations.bed.gz",
-                ASSET_DESC: "Genomic features including enhancers, promoters, promoter flanking, 5' UTR, 3' UTR, exons, and introns derived from Ensembl GTF and Ensembl regulatory build (rb) assets."
-            }
+            "feat_annotation": "{genome}_annotations.bed.gz",
         },
         REQ_IN: [],
         REQ_ASSETS: ["ensembl_gtf", "ensembl_rb"],
