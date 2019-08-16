@@ -334,11 +334,9 @@ def refgenie_build(rgc, genome, asset_list, args):
         else:
             volumes = outfolder
 
-    for asset in asset_list:
-
-        reg = parse_registry_path(asset_key)
-        asset_key = asset["asset"]
-        asset_tag = asset["tag"]
+    for a in asset_list:
+        asset_key = a["asset"]
+        asset_tag = a["tag"]
 
         if asset_key in asset_build_packages.keys():
             asset_build_package = asset_build_packages[asset_key]
