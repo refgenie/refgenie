@@ -527,7 +527,7 @@ def main():
     elif args.command == GET_ASSET_CMD:
         for a in asset_list:
             _LOGGER.debug("getting asset: '{}/{}.{}:{}'".format(a["genome"], a["asset"], a["seek_key"], a["tag"]))
-            print(rgc.get_asset(a["genome"], a["asset"], a["seek_key"], a["tag"]))
+            print(rgc.get_asset(a["genome"], a["asset"], a["tag"], a["seek_key"]))
         return
 
     elif args.command == INSERT_CMD:
