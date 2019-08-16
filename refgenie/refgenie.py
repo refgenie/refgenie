@@ -244,9 +244,9 @@ def refgenie_initg(rgc, genome, collection_checksum, content_checksums):
             CFG_CHECKSUM_KEY: collection_checksum,
         })
     rgc.write()
-    fasta_parent = os.path.join(rgc[CFG_FOLDER_KEY], genome, "fasta")
-    if is_writable(fasta_parent):
-        output_file = os.path.join(fasta_parent, "{}_{}.tsv".format(genome, CFG_CONTENTS_KEY))
+    genome_dir = os.path.join(rgc[CFG_FOLDER_KEY], genome)
+    if is_writable(genome_dir):
+        output_file = os.path.join(genome_dir, "{}_sequence_checksums.tsv".format(genome))
         with open(output_file, "w") as contents_file:
             wr = csv.writer(contents_file, delimiter="\t")
             for key, val in content_checksums.items():
@@ -254,7 +254,7 @@ def refgenie_initg(rgc, genome, collection_checksum, content_checksums):
         _LOGGER.debug("content checksums saved to: {}".format(output_file))
     else:
         _LOGGER.warning("Cound not save the genome content checksums hashes. "
-                        "The directory '{}' os not writable".format(fasta_parent))
+                        "The directory '{}' os not writable".format(genome_dir))
 
 
 def refgenie_build(rgc, genome, asset_list, args):
