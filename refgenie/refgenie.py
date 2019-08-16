@@ -247,7 +247,7 @@ def refgenie_initg(rgc, genome, collection_checksum, content_checksums):
         output_file = os.path.join(fasta_parent, "{}_{}.tsv".format(genome, CFG_CONTENTS_KEY))
         with open(output_file, "w") as contents_file:
             wr = csv.writer(contents_file, delimiter="\t")
-            for key, val in contents.items():
+            for key, val in content_checksums.items():
                 wr.writerow([key, val])
         _LOGGER.debug("content checksums saved to: {}".format(output_file))
     else:
@@ -493,14 +493,14 @@ def main():
     # check for registry_path format
     if args.registry_path:
         _LOGGER.debug("Found registry_path: {}".format(args.registry_path))
-        parsed_registry_path = parse_identifier_string(args.registry_path)
+        parsed_registry_path = parse_registry_path(args.registry_path)
         genome = parsed_registry_path["namespace"]
         asset = parsed_registry_path["item"]
         tag = parsed_registry_path["tag"]
     else:
         # Old way
         genome = args.genome
-        parsed_asset = parse_identifier_string(args.asset)
+        parsed_asset = parse_registry_path(args.asset)
         asset = parsed_asset["item"]  # args.asset
         tag = parsed_asset["tag"]
 
@@ -529,7 +529,6 @@ def main():
         refgenie_add(rgc, args)
 
     elif args.command == PULL_CMD:
-
         outdir = rgc[CFG_FOLDER_KEY]
         if not os.path.exists(outdir):
             raise MissingFolderError(outdir)

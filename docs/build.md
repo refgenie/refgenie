@@ -23,7 +23,6 @@ Some examples are:
 - mm10: ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/635/GCA_000001635.5_GRCm38.p3/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001635.5_GRCm38.p3_no_alt_analysis_set.fna.gz
 - This [README](ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/README_analysis_sets.txt) describes the sequences.
 
-
 ```
 export REFGENIE="test.yaml"
 refgenie build -g test -a fasta --fasta rCRS.fa.gz
@@ -32,6 +31,13 @@ refgenie seek -g test -a fasta
 
 ### refgene_anno
 A refgene annotation file is used to build several other derived assets.
+
+Some examples:
+
+- hg19: http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/refGene.txt.gz
+- hg38: http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/refGene.txt.gz
+- mm10: http://hgdownload.cse.ucsc.edu/goldenPath/mm10/database/refGene.txt.gz
+- rn6: http://hgdownload.cse.ucsc.edu/goldenPath/rn6/database/refGene.txt.gz
 
 ```
 wget http://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/refGene.txt.gz
@@ -42,29 +48,42 @@ refgenie build -g hg38 -a refgene_anno --refgene refGene.txt.gz
 
 The gencode_gtf asset just copies over a GTF annotation file provided by gencode.
 
-- hg19: ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz
-- hg38: GTF=ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/gencode.v29.primary_assembly.annotation.gtf.gz
-- mm10: ftp://ftp.sanger.ac.uk/pub/gencode/Gencode_mouse/release_M12/gencode.vM12.primary_assembly.annotation.gtf.gz
+Some examples are:
+
+- hg19: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz
+- hg38: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_31/gencode.v31.annotation.gtf.gz
+- mm10: ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M22/gencode.vM22.annotation.gtf.gz
 
 Build the asset like:
 ```
-wget ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_29/gencode.v29.primary_assembly.annotation.gtf.gz
-refgenie build -g hg19 -a gencode_gtf --gtf gencode.v29.primary_assembly.annotation.gtf.gz
+wget ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz
+refgenie build -g hg19 -a gencode_gtf --gtf gencode.v19.annotation.gtf.gz
 ```
 
-
 ### ensembl_gtf
-
+```
 wget ftp://ftp.ensembl.org/pub/release-97/gtf/homo_sapiens/Homo_sapiens.GRCh38.97.gtf.gz
-refgenie build -g hg19 -a ensembl_gtf --gtf Homo_sapiens.GRCh38.97.gtf.gz
+refgenie build -g hg38 -a ensembl_gtf --gtf Homo_sapiens.GRCh38.97.gtf.gz
+```
+Some examples are:
+
+- hg38: ftp://ftp.ensembl.org/pub/release-97/gtf/homo_sapiens/Homo_sapiens.GRCh38.97.gtf.gz
+- hg19: ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz
+- mm10: ftp://ftp.ensembl.org/pub/release-97/gtf/mus_musculus/Mus_musculus.GRCm38.97.gtf.gz
+- rn6: ftp://ftp.ensembl.org/pub/release-97/gtf/rattus_norvegicus/Rattus_norvegicus.Rnor_6.0.97.gtf.gz
 
 ### ensembl_rb
 
 This is the ensembl regulatory build. It requires an input `gff` file.
 
+Some examples are:
+
+- hg38: ftp://ftp.ensembl.org/pub/release-96/regulation/homo_sapiens/homo_sapiens.GRCh38.Regulatory_Build.regulatory_features.20190122.gff.gz
+- mm10: ftp://ftp.ensembl.org/pub/release-97/regulation/mus_musculus/mus_musculus.GRCm38.Regulatory_Build.regulatory_features.20180516.gff.gz
+
 ```
-wget ftp://ftp.ensembl.org/pub/release-97/regulation/homo_sapiens/homo_sapiens.GRCh38.Regulatory_Build.regulatory_features.20190329.gff.gz
-refgenie build -g hg19 -a ensembl_rb --gff homo_sapiens.GRCh38.Regulatory_Build.regulatory_features.20190329.gff.gz
+wget ftp://ftp.ensembl.org/pub/release-96/regulation/homo_sapiens/homo_sapiens.GRCh38.Regulatory_Build.regulatory_features.20190122.gff.gz
+refgenie build -g hg38 -a ensembl_rb --gff homo_sapiens.GRCh38.Regulatory_Build.regulatory_features.20190122.gff.gz
 ```
 
 ## Examples for derived assets you can build
@@ -84,7 +103,6 @@ The bismark index assets doesn't require any input, but does require that you've
 ```
 refgenie build -g test -a bismark_bt2_index -d -R
 ```
-
 
 ### ensembl_gtf
 
@@ -115,8 +133,8 @@ cd refgenie/containers
 make refgenie
 ```
 
-or pull it directly from dockerhub like this:
+or pull it directly from [dockerhub](https://hub.docker.com/r/databio/refgenie) like this:
 
 ```
-docker pull nsheff/refgenie
+docker pull databio/refgenie
 ```
