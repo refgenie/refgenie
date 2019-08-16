@@ -40,6 +40,11 @@ INSERT_CMD = "add"
 REMOVE_CMD = "remove"
 GETSEQ_CMD = "getseq"
 
+GENOME_REQUIRED = [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, 
+                    REMOVE_CMD, GETSEQ_CMD]
+
+ASSET_REQUIRED = [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD] 
+
 BUILD_SPECIFIC_ARGS = ('fasta', 'gtf', 'gff', 'context', 'refgene')
 
 # This establishes the API with the server
@@ -124,17 +129,17 @@ def build_argparser():
              'genome_folder attribute in the genome configuration file.')
 
     # add 'genome' argument to many commands
-    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, LIST_LOCAL_CMD,
-                 LIST_REMOTE_CMD, REMOVE_CMD, GETSEQ_CMD]:
+    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD,
+                 LIST_REMOTE_CMD, LIST_LOCAL_CMD, GETSEQ_CMD]:
         # genome is not required for listing actions
         sps[cmd].add_argument(
-            "-g", "--genome", required=cmd not in (PULL_CMD, LIST_REMOTE_CMD, LIST_LOCAL_CMD),
+            "-g", "--genome", required=cmd in (GETSEQ_CMD),
             help="Reference assembly ID, e.g. mm10")
 
     # add 'asset' argument to many commands
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD]:
         sps[cmd].add_argument(
-            "-a", "--asset", required=cmd not in [PULL_CMD, REMOVE_CMD], nargs='+',
+            "-a", "--asset", required=False, nargs='+',
             help="Name of one or more assets (keys in genome config file)")
 
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD]:
@@ -204,13 +209,14 @@ def default_config_file():
     return os.path.join(os.path.dirname(__file__), "refgenie.yaml")
 
 
-def get_asset_vars(genome, asset_key, outfolder, specific_args=None):
+def get_asset_vars(genome, asset_key, tag, outfolder, specific_args=None):
     """
     Gives a dict with variables used to populate an asset path.
     """
     asset_outfolder = os.path.join(outfolder, asset_key)
     asset_vars = {"genome": genome,
                   "asset": asset_key,
+                  "tag": tag,
                   "asset_outfolder": asset_outfolder}
     if specific_args:
         asset_vars.update(specific_args)
@@ -227,11 +233,13 @@ def refgenie_add(rgc, args):
 
 def refgenie_initg(rgc, genome, collection_checksum, content_checksums):
     """
-    Initializing a genome means adding `checksum` and `content_checksums` attributes in the genome config file.
-    This should perhaps be a function in refgenconf, but not a CLI-hook.
+    Initializing a genome means adding `collection_checksum` attributes in the
+    genome config file. This should perhaps be a function in refgenconf, but not
+    a CLI-hook. Also adds `content_checksums` tsv file (should be a recipe cmd?).
 
-    This function updates the provided RefGenConf object with the genome(collection)-level checksum and saves the
-    individual checksums to a TSV file in the fasta asset dicertory.
+    This function updates the provided RefGenConf object with the
+    genome(collection)-level checksum and saves the individual checksums to a
+    TSV file in the fasta asset directory.
 
     :param refgenconf.RefGenConf rgc: genome configuration object
     :param str genome: name of the genome
@@ -265,18 +273,8 @@ def refgenie_build(rgc, args):
 
     # Build specific args
     specific_args = {k: getattr(args, k) for k in BUILD_SPECIFIC_ARGS}
-
-    if args.genome:
-        genome = args.genome
-    else:
-        # This can probably be eliminated now that with flexible building
-        genome = os.path.basename(args.input)
-        # eliminate extensions to get canonical genome name.
-        for strike in [".fasta.gz$", ".fa.gz$", ".fasta$", ".fa$", ".gz$", ".2bit$"]:
-            genome = re.sub(strike, "", genome)
-
-    _LOGGER.info("Using genome name: {}".format(genome))
-
+    genome = args.genome
+ 
     if not hasattr(args, "outfolder") or not args.outfolder:
         # Default to genome_folder
         _LOGGER.debug("No outfolder provided, using genome config.")
@@ -296,7 +294,7 @@ def refgenie_build(rgc, args):
                       format(args.config_file))
         args.config_file = default_config_file()
 
-    def build_asset(genome, asset_key, asset_build_package, outfolder, specific_args):
+    def build_asset(genome, asset_key, tag, build_pkg, outfolder, specific_args):
         """
         Builds assets with pypiper and updates a genome config file.
 
@@ -305,19 +303,19 @@ def refgenie_build(rgc, args):
 
         :param str genome: The assembly key; e.g. 'mm10'.
         :param str asset_key: The unique asset identifier; e.g. 'bowtie2_index'
-        :param dict asset_build_package: A dict (see examples) specifying lists
+        :param dict build_pkg: A dict (see examples) specifying lists
             of required inputs, commands to run, and outputs to register as
             assets.
         """
-        _LOGGER.debug("Asset build package: " + str(asset_build_package))
+        _LOGGER.debug("Asset build package: " + str(build_pkg))
         asset_vars = get_asset_vars(genome, asset_key, outfolder, specific_args)
         asset_outfolder = os.path.join(outfolder, asset_key)
 
-        _LOGGER.debug(str([x.format(**asset_vars) for x in asset_build_package[CMD_LST]]))
+        _LOGGER.debug(str([x.format(**asset_vars) for x in build_pkg[CMD_LST]]))
 
         tk.make_dir(asset_outfolder)
         target = os.path.join(asset_outfolder, "build_complete.flag")
-        command_list_populated = [x.format(**asset_vars) for x in asset_build_package[CMD_LST]]
+        command_list_populated = [x.format(**asset_vars) for x in build_pkg[CMD_LST]]
 
         touch_target = "touch {target}".format(target=target)
         command_list_populated.append(touch_target)
@@ -326,10 +324,10 @@ def refgenie_build(rgc, args):
 
         pm.run(command_list_populated, target, container=pm.container)
 
-        for asset in asset_build_package[ASSETS].keys():
-            rgc.update_assets(genome, asset, {
-                CFG_ASSET_PATH_KEY: asset_build_package[ASSETS][asset][PTH].format(**asset_vars),
-                CFG_ASSET_DESC_KEY: asset_build_package[ASSETS][asset][ASSET_DESC]
+        for asset in build_pkg[ASSETS].keys():
+            rgc.update_assets(genome, asset, tag, {
+                CFG_ASSET_PATH_KEY: build_pkg[ASSETS][asset][PTH].format(**asset_vars),
+                CFG_ASSET_DESC_KEY: build_pkg[ASSETS][asset][ASSET_DESC]
             })
 
         # Write the updated refgenie genome configuration
@@ -346,6 +344,11 @@ def refgenie_build(rgc, args):
             volumes = outfolder
 
     for asset_key in args.asset:
+
+        reg = parse_registry_path(asset_key)
+        asset_key = reg["item"]
+        asset_tag = reg["tag"]
+
         if asset_key in asset_build_packages.keys():
             asset_build_package = asset_build_packages[asset_key]
             _LOGGER.debug(specific_args)
@@ -377,10 +380,14 @@ def refgenie_build(rgc, args):
                         and collection_checksum != rgc.genomes[genome][CFG_CHECKSUM_KEY]:
                     _LOGGER.info("Checksum doesn't match")
                     return False
-            build_asset(args.genome, asset_key, asset_build_package, outfolder, specific_args)
+                    
+            build_asset(args.genome, asset_key, asset_tag, 
+                        asset_build_package, outfolder, specific_args)
+
             if asset_key == "fasta":
-                # refgenie_initg saves a tsv file to the fasta asset dir, so this needs to happen after the asset
-                # build because the directory does not exist prior to the building
+                # refgenie_initg saves a tsv file to the fasta asset dir, so
+                # this needs to happen after the asset build because the
+                # directory does not exist prior to the building
                 refgenie_initg(rgc, genome, collection_checksum, content_checksums)
             _LOGGER.info("Finished building asset '{}'".format(asset_key))
         else:
@@ -494,14 +501,19 @@ def main():
     if args.registry_path:
         _LOGGER.debug("Found registry_path: {}".format(args.registry_path))
         parsed_registry_path = parse_registry_path(args.registry_path)
-        genome = parsed_registry_path["namespace"]
-        asset = parsed_registry_path["item"]
+        args.genome = parsed_registry_path["namespace"]
+        args.asset = [parsed_registry_path["item"]]
         tag = parsed_registry_path["tag"]
     else:
         # Old way
-        genome = args.genome
+        if args.cmd in GENOME_REQUIRED and not args.genome:
+            parser.error("You must provide either a genome or a registry path")
+        if args.cmd in ASSET_REQUIRED and not args.asset:
+            parser.error("You must provide either an asset or a registry path")
+        
         parsed_asset = parse_registry_path(args.asset)
-        asset = parsed_asset["item"]  # args.asset
+        genome = args.genome
+        args.asset = parsed_asset["item"]  # args.asset
         tag = parsed_asset["tag"]
 
     if args.command == INIT_CMD:
