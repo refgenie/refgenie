@@ -137,17 +137,19 @@ def build_argparser():
             "-a", "--asset", required=cmd not in [PULL_CMD, REMOVE_CMD], nargs='+',
             help="Name of one or more assets (keys in genome config file)")
 
+    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD]:
+        sps[cmd].add_argument(
+            "registry_path", metavar="registry-path", type=str, nargs='?',
+            help="Registry path string that identifies an asset"
+            " (e.g. hg38/bowtie2_index:1.0.0)")
+
     sps[PULL_CMD].add_argument(
         "-u", "--no-untar", action="store_true",
         help="Do not extract tarballs.")
 
-    sps[PULL_CMD].add_argument(
-        "registry_path", type=str, nargs='?',
-        help="Registry path string that identifies an asset (e.g. hg38/bowtie2_index:1.0.0)")
-
     sps[INSERT_CMD].add_argument(
         "-p", "--path", required=True,
-        help="Relative path to asset")
+        help="Relative local path to asset")
 
     sps[GETSEQ_CMD].add_argument(
         "-l", "--locus", required=True,
@@ -487,6 +489,21 @@ def main():
         raise MissingGenomeConfigError(args.genome_config)
     _LOGGER.debug("Determined genome config: {}".format(gencfg))
 
+
+    # check for registry_path format
+    if args.registry_path:
+        _LOGGER.debug("Found registry_path: {}".format(args.registry_path))
+        parsed_registry_path = parse_identifier_string(args.registry_path)
+        genome = parsed_registry_path["namespace"]
+        asset = parsed_registry_path["item"]
+        tag = parsed_registry_path["tag"]
+    else:
+        # Old way
+        genome = args.genome
+        parsed_asset = parse_identifier_string(args.asset)
+        asset = parsed_asset["item"]  # args.asset
+        tag = parsed_asset["tag"]
+
     if args.command == INIT_CMD:
         _LOGGER.info("Initializing refgenie genome configuration")
         _writeable(os.path.dirname(gencfg), strict_exists=True)
@@ -512,19 +529,6 @@ def main():
         refgenie_add(rgc, args)
 
     elif args.command == PULL_CMD:
-
-        # check for registry_path format?
-        if args.registry_path:
-            _LOGGER.debug("Found registry_path: {}".format(args.registry_path))
-            parsed_registry_path = parse_identifier_string(args.registry_path)
-            genome = parsed_registry_path["namespace"]
-            asset = parsed_registry_path["item"]
-            version = parsed_registry_path["version"]
-        else:
-            # Old way
-            genome = args.genome
-            asset = args.asset
-            version = None
 
         outdir = rgc[CFG_FOLDER_KEY]
         if not os.path.exists(outdir):
