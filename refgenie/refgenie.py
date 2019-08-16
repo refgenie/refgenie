@@ -226,10 +226,10 @@ def get_asset_vars(genome, asset_key, tag, outfolder, specific_args=None):
     return asset_vars
 
 
-def refgenie_add(rgc, args):
-    outfolder = os.path.abspath(os.path.join(rgc.genome_folder, args.genome))
-    asset_vars = get_asset_vars(args.genome, args.asset, outfolder)
-    rgc.update_assets(args.genome, args.asset, {CFG_ASSET_PATH_KEY: args.path.format(**asset_vars)})
+def refgenie_add(rgc, asset_dict):
+    outfolder = os.path.abspath(os.path.join(rgc.genome_folder, asset_dict["genome"]))
+    rgc.update_assets(asset_dict["genome"], asset_dict["asset"],
+        {CFG_ASSET_PATH_KEY: args.path.format(**asset_dict)})
     # Write the updated refgenie genome configuration
     rgc.write()
 
@@ -540,16 +540,17 @@ def main():
         refgenie_build(rgc, asset_list[0]["genome"], asset_list, args)
 
     elif args.command == GET_ASSET_CMD:
-        _LOGGER.debug("getting asset: '{}/{}'".format(args.genome, args.asset))
-        print(" ".join([rgc.get_asset(args.genome, asset) for asset in args.asset]))
+        for a in asset_list
+            _LOGGER.debug("getting asset: '{}/{}:{}'".format(a["genome"], a["asset"], a["tag"]))
+            print(rgc.get_asset(a["genome"], a["asset"], a["tag"]))
         return
 
     elif args.command == INSERT_CMD:
-        if len(args.asset) > 1:
+        if len(asset_list) > 1:
             raise NotImplementedError("Can only add 1 asset at a time")
         else:
             # recast from list to str
-            args.asset = args.asset[0]
+            asset_list = asset_list[0]
         refgenie_add(rgc, args)
 
     elif args.command == PULL_CMD:
