@@ -551,7 +551,7 @@ def main():
         # check for registry_path format?
         if args.registry_path:
             _LOGGER.debug("Found registry_path: {}".format(args.registry_path))
-            parsed_registry_path = parse_identifier_string(args.registry_path)
+            parsed_registry_path = parse_registry_path(args.registry_path)
             genome = parsed_registry_path["namespace"]
             asset = parsed_registry_path["item"]
             version = parsed_registry_path["version"]
