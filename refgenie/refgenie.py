@@ -21,7 +21,7 @@ import pypiper
 import refgenconf
 from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError
 from refgenconf.const import *
-from ubiquerg import is_url, query_yes_no
+from ubiquerg import is_url, query_yes_no, parse_registry_path
 from ubiquerg.system import is_writable
 import yacman
 
@@ -163,41 +163,6 @@ def build_argparser():
             "--{arg}".format(arg=arg), required=False, help=SUPPRESS)
 
     return parser
-
-def parse_registry_path(rpstring):
-    # A registry path is a string that is kind of like a URL, providing a unique
-    # identifier for a particular asset.
-    # This commented regex is the same without protocol
-    # ^(?:([0-9a-zA-Z_-]+)\/)?([0-9a-zA-Z_-]+)(?::([0-9a-zA-Z_.-]+))?$
-    regex = "^(?:([0-9a-zA-Z_-]+)(?:::|:\/\/))?(?:([0-9a-zA-Z_-]+)\/)?([0-9a-zA-Z_-]+)(?::([0-9a-zA-Z_.-]+))?$"
-    # This regex matches strings like:
-    # protocol://namespace/item:version
-    # or: protocol::namespace/item:version
-    # The names 'protocol', 'namespace', 'item', and 'version' are generic and
-    # you can use this function for whatever you like in this format... The
-    # regex can handle any of these missing and will parse correctly into the
-    # same element
-    # For instance, you can leave the version or protocol or both off:
-    # ucsc://hg38/bowtie2_index
-    # hg38/bowtie2_index
-    # With no delimiters, it will match the item name:
-    # bowtie2_index
-
-    res = re.match(regex, rpstring)
-    if not res:
-        return None
-    # position 0: parent namespace
-    # position 1: namespace
-    # position 2: primary name
-    # position 3: version
-    captures = res.groups()
-    parsed_identifier = {
-        "protocol": captures[0],
-        "namespace": captures[1],
-        "item": captures[2],
-        "version": captures[3]
-    }
-    return parsed_identifier
 
 
 def copy_or_download_file(input_string, outfolder):
