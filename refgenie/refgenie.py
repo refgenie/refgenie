@@ -21,7 +21,7 @@ import pypiper
 import refgenconf
 from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError
 from refgenconf.const import *
-from ubiquerg import is_url, query_yes_no, parse_registry_path
+from ubiquerg import is_url, query_yes_no, parse_registry_path as prp
 from ubiquerg.system import is_writable
 import yacman
 
@@ -40,9 +40,9 @@ INSERT_CMD = "add"
 REMOVE_CMD = "remove"
 GETSEQ_CMD = "getseq"
 
-GENOME_REQUIRED = [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, 
-                    REMOVE_CMD, GETSEQ_CMD]
+GENOME_ONLY_REQUIRED = [REMOVE_CMD, GETSEQ_CMD]
 
+# For each asset we assume a genome is also required
 ASSET_REQUIRED = [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD] 
 
 BUILD_SPECIFIC_ARGS = ('fasta', 'gtf', 'gff', 'context', 'refgene')
@@ -137,15 +137,15 @@ def build_argparser():
             help="Reference assembly ID, e.g. mm10")
 
     # add 'asset' argument to many commands
-    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD]:
-        sps[cmd].add_argument(
-            "-a", "--asset", required=False, nargs='+',
-            help="Name of one or more assets (keys in genome config file)")
+    # for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD]:
+    #     sps[cmd].add_argument(
+    #         "-a", "--asset", required=False, nargs='+',
+    #         help="Name of one or more assets (keys in genome config file)")
 
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD]:
         sps[cmd].add_argument(
-            "registry_path", metavar="registry-path", type=str, nargs='?',
-            help="Registry path string that identifies an asset"
+            "asset_registry_paths", metavar="registry-path", type=str, nargs='+',
+            help="One or more registry path strings that identify assets"
             " (e.g. hg38/bowtie2_index:1.0.0)")
 
     sps[PULL_CMD].add_argument(
@@ -171,6 +171,9 @@ def build_argparser():
 
     return parser
 
+
+def parse_registry_path(path):
+    return prp(path, names=["protocol", "genome", "asset", "tag"])
 
 def copy_or_download_file(input_string, outfolder):
     """
@@ -263,18 +266,15 @@ def refgenie_initg(rgc, genome, collection_checksum, content_checksums):
                         "The directory '{}' os not writable".format(fasta_parent))
 
 
-def refgenie_build(rgc, args):
+def refgenie_build(rgc, genome, asset_list, args):
     """
     Runs the refgenie build recipe.
 
     :param refgenconf.RefGenConf rgc: genome configuration instance
     :param argparse.Namespace args: parsed command-line options/arguments
     """
-
-    # Build specific args
     specific_args = {k: getattr(args, k) for k in BUILD_SPECIFIC_ARGS}
-    genome = args.genome
- 
+
     if not hasattr(args, "outfolder") or not args.outfolder:
         # Default to genome_folder
         _LOGGER.debug("No outfolder provided, using genome config.")
@@ -343,11 +343,11 @@ def refgenie_build(rgc, args):
         else:
             volumes = outfolder
 
-    for asset_key in args.asset:
+    for asset in asset_list:
 
         reg = parse_registry_path(asset_key)
-        asset_key = reg["item"]
-        asset_tag = reg["tag"]
+        asset_key = asset["asset"]
+        asset_tag = asset["tag"]
 
         if asset_key in asset_build_packages.keys():
             asset_build_package = asset_build_packages[asset_key]
@@ -372,7 +372,7 @@ def refgenie_build(rgc, args):
             if args.docker:
                 pm.get_container(asset_build_package[CONT], volumes)
 
-            # If the asset is a fasta, we first init the asset
+            # If the asset is a fasta, we first init the genome
             if asset_key == 'fasta':
                 _LOGGER.info("Initializing genome...")
                 collection_checksum, content_checksums = fasta_checksum(specific_args["fasta"])
@@ -380,7 +380,7 @@ def refgenie_build(rgc, args):
                         and collection_checksum != rgc.genomes[genome][CFG_CHECKSUM_KEY]:
                     _LOGGER.info("Checksum doesn't match")
                     return False
-                    
+
             build_asset(args.genome, asset_key, asset_tag, 
                         asset_build_package, outfolder, specific_args)
 
@@ -496,26 +496,35 @@ def main():
         raise MissingGenomeConfigError(args.genome_config)
     _LOGGER.debug("Determined genome config: {}".format(gencfg))
 
+    # From user input we want to construct a list of asset dicts, where each
+    # asset has a genome name, asset name, and tag
 
-    # check for registry_path format
     if args.registry_path:
         _LOGGER.debug("Found registry_path: {}".format(args.registry_path))
-        parsed_registry_path = parse_registry_path(args.registry_path)
-        args.genome = parsed_registry_path["namespace"]
-        args.asset = [parsed_registry_path["item"]]
-        tag = parsed_registry_path["tag"]
+        asset_list = [parse_registry_path(x) for x in args.registry_path]
+    
+        for a in asset_list:
+            # every asset must have a genome, either provided via registry path
+            # or the args.genome arg.
+            if not a["genome"]:
+                if args.genome:
+                    a["genome"] = args.genome
+                else:
+                    _LOGGER.error("Asset lacks a genome: {}".format(a["asset"]))
+                    Sys.exit(1)
+            else:
+                if args.genome and args.genome != a["genome"]:
+                    _LOGGER.warn("Genome specified twice for asset '{}'.".format(
+                        a["name"]))
+
     else:
-        # Old way
         if args.cmd in GENOME_REQUIRED and not args.genome:
             parser.error("You must provide either a genome or a registry path")
-        if args.cmd in ASSET_REQUIRED and not args.asset:
-            parser.error("You must provide either an asset or a registry path")
+            Sys.exit(1)
+        if args.cmd in ASSET_REQUIRED:
+            parser.error("You must provide an asset registry path")
+            Sys.exit(1)
         
-        parsed_asset = parse_registry_path(args.asset)
-        genome = args.genome
-        args.asset = parsed_asset["item"]  # args.asset
-        tag = parsed_asset["tag"]
-
     if args.command == INIT_CMD:
         _LOGGER.info("Initializing refgenie genome configuration")
         _writeable(os.path.dirname(gencfg), strict_exists=True)
@@ -525,7 +534,10 @@ def main():
     rgc = RefGenConf(gencfg)
 
     if args.command == BUILD_CMD:
-        refgenie_build(rgc, args)
+        if not all([x["genome"]==asset_list[0]["genome"] for x in asset_list]):
+            _LOGGER.error("Build can only build assets from one genome")
+            Sys.exit(1)
+        refgenie_build(rgc, asset_list[0]["genome"], asset_list, args)
 
     elif args.command == GET_ASSET_CMD:
         _LOGGER.debug("getting asset: '{}/{}'".format(args.genome, args.asset))
