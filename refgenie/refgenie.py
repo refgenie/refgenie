@@ -39,11 +39,12 @@ GET_ASSET_CMD = "seek"
 INSERT_CMD = "add"
 REMOVE_CMD = "remove"
 GETSEQ_CMD = "getseq"
+SETDEFAULT_CMD = "setdefault"
 
 GENOME_ONLY_REQUIRED = [REMOVE_CMD, GETSEQ_CMD]
 
 # For each asset we assume a genome is also required
-ASSET_REQUIRED = [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD] 
+ASSET_REQUIRED = [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, SETDEFAULT_CMD]
 
 BUILD_SPECIFIC_ARGS = ('fasta', 'gtf', 'gff', 'context', 'refgene')
 
@@ -53,6 +54,7 @@ refgenie_server_api = {
     'list_assets_by_genome': "/genome/{genome}",
     'download_asset': "/asset/{genome}/{asset}",
 }
+
 
 def build_argparser():
     """
@@ -84,7 +86,8 @@ def build_argparser():
         GET_ASSET_CMD: "Get the path to a local asset.",
         INSERT_CMD: "Add local asset to the config file.",
         REMOVE_CMD: "Remove a local asset.",
-        GETSEQ_CMD: "Get sequences from a genome"
+        GETSEQ_CMD: "Get sequences from a genome",
+        SETDEFAULT_CMD: "Assign a 'default' tag to an asset"
     }
 
     sps = {}
@@ -118,7 +121,7 @@ def build_argparser():
 
     # add 'genome' argument to many commands
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD,
-                 LIST_REMOTE_CMD, LIST_LOCAL_CMD, GETSEQ_CMD]:
+                 LIST_REMOTE_CMD, LIST_LOCAL_CMD, GETSEQ_CMD, SETDEFAULT_CMD]:
         # genome is not required for listing actions
         sps[cmd].add_argument(
             "-g", "--genome", required=cmd in (GETSEQ_CMD),
@@ -130,7 +133,7 @@ def build_argparser():
     #         "-a", "--asset", required=False, nargs='+',
     #         help="Name of one or more assets (keys in genome config file)")
 
-    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD]:
+    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, SETDEFAULT_CMD]:
         sps[cmd].add_argument(
             "asset_registry_paths", metavar="asset-registry-paths", type=str, nargs='+',
             help="One or more registry path strings that identify assets"
@@ -484,7 +487,7 @@ def main():
     if "asset_registry_paths" in args and args.asset_registry_paths:
         _LOGGER.debug("Found registry_path: {}".format(args.asset_registry_paths))
         asset_list = [parse_registry_path(x) for x in args.asset_registry_paths]
-    
+
         for a in asset_list:
             # every asset must have a genome, either provided via registry path
             # or the args.genome arg.
@@ -588,6 +591,10 @@ def main():
                 removed.append(asset_dir)
         _LOGGER.info("Successfully removed entities:\n- {}".format("\n- ".join(removed)))
 
+    elif args.command == SETDEFAULT_CMD:
+        for a in asset_list:
+            rgc.set_default_asset(a["genome"], a["asset"], a["tag"])
+            rgc.write()
 
 def _key_to_name(k):
     return k.replace("_", " ")
