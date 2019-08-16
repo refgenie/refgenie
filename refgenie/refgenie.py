@@ -299,7 +299,7 @@ def refgenie_build(rgc, genome, asset_list, args):
             assets.
         """
         _LOGGER.debug("Asset build package: " + str(build_pkg))
-        asset_vars = get_asset_vars(genome, asset_key, outfolder, specific_args)
+        asset_vars = get_asset_vars(genome, asset_key, tag, outfolder, specific_args)
         asset_outfolder = os.path.join(outfolder, asset_key)
 
         _LOGGER.debug(str([x.format(**asset_vars) for x in build_pkg[CMD_LST]]))
