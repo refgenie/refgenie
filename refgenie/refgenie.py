@@ -490,7 +490,7 @@ def main():
     # From user input we want to construct a list of asset dicts, where each
     # asset has a genome name, asset name, and tag
 
-    if args.registry_path:
+    if "registry_path" in args and args.registry_path:
         _LOGGER.debug("Found registry_path: {}".format(args.registry_path))
         asset_list = [parse_registry_path(x) for x in args.registry_path]
     
@@ -509,10 +509,10 @@ def main():
                         a["name"]))
 
     else:
-        if args.cmd in GENOME_REQUIRED and not args.genome:
+        if args.command in GENOME_ONLY_REQUIRED and not args.genome:
             parser.error("You must provide either a genome or a registry path")
             Sys.exit(1)
-        if args.cmd in ASSET_REQUIRED:
+        if args.command in ASSET_REQUIRED:
             parser.error("You must provide an asset registry path")
             Sys.exit(1)
         
