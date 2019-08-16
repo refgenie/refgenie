@@ -161,7 +161,7 @@ def build_argparser():
 
 
 def parse_registry_path(path):
-    return prp(path, names=["protocol", "genome", "asset", "tag"])
+    return prp(path, names=["protocol", "genome", "asset", "seek_key", "tag"])
 
 def copy_or_download_file(input_string, outfolder):
     """
@@ -530,8 +530,8 @@ def main():
 
     elif args.command == GET_ASSET_CMD:
         for a in asset_list:
-            _LOGGER.debug("getting asset: '{}/{}:{}'".format(a["genome"], a["asset"], a["tag"]))
-            print(rgc.get_asset(a["genome"], a["asset"], a["tag"]))
+            _LOGGER.debug("getting asset: '{}/{}:{}'".format(a["genome"], a["asset"], a["seek_key"], a["tag"]))
+            print(rgc.get_asset(a["genome"], a["asset"], a["seek_key"], a["tag"]))
         return
 
     elif args.command == INSERT_CMD:
