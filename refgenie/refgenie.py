@@ -21,7 +21,7 @@ import pypiper
 import refgenconf
 from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError
 from refgenconf.const import *
-from ubiquerg import is_url, query_yes_no, parse_registry_path as prp
+from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, VersionInHelpParser
 from ubiquerg.system import is_writable
 import yacman
 
@@ -54,14 +54,6 @@ refgenie_server_api = {
     'download_asset': "/asset/{genome}/{asset}",
 }
 
-
-class _VersionInHelpParser(ArgumentParser):
-    def format_help(self):
-        """ Add version information to help text. """
-        return "version: {}\n".format(__version__) + \
-               super(_VersionInHelpParser, self).format_help()
-
-
 def build_argparser():
     """
     Builds argument parser.
@@ -72,14 +64,10 @@ def build_argparser():
     banner = "%(prog)s - builds and manages reference genome assemblies"
     additional_description = "\nhttps://refgenie.databio.org"
 
-    parser = _VersionInHelpParser(
+    parser = VersionInHelpParser(
         description=banner,
-        epilog=additional_description)
-
-    parser.add_argument(
-        "-V", "--version",
-        action="version",
-        version="%(prog)s {v}".format(v=__version__))
+        epilog=additional_description,
+        version=__version__)
 
     subparsers = parser.add_subparsers(dest="command")
 
@@ -228,8 +216,11 @@ def get_asset_vars(genome, asset_key, tag, outfolder, specific_args=None):
 
 def refgenie_add(rgc, asset_dict):
     outfolder = os.path.abspath(os.path.join(rgc.genome_folder, asset_dict["genome"]))
-    rgc.update_assets(asset_dict["genome"], asset_dict["asset"],
-        {CFG_ASSET_PATH_KEY: args.path.format(**asset_dict)})
+    rgc.update_assets(asset_dict["genome"],
+                      asset_dict["asset"],
+                      asset_dict["tag"],
+                      {CFG_ASSET_PATH_KEY: args.path.format(**asset_dict)})
+
     # Write the updated refgenie genome configuration
     rgc.write()
 
@@ -540,7 +531,7 @@ def main():
         refgenie_build(rgc, asset_list[0]["genome"], asset_list, args)
 
     elif args.command == GET_ASSET_CMD:
-        for a in asset_list
+        for a in asset_list:
             _LOGGER.debug("getting asset: '{}/{}:{}'".format(a["genome"], a["asset"], a["tag"]))
             print(rgc.get_asset(a["genome"], a["asset"], a["tag"]))
         return
@@ -549,9 +540,7 @@ def main():
         if len(asset_list) > 1:
             raise NotImplementedError("Can only add 1 asset at a time")
         else:
-            # recast from list to str
-            asset_list = asset_list[0]
-        refgenie_add(rgc, args)
+            refgenie_add(rgc, asset_list[0])
 
     elif args.command == PULL_CMD:
         outdir = rgc[CFG_FOLDER_KEY]
@@ -564,7 +553,7 @@ def main():
             _LOGGER.error("Insufficient permissions to write to {}: "
                           "{}".format(target, outdir))
             return
-        rgc.pull_asset(genome, asset, gencfg, unpack=not args.no_untar)
+        rgc.pull_asset(genome, asset, tag, gencfg, unpack=not args.no_untar)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
@@ -577,7 +566,10 @@ def main():
         refgenie_getseq(rgc, args.genome, args.locus)
 
     elif args.command == REMOVE_CMD:
-        assets = rgc.list_assets_by_genome(args.genome) if args.asset is None else args.asset
+        if len(asset_list) < 1:
+            # No assets provided, must be all for this genome
+            asset_list = rgc.list_assets_by_genome(args.genome)
+
         for asset in assets:
             try:
                 rgc.get_asset(args.genome, asset)
