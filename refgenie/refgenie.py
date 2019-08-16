@@ -132,7 +132,7 @@ def build_argparser():
 
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD]:
         sps[cmd].add_argument(
-            "asset_registry_paths", metavar="registry-path", type=str, nargs='+',
+            "asset_registry_paths", metavar="asset-registry-paths", type=str, nargs='+',
             help="One or more registry path strings that identify assets"
             " (e.g. hg38/bowtie2_index:1.0.0)")
 
@@ -490,9 +490,9 @@ def main():
     # From user input we want to construct a list of asset dicts, where each
     # asset has a genome name, asset name, and tag
 
-    if "registry_path" in args and args.registry_path:
-        _LOGGER.debug("Found registry_path: {}".format(args.registry_path))
-        asset_list = [parse_registry_path(x) for x in args.registry_path]
+    if "asset_registry_paths" in args and args.asset_registry_paths:
+        _LOGGER.debug("Found registry_path: {}".format(args.asset_registry_paths))
+        asset_list = [parse_registry_path(x) for x in args.asset_registry_paths]
     
         for a in asset_list:
             # every asset must have a genome, either provided via registry path
@@ -553,7 +553,10 @@ def main():
             _LOGGER.error("Insufficient permissions to write to {}: "
                           "{}".format(target, outdir))
             return
-        rgc.pull_asset(genome, asset, tag, gencfg, unpack=not args.no_untar)
+
+        for a in asset_list:
+            rgc.pull_asset(a["genome"], a["asset"], a["tag"], gencfg, 
+                           unpack=not args.no_untar)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
