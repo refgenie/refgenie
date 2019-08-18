@@ -67,9 +67,9 @@ def build_argparser():
     additional_description = "\nhttps://refgenie.databio.org"
 
     parser = VersionInHelpParser(
+        version=__version__,
         description=banner,
-        epilog=additional_description,
-        version=__version__)
+        epilog=additional_description)
 
     subparsers = parser.add_subparsers(dest="command")
 
