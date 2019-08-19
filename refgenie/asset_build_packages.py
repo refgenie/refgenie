@@ -115,7 +115,7 @@ asset_build_packages = {
             ] 
     },
     "salmon_index": {
-        DESC: "Transcriptome index for salmon, produced with salmon index"
+        DESC: "Transcriptome index for salmon, produced with salmon index",
         REQ_IN: [],
         REQ_ASSETS: ["fasta"],
         CONT: "combinelab/salmon",
@@ -127,7 +127,7 @@ asset_build_packages = {
             ] 
     },
     "epilog_index": {
-        DESC: "Genome index for CpG sites, produced by the epilog DNA methylation caller"
+        DESC: "Genome index for CpG sites, produced by the epilog DNA methylation caller",
         REQ_IN: ["context"],
         REQ_ASSETS: ["fasta"],
         CONT: "databio/refgenie",
@@ -139,7 +139,7 @@ asset_build_packages = {
             ] 
     },
     "star_index": {
-        DESC: "Genome index for STAR RNA-seq aligner, produced with STAR --runMode genomeGenerate"
+        DESC: "Genome index for STAR RNA-seq aligner, produced with STAR --runMode genomeGenerate",
         REQ_IN: [],
         REQ_ASSETS: ["fasta"],
         CONT: "databio/refgenie",
