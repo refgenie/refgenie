@@ -320,8 +320,7 @@ def refgenie_build(rgc, genome, asset_list, args):
 
         for asset in build_pkg[ASSETS].keys():
             rgc.update_assets(genome, asset, tag, {
-                CFG_ASSET_PATH_KEY: build_pkg[ASSETS][asset][PTH].format(**asset_vars),
-                CFG_ASSET_DESC_KEY: build_pkg[ASSETS][asset][ASSET_DESC]
+                CFG_ASSET_PATH_KEY: build_pkg[ASSETS][asset].format(**asset_vars),
             })
 
         # Write the updated refgenie genome configuration
