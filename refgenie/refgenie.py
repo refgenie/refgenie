@@ -319,7 +319,7 @@ def refgenie_build(rgc, genome, asset_list, args):
         pm.run(command_list_populated, target, container=pm.container)
 
         # update and write refgenie genome configuration
-        rgc.update_assets(genome, asset_key, tag, {CFG_ASSET_PATH_KEY: asset_key})
+        rgc.update_assets(genome, asset_key, tag, {CFG_ASSET_PATH_KEY: asset_key, CFG_ASSET_DESC_KEY: build_pkg[DESC]})
         rgc.update_seek_keys(genome, asset_key, tag, {k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
         rgc.write()
 
