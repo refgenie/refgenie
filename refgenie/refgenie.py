@@ -318,12 +318,9 @@ def refgenie_build(rgc, genome, asset_list, args):
 
         pm.run(command_list_populated, target, container=pm.container)
 
-        for asset in build_pkg[ASSETS].keys():
-            rgc.update_assets(genome, asset, tag, {
-                CFG_ASSET_PATH_KEY: build_pkg[ASSETS][asset].format(**asset_vars),
-            })
-
-        # Write the updated refgenie genome configuration
+        # update and write refgenie genome configuration
+        rgc.update_assets(genome, asset_key, tag, {CFG_ASSET_PATH_KEY: asset_key})
+        rgc.update_seek_keys(genome, asset_key, tag, {k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
         rgc.write()
 
     pm = pypiper.PipelineManager(name="refgenie", outfolder=outfolder, args=args)
