@@ -23,7 +23,7 @@ CMD_LST = "command_list"
 
 asset_build_packages = {
     "fasta": {
-        DESC: "Given a gzipped fasta file, produces fasta, fai, and chrom_sizes assets",
+        DESC: "Sequences in the FASTA format, indexed FASTA (produced with samtools index) and chromosome sizes file",
         ASSETS: {
             "fasta": "{genome}.fa",
             "fai": "{genome}.fa.fai",
@@ -40,6 +40,7 @@ asset_build_packages = {
         ]
     },
     "bowtie2_index": {
+        DESC: "Genome index for bowtie, produced with bowtie-build",
         ASSETS: {
             "bowtie2_index": "."
         },
@@ -51,6 +52,7 @@ asset_build_packages = {
             ] 
     },
     "bwa_index": {
+        DESC: "Genome index for Burrows-Wheeler Alignment Tool, produced with bwa index",
         ASSETS: {
             "bwa_index": "."
         },
@@ -63,6 +65,7 @@ asset_build_packages = {
             ] 
     },    
     "hisat2_index": {
+        DESC: "Genome index for HISAT2, produced with hisat2-build",
         ASSETS: {
             "hisat2_index": "."
         },
@@ -74,7 +77,7 @@ asset_build_packages = {
             ] 
     },
     "bismark_bt2_index": {
-        DESC: "The fasta asset must be built first for this to work.",
+        DESC: "Genome index for Bisulfite-Seq applications, produced by bismark_genome_preparation using bowtie2",
         REQ_IN: [],
         REQ_ASSETS: ["fasta"],
         CONT: "databio/refgenie",
@@ -87,7 +90,7 @@ asset_build_packages = {
             ] 
     },
     "bismark_bt1_index": {
-        DESC: "The fasta asset must be built first for this to work.",
+        DESC: "Genome index for Bisulfite-Seq applications, produced by bismark_genome_preparation using bowtie1",
         REQ_IN: [],
         REQ_ASSETS: ["fasta"],
         CONT: "databio/refgenie",
@@ -100,6 +103,7 @@ asset_build_packages = {
             ] 
     },  
     "kallisto_index": {
+        DESC: "Genome index for kallisto, produced with kallisto index",
         REQ_IN: [],
         REQ_ASSETS: ["fasta"],
         CONT: "databio/refgenie",
@@ -111,6 +115,7 @@ asset_build_packages = {
             ] 
     },
     "salmon_index": {
+        DESC: "Transcriptome index for salmon, produced with salmon index"
         REQ_IN: [],
         REQ_ASSETS: ["fasta"],
         CONT: "combinelab/salmon",
@@ -122,6 +127,7 @@ asset_build_packages = {
             ] 
     },
     "epilog_index": {
+        DESC: "Genome index for CpG sites, produced by the epilog DNA methylation caller"
         REQ_IN: ["context"],
         REQ_ASSETS: ["fasta"],
         CONT: "databio/refgenie",
@@ -133,6 +139,7 @@ asset_build_packages = {
             ] 
     },
     "star_index": {
+        DESC: "Genome index for STAR RNA-seq aligner, produced with STAR --runMode genomeGenerate"
         REQ_IN: [],
         REQ_ASSETS: ["fasta"],
         CONT: "databio/refgenie",
@@ -145,7 +152,7 @@ asset_build_packages = {
             ]
     },
     "gencode_gtf": {
-        DESC: "Given a GTF file (must be downloaded), create a GTF annotation asset.  GTF provides access to all annotated transcripts which make up an Ensembl gene set.",
+        DESC: "GTF annotation asset which provides access to all annotated transcripts which make up an Ensembl gene set.",
         REQ_IN: ["gtf"],
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
@@ -157,7 +164,7 @@ asset_build_packages = {
             ] 
     },
     "ensembl_gtf": {
-        DESC: "Given a Ensembl GTF file (must be downloaded), create Ensembl GTF, TSS, and gene body annotation assets.",
+        DESC: "Ensembl GTF, TSS, and gene body annotation",
         REQ_IN: ["gtf"],
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
@@ -173,7 +180,7 @@ asset_build_packages = {
             ] 
     },
     "ensembl_rb": {
-        DESC: "Given a GFF regulatory build file (must be downloaded), create a regulatory annotation asset.",
+        DESC: "A regulatory annotation file",
         REQ_IN: ["gff"],
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
@@ -185,7 +192,7 @@ asset_build_packages = {
             ] 
     },
     "refgene_anno": {
-        DESC: "Given a refGene file (must be downloaded), create gene, TSS, exon, intron, and premature mRNA annotation assets.",
+        DESC: "gene, TSS, exon, intron, and premature mRNA annotation files",
         REQ_IN: ["refgene"],
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
@@ -205,7 +212,7 @@ asset_build_packages = {
             ]
     },
     "feat_annotation": {
-        DESC: "Using a Ensembl GTF annotation asset and an Ensembl regulatory build annotation asset, create a combined genomic feature annotation asset.",
+        DESC: "Combined genomic feature annotation created using an Ensembl GTF annotation asset and an Ensembl regulatory build annotation asset",
         ASSETS: {
             "feat_annotation": "{genome}_annotations.bed.gz",
         },
