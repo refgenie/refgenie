@@ -554,6 +554,16 @@ def main():
             rgc.pull_asset(a["genome"], a["asset"], a["tag"], gencfg,
                            unpack=not args.no_untar)
 
+    elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
+        pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
+        _LOGGER.info("{} genomes: {}".format(pfx, genomes))
+        if args.command != LIST_REMOTE_CMD:  # Not implemented yet
+            _LOGGER.info("{} recipes: {}".format(pfx, recipes))
+        _LOGGER.info("{} assets:\n{}".format(pfx, assets))
+
+    elif args.command == GETSEQ_CMD:
+        refgenie_getseq(rgc, args.genome, args.locus)
+
     elif args.command == REMOVE_CMD:
         if len(asset_list) < 1:
             # No assets provided, must be all for this genome
