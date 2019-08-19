@@ -554,49 +554,62 @@ def main():
             rgc.pull_asset(a["genome"], a["asset"], a["tag"], gencfg,
                            unpack=not args.no_untar)
 
-    elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
-        pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
-        _LOGGER.info("{} genomes: {}".format(pfx, genomes))
-        if args.command != LIST_REMOTE_CMD:  # Not implemented yet
-            _LOGGER.info("{} recipes: {}".format(pfx, recipes))
-        _LOGGER.info("{} assets:\n{}".format(pfx, assets))
-
-    elif args.command == GETSEQ_CMD:
-        refgenie_getseq(rgc, args.genome, args.locus)
-
     elif args.command == REMOVE_CMD:
         if len(asset_list) < 1:
             # No assets provided, must be all for this genome
             asset_list = rgc.list_assets_by_genome(args.genome)
-
-        for asset in assets:
+        for a in asset_list:
+            bundle = [a["genome"], a["asset"], a["tag"], a["seek_key"]]
             try:
-                rgc.get_asset(args.genome, asset)
+                rgc.get_asset(*bundle)
             except (MissingAssetError, MissingGenomeError):
-                _LOGGER.info("Asset {}/{} does not exist".format(args.genome, asset))
+                _LOGGER.info("Asset '{}/{}.{}:{}' does not exist".format(*bundle))
                 return
-        if len(assets) > 1:
-            if not query_yes_no("Remove {} assets for genome: {}?".format(len(assets), args.genome)):
+        if len(asset_list) > 1:
+            if not query_yes_no("Are you sure you want to remove {} assets?".format(len(asset_list))):
+                _LOGGER.info("Action aborted by the user")
                 return
         else:
-            query_yes_no("Remove {}/{}?".format(args.genome, assets[0]))
+            a = asset_list[0]
+            bundle = [a["genome"], a["asset"], a["seek_key"], a["tag"]]
+            if not query_yes_no("Remove '{}/{}.{}:{}'?".format(*bundle)):
+                _LOGGER.info("Action aborted by the user")
+                return
         removed = []
-        for asset in assets:
-            asset_dir = os.path.abspath(os.path.join(rgc.get_asset(args.genome, asset), os.pardir))
-            asset_archive = asset_dir + ".tar"
-            if os.path.isfile(asset_archive):
-                os.remove(asset_archive)
-                removed.append(asset_archive)
-            if os.path.isdir(asset_dir):
-                rmtree(asset_dir)
-                rgc.remove_assets(args.genome, asset).write()
-                removed.append(asset_dir)
+        for a in asset_list:
+            bundle = [a["genome"], a["asset"], a["tag"], a["seek_key"]]
+            asset_path = rgc.get_asset(*bundle)
+            is_subasset = not os.path.isdir(asset_path)  # check if the asset to be removed is a subasset or
+            if os.path.exists(asset_path):
+                removed.append(_remove_asset(asset_path))
+                rgc.remove_assets(*bundle).write()
+            try:
+                rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY][a["asset"]]
+            except KeyError:
+                if is_subasset:
+                    _LOGGER.debug("Last asset from the asset package has been removed, removing enclosing dir")
+                    removed.append(_remove_asset(os.path.abspath(os.path.join(asset_path, os.path.pardir))))
         _LOGGER.info("Successfully removed entities:\n- {}".format("\n- ".join(removed)))
 
     elif args.command == SETDEFAULT_CMD:
         for a in asset_list:
             rgc.set_default_asset(a["genome"], a["asset"], a["tag"])
             rgc.write()
+
+
+def _remove_asset(path):
+    """
+    remove asset if it is a dir or a file
+    :param str path: path to the entity to remove, either a file or a dir
+    """
+    if os.path.isfile(path):
+        os.remove(path)
+    elif os.path.isdir(path):
+        rmtree(path)
+    else:
+        raise ValueError("path '{}' is neither a file nor dir.".format(path))
+    return path
+
 
 def _key_to_name(k):
     return k.replace("_", " ")
