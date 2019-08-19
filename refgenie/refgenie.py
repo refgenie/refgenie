@@ -164,7 +164,13 @@ def build_argparser():
 
 
 def parse_registry_path(path):
-    return prp(path, names=["protocol", "genome", "asset", "seek_key", "tag"])
+    return prp(path, defaults=[
+        ("protocol", None),
+        ("genome", None),
+        ("asset", None),
+        ("seek_key", None),
+        ("tag", "default")])
+
 
 def copy_or_download_file(input_string, outfolder):
     """
