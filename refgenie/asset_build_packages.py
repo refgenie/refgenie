@@ -45,11 +45,11 @@ asset_build_packages = {
             "bowtie2_index": "."
         },
         REQ_IN: [],
-        REQ_ASSETS: ["fasta"],
+        REQ_ASSETS: ["fasta.fasta"],
         CONT: "databio/refgenie",
         CMD_LST: [
-            "bowtie2-build {asset_outfolder}/../fasta/{genome}.fa {asset_outfolder}/{genome}",
-            ] 
+            "bowtie2-build {fasta} {asset_outfolder}/{genome}",
+            ]
     },
     "bwa_index": {
         DESC: "Genome index for Burrows-Wheeler Alignment Tool, produced with bwa index",
@@ -57,10 +57,10 @@ asset_build_packages = {
             "bwa_index": "."
         },
         REQ_IN: [],
-        REQ_ASSETS: ["fasta"],
+        REQ_ASSETS: ["fasta.fasta"],
         CONT: "databio/refgenie",
         CMD_LST: [
-            "ln -sf ../fasta/{genome}.fa {asset_outfolder}",
+            "ln -sf {fasta} {asset_outfolder}",
             "bwa index {asset_outfolder}/{genome}.fa",
             ] 
     },    
@@ -70,85 +70,85 @@ asset_build_packages = {
             "hisat2_index": "."
         },
         REQ_IN: [],
-        REQ_ASSETS: ["fasta"],
+        REQ_ASSETS: ["fasta.fasta"],
         CONT: "databio/refgenie",
         CMD_LST: [
-            "hisat2-build {asset_outfolder}/../fasta/{genome}.fa {asset_outfolder}/{genome}"
+            "hisat2-build {fasta} {asset_outfolder}/{genome}"
             ] 
     },
     "bismark_bt2_index": {
         DESC: "Genome index for Bisulfite-Seq applications, produced by bismark_genome_preparation using bowtie2",
         REQ_IN: [],
-        REQ_ASSETS: ["fasta"],
+        REQ_ASSETS: ["fasta.fasta"],
         CONT: "databio/refgenie",
         ASSETS: {
             "bismark_bt2_index": "."
         },
         CMD_LST: [
-            "ln -sf ../fasta/{genome}.fa {asset_outfolder}",
+            "ln -sf {fasta} {asset_outfolder}",
             "bismark_genome_preparation --bowtie2 {asset_outfolder}"
             ] 
     },
     "bismark_bt1_index": {
         DESC: "Genome index for Bisulfite-Seq applications, produced by bismark_genome_preparation using bowtie1",
         REQ_IN: [],
-        REQ_ASSETS: ["fasta"],
+        REQ_ASSETS: ["fasta.fasta"],
         CONT: "databio/refgenie",
         ASSETS: {
             "bismark_bt1_index": "."
         },
         CMD_LST: [
-            "ln -sf ../fasta/{genome}.fa {asset_outfolder}",
+            "ln -sf {fasta} {asset_outfolder}",
             "bismark_genome_preparation {asset_outfolder}"
             ] 
     },  
     "kallisto_index": {
         DESC: "Genome index for kallisto, produced with kallisto index",
         REQ_IN: [],
-        REQ_ASSETS: ["fasta"],
+        REQ_ASSETS: ["fasta.fasta"],
         CONT: "databio/refgenie",
         ASSETS: {
             "kallisto_index": "."
         },
         CMD_LST: [
-            "kallisto index -i {asset_outfolder}/{genome}_kallisto_index.idx {asset_outfolder}/../fasta/{genome}.fa"
+            "kallisto index -i {asset_outfolder}/{genome}_kallisto_index.idx {fasta}"
             ] 
     },
     "salmon_index": {
         DESC: "Transcriptome index for salmon, produced with salmon index",
         REQ_IN: [],
-        REQ_ASSETS: ["fasta"],
+        REQ_ASSETS: ["fasta.fasta"],
         CONT: "combinelab/salmon",
         ASSETS: {
             "salmon_index": "."
         },
         CMD_LST: [
-            "salmon index -k 31 -i {asset_outfolder} -t {asset_outfolder}/../fasta/{genome}.fa"
+            "salmon index -k 31 -i {asset_outfolder} -t {fasta}"
             ] 
     },
     "epilog_index": {
         DESC: "Genome index for CpG sites, produced by the epilog DNA methylation caller",
         REQ_IN: ["context"],
-        REQ_ASSETS: ["fasta"],
+        REQ_ASSETS: ["fasta.fasta"],
         CONT: "databio/refgenie",
         ASSETS: {
             "epilog_index": "."
         },
         CMD_LST: [
-            "epilog index -i {asset_outfolder}/../fasta/{genome}.fa -o {asset_outfolder}/{genome}_{context}.tsv -s {context} -t"
+            "epilog index -i {fasta} -o {asset_outfolder}/{genome}_{context}.tsv -s {context} -t"
             ] 
     },
     "star_index": {
         DESC: "Genome index for STAR RNA-seq aligner, produced with STAR --runMode genomeGenerate",
         REQ_IN: [],
-        REQ_ASSETS: ["fasta"],
+        REQ_ASSETS: ["fasta.fasta"],
         CONT: "databio/refgenie",
         ASSETS: {
             "star_index": "."
         },
         CMD_LST: [
             "mkdir -p {asset_outfolder}",
-            "STAR --runThreadN 16 --runMode genomeGenerate --genomeDir {asset_outfolder} --genomeFastaFiles {asset_outfolder}/../fasta/{genome}.fa "
+            "STAR --runThreadN 16 --runMode genomeGenerate --genomeDir {asset_outfolder} --genomeFastaFiles {fasta}"
             ]
     },
     "gencode_gtf": {
@@ -205,10 +205,10 @@ asset_build_packages = {
         },
         CMD_LST: [
             "cp {refgene} {asset_outfolder}/{genome}_refGene.txt.gz",
-            "gzip -dc {asset_outfolder}/../refgene_anno/{genome}_refGene.txt.gz | awk '{{if($4==\"+\"){{print $3\"\t\"$5\"\t\"$5\"\t\"$13\"\t.\t\"$4}}else{{print $3\"\t\"$6\"\t\"$6\"\t\"$13\"\t.\t\"$4}}}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_TSS.bed",
-            "gzip -dc {asset_outfolder}/../refgene_anno/{genome}_refGene.txt.gz | awk -v OFS='\t' '$9>1' | awk -v OFS='\t' '{{ n = split($10, a, \",\"); split($11, b, \",\"); for(i=1; i<n; ++i) print $3, a[i], b[i], $13, i, $4 }}' | awk -v OFS='\t' '$6==\"+\" && $5!=1 {{print $0}} $6==\"-\" {{print $0}}' | awk '$4!=prev4 && prev6==\"-\" {{prev4=$4; prev6=$6; delete line[NR-1]; idx-=1}} {{line[++idx]=$0; prev4=$4; prev6=$6}} END {{for (x=1; x<=idx; x++) print line[x]}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_exons.bed",
-            "gzip -dc {asset_outfolder}/../refgene_anno/{genome}_refGene.txt.gz | awk -v OFS='\t' '$9>1' | awk -F'\t' '{{ exonCount=int($9);split($10,exonStarts,\"[,]\"); split($11,exonEnds,\"[,]\"); for(i=1;i<exonCount;i++) {{printf(\"%s\\t%s\\t%s\\t%s\\t%d\\t%s\\n\",$3,exonEnds[i],exonStarts[i+1],$13,($3==\"+\"?i:exonCount-i),$4);}}}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_introns.bed",
-            "gzip -dc {asset_outfolder}/../refgene_anno/{genome}_refGene.txt.gz | grep 'cmpl' | awk  '{{print $3\"\t\"$5\"\t\"$6\"\t\"$13\"\t.\t\"$4}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u >  {asset_outfolder}/{genome}_pre-mRNA.bed"
+            "gzip -dc {asset_outfolder}{genome}_refGene.txt.gz | awk '{{if($4==\"+\"){{print $3\"\t\"$5\"\t\"$5\"\t\"$13\"\t.\t\"$4}}else{{print $3\"\t\"$6\"\t\"$6\"\t\"$13\"\t.\t\"$4}}}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_TSS.bed",
+            "gzip -dc {asset_outfolder}{genome}_refGene.txt.gz  | awk -v OFS='\t' '$9>1' | awk -v OFS='\t' '{{ n = split($10, a, \",\"); split($11, b, \",\"); for(i=1; i<n; ++i) print $3, a[i], b[i], $13, i, $4 }}' | awk -v OFS='\t' '$6==\"+\" && $5!=1 {{print $0}} $6==\"-\" {{print $0}}' | awk '$4!=prev4 && prev6==\"-\" {{prev4=$4; prev6=$6; delete line[NR-1]; idx-=1}} {{line[++idx]=$0; prev4=$4; prev6=$6}} END {{for (x=1; x<=idx; x++) print line[x]}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_exons.bed",
+            "gzip -dc {asset_outfolder}{genome}_refGene.txt.gz  | awk -v OFS='\t' '$9>1' | awk -F'\t' '{{ exonCount=int($9);split($10,exonStarts,\"[,]\"); split($11,exonEnds,\"[,]\"); for(i=1;i<exonCount;i++) {{printf(\"%s\\t%s\\t%s\\t%s\\t%d\\t%s\\n\",$3,exonEnds[i],exonStarts[i+1],$13,($3==\"+\"?i:exonCount-i),$4);}}}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_introns.bed",
+            "gzip -dc {asset_outfolder}{genome}_refGene.txt.gz  | grep 'cmpl' | awk  '{{print $3\"\t\"$5\"\t\"$6\"\t\"$13\"\t.\t\"$4}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u >  {asset_outfolder}/{genome}_pre-mRNA.bed"
             ]
     },
     "feat_annotation": {
@@ -220,13 +220,13 @@ asset_build_packages = {
         REQ_ASSETS: ["ensembl_gtf", "ensembl_rb"],
         CONT: "databio/refgenie",
         CMD_LST: [
-            "gzip -dc {asset_outfolder}/../ensembl_gtf/{genome}.gtf.gz | awk '$3==\"exon\"' | grep -v 'pseudogene' | awk -v OFS='\t' '{{print \"chr\"$1, $4-1, $5, \"Exon\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u > {asset_outfolder}/{genome}_exons.bed",
-            "gzip -dc {asset_outfolder}/../ensembl_gtf/{genome}.gtf.gz | awk '$3==\"exon\"' | grep -v 'pseudogene' | awk -v OFS='\t' '{{ split($20, a, \"\\\"\"); print \"chr\"$1, $4-1, $5, a[2], $6, $7}}' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u | awk 'seen[$4]++ && seen[$4] > 1' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3nr | env LC_COLLATE=C sort -k1,1 -k2,2n -u | env LC_COLLATE=C sort -k1,1 -k3,3n -u | awk -v OFS='\t' '{{if($4==prev4){{new2=prev3+1;}} {{prev4=$4; prev3=$3; print $1, new2, $2-1, \"Intron\", $5, $6}}}}' | awk -F'\t' '$2' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_introns.bed",
-            "gzip -dc {asset_outfolder}/../ensembl_gtf/{genome}.gtf.gz | awk '$3==\"three_prime_utr\"' | grep -v 'pseudogene' | awk -v OFS='\t' '{{print \"chr\"$1, $4-1, $5, \"3\'\\\'\' UTR\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_3utr.bed",
-            "gzip -dc {asset_outfolder}/../ensembl_gtf/{genome}.gtf.gz | awk '$3==\"five_prime_utr\"' | grep -v 'pseudogene' | awk -v OFS='\t' '{{print \"chr\"$1, $4-1, $5, \"5\'\\\'\' UTR\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_5utr.bed",
-            "gzip -dc {asset_outfolder}/../ensembl_rb/{genome}.gff.gz | awk '$3==\"promoter\"' | awk -v OFS='\t' '{{print \"chr\"$1, $4, $5, \"Promoter\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u > {asset_outfolder}/{genome}_promoter.bed",
-            "gzip -dc {asset_outfolder}/../ensembl_rb/{genome}.gff.gz | awk '$3==\"promoter_flanking_region\"' | awk -v OFS='\t' '{{print \"chr\"$1, $4, $5, \"Promoter Flanking Region\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u > {asset_outfolder}/{genome}_promoter_flanking.bed",
-            "gzip -dc {asset_outfolder}/../ensembl_rb/{genome}.gff.gz | awk '$3==\"enhancer\"' | awk -v OFS='\t' '{{print \"chr\"$1, $4, $5, \"Enhancer\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u > {asset_outfolder}/{genome}_enhancer.bed",
+            "gzip -dc {inputs} | awk '$3==\"exon\"' | grep -v 'pseudogene' | awk -v OFS='\t' '{{print \"chr\"$1, $4-1, $5, \"Exon\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u > {asset_outfolder}/{genome}_exons.bed",
+            "gzip -dc {ensembl_gtf} | awk '$3==\"exon\"' | grep -v 'pseudogene' | awk -v OFS='\t' '{{ split($20, a, \"\\\"\"); print \"chr\"$1, $4-1, $5, a[2], $6, $7}}' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u | awk 'seen[$4]++ && seen[$4] > 1' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3nr | env LC_COLLATE=C sort -k1,1 -k2,2n -u | env LC_COLLATE=C sort -k1,1 -k3,3n -u | awk -v OFS='\t' '{{if($4==prev4){{new2=prev3+1;}} {{prev4=$4; prev3=$3; print $1, new2, $2-1, \"Intron\", $5, $6}}}}' | awk -F'\t' '$2' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_introns.bed",
+            "gzip -dc {ensembl_gtf} | awk '$3==\"three_prime_utr\"' | grep -v 'pseudogene' | awk -v OFS='\t' '{{print \"chr\"$1, $4-1, $5, \"3\'\\\'\' UTR\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_3utr.bed",
+            "gzip -dc {ensembl_gtf}| awk '$3==\"five_prime_utr\"' | grep -v 'pseudogene' | awk -v OFS='\t' '{{print \"chr\"$1, $4-1, $5, \"5\'\\\'\' UTR\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_5utr.bed",
+            "gzip -dc {ensembl_gff} | awk '$3==\"promoter\"' | awk -v OFS='\t' '{{print \"chr\"$1, $4, $5, \"Promoter\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u > {asset_outfolder}/{genome}_promoter.bed",
+            "gzip -dc {ensembl_gff} | awk '$3==\"promoter_flanking_region\"' | awk -v OFS='\t' '{{print \"chr\"$1, $4, $5, \"Promoter Flanking Region\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u > {asset_outfolder}/{genome}_promoter_flanking.bed",
+            "gzip -dc {ensembl_gff} | awk '$3==\"enhancer\"' | awk -v OFS='\t' '{{print \"chr\"$1, $4, $5, \"Enhancer\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u > {asset_outfolder}/{genome}_enhancer.bed",
             "cat {asset_outfolder}/{genome}_enhancer.bed {asset_outfolder}/{genome}_promoter.bed {asset_outfolder}/{genome}_promoter_flanking.bed {asset_outfolder}/{genome}_5utr.bed {asset_outfolder}/{genome}_3utr.bed {asset_outfolder}/{genome}_exons.bed {asset_outfolder}/{genome}_introns.bed | awk -F'\t' '!seen[$1, $2, $3]++' | env LC_COLLATE=C sort -k4d -k1.4,1V -k2,2n -s > {asset_outfolder}/{genome}_annotations.bed",
             "rm -f {asset_outfolder}/{genome}_enhancer.bed {asset_outfolder}/{genome}_promoter.bed {asset_outfolder}/{genome}_promoter_flanking.bed {asset_outfolder}/{genome}_5utr.bed {asset_outfolder}/{genome}_3utr.bed {asset_outfolder}/{genome}_exons.bed {asset_outfolder}/{genome}_introns.bed",
             "gzip {asset_outfolder}/{genome}_annotations.bed"

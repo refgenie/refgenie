@@ -213,16 +213,17 @@ def default_config_file():
     return os.path.join(os.path.dirname(__file__), "refgenie.yaml")
 
 
-def get_asset_vars(genome, asset_key, tag, outfolder, inputs=None, specific_args=None):
+def get_asset_vars(genome, asset_key, tag, outfolder, inputs=None, specific_args=None, **kwargs):
     """
     Gives a dict with variables used to populate an asset path.
     """
-    asset_outfolder = os.path.join(outfolder, asset_key)
+    asset_outfolder = os.path.join(outfolder, asset_key, tag)
     asset_vars = {"genome": genome,
                   "asset": asset_key,
                   "tag": tag,
                   "asset_outfolder": asset_outfolder,
                   "inputs": inputs}
+    asset_vars.update(**kwargs)
     if specific_args:
         asset_vars.update(specific_args)
     return asset_vars
@@ -299,7 +300,7 @@ def refgenie_build(rgc, genome, asset_list, args):
                       format(args.config_file))
         args.config_file = default_config_file()
 
-    def build_asset(genome, asset_key, tag, build_pkg, outfolder, inputs, specific_args):
+    def build_asset(genome, asset_key, tag, build_pkg, outfolder, specific_args, **kwargs):
         """
         Builds assets with pypiper and updates a genome config file.
 
@@ -313,20 +314,18 @@ def refgenie_build(rgc, genome, asset_list, args):
             assets.
         """
         _LOGGER.debug("Asset build package: " + str(build_pkg))
-        asset_vars = get_asset_vars(genome, asset_key, tag, outfolder, inputs, specific_args)
-        asset_outfolder = os.path.join(outfolder, asset_key, tag)
-
-        _LOGGER.debug(str([x.format(**asset_vars) for x in build_pkg[CMD_LST]]))
-
-        tk.make_dir(asset_outfolder)
-        target = os.path.join(asset_outfolder, "build_complete.flag")
+        # collect variables required to populate the command templates
+        asset_vars = get_asset_vars(genome, asset_key, tag, outfolder, specific_args, **kwargs)
+        # populate command templates
         command_list_populated = [x.format(**asset_vars) for x in build_pkg[CMD_LST]]
+        # create ouput directory
+        tk.make_dir(asset_vars["asset_outfolder"])
+        target = os.path.join(asset_vars["asset_outfolder"], "build_complete.flag")
+        # add target command
+        command_list_populated.append("touch {target}".format(target=target))
+        _LOGGER.debug("Command populated: '{}'".format(" ".join(command_list_populated)))
 
-        touch_target = "touch {target}".format(target=target)
-        command_list_populated.append(touch_target)
-
-        _LOGGER.debug("Command list populated: " + str(command_list_populated))
-
+        # run build command
         pm.run(command_list_populated, target, container=pm.container)
 
         # update and write refgenie genome configuration
@@ -353,18 +352,19 @@ def refgenie_build(rgc, genome, asset_list, args):
             _LOGGER.debug(specific_args)
             required_inputs = ", ".join(asset_build_package[REQ_IN])
             # handle user-requested tags for the required assets
-            inputs = []
+            inputs = {}
             parent_tags = args.tags
             parent_assets = ["{}.{}".format(p["item"], p["subitem"]) for p in [prp(x) for x in parent_tags]] \
                 if isinstance(parent_tags, list) else None  # if tags specified construct asset_package.asset names
             for req_asset in asset_build_package[REQ_ASSETS]:
                 # for each req asset see if non-default tag was requested
                 if parent_assets is not None and req_asset in parent_assets:
+                    # if requested, add the path to the asset to the dictionary
                     parent_data = prp(parent_tags[asset_build_package[REQ_ASSETS].index(req_asset)])
-                    inputs.append(rgc.get_asset(genome, parent_data["item"], parent_data["tag"], parent_data["subitem"]))
+                    inputs[parent_data["item"]] = rgc.get_asset(genome, parent_data["item"], parent_data["tag"], parent_data["subitem"])
                 else:  # if no tag was requested for the req asset, use one tagged with default
                     default = prp(req_asset)
-                    inputs.append(rgc.get_asset(genome, default["item"], None, default["subitem"]))
+                    inputs[parent_data["item"]] = rgc.get_asset(genome, default["item"], None, default["subitem"])
             _LOGGER.info("Inputs required to build '{}': {}".format(asset_key, required_inputs))
             for required_input in asset_build_package[REQ_IN]:
                 if not specific_args[required_input]:
@@ -391,7 +391,7 @@ def refgenie_build(rgc, genome, asset_list, args):
                     _LOGGER.info("Checksum doesn't match")
                     return False
                 refgenie_initg(rgc, genome, collection_checksum, content_checksums)
-            build_asset(genome, asset_key, asset_tag, asset_build_package, outfolder, " ".join(inputs), specific_args)
+            build_asset(genome, asset_key, asset_tag, asset_build_package, outfolder, specific_args, **inputs)
             _LOGGER.info("Finished building asset '{}'".format(asset_key))
         else:
             _LOGGER.warn("Recipe does not exist for asset '{}'".format(asset_key))
