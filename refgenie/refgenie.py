@@ -605,15 +605,12 @@ def main():
         for a in asset_list:
             bundle = [a["genome"], a["asset"], a["tag"], a["seek_key"]]
             asset_path = rgc.get_asset(*bundle)
-            _LOGGER.info("asset path: '{}'".format(asset_path))
-            # is_subasset = not os.path.isdir(asset_path)  # check if the asset to be removed is a subasset
             if os.path.exists(asset_path):
                 removed.append(_remove_asset(asset_path))
                 rgc.remove_assets(*bundle).write()
             try:
                 rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY][a["asset"]]
             except KeyError:
-                # if is_subasset:
                 _LOGGER.debug("Last asset from the asset package has been removed, removing enclosing dir")
                 removed.append(_remove_asset(os.path.abspath(os.path.join(asset_path, os.path.pardir))))
         _LOGGER.info("Successfully removed entities:\n- {}".format("\n- ".join(removed)))
