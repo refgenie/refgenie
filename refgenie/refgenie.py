@@ -111,6 +111,10 @@ def build_argparser():
         help="Run all commands in the refgenie docker container.")
 
     sps[BUILD_CMD].add_argument(
+        '-t', '--tags', nargs="+", required=False, default=None,
+        help='Override the default tags of the parent assets. Format: asset:tag.')
+
+    sps[BUILD_CMD].add_argument(
         '-v', '--volumes', nargs="+", required=False, default=None,
         help='If using docker, also mount these folders as volumes')
 
@@ -209,7 +213,7 @@ def default_config_file():
     return os.path.join(os.path.dirname(__file__), "refgenie.yaml")
 
 
-def get_asset_vars(genome, asset_key, tag, outfolder, specific_args=None):
+def get_asset_vars(genome, asset_key, tag, outfolder, inputs=None, specific_args=None):
     """
     Gives a dict with variables used to populate an asset path.
     """
@@ -217,7 +221,8 @@ def get_asset_vars(genome, asset_key, tag, outfolder, specific_args=None):
     asset_vars = {"genome": genome,
                   "asset": asset_key,
                   "tag": tag,
-                  "asset_outfolder": asset_outfolder}
+                  "asset_outfolder": asset_outfolder,
+                  "inputs": inputs}
     if specific_args:
         asset_vars.update(specific_args)
     return asset_vars
@@ -294,7 +299,7 @@ def refgenie_build(rgc, genome, asset_list, args):
                       format(args.config_file))
         args.config_file = default_config_file()
 
-    def build_asset(genome, asset_key, tag, build_pkg, outfolder, specific_args):
+    def build_asset(genome, asset_key, tag, build_pkg, outfolder, inputs, specific_args):
         """
         Builds assets with pypiper and updates a genome config file.
 
@@ -308,8 +313,8 @@ def refgenie_build(rgc, genome, asset_list, args):
             assets.
         """
         _LOGGER.debug("Asset build package: " + str(build_pkg))
-        asset_vars = get_asset_vars(genome, asset_key, tag, outfolder, specific_args)
-        asset_outfolder = os.path.join(outfolder, asset_key)
+        asset_vars = get_asset_vars(genome, asset_key, tag, outfolder, inputs, specific_args)
+        asset_outfolder = os.path.join(outfolder, asset_key, tag)
 
         _LOGGER.debug(str([x.format(**asset_vars) for x in build_pkg[CMD_LST]]))
 
@@ -347,22 +352,33 @@ def refgenie_build(rgc, genome, asset_list, args):
             asset_build_package = asset_build_packages[asset_key]
             _LOGGER.debug(specific_args)
             required_inputs = ", ".join(asset_build_package[REQ_IN])
+            # handle user-requested tags for the required assets
+            inputs = []
+            parent_tags = args.tags
+            parent_assets = ["{}.{}".format(p["item"], p["subitem"]) for p in [prp(x) for x in parent_tags]] \
+                if isinstance(parent_tags, list) else None  # if tags specified construct asset_package.asset names
+            for req_asset in asset_build_package[REQ_ASSETS]:
+                # for each req asset see if non-default tag was requested
+                if parent_assets is not None and req_asset in parent_assets:
+                    parent_data = prp(parent_tags[asset_build_package[REQ_ASSETS].index(req_asset)])
+                    inputs.append(rgc.get_asset(genome, parent_data["item"], parent_data["tag"], parent_data["subitem"]))
+                else:  # if no tag was requested for the req asset, use one tagged with default
+                    default = prp(req_asset)
+                    inputs.append(rgc.get_asset(genome, default["item"], None, default["subitem"]))
             _LOGGER.info("Inputs required to build '{}': {}".format(asset_key, required_inputs))
             for required_input in asset_build_package[REQ_IN]:
                 if not specific_args[required_input]:
                     raise ValueError(
                         "Argument '{}' is required to build asset '{}', but not provided".format(required_input,
                                                                                                  asset_key))
-            for required_asset in asset_build_package[REQ_ASSETS]:
+            error_req_template = "Asset '{}' is required to build asset '{}', but not provided"
+            for ra in asset_build_package[REQ_ASSETS]:
                 try:
-                    if not rgc.get_asset(args.genome, required_asset):
-                        raise ValueError(
-                            "Asset '{}' is required to build asset '{}', but not provided".format(required_asset,
-                                                                                                  asset_key))
+                    req_data = prp(ra)
+                    if not rgc.get_asset(genome, req_data["item"], req_data["tag"], req_data["subitem"]):
+                        raise ValueError(error_req_template.format(ra, asset_key))
                 except refgenconf.exceptions.MissingGenomeError:
-                    raise ValueError(
-                        "Asset '{}' is required to build asset '{}', but not provided".format(required_asset,
-                                                                                              asset_key))
+                    raise ValueError(error_req_template.format(ra, asset_key))
             if args.docker:
                 pm.get_container(asset_build_package[CONT], volumes)
 
@@ -375,7 +391,7 @@ def refgenie_build(rgc, genome, asset_list, args):
                     _LOGGER.info("Checksum doesn't match")
                     return False
                 refgenie_initg(rgc, genome, collection_checksum, content_checksums)
-            build_asset(genome, asset_key, asset_tag, asset_build_package, outfolder, specific_args)
+            build_asset(genome, asset_key, asset_tag, asset_build_package, outfolder, " ".join(inputs), specific_args)
             _LOGGER.info("Finished building asset '{}'".format(asset_key))
         else:
             _LOGGER.warn("Recipe does not exist for asset '{}'".format(asset_key))
@@ -589,16 +605,17 @@ def main():
         for a in asset_list:
             bundle = [a["genome"], a["asset"], a["tag"], a["seek_key"]]
             asset_path = rgc.get_asset(*bundle)
-            is_subasset = not os.path.isdir(asset_path)  # check if the asset to be removed is a subasset or
+            _LOGGER.info("asset path: '{}'".format(asset_path))
+            # is_subasset = not os.path.isdir(asset_path)  # check if the asset to be removed is a subasset
             if os.path.exists(asset_path):
                 removed.append(_remove_asset(asset_path))
                 rgc.remove_assets(*bundle).write()
             try:
                 rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY][a["asset"]]
             except KeyError:
-                if is_subasset:
-                    _LOGGER.debug("Last asset from the asset package has been removed, removing enclosing dir")
-                    removed.append(_remove_asset(os.path.abspath(os.path.join(asset_path, os.path.pardir))))
+                # if is_subasset:
+                _LOGGER.debug("Last asset from the asset package has been removed, removing enclosing dir")
+                removed.append(_remove_asset(os.path.abspath(os.path.join(asset_path, os.path.pardir))))
         _LOGGER.info("Successfully removed entities:\n- {}".format("\n- ".join(removed)))
 
     elif args.command == SETDEFAULT_CMD:
@@ -610,7 +627,9 @@ def main():
 def _remove_asset(path):
     """
     remove asset if it is a dir or a file
+
     :param str path: path to the entity to remove, either a file or a dir
+    :return str: removed path
     """
     if os.path.isfile(path):
         os.remove(path)
