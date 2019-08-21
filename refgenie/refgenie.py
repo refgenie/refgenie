@@ -366,8 +366,7 @@ def refgenie_build(rgc, genome, asset_list, args):
                     parent_data = prp(parent_tags[asset_build_package[REQ_ASSETS].index(req_asset)])
                     input_assets[parent_data["item"]] = rgc.get_asset(genome, parent_data["item"], parent_data["tag"],
                                                                       parent_data["subitem"])
-                    parent_assets.append("{}.{}:{}".format(parent_data["item"], parent_data["subitem"],
-                                                           parent_data["tag"]))
+                    parent_assets.append("{}:{}".format(parent_data["item"], parent_data["tag"]))
                 else:  # if no tag was requested for the req asset, use one tagged with default
                     default = prp(req_asset)
                     input_assets[default["item"]] = rgc.get_asset(genome, default["item"], None, default["subitem"])
@@ -634,6 +633,18 @@ def main():
         if len(asset_list) > 1:
             raise NotImplementedError("Can only tag 1 asset at a time")
         rgc.tag_asset(a["genome"], a["asset"], a["tag"], args.tag)
+        ori_path = rgc.get_asset(a["genome"], a["asset"], a["tag"])
+        new_path = os.path.abspath(os.path.join(ori_path, os.pardir, args.tag))
+        try:
+            os.rename(ori_path, new_path)
+        except FileNotFoundError:
+            _LOGGER.warning("Could not rename original asset tag directory '{}' to the new one '{}'".
+                            format(ori_path, new_path))
+        else:
+            rgc.remove_assets(a["genome"], a["asset"], a["tag"])
+            _LOGGER.debug("Asset '{}/{}' tagged with '{}' has been removed from the genome config".
+                          format(a["genome"], a["asset"], a["tag"]))
+            _LOGGER.debug("Original asset has been moved from '{}' to '{}'".format(ori_path, new_path))
         rgc.write()
 
 
