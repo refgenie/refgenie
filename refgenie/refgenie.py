@@ -174,7 +174,7 @@ def parse_registry_path(path):
         ("genome", None),
         ("asset", None),
         ("seek_key", None),
-        ("tag", "default")])
+        ("tag", None)])
 
 
 def copy_or_download_file(input_string, outfolder):
@@ -369,9 +369,10 @@ def refgenie_build(rgc, genome, asset_list, args):
                     parent_assets.append("{}:{}".format(parent_data["item"], parent_data["tag"]))
                 else:  # if no tag was requested for the req asset, use one tagged with default
                     default = prp(req_asset)
-                    input_assets[default["item"]] = rgc.get_asset(genome, default["item"], None, default["subitem"])
-                    parent_assets.append("{}.{}:{}".format(default["item"], default["subitem"], DEFAULT_TAG_NAME))
-            _LOGGER.info("parents: {}".format(", ".join(parent_assets)))
+                    dafault_tag = rgc.get_default_tag(genome, default["item"])
+                    input_assets[default["item"]] = rgc.get_asset(genome, default["item"], dafault_tag, default["subitem"])
+                    parent_assets.append("{}:{}".format(default["item"], dafault_tag))
+            _LOGGER.debug("parents: {}".format(", ".join(parent_assets)))
             _LOGGER.info("Inputs required to build '{}': {}".format(asset_key, required_inputs))
             for required_input in asset_build_package[REQ_IN]:
                 if not specific_args[required_input]:
