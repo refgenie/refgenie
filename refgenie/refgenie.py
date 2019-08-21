@@ -347,7 +347,7 @@ def refgenie_build(rgc, genome, asset_list, args):
 
     for a in asset_list:
         asset_key = a["asset"]
-        asset_tag = a["tag"]
+        asset_tag = a["tag"] or rgc.get_default_tag(genome, a["asset"])
 
         if asset_key in asset_build_packages.keys():
             asset_build_package = asset_build_packages[asset_key]
