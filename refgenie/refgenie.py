@@ -36,12 +36,12 @@ GET_ASSET_CMD = "seek"
 INSERT_CMD = "add"
 REMOVE_CMD = "remove"
 GETSEQ_CMD = "getseq"
-SETDEFAULT_CMD = "setdefault"
+TAG_CMD = "tag"
 
 GENOME_ONLY_REQUIRED = [REMOVE_CMD, GETSEQ_CMD]
 
 # For each asset we assume a genome is also required
-ASSET_REQUIRED = [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, SETDEFAULT_CMD]
+ASSET_REQUIRED = [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, TAG_CMD]
 
 BUILD_SPECIFIC_ARGS = ('fasta', 'gtf', 'gff', 'context', 'refgene')
 
@@ -84,7 +84,7 @@ def build_argparser():
         INSERT_CMD: "Add local asset to the config file.",
         REMOVE_CMD: "Remove a local asset.",
         GETSEQ_CMD: "Get sequences from a genome",
-        SETDEFAULT_CMD: "Assign a 'default' tag to an asset"
+        TAG_CMD: "Assign a selected tag to an asset"
     }
 
     sps = {}
@@ -122,7 +122,7 @@ def build_argparser():
 
     # add 'genome' argument to many commands
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD,
-                 LIST_REMOTE_CMD, LIST_LOCAL_CMD, GETSEQ_CMD, SETDEFAULT_CMD]:
+                 LIST_REMOTE_CMD, LIST_LOCAL_CMD, GETSEQ_CMD, TAG_CMD]:
         # genome is not required for listing actions
         sps[cmd].add_argument(
             "-g", "--genome", required=cmd in (GETSEQ_CMD),
@@ -134,7 +134,7 @@ def build_argparser():
     #         "-a", "--asset", required=False, nargs='+',
     #         help="Name of one or more assets (keys in genome config file)")
 
-    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, SETDEFAULT_CMD]:
+    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, TAG_CMD]:
         sps[cmd].add_argument(
             "asset_registry_paths", metavar="asset-registry-paths", type=str, nargs='+',
             help="One or more registry path strings that identify assets"
@@ -151,6 +151,10 @@ def build_argparser():
     sps[GETSEQ_CMD].add_argument(
         "-l", "--locus", required=True,
         help="Coordinates to retrieve sequence for; such has 'chr1:50000-50200'.")
+
+    sps[TAG_CMD].add_argument(
+        "-t", "--tag", required=True, type=str,
+        help="Tag to assign to an asset")
 
 
     # Finally, arguments to the build command to give the files needed to do
@@ -613,10 +617,11 @@ def main():
                 removed.append(_remove_asset(os.path.abspath(os.path.join(asset_path, os.path.pardir))))
         _LOGGER.info("Successfully removed entities:\n- {}".format("\n- ".join(removed)))
 
-    elif args.command == SETDEFAULT_CMD:
-        for a in asset_list:
-            rgc.set_default_asset(a["genome"], a["asset"], a["tag"])
-            rgc.write()
+    elif args.command == TAG_CMD:
+        if len(asset_list) > 1:
+            raise NotImplementedError("Can only tag 1 asset at a time")
+        rgc.tag_asset(a["genome"], a["asset"], a["tag"], args.tag)
+        rgc.write()
 
 
 def _remove_asset(path):
