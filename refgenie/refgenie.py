@@ -311,7 +311,7 @@ def refgenie_build(rgc, genome, asset_list, args):
         :param str genome: The assembly key; e.g. 'mm10'.
         :param str asset_key: The unique asset identifier; e.g. 'bowtie2_index'
         :param dict build_pkg: A dict (see examples) specifying lists
-            of required inputs, commands to run, and outputs to register as
+            of required input_assets, commands to run, and outputs to register as
             assets.
         """
         _LOGGER.debug("Asset build package: " + str(build_pkg))
@@ -354,19 +354,25 @@ def refgenie_build(rgc, genome, asset_list, args):
             _LOGGER.debug(specific_args)
             required_inputs = ", ".join(asset_build_package[REQ_IN])
             # handle user-requested tags for the required assets
-            inputs = {}
+            input_assets = {}
+            parent_assets = []
             parent_tags = args.tags
-            parent_assets = ["{}.{}".format(p["item"], p["subitem"]) for p in [prp(x) for x in parent_tags]] \
+            selected_parent_tags = ["{}.{}".format(p["item"], p["subitem"]) for p in [prp(x) for x in parent_tags]] \
                 if isinstance(parent_tags, list) else None  # if tags specified construct asset_package.asset names
             for req_asset in asset_build_package[REQ_ASSETS]:
                 # for each req asset see if non-default tag was requested
-                if parent_assets is not None and req_asset in parent_assets:
+                if selected_parent_tags is not None and req_asset in selected_parent_tags:
                     # if requested, add the path to the asset to the dictionary
                     parent_data = prp(parent_tags[asset_build_package[REQ_ASSETS].index(req_asset)])
-                    inputs[parent_data["item"]] = rgc.get_asset(genome, parent_data["item"], parent_data["tag"], parent_data["subitem"])
+                    input_assets[parent_data["item"]] = rgc.get_asset(genome, parent_data["item"], parent_data["tag"],
+                                                                      parent_data["subitem"])
+                    parent_assets.append("{}.{}:{}".format(parent_data["item"], parent_data["subitem"],
+                                                           parent_data["tag"]))
                 else:  # if no tag was requested for the req asset, use one tagged with default
                     default = prp(req_asset)
-                    inputs[default["item"]] = rgc.get_asset(genome, default["item"], None, default["subitem"])
+                    input_assets[default["item"]] = rgc.get_asset(genome, default["item"], None, default["subitem"])
+                    parent_assets.append("{}.{}:{}".format(default["item"], default["subitem"], DEFAULT_TAG_NAME))
+            _LOGGER.info("parents: {}".format(", ".join(parent_assets)))
             _LOGGER.info("Inputs required to build '{}': {}".format(asset_key, required_inputs))
             for required_input in asset_build_package[REQ_IN]:
                 if not specific_args[required_input]:
@@ -393,8 +399,15 @@ def refgenie_build(rgc, genome, asset_list, args):
                     _LOGGER.info("Checksum doesn't match")
                     return False
                 refgenie_initg(rgc, genome, collection_checksum, content_checksums)
-            build_asset(genome, asset_key, asset_tag, asset_build_package, outfolder, specific_args, **inputs)
+            build_asset(genome, asset_key, asset_tag, asset_build_package, outfolder, specific_args, **input_assets)
             _LOGGER.info("Finished building asset '{}'".format(asset_key))
+            # update asset relationships
+            rgc.update_relatives_assets(genome, asset_key, asset_tag, parent_assets)  # adds parents
+            for i in parent_assets:
+                parsed_parent = prp(i)
+                rgc.update_relatives_assets(genome, parsed_parent["item"], parsed_parent["tag"],
+                                            ["{}:{}".format(asset_key, asset_tag)], True)  # adds children
+            rgc.write()
         else:
             _LOGGER.warn("Recipe does not exist for asset '{}'".format(asset_key))
 
