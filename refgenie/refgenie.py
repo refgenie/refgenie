@@ -1,16 +1,13 @@
 #!/usr/bin/env python
 
-from argparse import ArgumentParser, SUPPRESS
+from argparse import SUPPRESS
 from collections import OrderedDict
 from shutil import rmtree
 import os
-import re
 import sys
 import csv
 
-import hashlib
 import pyfaidx
-
 
 from ._version import __version__
 from .exceptions import MissingGenomeConfigError, MissingFolderError
@@ -222,9 +219,9 @@ def get_asset_vars(genome, asset_key, tag, outfolder, specific_args=None, **kwar
                   "asset": asset_key,
                   "tag": tag,
                   "asset_outfolder": asset_outfolder}
-    asset_vars.update(**kwargs)
     if specific_args:
         asset_vars.update(specific_args)
+    asset_vars.update(**kwargs)
     return asset_vars
 
 
