@@ -332,6 +332,7 @@ def refgenie_build(rgc, genome, asset_list, args):
         # update and write refgenie genome configuration
         rgc.update_assets(genome, asset_key, tag, {CFG_ASSET_PATH_KEY: asset_key, CFG_ASSET_DESC_KEY: build_pkg[DESC]})
         rgc.update_seek_keys(genome, asset_key, tag, {k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
+        rgc.set_default_pointer(genome, asset_key, tag)
         rgc.write()
 
     pm = pypiper.PipelineManager(name="refgenie", outfolder=outfolder, args=args)
@@ -624,10 +625,16 @@ def main():
                 removed.append(_remove_asset(asset_path))
                 rgc.remove_assets(*bundle).write()
             try:
-                rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY][a["asset"]]
+                asset = rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY][a["asset"]]
             except KeyError:
                 _LOGGER.debug("Last asset from the asset package has been removed, removing enclosing dir")
                 removed.append(_remove_asset(os.path.abspath(os.path.join(asset_path, os.path.pardir))))
+            else:
+                _LOGGER.info("defalut tag: {}".format(asset[CFG_ASSET_DEFAULT_TAG_KEY]))
+                _LOGGER.info("tag: {}".format(a["tag"]))
+                if hasattr(asset, CFG_ASSET_DEFAULT_TAG_KEY) and asset[CFG_ASSET_DEFAULT_TAG_KEY] == a["tag"]:
+                    del rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY][a["asset"]][CFG_ASSET_DEFAULT_TAG_KEY]
+                    rgc.write()
         _LOGGER.info("Successfully removed entities:\n- {}".format("\n- ".join(removed)))
 
     elif args.command == TAG_CMD:
