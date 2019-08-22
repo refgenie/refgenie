@@ -353,7 +353,6 @@ def refgenie_build(rgc, genome, asset_list, args):
         if asset_key in asset_build_packages.keys():
             asset_build_package = asset_build_packages[asset_key]
             _LOGGER.debug(specific_args)
-            required_inputs = ", ".join(asset_build_package[REQ_IN])
             # handle user-requested tags for the required assets
             input_assets = {}
             parent_assets = []
@@ -374,7 +373,7 @@ def refgenie_build(rgc, genome, asset_list, args):
                     input_assets[default["item"]] = rgc.get_asset(genome, default["item"], dafault_tag, default["subitem"])
                     parent_assets.append("{}:{}".format(default["item"], dafault_tag))
             _LOGGER.debug("parents: {}".format(", ".join(parent_assets)))
-            _LOGGER.info("Inputs required to build '{}': {}".format(asset_key, required_inputs))
+            _LOGGER.info("Inputs required to build '{}': {}".format(asset_key, ", ".join(asset_build_package[REQ_IN])))
             for required_input in asset_build_package[REQ_IN]:
                 if not specific_args[required_input]:
                     raise ValueError(
@@ -630,8 +629,6 @@ def main():
                 _LOGGER.debug("Last asset from the asset package has been removed, removing enclosing dir")
                 removed.append(_remove_asset(os.path.abspath(os.path.join(asset_path, os.path.pardir))))
             else:
-                _LOGGER.info("defalut tag: {}".format(asset[CFG_ASSET_DEFAULT_TAG_KEY]))
-                _LOGGER.info("tag: {}".format(a["tag"]))
                 if hasattr(asset, CFG_ASSET_DEFAULT_TAG_KEY) and asset[CFG_ASSET_DEFAULT_TAG_KEY] == a["tag"]:
                     del rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY][a["asset"]][CFG_ASSET_DEFAULT_TAG_KEY]
                     rgc.write()
