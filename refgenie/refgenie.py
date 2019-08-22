@@ -653,6 +653,9 @@ def main():
             _LOGGER.debug("Asset '{}/{}' tagged with '{}' has been removed from the genome config".
                           format(a["genome"], a["asset"], a["tag"]))
             _LOGGER.debug("Original asset has been moved from '{}' to '{}'".format(ori_path, new_path))
+            asset = rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY][a["asset"]]
+            if hasattr(asset, CFG_ASSET_DEFAULT_TAG_KEY) and asset[CFG_ASSET_DEFAULT_TAG_KEY] == a["tag"]:
+                rgc.set_default_pointer(a["genome"], a["asset"], args.tag, force=True)
         rgc.write()
 
 
