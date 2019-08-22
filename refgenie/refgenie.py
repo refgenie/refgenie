@@ -600,11 +600,11 @@ def main():
             # No assets provided, must be all for this genome
             asset_list = rgc.list_assets_by_genome(args.genome)
         for a in asset_list:
-            bundle = [a["genome"], a["asset"], a["tag"], a["seek_key"]]
+            bundle = [a["genome"], a["asset"], a["tag"]]
             try:
                 rgc.get_asset(*bundle)
             except (MissingAssetError, MissingGenomeError):
-                _LOGGER.info("Asset '{}/{}.{}:{}' does not exist".format(*bundle))
+                _LOGGER.info("Asset '{}/{}:{}' does not exist".format(*bundle))
                 return
         if len(asset_list) > 1:
             if not query_yes_no("Are you sure you want to remove {} assets?".format(len(asset_list))):
@@ -612,22 +612,28 @@ def main():
                 return
         else:
             a = asset_list[0]
-            bundle = [a["genome"], a["asset"], a["seek_key"], a["tag"]]
-            if not query_yes_no("Remove '{}/{}.{}:{}'?".format(*bundle)):
+            bundle = [a["genome"], a["asset"], a["tag"]]
+            if not query_yes_no("Remove '{}/{}:{}'?".format(*bundle)):
                 _LOGGER.info("Action aborted by the user")
                 return
         removed = []
         for a in asset_list:
-            bundle = [a["genome"], a["asset"], a["tag"], a["seek_key"]]
+            bundle = [a["genome"], a["asset"], a["tag"]]
             asset_path = rgc.get_asset(*bundle)
             if os.path.exists(asset_path):
-                removed.append(_remove_asset(asset_path))
+                removed.append(_remove(asset_path))
                 rgc.remove_assets(*bundle).write()
             try:
                 asset = rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY][a["asset"]]
             except KeyError:
-                _LOGGER.debug("Last asset from the asset package has been removed, removing enclosing dir")
-                removed.append(_remove_asset(os.path.abspath(os.path.join(asset_path, os.path.pardir))))
+                _LOGGER.info("Last tag for asset '{}' has been removed, removing asset dir".
+                             format(a["asset"], os.path.abspath(os.path.join(asset_path, os.path.pardir))))
+                removed.append(_remove(os.path.abspath(os.path.join(asset_path, os.path.pardir))))
+                try:
+                    rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY]
+                except KeyError:
+                    _LOGGER.info("Last asset for genome '{}' has been removed, removing genome dir".format(a["genome"]))
+                    removed.append(_remove(os.path.abspath(os.path.join(asset_path, os.path.pardir, os.path.pardir))))
             else:
                 if hasattr(asset, CFG_ASSET_DEFAULT_TAG_KEY) and asset[CFG_ASSET_DEFAULT_TAG_KEY] == a["tag"]:
                     del rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY][a["asset"]][CFG_ASSET_DEFAULT_TAG_KEY]
@@ -656,7 +662,7 @@ def main():
         rgc.write()
 
 
-def _remove_asset(path):
+def _remove(path):
     """
     remove asset if it is a dir or a file
 
