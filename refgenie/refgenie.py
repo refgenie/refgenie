@@ -3,6 +3,7 @@
 from argparse import SUPPRESS
 from collections import OrderedDict
 from shutil import rmtree
+from re import sub
 import os
 import sys
 import csv
@@ -232,7 +233,7 @@ def get_asset_vars(genome, asset_key, tag, outfolder, specific_args=None, **kwar
 def refgenie_add(rgc, asset_dict):
     # TODO: does not seem right, correct
     outfolder = os.path.abspath(os.path.join(rgc.genome_folder, asset_dict["genome"]))
-    rgc.update_assets(asset_dict["genome"],
+    rgc.update_tags(asset_dict["genome"],
                       asset_dict["asset"],
                       asset_dict["tag"],
                       {CFG_ASSET_PATH_KEY: args.path.format(**asset_dict)})
@@ -314,9 +315,13 @@ def refgenie_build(rgc, genome, asset_list, args):
             of required input_assets, commands to run, and outputs to register as
             assets.
         """
+        def _get_asset_digest(asset_dir):
+            return sub(r'\W+', '', pm.checkprint("tar -vcf - {} | md5sum".format(asset_dir)))  # strips non-alphanumeric
+
         _LOGGER.debug("Asset build package: " + str(build_pkg))
+        gat = [genome, asset_key, tag]  # create a bundle list to simplify calls below
         # collect variables required to populate the command templates
-        asset_vars = get_asset_vars(genome, asset_key, tag, outfolder, specific_args, **kwargs)
+        asset_vars = get_asset_vars(*gat, outfolder, specific_args, **kwargs)
         # populate command templates
         command_list_populated = [x.format(**asset_vars) for x in build_pkg[CMD_LST]]
         # create output directory
@@ -330,9 +335,12 @@ def refgenie_build(rgc, genome, asset_list, args):
         pm.run(command_list_populated, target, container=pm.container)
 
         # update and write refgenie genome configuration
-        rgc.update_assets(genome, asset_key, tag, {CFG_ASSET_PATH_KEY: asset_key, CFG_ASSET_DESC_KEY: build_pkg[DESC]})
-        rgc.update_seek_keys(genome, asset_key, tag, {k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
-        rgc.set_default_pointer(genome, asset_key, tag)
+        rgc.update_assets(*gat[0:2], {CFG_ASSET_DESC_KEY: build_pkg[DESC]})
+        rgc.update_tags(*gat, {CFG_ASSET_PATH_KEY: asset_key, CFG_ASSET_DESC_KEY: build_pkg[DESC]})
+        rgc.update_seek_keys(*gat, {k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
+        # in order to conveniently get the path to digest we update the tags metadata in two steps
+        rgc.update_tags(*gat, {CFG_ASSET_CHECKSUM_KEY: _get_asset_digest(rgc.get_asset(genome, asset_key, tag))})
+        rgc.set_default_pointer(*gat)
         rgc.write()
 
     pm = pypiper.PipelineManager(name="refgenie", outfolder=outfolder, args=args)
@@ -624,7 +632,7 @@ def main():
                 removed.append(_remove(asset_path))
                 rgc.remove_assets(*bundle).write()
             try:
-                asset = rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY][a["asset"]]
+                rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY][a["asset"]]
             except KeyError:
                 _LOGGER.info("Last tag for asset '{}' has been removed, removing asset dir".
                              format(a["asset"], os.path.abspath(os.path.join(asset_path, os.path.pardir))))
@@ -635,9 +643,7 @@ def main():
                     _LOGGER.info("Last asset for genome '{}' has been removed, removing genome dir".format(a["genome"]))
                     removed.append(_remove(os.path.abspath(os.path.join(asset_path, os.path.pardir, os.path.pardir))))
             else:
-                if hasattr(asset, CFG_ASSET_DEFAULT_TAG_KEY) and asset[CFG_ASSET_DEFAULT_TAG_KEY] == a["tag"]:
-                    del rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY][a["asset"]][CFG_ASSET_DEFAULT_TAG_KEY]
-                    rgc.write()
+                rgc.write()
         _LOGGER.info("Successfully removed entities:\n- {}".format("\n- ".join(removed)))
 
     elif args.command == TAG_CMD:
@@ -656,9 +662,6 @@ def main():
             _LOGGER.debug("Asset '{}/{}' tagged with '{}' has been removed from the genome config".
                           format(a["genome"], a["asset"], a["tag"]))
             _LOGGER.debug("Original asset has been moved from '{}' to '{}'".format(ori_path, new_path))
-            asset = rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY][a["asset"]]
-            if hasattr(asset, CFG_ASSET_DEFAULT_TAG_KEY) and asset[CFG_ASSET_DEFAULT_TAG_KEY] == a["tag"]:
-                rgc.set_default_pointer(a["genome"], a["asset"], args.tag, force=True)
         rgc.write()
 
 
