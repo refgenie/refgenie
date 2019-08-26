@@ -373,8 +373,8 @@ def refgenie_build(rgc, genome, asset_list, args):
             input_assets = {}
             parent_assets = []
             parent_tags = args.tags
-            selected_parent_tags = ["{}.{}".format(p["item"], p["subitem"]) for p in [prp(x) for x in parent_tags]] \
-                if isinstance(parent_tags, list) else None  # if tags specified construct asset_package.asset names
+            selected_parent_tags = [p["item"] for p in [prp(x) for x in parent_tags]] if isinstance(parent_tags, list) \
+                else None  # if tags specified construct asset_package.asset names
             for req_asset in asset_build_package[REQ_ASSETS]:
                 # for each req asset see if non-default tag was requested
                 if selected_parent_tags is not None and req_asset in selected_parent_tags:
