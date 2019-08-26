@@ -123,7 +123,7 @@ def build_argparser():
 
     # add 'genome' argument to many commands
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD,
-                 LIST_REMOTE_CMD, LIST_LOCAL_CMD, GETSEQ_CMD, TAG_CMD]:
+                LIST_REMOTE_CMD, LIST_LOCAL_CMD, GETSEQ_CMD, TAG_CMD]:
         # genome is not required for listing actions
         sps[cmd].add_argument(
             "-g", "--genome", required=cmd in (GETSEQ_CMD),
@@ -139,7 +139,7 @@ def build_argparser():
         sps[cmd].add_argument(
             "asset_registry_paths", metavar="asset-registry-paths", type=str, nargs='+',
             help="One or more registry path strings that identify assets"
-            " (e.g. hg38/bowtie2_index:1.0.0)")
+                 " (e.g. hg38/bowtie2_index:1.0.0)")
 
     sps[PULL_CMD].add_argument(
         "-u", "--no-untar", action="store_true",
@@ -156,7 +156,6 @@ def build_argparser():
     sps[TAG_CMD].add_argument(
         "-t", "--tag", required=True, type=str,
         help="Tag to assign to an asset")
-
 
     # Finally, arguments to the build command to give the files needed to do
     # the building. These should eventually move to a more flexible system that
@@ -234,9 +233,9 @@ def refgenie_add(rgc, asset_dict):
     # TODO: does not seem right, correct
     outfolder = os.path.abspath(os.path.join(rgc.genome_folder, asset_dict["genome"]))
     rgc.update_tags(asset_dict["genome"],
-                      asset_dict["asset"],
-                      asset_dict["tag"],
-                      {CFG_ASSET_PATH_KEY: args.path.format(**asset_dict)})
+                    asset_dict["asset"],
+                    asset_dict["tag"],
+                    {CFG_ASSET_PATH_KEY: args.path.format(**asset_dict)})
 
     # Write the updated refgenie genome configuration
     rgc.write()
@@ -258,8 +257,8 @@ def refgenie_initg(rgc, genome, collection_checksum, content_checksums):
     :param dict content_checksums: checksums of individual content_checksums, e.g. chromosomes
     """
     rgc.update_genomes(genome, {
-            CFG_CHECKSUM_KEY: collection_checksum,
-        })
+        CFG_CHECKSUM_KEY: collection_checksum,
+    })
     rgc.write()
     genome_dir = os.path.join(rgc[CFG_FOLDER_KEY], genome)
     if is_writable(genome_dir):
@@ -315,8 +314,17 @@ def refgenie_build(rgc, genome, asset_list, args):
             of required input_assets, commands to run, and outputs to register as
             assets.
         """
+
         def _get_asset_digest(asset_dir):
-            return sub(r'\W+', '', pm.checkprint("tar -vcf - {} | md5sum".format(asset_dir)))  # strips non-alphanumeric
+            """
+            Generate a MD5 digest that reflects just the contents of the files in the selected directory.
+
+            :param str asset_dir: path to the directory to digest
+            :return str: a digest, e.g. a3c46f201a3ce7831d85cf4a125aa334
+            """
+            x = pm.checkprint("cd {}; find . -type f -exec md5sum {{}} \; | sort -k 2 | awk '{{print $1}}' | md5sum".
+                              format(asset_dir))
+            return sub(r'\W+', '', x)  # strips non-alphanumeric
 
         _LOGGER.debug("Asset build package: " + str(build_pkg))
         gat = [genome, asset_key, tag]  # create a bundle list to simplify calls below
@@ -378,7 +386,8 @@ def refgenie_build(rgc, genome, asset_list, args):
                 else:  # if no tag was requested for the req asset, use one tagged with default
                     default = prp(req_asset)
                     dafault_tag = rgc.get_default_tag(genome, default["item"])
-                    input_assets[default["item"]] = rgc.get_asset(genome, default["item"], dafault_tag, default["subitem"])
+                    input_assets[default["item"]] = rgc.get_asset(genome, default["item"], dafault_tag,
+                                                                  default["subitem"])
                     parent_assets.append("{}:{}".format(default["item"], dafault_tag))
             _LOGGER.debug("parents: {}".format(", ".join(parent_assets)))
             _LOGGER.info("Inputs required to build '{}': {}".format(asset_key, ", ".join(asset_build_package[REQ_IN])))
@@ -402,7 +411,7 @@ def refgenie_build(rgc, genome, asset_list, args):
             if asset_key == 'fasta':
                 _LOGGER.info("Initializing genome...")
                 collection_checksum, content_checksums = fasta_checksum(specific_args["fasta"])
-                if genome in rgc.genomes and CFG_CHECKSUM_KEY in rgc.genomes[genome]\
+                if genome in rgc.genomes and CFG_CHECKSUM_KEY in rgc.genomes[genome] \
                         and collection_checksum != rgc.genomes[genome][CFG_CHECKSUM_KEY]:
                     _LOGGER.info("Checksum doesn't match")
                     return False
@@ -550,7 +559,7 @@ def main():
         if args.command in ASSET_REQUIRED:
             parser.error("You must provide an asset registry path")
             sys.exit(1)
-        
+
     if args.command == INIT_CMD:
         _LOGGER.info("Initializing refgenie genome configuration")
         _writeable(os.path.dirname(gencfg), strict_exists=True)
@@ -649,9 +658,9 @@ def main():
     elif args.command == TAG_CMD:
         if len(asset_list) > 1:
             raise NotImplementedError("Can only tag 1 asset at a time")
-        rgc.tag_asset(a["genome"], a["asset"], a["tag"], args.tag)
         ori_path = rgc.get_asset(a["genome"], a["asset"], a["tag"])
         new_path = os.path.abspath(os.path.join(ori_path, os.pardir, args.tag))
+        rgc.tag_asset(a["genome"], a["asset"], a["tag"], args.tag)
         try:
             os.rename(ori_path, new_path)
         except FileNotFoundError:
