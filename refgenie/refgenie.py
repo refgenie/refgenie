@@ -660,9 +660,10 @@ def main():
             raise NotImplementedError("Can only tag 1 asset at a time")
         ori_path = rgc.get_asset(a["genome"], a["asset"], a["tag"])
         new_path = os.path.abspath(os.path.join(ori_path, os.pardir, args.tag))
-        rgc.tag_asset(a["genome"], a["asset"], a["tag"], args.tag)
+        if not rgc.tag_asset(a["genome"], a["asset"], a["tag"], args.tag):  # tagging in the RefGenConf object
+            sys.exit(0)
         try:
-            os.rename(ori_path, new_path)
+            os.rename(ori_path, new_path)  # tagging in the directory
         except FileNotFoundError:
             _LOGGER.warning("Could not rename original asset tag directory '{}' to the new one '{}'".
                             format(ori_path, new_path))
