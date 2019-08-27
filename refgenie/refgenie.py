@@ -361,7 +361,7 @@ def refgenie_build(rgc, genome, asset_list, args):
 
     for a in asset_list:
         asset_key = a["asset"]
-        asset_tag = a["tag"] or rgc.get_default_tag(genome, a["asset"])
+        asset_tag = a["tag"] or rgc.get_default_tag(genome, a["asset"], use_existing=False)
 
         if asset_key in asset_build_packages.keys():
             asset_build_package = asset_build_packages[asset_key]
@@ -610,14 +610,16 @@ def main():
         refgenie_getseq(rgc, args.genome, args.locus)
 
     elif args.command == REMOVE_CMD:
-        if len(asset_list) < 1:
-            # No assets provided, must be all for this genome
-            asset_list = rgc.list_assets_by_genome(args.genome)
         for a in asset_list:
             bundle = [a["genome"], a["asset"], a["tag"]]
             try:
-                rgc.get_asset(*bundle)
-            except (MissingAssetError, MissingGenomeError):
+                if not rgc.is_asset_complete(*bundle):
+                    rgc.remove_assets(*bundle).write()
+                    _LOGGER.info("Removed an incomplete asset '{}/{}:{}'".format(*bundle))
+                    return
+                else:
+                    rgc.get_asset(*bundle)
+            except (KeyError, MissingAssetError, MissingGenomeError):
                 _LOGGER.info("Asset '{}/{}:{}' does not exist".format(*bundle))
                 return
         if len(asset_list) > 1:
@@ -640,13 +642,14 @@ def main():
             try:
                 rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY][a["asset"]]
             except KeyError:
-                _LOGGER.info("Last tag for asset '{}' has been removed, removing asset dir".
+                _LOGGER.info("Last tag for asset '{}' has been removed, removing asset directory".
                              format(a["asset"], os.path.abspath(os.path.join(asset_path, os.path.pardir))))
                 removed.append(_remove(os.path.abspath(os.path.join(asset_path, os.path.pardir))))
                 try:
                     rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY]
                 except KeyError:
-                    _LOGGER.info("Last asset for genome '{}' has been removed, removing genome dir".format(a["genome"]))
+                    _LOGGER.info("Last asset for genome '{}' has been removed, "
+                                 "removing genome directory".format(a["genome"]))
                     removed.append(_remove(os.path.abspath(os.path.join(asset_path, os.path.pardir, os.path.pardir))))
                     try:
                         del rgc[CFG_GENOMES_KEY][a["genome"]]
