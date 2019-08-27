@@ -611,6 +611,8 @@ def main():
 
     elif args.command == REMOVE_CMD:
         for a in asset_list:
+            a["tag"] = a["tag"] or rgc.get_default_tag(a["genome"], a["asset"], use_existing=False)
+            _LOGGER.debug("Determined tag for removal: {}".format(a["tag"]))
             bundle = [a["genome"], a["asset"], a["tag"]]
             try:
                 if not rgc.is_asset_complete(*bundle):
