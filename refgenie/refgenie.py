@@ -19,7 +19,7 @@ import pypiper
 import refgenconf
 from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError
 from refgenconf.const import *
-from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, VersionInHelpParser
+from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, VersionInHelpParser, is_command_callable
 from ubiquerg.system import is_writable
 import yacman
 
@@ -128,12 +128,6 @@ def build_argparser():
         sps[cmd].add_argument(
             "-g", "--genome", required=cmd in (GETSEQ_CMD),
             help="Reference assembly ID, e.g. mm10")
-
-    # add 'asset' argument to many commands
-    # for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD]:
-    #     sps[cmd].add_argument(
-    #         "-a", "--asset", required=False, nargs='+',
-    #         help="Name of one or more assets (keys in genome config file)")
 
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, TAG_CMD]:
         sps[cmd].add_argument(
@@ -322,6 +316,9 @@ def refgenie_build(rgc, genome, asset_list, args):
             :param str asset_dir: path to the directory to digest
             :return str: a digest, e.g. a3c46f201a3ce7831d85cf4a125aa334
             """
+            if not is_command_callable("md5sum"):
+                raise OSError("md5sum command line tool is required for asset digest calculation. \n"
+                              "Install and try again, e.g on macOS: 'brew install md5sha1sum'")
             x = pm.checkprint("cd {}; find . -type f -exec md5sum {{}} \; | sort -k 2 | awk '{{print $1}}' | md5sum".
                               format(asset_dir))
             return sub(r'\W+', '', x)  # strips non-alphanumeric
@@ -344,7 +341,7 @@ def refgenie_build(rgc, genome, asset_list, args):
 
         # update and write refgenie genome configuration
         rgc.update_assets(*gat[0:2], {CFG_ASSET_DESC_KEY: build_pkg[DESC]})
-        rgc.update_tags(*gat, {CFG_ASSET_PATH_KEY: asset_key, CFG_ASSET_DESC_KEY: build_pkg[DESC]})
+        rgc.update_tags(*gat, {CFG_ASSET_PATH_KEY: asset_key})
         rgc.update_seek_keys(*gat, {k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
         # in order to conveniently get the path to digest we update the tags metadata in two steps
         rgc.update_tags(*gat, {CFG_ASSET_CHECKSUM_KEY: _get_asset_digest(rgc.get_asset(genome, asset_key, tag))})
