@@ -377,7 +377,9 @@ def refgenie_build(rgc, genome, asset_list, args):
                 if selected_parent_tags is not None and req_asset in selected_parent_tags:
                     # if requested, add the path to the asset to the dictionary
                     parent_data = prp(parent_tags[asset_build_package[REQ_ASSETS].index(req_asset)])
-                    _LOGGER.info("parent data: {}".format(parent_data))
+                    if parent_data["tag"] is None:
+                        raise ValueError("Parent asset tag was not specified. "
+                                         "To use the default one, skip the -t/--tags option.")
                     input_assets[parent_data["item"]] = rgc.get_asset(genome, parent_data["item"], parent_data["tag"],
                                                                       parent_data["subitem"])
                     parent_assets.append("{}:{}".format(parent_data["item"], parent_data["tag"]))
