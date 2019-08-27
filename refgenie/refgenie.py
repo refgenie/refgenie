@@ -110,7 +110,7 @@ def build_argparser():
 
     sps[BUILD_CMD].add_argument(
         '-t', '--tags', nargs="+", required=False, default=None,
-        help='Override the default tags of the parent assets. Format: asset:tag.')
+        help='Override the default tags of the parent assets. Format: asset.seek_key:tag.')
 
     sps[BUILD_CMD].add_argument(
         '-v', '--volumes', nargs="+", required=False, default=None,
@@ -377,6 +377,7 @@ def refgenie_build(rgc, genome, asset_list, args):
                 if selected_parent_tags is not None and req_asset in selected_parent_tags:
                     # if requested, add the path to the asset to the dictionary
                     parent_data = prp(parent_tags[asset_build_package[REQ_ASSETS].index(req_asset)])
+                    _LOGGER.info("parent data: {}".format(parent_data))
                     input_assets[parent_data["item"]] = rgc.get_asset(genome, parent_data["item"], parent_data["tag"],
                                                                       parent_data["subitem"])
                     parent_assets.append("{}:{}".format(parent_data["item"], parent_data["tag"]))
@@ -671,6 +672,8 @@ def main():
         if not rgc.tag_asset(a["genome"], a["asset"], a["tag"], args.tag):  # tagging in the RefGenConf object
             sys.exit(0)
         try:
+            if os.path.exists(new_path):
+                _remove(new_path)
             os.rename(ori_path, new_path)  # tagging in the directory
         except FileNotFoundError:
             _LOGGER.warning("Could not rename original asset tag directory '{}' to the new one '{}'".
@@ -695,7 +698,7 @@ def _remove(path):
     elif os.path.isdir(path):
         rmtree(path)
     else:
-        raise ValueError("path '{}' is neither a file nor dir.".format(path))
+        raise ValueError("path '{}' is neither a file nor a dir.".format(path))
     return path
 
 
