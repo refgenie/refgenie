@@ -648,6 +648,12 @@ def main():
                 except KeyError:
                     _LOGGER.info("Last asset for genome '{}' has been removed, removing genome dir".format(a["genome"]))
                     removed.append(_remove(os.path.abspath(os.path.join(asset_path, os.path.pardir, os.path.pardir))))
+                    try:
+                        del rgc[CFG_GENOMES_KEY][a["genome"]]
+                        rgc.write()
+                    except KeyError:
+                        _LOGGER.info("Could not remove genome '{}' from the config; it does not exist".
+                                      format(a["genome"]))
             else:
                 rgc.write()
         _LOGGER.info("Successfully removed entities:\n- {}".format("\n- ".join(removed)))
