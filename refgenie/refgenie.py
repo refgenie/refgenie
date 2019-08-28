@@ -223,14 +223,41 @@ def get_asset_vars(genome, asset_key, tag, outfolder, specific_args=None, **kwar
     return asset_vars
 
 
-def refgenie_add(rgc, asset_dict):
-    # TODO: does not seem right, correct
-    outfolder = os.path.abspath(os.path.join(rgc.genome_folder, asset_dict["genome"]))
-    rgc.update_tags(asset_dict["genome"],
-                    asset_dict["asset"],
-                    asset_dict["tag"],
-                    {CFG_ASSET_PATH_KEY: args.path.format(**asset_dict)})
+def refgenie_add(rgc, asset_dict, path):
+    """
+    Add an external asset to the config.
+    File existence is checked and asset files are transferred to the selected tag subdirectory
 
+    :param refgenconf.RefGenConf rgc: genome configuration object
+    :param dict asset_dict: a single parsed registry path
+    :param str path: the path provided by the user. Must be relative to the specific genome directory
+    """
+    tag = asset_dict["tag"] or rgc.get_default_tag(asset_dict["genome"], asset_dict["asset"])
+    outfolder = os.path.abspath(os.path.join(rgc.genome_folder, asset_dict["genome"]))
+    abs_asset_path = os.path.join(outfolder, path)
+    if asset_dict["seek_key"] is None:
+        # if seek_key is not specified we're about to move a directory to the tag subdir
+        tag_path = os.path.join(abs_asset_path, tag)
+        from shutil import copytree as cp
+    else:
+        # if seek_key is not specified we're about to move just a single file to the tag subdir
+        tag_path = os.path.join(os.path.dirname(abs_asset_path), tag)
+        from shutil import copy2 as cp
+    if os.path.exists(abs_asset_path):
+        _LOGGER.debug("Moving asset from '{}' to '{}'".format(abs_asset_path, tag_path))
+        if not os.path.exists(tag_path):
+            os.makedirs(tag_path)
+        cp(abs_asset_path, tag_path)
+    else:
+        raise OSError("Absolute path '{}' does not exist. The provided path must be relative to: {}".
+                      format(abs_asset_path, rgc.genome_folder))
+    gat_bundle = [asset_dict["genome"], asset_dict["asset"], tag]
+    rgc.update_tags(*gat_bundle,
+                    {CFG_ASSET_PATH_KEY: path if os.path.isdir(path) else os.path.dirname(path)})
+    # seek_key points to the entire dir if not specified
+    seek_key = "." if asset_dict["seek_key"] is None else os.path.basename(abs_asset_path)
+    rgc.update_seek_keys(*gat_bundle, {asset_dict["seek_key"]:  seek_key})
+    rgc.set_default_pointer(asset_dict["genome"], asset_dict["asset"], tag)
     # Write the updated refgenie genome configuration
     rgc.write()
 
@@ -584,7 +611,7 @@ def main():
         if len(asset_list) > 1:
             raise NotImplementedError("Can only add 1 asset at a time")
         else:
-            refgenie_add(rgc, asset_list[0])
+            refgenie_add(rgc, asset_list[0], args.path)
 
     elif args.command == PULL_CMD:
         outdir = rgc[CFG_FOLDER_KEY]
@@ -653,18 +680,19 @@ def main():
                                  format(a["asset"], asset_dir))
                     removed.append(_remove(asset_dir))
                 else:
-                    _LOGGER.info("Couldn't remove '{}' since it does not match the asset name: {}".
+                    _LOGGER.debug("Didn't remove '{}' since it does not match the asset name: {}".
                                  format(asset_dir, a["asset"]))
                 try:
                     rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY]
                 except KeyError:
+                    # TODO: duplicated logic, wrap in a function
                     genome_dir = os.path.abspath(os.path.join(asset_dir, os.path.pardir))
                     if os.path.basename(genome_dir) == a["genome"]:
                         _LOGGER.info("Last asset for genome '{}' has been removed, "
                                      "removing genome directory".format(a["genome"]))
                         removed.append(_remove(genome_dir))
                     else:
-                        _LOGGER.info("Couldn't remove '{}' since it does not match the genome name: {}".
+                        _LOGGER.debug("Didn't remove '{}' since it does not match the genome name: {}".
                                      format(genome_dir, a["genome"]))
                     try:
                         del rgc[CFG_GENOMES_KEY][a["genome"]]
