@@ -232,6 +232,8 @@ def refgenie_add(rgc, asset_dict, path):
     :param dict asset_dict: a single parsed registry path
     :param str path: the path provided by the user. Must be relative to the specific genome directory
     """
+    # remove the first directory from the provided path if it is the genome name
+    path = os.path.join(*path.split(os.sep)[1:]) if path.split(os.sep)[0] == asset_dict["genome"] else path
     tag = asset_dict["tag"] or rgc.get_default_tag(asset_dict["genome"], asset_dict["asset"])
     outfolder = os.path.abspath(os.path.join(rgc.genome_folder, asset_dict["genome"]))
     abs_asset_path = os.path.join(outfolder, path)
@@ -242,18 +244,18 @@ def refgenie_add(rgc, asset_dict, path):
     else:
         # if seek_key is not specified we're about to move just a single file to the tag subdir
         tag_path = os.path.join(os.path.dirname(abs_asset_path), tag)
+        if not os.path.exists(tag_path):
+            os.makedirs(tag_path)
         from shutil import copy2 as cp
     if os.path.exists(abs_asset_path):
         _LOGGER.debug("Moving asset from '{}' to '{}'".format(abs_asset_path, tag_path))
-        if not os.path.exists(tag_path):
-            os.makedirs(tag_path)
         cp(abs_asset_path, tag_path)
     else:
         raise OSError("Absolute path '{}' does not exist. The provided path must be relative to: {}".
                       format(abs_asset_path, rgc.genome_folder))
     gat_bundle = [asset_dict["genome"], asset_dict["asset"], tag]
     rgc.update_tags(*gat_bundle,
-                    {CFG_ASSET_PATH_KEY: path if os.path.isdir(path) else os.path.dirname(path)})
+                    {CFG_ASSET_PATH_KEY: path if os.path.isdir(abs_asset_path) else os.path.dirname(path)})
     # seek_key points to the entire dir if not specified
     seek_key = "." if asset_dict["seek_key"] is None else os.path.basename(abs_asset_path)
     rgc.update_seek_keys(*gat_bundle, {asset_dict["seek_key"]:  seek_key})
