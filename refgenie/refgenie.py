@@ -256,15 +256,14 @@ def refgenie_initg(rgc, genome, collection_checksum, content_checksums):
     rgc.write()
     genome_dir = os.path.join(rgc[CFG_FOLDER_KEY], genome)
     if is_writable(genome_dir):
-        output_file = os.path.join(genome_dir, "{}_sequence_checksums.tsv".format(genome))
+        output_file = os.path.join(genome_dir, "{}_sequence_digests.tsv".format(genome))
         with open(output_file, "w") as contents_file:
             wr = csv.writer(contents_file, delimiter="\t")
             for key, val in content_checksums.items():
                 wr.writerow([key, val])
-        _LOGGER.debug("content checksums saved to: {}".format(output_file))
+        _LOGGER.debug("sequence digests saved to: {}".format(output_file))
     else:
-        _LOGGER.warning("Cound not save the genome content checksums hashes. "
-                        "The directory '{}' os not writable".format(genome_dir))
+        _LOGGER.warning("Could not save the genome sequence digests. '{}' is not writable".format(genome_dir))
 
 
 def refgenie_build(rgc, genome, asset_list, args):
@@ -648,15 +647,25 @@ def main():
             try:
                 rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY][a["asset"]]
             except KeyError:
-                _LOGGER.info("Last tag for asset '{}' has been removed, removing asset directory".
-                             format(a["asset"], os.path.abspath(os.path.join(asset_path, os.path.pardir))))
-                removed.append(_remove(os.path.abspath(os.path.join(asset_path, os.path.pardir))))
+                asset_dir = os.path.abspath(os.path.join(asset_path, os.path.pardir))
+                if os.path.basename(asset_dir) == a["asset"]:
+                    _LOGGER.info("Last tag for asset '{}' has been removed, removing asset directory".
+                                 format(a["asset"], asset_dir))
+                    removed.append(_remove(asset_dir))
+                else:
+                    _LOGGER.info("Couldn't remove '{}' since it does not match the asset name: {}".
+                                 format(asset_dir, a["asset"]))
                 try:
                     rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY]
                 except KeyError:
-                    _LOGGER.info("Last asset for genome '{}' has been removed, "
-                                 "removing genome directory".format(a["genome"]))
-                    removed.append(_remove(os.path.abspath(os.path.join(asset_path, os.path.pardir, os.path.pardir))))
+                    genome_dir = os.path.abspath(os.path.join(asset_dir, os.path.pardir))
+                    if os.path.basename(genome_dir) == a["genome"]:
+                        _LOGGER.info("Last asset for genome '{}' has been removed, "
+                                     "removing genome directory".format(a["genome"]))
+                        removed.append(_remove(genome_dir))
+                    else:
+                        _LOGGER.info("Couldn't remove '{}' since it does not match the genome name: {}".
+                                     format(genome_dir, a["genome"]))
                     try:
                         del rgc[CFG_GENOMES_KEY][a["genome"]]
                         rgc.write()
