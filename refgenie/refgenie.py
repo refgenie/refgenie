@@ -576,12 +576,11 @@ def main():
                 if args.genome:
                     a["genome"] = args.genome
                 else:
-                    _LOGGER.error("Asset lacks a genome: {}".format(a["asset"]))
+                    _LOGGER.error("Asset '{}' lacks a genome".format(a["asset"]))
                     sys.exit(1)
             else:
                 if args.genome and args.genome != a["genome"]:
-                    _LOGGER.warn("Genome specified twice for asset '{}'.".format(
-                        a["name"]))
+                    _LOGGER.warn("Two different genomes specified for asset '{}'.".format(a["asset"]))
 
     else:
         if args.command in GENOME_ONLY_REQUIRED and not args.genome:
