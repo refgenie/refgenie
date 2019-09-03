@@ -105,8 +105,7 @@ def build_argparser():
     # Add any arguments specific to subcommands.
 
     sps[BUILD_CMD].add_argument(
-        "-d", "--docker", action="store_true",
-        help="Run all commands in the refgenie docker container.")
+        "-d", "--docker", action="store_true", help="Run all commands in the refgenie docker container.")
 
     sps[BUILD_CMD].add_argument(
         '-t', '--tags', nargs="+", required=False, default=None,
@@ -120,6 +119,9 @@ def build_argparser():
         '-o', '--outfolder', dest='outfolder', required=False, default=None,
         help='Override the default path to genomes folder, which is the '
              'genome_folder attribute in the genome configuration file.')
+
+    sps[BUILD_CMD].add_argument(
+        "-r", "--requirements", action="store_true", help="Show the build requirements for the specified asset.")
 
     # add 'genome' argument to many commands
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD,
@@ -601,6 +603,13 @@ def main():
         if not all([x["genome"] == asset_list[0]["genome"] for x in asset_list]):
             _LOGGER.error("Build can only build assets from one genome")
             sys.exit(1)
+        if args.requirements:
+            if a["asset"] not in asset_build_packages.keys():
+                _LOGGER.error("Recipe does not exist for asset '{}'".format(a["asset"]))
+                sys.exit(1)
+            _LOGGER.info("'{}/{}' build requirements: ".format(a["genome"], a["asset"]))
+            _make_asset_build_reqs(a["asset"])
+            sys.exit(0)
         refgenie_build(rgc, asset_list[0]["genome"], asset_list, args)
 
     elif args.command == GET_ASSET_CMD:
@@ -767,6 +776,16 @@ def _writeable(outdir, strict_exists=False):
     elif strict_exists:
         raise MissingFolderError(outdir)
     return _writeable(os.path.dirname(outdir), strict_exists)
+
+
+def _make_asset_build_reqs(asset):
+    reqs_list = []
+    if asset_build_packages[asset][REQ_IN]:
+        reqs_list.append("- arguments: {}".format(", ".join(asset_build_packages[asset][REQ_IN])))
+    if asset_build_packages[asset][REQ_ASSETS]:
+        reqs_list.append("- assets: {}".format(", ".join(asset_build_packages[asset][REQ_ASSETS])))
+    _LOGGER.info("\n".join(reqs_list))
+
 
 
 if __name__ == '__main__':
