@@ -677,32 +677,19 @@ def main():
                 rgc.remove_assets(*bundle).write()
             try:
                 rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY][a["asset"]]
-            except KeyError:
+            except (KeyError, TypeError):
                 asset_dir = os.path.abspath(os.path.join(asset_path, os.path.pardir))
-                if os.path.basename(asset_dir) == a["asset"]:
-                    _LOGGER.info("Last tag for asset '{}' has been removed, removing asset directory".
-                                 format(a["asset"], asset_dir))
-                    removed.append(_remove(asset_dir))
-                else:
-                    _LOGGER.debug("Didn't remove '{}' since it does not match the asset name: {}".
-                                 format(asset_dir, a["asset"]))
+                _entity_dir_removal_log(asset_dir, "asset", a, removed)
                 try:
                     rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY]
-                except KeyError:
-                    # TODO: duplicated logic, wrap in a function
+                except (KeyError, TypeError):
                     genome_dir = os.path.abspath(os.path.join(asset_dir, os.path.pardir))
-                    if os.path.basename(genome_dir) == a["genome"]:
-                        _LOGGER.info("Last asset for genome '{}' has been removed, "
-                                     "removing genome directory".format(a["genome"]))
-                        removed.append(_remove(genome_dir))
-                    else:
-                        _LOGGER.debug("Didn't remove '{}' since it does not match the genome name: {}".
-                                     format(genome_dir, a["genome"]))
+                    _entity_dir_removal_log(genome_dir, "genome", a, removed)
                     try:
                         del rgc[CFG_GENOMES_KEY][a["genome"]]
                         rgc.write()
-                    except KeyError:
-                        _LOGGER.info("Could not remove genome '{}' from the config; it does not exist".
+                    except (KeyError, TypeError):
+                        _LOGGER.debug("Could not remove genome '{}' from the config; it does not exist".
                                       format(a["genome"]))
             else:
                 rgc.write()
@@ -728,6 +715,25 @@ def main():
                           format(a["genome"], a["asset"], a["tag"]))
             _LOGGER.debug("Original asset has been moved from '{}' to '{}'".format(ori_path, new_path))
         rgc.write()
+
+
+def _entity_dir_removal_log(directory, entity_class, asset_dict, removed_entities):
+    """
+    Message and save removed entity data
+
+    :param str directory: removed dir
+    :param str entity_class: class of the entity
+    :param dict asset_dict: selected genome/asset:tag combination
+    :param list removed_entities: list of the removed entities to append to
+    """
+    subclass = "asset" if entity_class == "genome" else "tag"
+    if os.path.basename(directory) == asset_dict[entity_class]:
+        _LOGGER.info("Last {sub} for {ec} '{en}' has been removed, removing {ec} directory".
+                     format(sub=subclass, ec=entity_class, en=asset_dict[entity_class]))
+        removed_entities.append(_remove(directory))
+    else:
+        _LOGGER.debug("Didn't remove '{}' since it does not match the {} name: {}".
+                      format(directory, entity_class, asset_dict[entity_class]))
 
 
 def _remove(path):
