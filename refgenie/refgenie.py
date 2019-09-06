@@ -254,7 +254,7 @@ def refgenie_add(rgc, asset_dict, path):
             cp(abs_asset_path, tag_path)
         else:
             if not query_yes_no("Path '{}' exists? Do you want to overwrite?".format(tag_path)):
-                return
+                return False
             else:
                 _remove(tag_path)
                 cp(abs_asset_path, tag_path)
@@ -269,6 +269,7 @@ def refgenie_add(rgc, asset_dict, path):
     rgc.set_default_pointer(asset_dict["genome"], asset_dict["asset"], tag)
     # Write the updated refgenie genome configuration
     rgc.write()
+    return True
 
 
 def refgenie_initg(rgc, genome, collection_checksum, content_checksums):
