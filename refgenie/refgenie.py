@@ -250,8 +250,14 @@ def refgenie_add(rgc, asset_dict, path):
             os.makedirs(tag_path)
         from shutil import copy2 as cp
     if os.path.exists(abs_asset_path):
-        _LOGGER.debug("Moving asset from '{}' to '{}'".format(abs_asset_path, tag_path))
-        cp(abs_asset_path, tag_path)
+        if not os.path.exists(tag_path):
+            cp(abs_asset_path, tag_path)
+        else:
+            if not query_yes_no("Path '{}' exists? Do you want to overwrite?".format(tag_path)):
+                sys.exit(0)
+            else:
+                _remove(tag_path)
+                cp(abs_asset_path, tag_path)
     else:
         raise OSError("Absolute path '{}' does not exist. The provided path must be relative to: {}".
                       format(abs_asset_path, rgc.genome_folder))
@@ -783,7 +789,6 @@ def _make_asset_build_reqs(asset):
     if asset_build_packages[asset][REQ_ASSETS]:
         reqs_list.append("- assets: {}".format(", ".join(asset_build_packages[asset][REQ_ASSETS])))
     _LOGGER.info("\n".join(reqs_list))
-
 
 
 if __name__ == '__main__':
