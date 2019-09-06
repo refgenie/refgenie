@@ -254,7 +254,7 @@ def refgenie_add(rgc, asset_dict, path):
             cp(abs_asset_path, tag_path)
         else:
             if not query_yes_no("Path '{}' exists? Do you want to overwrite?".format(tag_path)):
-                sys.exit(0)
+                return
             else:
                 _remove(tag_path)
                 cp(abs_asset_path, tag_path)
