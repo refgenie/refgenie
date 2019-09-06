@@ -256,11 +256,10 @@ def refgenie_add(rgc, asset_dict, path):
         raise OSError("Absolute path '{}' does not exist. The provided path must be relative to: {}".
                       format(abs_asset_path, rgc.genome_folder))
     gat_bundle = [asset_dict["genome"], asset_dict["asset"], tag]
-    rgc.update_tags(*gat_bundle,
-                    {CFG_ASSET_PATH_KEY: path if os.path.isdir(abs_asset_path) else os.path.dirname(path)})
+    rgc.update_tags(*gat_bundle, {CFG_ASSET_PATH_KEY: path if os.path.isdir(abs_asset_path) else os.path.dirname(path)})
     # seek_key points to the entire dir if not specified
-    seek_key = "." if asset_dict["seek_key"] is None else os.path.basename(abs_asset_path)
-    rgc.update_seek_keys(*gat_bundle, {asset_dict["seek_key"]:  seek_key})
+    seek_key_value = os.path.basename(abs_asset_path) if asset_dict["seek_key"] is not None else "."
+    rgc.update_seek_keys(*gat_bundle, {asset_dict["seek_key"] or asset_dict["asset"]: seek_key_value})
     rgc.set_default_pointer(asset_dict["genome"], asset_dict["asset"], tag)
     # Write the updated refgenie genome configuration
     rgc.write()
