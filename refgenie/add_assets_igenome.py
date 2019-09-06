@@ -71,8 +71,8 @@ def main():
     for a in asset_names:
         asset_dict = {"genome": args.genome, "asset": a, "tag": None, "seek_key": None}
         asset_path = os.path.join(assets_path, a)
-        refgenie_add(rgc, asset_dict, asset_path)
-        processed.append("{}/{}".format(asset_dict["genome"], asset_dict["asset"]))
+        if refgenie_add(rgc, asset_dict, asset_path):
+            processed.append("{}/{}".format(asset_dict["genome"], asset_dict["asset"]))
     print("Added assets: \n- {}".format("\n- ".join(processed)))
 
 
