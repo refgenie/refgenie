@@ -17,7 +17,7 @@ import os
 import argparse
 import sys
 import tarfile
-from shutil import copytree
+from shutil import move
 
 
 def build_argparser():
@@ -45,7 +45,13 @@ def untar_or_copy(p, dest):
     :return bool: whether the process was successful
     """
     if os.path.exists(p):
-        fun = untar if tarfile.is_tarfile(p) else copytree
+        if os.path.isdir(p):
+            fun = move
+            dest = os.path.join(dest, os.path.basename(p))
+        elif tarfile.is_tarfile(p):
+            fun = untar
+        else:
+            raise ValueError("Provided path is neither a directory nor a tar archive.")
         fun(p, dest)
         print("Moved '{}' to '{}'".format(p, dest))
         return True
@@ -63,8 +69,9 @@ def main():
     rgc = refgenconf.RefGenConf(args.config)
     path_components = [args.genome] + ["*"] * 3 + ["Sequence"]
     assets_paths = glob(os.path.join(*path_components))
-    assert len(assets_paths) == 1, OSError("Your iGenomes directory is corrupted, more that one directory matched by {}"
-                                           .format(os.path.join(*path_components)))
+    assert len(assets_paths) > 0, OSError("Your iGenomes directory is corrupted, more that one directory matched by {}."
+                                          "\nMatched dirs: {}".format(os.path.join(*path_components),
+                                                                      ", ".join(assets_paths)))
     assets_path = assets_paths[0]
     asset_names = [d for d in os.listdir(assets_path) if os.path.isdir(assets_path)]
     processed = []
