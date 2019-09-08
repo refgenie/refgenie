@@ -62,12 +62,12 @@ def main():
     """ main workflow """
     parser = build_argparser()
     args, remaining_args = parser.parse_known_args()
-    pths = [args.path, mkabs(args.path)]
-    if not untar_or_copy(pths[0], args.genome):
-        if not untar_or_copy(pths[1], args.genome):
-            raise OSError("Path '{}' does not exist. Tried: {}".format(args.path, " and ".join(pths)))
     rgc = refgenconf.RefGenConf(args.config)
-    path_components = [args.genome] + ["*"] * 3 + ["Sequence"]
+    pths = [args.path, mkabs(args.path, rgc.genome_folder)]
+    if not untar_or_copy(pths[0], os.path.join(rgc.genome_folder, args.genome)):
+        if not untar_or_copy(pths[1], os.path.join(rgc.genome_folder, args.genome)):
+            raise OSError("Path '{}' does not exist. Tried: {}".format(args.path, " and ".join(pths)))
+    path_components = [rgc.genome_folder] + [args.genome] + ["*"] * 3 + ["Sequence"]
     assets_paths = glob(os.path.join(*path_components))
     assert len(assets_paths) > 0, OSError("Your iGenomes directory is corrupted, more that one directory matched by {}."
                                           "\nMatched dirs: {}".format(os.path.join(*path_components),
@@ -77,7 +77,7 @@ def main():
     processed = []
     for a in asset_names:
         asset_dict = {"genome": args.genome, "asset": a, "tag": None, "seek_key": None}
-        asset_path = os.path.join(assets_path, a)
+        asset_path = os.path.relpath(os.path.join(assets_path, a), rgc.genome_folder)
         if refgenie_add(rgc, asset_dict, asset_path):
             processed.append("{}/{}".format(asset_dict["genome"], asset_dict["asset"]))
     print("Added assets: \n- {}".format("\n- ".join(processed)))
