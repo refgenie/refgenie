@@ -4,7 +4,7 @@ __all__ = ["RefgenieError", "MissingGenomeConfigError"]
 
 
 class RefgenieError(Exception):
-    """ Base refegnie exception type """
+    """ Base refgenie exception type """
     pass
 
 
@@ -17,9 +17,8 @@ class MissingGenomeConfigError(RefgenieError):
 
         :param str conf_file: path attempted to be used as genome config file
         """
-        msg = "You must provide a config file either as an argument " \
-              "or via an environment variable: " \
-              "{}".format(CFG_ENV_VARS)
+        msg = "You must provide a config file either as an argument or via an environment variable: {}"\
+            .format(", ".join(CFG_ENV_VARS))
         if conf_file:
             msg = "Not a file {} -- {}.".format(conf_file, msg)
         super(MissingGenomeConfigError, self).__init__(msg)
