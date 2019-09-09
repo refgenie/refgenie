@@ -64,9 +64,9 @@ def main():
     args, remaining_args = parser.parse_known_args()
     rgc = refgenconf.RefGenConf(args.config)
     pths = [args.path, mkabs(args.path, rgc.genome_folder)]
-    if not untar_or_copy(pths[0], os.path.join(rgc.genome_folder, args.genome)):
-        if not untar_or_copy(pths[1], os.path.join(rgc.genome_folder, args.genome)):
-            raise OSError("Path '{}' does not exist. Tried: {}".format(args.path, " and ".join(pths)))
+    if not untar_or_copy(pths[0], os.path.join(rgc.genome_folder, args.genome)) \
+            and not untar_or_copy(pths[1], os.path.join(rgc.genome_folder, args.genome)):
+        raise OSError("Path '{}' does not exist. Tried: {}".format(args.path, " and ".join(pths)))
     path_components = [rgc.genome_folder] + [args.genome] + ["*"] * 3 + ["Sequence"]
     assets_paths = glob(os.path.join(*path_components))
     assert len(assets_paths) > 0, OSError("Your iGenomes directory is corrupted, more that one directory matched by {}."
