@@ -7,6 +7,7 @@ Each iGenomes has the following nested directory structure:
     Annotation/ Sequence/
 """
 from .refgenie import refgenie_add
+from .exceptions import MissingGenomeConfigError
 
 from ubiquerg import untar, mkabs
 from yacman import select_config
@@ -63,7 +64,10 @@ def main():
     """ main workflow """
     parser = build_argparser()
     args, remaining_args = parser.parse_known_args()
-    rgc = refgenconf.RefGenConf(select_config(args.config, refgenconf.CFG_ENV_VARS))
+    cfg = select_config(args.config, refgenconf.CFG_ENV_VARS, check_exist=True)
+    if not cfg:
+        raise MissingGenomeConfigError(args.config)
+    rgc = refgenconf.RefGenConf(cfg)
     pths = [args.path, mkabs(args.path, rgc.genome_folder)]
     if not untar_or_copy(pths[0], os.path.join(rgc.genome_folder, args.genome)) \
             and not untar_or_copy(pths[1], os.path.join(rgc.genome_folder, args.genome)):
