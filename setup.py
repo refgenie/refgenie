@@ -49,7 +49,7 @@ setup(
     entry_points={
         "console_scripts": [
             'refgenie = refgenie.refgenie:main',
-            'add_igenome = refgenie.add_assets_igenome:main'
+            'import_igenome = refgenie.add_assets_igenome:main'
         ],
     },
     keywords="bioinformatics, sequencing, ngs",

@@ -69,7 +69,7 @@ def main():
         raise OSError("Path '{}' does not exist. Tried: {}".format(args.path, " and ".join(pths)))
     path_components = [rgc.genome_folder] + [args.genome] + ["*"] * 3 + ["Sequence"]
     assets_paths = glob(os.path.join(*path_components))
-    assert len(assets_paths) > 0, OSError("Your iGenomes directory is corrupted, more that one directory matched by {}."
+    assert len(assets_paths) > 0, OSError("Your iGenomes directory is corrupted, more than one directory matched by {}."
                                           "\nMatched dirs: {}".format(os.path.join(*path_components),
                                                                       ", ".join(assets_paths)))
     assets_path = assets_paths[0]
