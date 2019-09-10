@@ -9,6 +9,7 @@ Each iGenomes has the following nested directory structure:
 from .refgenie import refgenie_add
 
 from ubiquerg import untar, mkabs
+from yacman import select_config
 
 import refgenconf
 from glob import glob
@@ -32,7 +33,7 @@ def build_argparser():
                         required=True)
     parser.add_argument('-g', '--genome', dest="genome", type=str,  help='name to be assigned to the selected genome',
                         required=True)
-    parser.add_argument('-c', '--config', dest="config", type=str,  help='genome config', required=True)
+    parser.add_argument('-c', '--config', dest="config", type=str,  help='genome config', required=False)
     return parser
 
 
@@ -62,7 +63,7 @@ def main():
     """ main workflow """
     parser = build_argparser()
     args, remaining_args = parser.parse_known_args()
-    rgc = refgenconf.RefGenConf(args.config)
+    rgc = refgenconf.RefGenConf(select_config(args.config, refgenconf.CFG_ENV_VARS))
     pths = [args.path, mkabs(args.path, rgc.genome_folder)]
     if not untar_or_copy(pths[0], os.path.join(rgc.genome_folder, args.genome)) \
             and not untar_or_copy(pths[1], os.path.join(rgc.genome_folder, args.genome)):
