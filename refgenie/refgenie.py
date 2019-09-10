@@ -94,7 +94,8 @@ def build_argparser():
         # It's required for init
         sps[cmd].add_argument(
             '-c', '--genome-config', required=(cmd == INIT_CMD), dest="genome_config",
-            help="Path to local genome configuration file.")
+            help="Path to local genome configuration file. Optional if {} environment variable is set."
+                .format(", ".join(refgenconf.CFG_ENV_VARS)))
 
     sps[INIT_CMD].add_argument('-s', '--genome-server', default=DEFAULT_SERVER,
                                help="URL to use for the genome_server attribute in config file."

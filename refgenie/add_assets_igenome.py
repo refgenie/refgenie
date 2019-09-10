@@ -30,11 +30,13 @@ def build_argparser():
     """
     parser = argparse.ArgumentParser(description='Integrates every asset from the downloaded iGenomes'
                                                  ' tarball/directory with Refgenie asset management system')
-    parser.add_argument('-p', '--path', dest="path", type=str,  help='path to the desired genome tarball to integrate',
-                        required=True)
+    parser.add_argument('-p', '--path', dest="path", type=str,
+                        help='path to the desired genome tarball or directory to integrate', required=True)
     parser.add_argument('-g', '--genome', dest="genome", type=str,  help='name to be assigned to the selected genome',
                         required=True)
-    parser.add_argument('-c', '--config', dest="config", type=str,  help='genome config', required=False)
+    parser.add_argument('-c', '--config', dest="config", type=str,
+                        help="path to local genome configuration file. Optional if '{}' environment variable is set.".
+                        format(", ".join(refgenconf.CFG_ENV_VARS)), required=False)
     return parser
 
 
