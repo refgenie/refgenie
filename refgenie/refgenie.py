@@ -84,8 +84,8 @@ def build_argparser():
         GET_ASSET_CMD: "Get the path to a local asset.",
         INSERT_CMD: "Add local asset to the config file.",
         REMOVE_CMD: "Remove a local asset.",
-        GETSEQ_CMD: "Get sequences from a genome",
-        TAG_CMD: "Assign a selected tag to an asset"
+        GETSEQ_CMD: "Get sequences from a genome.",
+        TAG_CMD: "Assign a selected tag to an asset."
     }
 
     sps = {}
