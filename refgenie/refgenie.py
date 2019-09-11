@@ -372,18 +372,23 @@ def refgenie_build(rgc, genome, asset_list, args):
         # add target command
         command_list_populated.append("touch {target}".format(target=target))
         _LOGGER.debug("Command populated: '{}'".format(" ".join(command_list_populated)))
-
-        # run build command
-        pm.run(command_list_populated, target, container=pm.container)
-
-        # update and write refgenie genome configuration
-        rgc.update_assets(*gat[0:2], {CFG_ASSET_DESC_KEY: build_pkg[DESC]})
-        rgc.update_tags(*gat, {CFG_ASSET_PATH_KEY: asset_key})
-        rgc.update_seek_keys(*gat, {k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
-        # in order to conveniently get the path to digest we update the tags metadata in two steps
-        rgc.update_tags(*gat, {CFG_ASSET_CHECKSUM_KEY: _get_asset_digest(rgc.get_asset(genome, asset_key, tag))})
-        rgc.set_default_pointer(*gat)
-        rgc.write()
+        try:
+            # run build command
+            pm.run(command_list_populated, target, container=pm.container)
+        except pypiper.exceptions.SubprocessError:
+            _LOGGER.error("asset '{}' build failed".format(asset_key))
+            return False
+        else:
+            _LOGGER.info("updating cfg")
+            # update and write refgenie genome configuration
+            rgc.update_assets(*gat[0:2], {CFG_ASSET_DESC_KEY: build_pkg[DESC]})
+            rgc.update_tags(*gat, {CFG_ASSET_PATH_KEY: asset_key})
+            rgc.update_seek_keys(*gat, {k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
+            # in order to conveniently get the path to digest we update the tags metadata in two steps
+            rgc.update_tags(*gat, {CFG_ASSET_CHECKSUM_KEY: _get_asset_digest(rgc.get_asset(genome, asset_key, tag))})
+            rgc.set_default_pointer(*gat)
+            rgc.write()
+        return True
 
     pm = pypiper.PipelineManager(name="refgenie", outfolder=outfolder, args=args)
     tk = pypiper.NGSTk(pm=pm)
@@ -445,7 +450,12 @@ def refgenie_build(rgc, genome, asset_list, args):
             if args.docker:
                 pm.get_container(asset_build_package[CONT], volumes)
 
-            # If the asset is a fasta, we first init the genome
+            _LOGGER.info("Building asset '{}'".format(asset_key))    
+            if not build_asset(genome, asset_key, asset_tag, asset_build_package, outfolder, specific_args, **input_assets):
+                _LOGGER.info("'{}/{}:{}' was not added to the config, but directory has been left in place. "
+                             "See the log file for details".format(genome, asset_key, asset_tag))
+                return
+            # If the asset was a fasta, we init the genome
             if asset_key == 'fasta':
                 _LOGGER.info("Computing initial genome digest...")
                 collection_checksum, content_checksums = fasta_checksum(specific_args["fasta"])
@@ -455,8 +465,6 @@ def refgenie_build(rgc, genome, asset_list, args):
                     return False
                 _LOGGER.info("Initializing genome...")
                 refgenie_initg(rgc, genome, collection_checksum, content_checksums)
-            _LOGGER.info("Building asset '{}'".format(asset_key))    
-            build_asset(genome, asset_key, asset_tag, asset_build_package, outfolder, specific_args, **input_assets)
             _LOGGER.info("Finished building asset '{}'".format(asset_key))
             # update asset relationships
             rgc.update_relatives_assets(genome, asset_key, asset_tag, parent_assets)  # adds parents
@@ -467,7 +475,6 @@ def refgenie_build(rgc, genome, asset_list, args):
             rgc.write()
         else:
             _LOGGER.warn("Recipe does not exist for asset '{}'".format(asset_key))
-
     pm.stop_pipeline()
 
 
