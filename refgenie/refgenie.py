@@ -447,13 +447,15 @@ def refgenie_build(rgc, genome, asset_list, args):
 
             # If the asset is a fasta, we first init the genome
             if asset_key == 'fasta':
-                _LOGGER.info("Initializing genome...")
+                _LOGGER.info("Computing initial genome digest...")
                 collection_checksum, content_checksums = fasta_checksum(specific_args["fasta"])
                 if genome in rgc.genomes and CFG_CHECKSUM_KEY in rgc.genomes[genome] \
                         and collection_checksum != rgc.genomes[genome][CFG_CHECKSUM_KEY]:
                     _LOGGER.info("Checksum doesn't match")
                     return False
+                _LOGGER.info("Initializing genome...")
                 refgenie_initg(rgc, genome, collection_checksum, content_checksums)
+            _LOGGER.info("Building asset '{}'".format(asset_key))    
             build_asset(genome, asset_key, asset_tag, asset_build_package, outfolder, specific_args, **input_assets)
             _LOGGER.info("Finished building asset '{}'".format(asset_key))
             # update asset relationships
