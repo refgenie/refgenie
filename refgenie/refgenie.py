@@ -267,7 +267,7 @@ def refgenie_add(rgc, asset_dict, path):
                     data={CFG_ASSET_PATH_KEY: path if os.path.isdir(abs_asset_path) else os.path.dirname(path)})
     # seek_key points to the entire dir if not specified
     seek_key_value = os.path.basename(abs_asset_path) if asset_dict["seek_key"] is not None else "."
-    rgc.update_seek_keys(*gat_bundle, data={asset_dict["seek_key"] or asset_dict["asset"]: seek_key_value})
+    rgc.update_seek_keys(*gat_bundle, keys={asset_dict["seek_key"] or asset_dict["asset"]: seek_key_value})
     rgc.set_default_pointer(asset_dict["genome"], asset_dict["asset"], tag)
     # Write the updated refgenie genome configuration
     rgc.write()
@@ -384,7 +384,7 @@ def refgenie_build(rgc, genome, asset_list, args):
             # update and write refgenie genome configuration
             rgc.update_assets(*gat[0:2], data={CFG_ASSET_DESC_KEY: build_pkg[DESC]})
             rgc.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key})
-            rgc.update_seek_keys(*gat, data={k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
+            rgc.update_seek_keys(*gat, keys={k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
             # in order to conveniently get the path to digest we update the tags metadata in two steps
             rgc.update_tags(*gat,
                             data={CFG_ASSET_CHECKSUM_KEY: _get_asset_digest(rgc.get_asset(genome, asset_key, tag))})
