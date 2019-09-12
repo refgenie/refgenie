@@ -380,14 +380,13 @@ def refgenie_build(rgc, genome, asset_list, args):
             _LOGGER.error("asset '{}' build failed".format(asset_key))
             return False
         else:
-            _LOGGER.info("updating cfg")
             # update and write refgenie genome configuration
             rgc.update_assets(*gat[0:2], data={CFG_ASSET_DESC_KEY: build_pkg[DESC]})
             rgc.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key})
             rgc.update_seek_keys(*gat, keys={k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
             # in order to conveniently get the path to digest we update the tags metadata in two steps
-            rgc.update_tags(*gat,
-                            data={CFG_ASSET_CHECKSUM_KEY: _get_asset_digest(rgc.get_asset(genome, asset_key, tag))})
+            rgc.update_tags(*gat, data={CFG_ASSET_CHECKSUM_KEY: _get_asset_digest(rgc.get_asset(
+                genome, asset_key, tag, enclosing_dir=True))})
             rgc.set_default_pointer(*gat)
             rgc.write()
         return True
