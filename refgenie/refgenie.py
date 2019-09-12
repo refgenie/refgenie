@@ -680,7 +680,7 @@ def main():
                     _LOGGER.info("Removed an incomplete asset '{}/{}:{}'".format(*bundle))
                     return
                 else:
-                    rgc.get_asset(*bundle)
+                    rgc.get_asset(*bundle, enclosing_dir=True)
             except (KeyError, MissingAssetError, MissingGenomeError):
                 _LOGGER.info("Asset '{}/{}:{}' does not exist".format(*bundle))
                 return
@@ -697,7 +697,7 @@ def main():
         removed = []
         for a in asset_list:
             bundle = [a["genome"], a["asset"], a["tag"]]
-            asset_path = rgc.get_asset(*bundle)
+            asset_path = rgc.get_asset(*bundle, enclosing_dir=True)
             if os.path.exists(asset_path):
                 removed.append(_remove(asset_path))
                 rgc.remove_assets(*bundle).write()
@@ -724,7 +724,7 @@ def main():
     elif args.command == TAG_CMD:
         if len(asset_list) > 1:
             raise NotImplementedError("Can only tag 1 asset at a time")
-        ori_path = rgc.get_asset(a["genome"], a["asset"], a["tag"])
+        ori_path = rgc.get_asset(a["genome"], a["asset"], a["tag"], enclosing_dir=True)
         new_path = os.path.abspath(os.path.join(ori_path, os.pardir, args.tag))
         if not rgc.tag_asset(a["genome"], a["asset"], a["tag"], args.tag):  # tagging in the RefGenConf object
             sys.exit(0)
