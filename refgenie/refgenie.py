@@ -98,8 +98,8 @@ def build_argparser():
                 .format(", ".join(refgenconf.CFG_ENV_VARS)))
 
     sps[INIT_CMD].add_argument('-s', '--genome-server', default=DEFAULT_SERVER,
-                               help="URL to use for the genome_server attribute in config file."
-                                    " Defaults : {}".format(DEFAULT_SERVER))
+                               help="URL to use for the genome_server attribute in config file. Default: {}"
+                               .format(DEFAULT_SERVER))
     sps[BUILD_CMD] = pypiper.add_pypiper_args(
         sps[BUILD_CMD], groups=None, args=["recover", "config", "new-start"])
 
@@ -129,14 +129,14 @@ def build_argparser():
                 LIST_REMOTE_CMD, LIST_LOCAL_CMD, GETSEQ_CMD, TAG_CMD]:
         # genome is not required for listing actions
         sps[cmd].add_argument(
-            "-g", "--genome", required=cmd in (GETSEQ_CMD),
+            "-g", "--genome", required=cmd in GETSEQ_CMD,
             help="Reference assembly ID, e.g. mm10")
 
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, TAG_CMD]:
         sps[cmd].add_argument(
             "asset_registry_paths", metavar="asset-registry-paths", type=str, nargs='+',
-            help="One or more registry path strings that identify assets"
-                 " (e.g. hg38/bowtie2_index:1.0.0)")
+            help="One or more registry path strings that identify assets  (e.g. hg38/fasta or hg38/fasta:tag"
+                 + (" or hg38/fasta.fai:tag)" if cmd == GET_ASSET_CMD else ")"))
 
     sps[PULL_CMD].add_argument(
         "-u", "--no-untar", action="store_true",
@@ -593,7 +593,8 @@ def main():
                 if args.genome:
                     a["genome"] = args.genome
                 else:
-                    _LOGGER.error("Asset '{}' lacks a genome".format(a["asset"]))
+                    _LOGGER.error("Provided asset registry path ({}/{}:{}) is invalid. See help for usage reference.".
+                                  format(a["genome"], a["asset"], a["tag"]))
                     sys.exit(1)
             else:
                 if args.genome and args.genome != a["genome"]:
