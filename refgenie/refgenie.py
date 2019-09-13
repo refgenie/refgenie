@@ -44,7 +44,7 @@ GENOME_ONLY_REQUIRED = [REMOVE_CMD, GETSEQ_CMD]
 # For each asset we assume a genome is also required
 ASSET_REQUIRED = [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, TAG_CMD]
 
-BUILD_SPECIFIC_ARGS = ('fasta', 'gtf', 'gff', 'context', 'refgene')
+BUILD_SPECIFIC_ARGS = ('fasta', 'ensembl-gtf', 'gencode-gtf', 'gff', 'context', 'refgene')
 
 # This establishes the API with the server
 refgenie_server_api = {
