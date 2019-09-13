@@ -153,19 +153,19 @@ asset_build_packages = {
     },
     "gencode_gtf": {
         DESC: "GTF annotation asset which provides access to all annotated transcripts which make up an Ensembl gene set.",
-        REQ_IN: ["gencode-gtf"],
+        REQ_IN: ["gencode_gtf"],
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
         ASSETS: {
             "gencode_gtf": "{genome}.gtf.gz"
         },
         CMD_LST: [
-            "cp {gtf} {asset_outfolder}/{genome}.gtf.gz"
+            "cp {gencode_gtf} {asset_outfolder}/{genome}.gtf.gz"
             ] 
     },
     "ensembl_gtf": {
         DESC: "Ensembl GTF, TSS, and gene body annotation",
-        REQ_IN: ["ensembl-gtf"],
+        REQ_IN: ["ensembl_gtf"],
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
         ASSETS: {
@@ -174,7 +174,7 @@ asset_build_packages = {
             "ensembl_gene_body": "{genome}_ensembl_gene_body.bed",
         },
         CMD_LST: [
-            "cp {gtf} {asset_outfolder}/{genome}.gtf.gz",
+            "cp {ensembl_gtf} {asset_outfolder}/{genome}.gtf.gz",
             "gzip -dc {asset_outfolder}/{genome}.gtf.gz | grep 'exon_number \"1\";' | sed 's/^/chr/' | awk -v OFS='\t' '{{print $1, $4, $5, $20, $14, $7}}' | sed 's/\";//g' | sed 's/\"//g' | awk '{{if($6==\"+\"){{print $1\"\t\"$2+20\"\t\"$2+120\"\t\"$4\"\t\"$5\"\t\"$6}}else{{print $1\"\t\"$3-120\"\t\"$3-20\"\t\"$4\"\t\"$5\"\t\"$6}}}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_ensembl_TSS.bed",
             "gzip -dc {asset_outfolder}/{genome}.gtf.gz | awk '$3 == \"gene\"' | sed 's/^/chr/' | awk -v OFS='\t' '{{print $1,$4,$5,$14,$6,$7}}' | sed 's/\";//g' | sed 's/\"//g' | awk '$4!=\"Metazoa_SRP\"' | awk '$4!=\"U3\"' | awk '$4!=\"7SK\"'  | awk '($3-$2)>200' | awk '{{if($6==\"+\"){{print $1\"\t\"$2+500\"\t\"$3\"\t\"$4\"\t\"$5\"\t\"$6}}else{{print $1\"\t\"$2\"\t\"$3-500\"\t\"$4\"\t\"$5\"\t\"$6}}}}' | awk '$3>$2' | LC_COLLATE=C sort -k4 -u > {asset_outfolder}/{genome}_ensembl_gene_body.bed"
             ] 
