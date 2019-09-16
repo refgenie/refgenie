@@ -269,6 +269,8 @@ def refgenie_add(rgc, asset_dict, path):
     seek_key_value = os.path.basename(abs_asset_path) if asset_dict["seek_key"] is not None else "."
     rgc.update_seek_keys(*gat_bundle, keys={asset_dict["seek_key"] or asset_dict["asset"]: seek_key_value})
     rgc.set_default_pointer(asset_dict["genome"], asset_dict["asset"], tag)
+    # a separate update_tags call since we want to use the get_asset method that requires a complete asset entry in rgc
+    rgc.update_tags(*gat_bundle, data={CFG_ASSET_CHECKSUM_KEY: get_asset_digest(rgc.get_asset(*gat_bundle))})
     # Write the updated refgenie genome configuration
     rgc.write()
     return True
@@ -347,20 +349,6 @@ def refgenie_build(rgc, genome, asset_list, args):
             assets.
         """
 
-        def _get_asset_digest(asset_dir):
-            """
-            Generate a MD5 digest that reflects just the contents of the files in the selected directory.
-
-            :param str asset_dir: path to the directory to digest
-            :return str: a digest, e.g. a3c46f201a3ce7831d85cf4a125aa334
-            """
-            if not is_command_callable("md5sum"):
-                raise OSError("md5sum command line tool is required for asset digest calculation. \n"
-                              "Install and try again, e.g on macOS: 'brew install md5sha1sum'")
-            x = pm.checkprint("cd {}; find . -type f -exec md5sum {{}} \; | sort -k 2 | awk '{{print $1}}' | md5sum".
-                              format(asset_dir))
-            return sub(r'\W+', '', x)  # strips non-alphanumeric
-
         _LOGGER.debug("Asset build package: " + str(build_pkg))
         gat = [genome, asset_key, tag]  # create a bundle list to simplify calls below
         # collect variables required to populate the command templates
@@ -385,8 +373,8 @@ def refgenie_build(rgc, genome, asset_list, args):
             rgc.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key})
             rgc.update_seek_keys(*gat, keys={k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
             # in order to conveniently get the path to digest we update the tags metadata in two steps
-            rgc.update_tags(*gat, data={CFG_ASSET_CHECKSUM_KEY: _get_asset_digest(rgc.get_asset(
-                genome, asset_key, tag, enclosing_dir=True))})
+            rgc.update_tags(*gat, data={CFG_ASSET_CHECKSUM_KEY: get_asset_digest(rgc.get_asset(
+                genome, asset_key, tag, enclosing_dir=True), pm)})
             rgc.set_default_pointer(*gat)
             rgc.write()
         return True
@@ -802,6 +790,30 @@ def _make_asset_build_reqs(asset):
     if asset_build_packages[asset][REQ_ASSETS]:
         reqs_list.append("- assets: {}".format(", ".join(asset_build_packages[asset][REQ_ASSETS])))
     _LOGGER.info("\n".join(reqs_list))
+
+
+def get_asset_digest(asset_dir, pm=None):
+    """
+    Generate a MD5 digest that reflects just the contents of the files in the selected directory.
+
+    :param str asset_dir: path to the directory to digest
+    :param pypiper.PipelineManager pm: a pipeline object, optional. The subprocess module will be used if not provided
+    :return str: a digest, e.g. a3c46f201a3ce7831d85cf4a125aa334
+    """
+    if not is_command_callable("md5sum"):
+        raise OSError("md5sum command line tool is required for asset digest calculation. \n"
+                      "Install and try again, e.g on macOS: 'brew install md5sha1sum'")
+    cmd = "cd {}; find . -type f -exec md5sum {{}} \; | sort -k 2 | awk '{{print $1}}' | md5sum".format(asset_dir)
+    if isinstance(pm, pypiper.PipelineManager):
+        x = pm.checkprint(cmd)
+    else:
+        try:
+            from subprocess import check_output
+            x = check_output(cmd, shell=True).decode("utf-8")
+        except Exception as e:
+            _LOGGER.warning("{}: could not calculate asset digest for: {}".format(e.__class__.__name__, asset_dir))
+            return
+    return sub(r'\W+', '', x)  # strips non-alphanumeric
 
 
 if __name__ == '__main__':
