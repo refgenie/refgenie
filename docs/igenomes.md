@@ -11,7 +11,9 @@ refgenie init -c $REFGENIE
 
 And then you have two options:
 
-1. (recommended) use `import_igenome` tool that is distributed with `refgenie` via PyPi (ready to use after `refgenie` installation)
+## `import_igenome` tool (recommended)
+
+This command line tool is distributed with `refgenie` via PyPi (ready to use after `refgenie` installation)
 
 It adds all the assets enclosed in the genome archive downloaded from the iGenomes website to the `refgenie` local asset inventory. The required inputs are:
 
@@ -54,9 +56,12 @@ Added assets:
 - staph/WholeGenomeFasta
 ```
 
-2. add individual assets you want `refgenie` to track with `refgenie add`:
+## `refgenie add`
 
-```
+Or add individual assets you want `refgenie` to track with `refgenie add`. This way of iGenomes integration with `refgenie` is useful if you do not plan to add all of the assets for the downloaded iGenome
+ 
+
+```console
 refgenie add genome/asset -p RELATIVE_PATH
 ```
 
@@ -80,4 +85,4 @@ Or `remove` unwanted/faulty ones:
 refgenie remove staph/BWAIndex
 ```
 
-This way you can configure refgenie to use your iGenomes assets, so you can wean yourself off of the iGenomes hard structure and transition to the refgenie-managed path system.
+This way you can configure `refgenie` to use your iGenomes assets, so you can wean yourself off of the iGenomes hard structure and transition to the refgenie-managed path system.
