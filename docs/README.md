@@ -39,26 +39,23 @@ refgenie listr
 
 Response:
 ```console
-Querying available assets from server: http://refgenomes.databio.org/assets
-Remote genomes: hg19, hg19_cdna, hg38, hg38_cdna
+Querying available assets from server: http://refgenomes.databio.org/v2/assets
+Remote genomes: mouse_chrM2x, rCRSd
 Remote assets:
-  hg19: bismark_bt1_index; bismark_bt2_index; bowtie2_index; bwa_index; fasta; hisat2_index
-  hg19_cdna: bowtie2_index; hisat2_index; kallisto_index; salmon_index
-  hg38: bismark_bt1_index; bismark_bt2_index; bowtie2_index; bwa_index; fasta; hisat2_index
-  hg38_cdna: bowtie2_index; hisat2_index; kallisto_index; salmon_index
+        mouse_chrM2x/   bowtie2_index:default, fasta.chrom_sizes:default, fasta.fai:default, fasta:default
+               rCRSd/   bowtie2_index:default, fasta.chrom_sizes:default, fasta.chrom_sizes:test, fasta.fai:default, fasta.fai:test, fasta:default, fasta:test
 ```
 
 Next, pull one:
 
 ```console
-refgenie pull --genome hg38 --asset bowtie2_index
+refgenie pull rCRSd/bowtie2_index
 ```
 
 Response:
 ```console
-Starting pull for 'hg38/bowtie2_index'
-'hg38/bowtie2_index' archive size: 3.5GB
-Downloading URL: http://refgenomes.databio.org/asset/hg38/bowtie2/archive ...
+'rCRSd/bowtie2_index:default' archive size: 116.8KB
+Downloading URL: http://staging.refgenomes.databio.org/v2/asset/rCRSd/bowtie2_index/archive ... 
 ```
 
 See [further reading on downloading assets](pull.md).
@@ -67,7 +64,7 @@ See [further reading on downloading assets](pull.md).
 
 
 ```console
-refgenie build --genome mygenome --asset bwa_index --fasta mygenome.fa.gz
+refgenie build mygenome/bwa_index --fasta mygenome.fa.gz
 ```
 
 See [further reading on building assets](build.md).
@@ -77,7 +74,7 @@ See [further reading on building assets](build.md).
 Once you've populated your refgenie with a few assets, it's easy to get paths to them:
 
 ```console
-refgenie seek --genome mm10 --asset bowtie2_index
+refgenie seek mm10/bowtie2_index
 ```
 
 This will return the path to the particular asset of interest, regardless of your computing environment. This gives you an ultra-portable asset manager! See [further reading on retrieving asset paths](seek.md).

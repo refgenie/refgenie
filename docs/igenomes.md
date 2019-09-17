@@ -1,39 +1,83 @@
 # Using refgenie with iGenomes
 
-If you're already using iGenomes, it's easy to configure refgenie to use your existing folder structure. [iGenomes](https://support.illumina.com/sequencing/sequencing_software/igenome.html) is project that provides sequences and annotation files for commonly analyzed organisms. Each iGenome is available as a compressed file that contains sequences and annotation files for a single genomic build of an organism. 
+If you're already using iGenomes, it's easy to configure `refgenie` to use your existing folder structure. [iGenomes](https://support.illumina.com/sequencing/sequencing_software/igenome.html) is project that provides sequences and annotation files for commonly analyzed organisms. Each iGenome is available as a compressed file that contains sequences and annotation files for a single genomic build of an organism. 
 
 Initialize a refgenie config file if you don't have one you want to use for your iGenomes assets:
 
-```
-export REFGENIE='genome_config.yaml'
+```console
+export REFGENIE='igenome_config.yaml'
 refgenie init -c $REFGENIE
 ```
 
-And then add individual assets you want refgenie to track with `refgenie add`:
+And then you have two options:
 
-```
-refgenie add -g GENOME -a ASSET -p RELATIVE_PATH
-```
+1. (recommended) use `import_igenome` tool that is distributed with `refgenie` via PyPi (ready to use after `refgenie` installation)
 
-So, for example, 
+It adds all the assets enclosed in the genome archive downloaded from the iGenomes website to the `refgenie` local asset inventory. The required inputs are:
+
+* `-g`: name of the genome that should be assigned to the assets,
+* `-p`: a path to the downloaded archive or a directory (unarchived archive).
+
+usage: 
 
 ```console
-wget ftp://igenome:G3nom3s4u@ussd-ftp.illumina.com/Caenorhabditis_elegans/UCSC/ce10/Caenorhabditis_elegans_UCSC_ce10.tar.gz
-tar -xf Caenorhabditis_elegans_UCSC_ce10.tar.gz
-refgenie init -c igenome_config.yaml
-refgenie add -c igenome_config.yaml -g ce10 --asset bowtie2_index --path Caenorhabditis_elegans/UCSC/ce10/Sequence/Bowtie2Index
+$ import_igenome -h
+
+usage: import_igenome [-h] -p PATH -g GENOME [-c CONFIG]
+
+Integrates every asset from the downloaded iGenomes tarball/directory with
+Refgenie asset management system
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -p PATH, --path PATH  path to the desired genome tarball or directory to
+                        integrate
+  -g GENOME, --genome GENOME
+                        name to be assigned to the selected genome
+  -c CONFIG, --config CONFIG
+                        path to local genome configuration file. Optional if
+                        'REFGENIE' environment variable is set.
+```
+
+Example:
+
+```console
+$ import_igenome -g staph -p Staphylococcus_aureus_NCTC_8325_NCBI_2006-02-13.tar.gz
+
+Moved 'Staphylococcus_aureus_NCTC_8325_NCBI_2006-02-13.tar.gz' to '/Users/mstolarczyk/Desktop/testing/test_genomes/staph'
+Added assets: 
+- staph/Chromosomes
+- staph/BWAIndex
+- staph/BowtieIndex
+- staph/AbundantSequences
+- staph/Bowtie2Index
+- staph/WholeGenomeFasta
+```
+
+2. add individual assets you want `refgenie` to track with `refgenie add`:
+
+```
+refgenie add genome/asset -p RELATIVE_PATH
+```
+
+So, after downloading an archive from iGenomes website:
+
+```console
+tar -xf Staphylococcus_aureus_NCTC_8325_NCBI_2006-02-13.tar.gz
+refgenie init $REFGENIE
+refgenie add staph/bowtie2_index -p Staphylococcus_aureus_NCTC_8325/NCBI/2006-02-13/Sequence/Bowtie2Index
 ```
 
 Now we can `seek` any of those assets:
 
 ```console
-refgenie seek -c igenome_config.yaml -g ce10 --asset bowtie2_index
+refgenie seek staph/BWAIndex
 ```
 
 Or `remove` unwanted/faulty ones:
 
 ```console
-refgenie remove -g ce10 --asset bowtie2_index
+refgenie remove staph/BWAIndex
 ```
 
 This way you can configure refgenie to use your iGenomes assets, so you can wean yourself off of the iGenomes hard structure and transition to the refgenie-managed path system.
