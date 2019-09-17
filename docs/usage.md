@@ -3,7 +3,7 @@
 ## `refgenie --help`
 
 ```console
-version: 0.6.1
+version: 0.7.0
 usage: refgenie [-h] [--version] [--silent] [--verbosity V] [--logdev]
                 {init,list,listr,pull,build,seek,add,remove,getseq,tag} ...
 

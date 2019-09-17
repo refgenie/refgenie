@@ -797,7 +797,7 @@ def _make_asset_build_reqs(asset):
         Some of them specify seek_keys named as the assets, but we dont wanto to display that
 
         :param str req: requirement str
-        :return:
+        :return str: formatted requirement
         """
         reqs = req.split(".")
         assert len(reqs) == 2, ValueError("Length of requirement '{}' after splitting is not 2. Specified requirement "
