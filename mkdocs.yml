@@ -13,6 +13,7 @@ nav:
     - Download pre-built assets: pull.md
     - Use custom genomes: build.md
     - Retrieve paths to assets: seek.md
+    - Manage multiple versions of an asset: tag.md
     - Use refgenie from python: refgenconf.md
     - Use refgenie with iGenomes: igenomes.md
     - Use custom assets: custom_assets.md
