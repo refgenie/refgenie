@@ -173,7 +173,7 @@ asset_build_packages = {
     },
     "gencode_gtf": {
         DESC: "GTF annotation asset which provides access to all annotated transcripts which make up an Ensembl gene set.",
-        REQ_IN: ["gencode-gtf"],
+        REQ_IN: ["gencode_gtf"],
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
         ASSETS: {
@@ -185,7 +185,7 @@ asset_build_packages = {
     },
     "ensembl_gtf": {
         DESC: "Ensembl GTF, TSS, and gene body annotation",
-        REQ_IN: ["ensembl-gtf"],
+        REQ_IN: ["ensembl_gtf"],
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
         ASSETS: {
