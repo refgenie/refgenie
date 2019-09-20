@@ -50,12 +50,12 @@ asset_build_packages = {
         CONT: "databio/refgenie",
         CMD_LST: [
             "cp {dbnsfp} {asset_outfolder}/{genome}.zip",
-            "unzip {asset_outfolder}/{genome}.zip",
-            "gunzip {asset_outfolder}/*.gz",
+            "unzip {asset_outfolder}/{genome}.zip -d {asset_outfolder}",
+            "gunzip {asset_outfolder}/*variant.chr*.gz",
             "head -n1 {asset_outfolder}/dbNSFP*_variant.chr1 > {asset_outfolder}/{genome}_dbNSFP.txt",
             "cat {asset_outfolder}/dbNSFP*variant.chr* | grep -v '#' >> {asset_outfolder}/{genome}_dbNSFP.txt",
             "rm {asset_outfolder}/dbNSFP*_variant.chr*",
-            "bgzip {asset_outfolder}/{genome}_dbNSFP.txt",
+            "bgzip -@ 4 {asset_outfolder}/{genome}_dbNSFP.txt",
             "tabix -s 1 -b 2 -e 2 {asset_outfolder}/{genome}_dbNSFP.txt.gz"
         ]
     },
