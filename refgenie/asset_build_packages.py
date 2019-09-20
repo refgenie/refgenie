@@ -39,6 +39,26 @@ asset_build_packages = {
             "cut -f 1,2 {asset_outfolder}/{genome}.fa.fai > {asset_outfolder}/{genome}.chrom.sizes",
         ]
     },
+    "dbnsfp": {
+        DESC: "A database developed for functional prediction and annotation of all potential non-synonymous single-nucleotide variants (nsSNVs) in the human genome (Gencode release 29/Ensembl 94)",
+        ASSETS: {
+            "dbnsfp": "{genome}_dbNSFP.txt.gz",
+            "tabix": "{genome}_dbNSFP.txt.gz.tbi"
+        },
+        REQ_IN: ["dbnsfp"],
+        REQ_ASSETS: [],
+        CONT: "databio/refgenie",
+        CMD_LST: [
+            "cp {dbnsfp} {asset_outfolder}/{genome}.zip",
+            "unzip {asset_outfolder}/{genome}.zip",
+            "gunzip {asset_outfolder}/*.gz",
+            "head -n1 {asset_outfolder}/dbNSFP*_variant.chr1 > {asset_outfolder}/{genome}_dbNSFP.txt",
+            "cat {asset_outfolder}/dbNSFP*variant.chr* | grep -v '#' >> {asset_outfolder}/{genome}_dbNSFP.txt",
+            "rm {asset_outfolder}/dbNSFP*_variant.chr*",
+            "bgzip {asset_outfolder}/{genome}_dbNSFP.txt",
+            "tabix -s 1 -b 2 -e 2 {asset_outfolder}/{genome}_dbNSFP.txt.gz"
+        ]
+    },
     "bowtie2_index": {
         DESC: "Genome index for bowtie, produced with bowtie-build",
         ASSETS: {
@@ -153,7 +173,7 @@ asset_build_packages = {
     },
     "gencode_gtf": {
         DESC: "GTF annotation asset which provides access to all annotated transcripts which make up an Ensembl gene set.",
-        REQ_IN: ["gencode_gtf"],
+        REQ_IN: ["gencode-gtf"],
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
         ASSETS: {
@@ -165,7 +185,7 @@ asset_build_packages = {
     },
     "ensembl_gtf": {
         DESC: "Ensembl GTF, TSS, and gene body annotation",
-        REQ_IN: ["ensembl_gtf"],
+        REQ_IN: ["ensembl-gtf"],
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
         ASSETS: {

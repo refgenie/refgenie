@@ -10,30 +10,29 @@ MAINTAINER Nathan Sheffield <nathan@code.databio.org>
 	RUN apt-get install -y python python-pip
 	RUN apt-get install -y curl
 
-# HTSLIB
+# htslib 1.9 (tabix cmd)
 	RUN apt-get install -y libz-dev libncurses-dev
-	RUN wget -O ~/htslib.tar.bz2 https://github.com/samtools/htslib/releases/download/1.3.2/htslib-1.3.2.tar.bz2
-	RUN tar -xf ~/htslib.tar.bz2
-	RUN cd /htslib-1.3.2  && ./configure && make && make install
+  RUN wget -O ~/htslib.tar.gz https://github.com/samtools/htslib/releases/download/1.9/htslib-1.9.tar.bz2 && tar xjf ~/htslib.tar.gz && cd htslib-1.9 && ./configure && make && make install
+  ENV PATH="/htslib-1.9:${PATH}"
 
-# install samtools
+# install samtools 1.3.1
 	RUN wget -O ~/samtools.bz2 https://github.com/samtools/samtools/releases/download/1.3.1/samtools-1.3.1.tar.bz2
 	RUN tar -xf ~/samtools.bz2
 	RUN cd /samtools-1.3.1 && make
 	ENV PATH="/samtools-1.3.1:${PATH}"
 
-# bowtie2 and deps
+# bowtie2 2.3.0 and deps
 	RUN apt-get install -y libtbb-dev  # bowtie2 dependencies
 	RUN wget -O ~/bowtie.zip "https://downloads.sourceforge.net/project/bowtie-bio/bowtie2/2.3.0/bowtie2-2.3.0-linux-x86_64.zip?r=https%3A%2F%2Fsourceforge.net%2Fprojects%2Fbowtie-bio%2Ffiles%2Fbowtie2%2F2.3.0%2F&ts=1485465820&use_mirror=kent"
 	RUN unzip ~/bowtie.zip
 	ENV PATH="/bowtie2-2.3.0:${PATH}"
 
-# Bismark Methylation caller
+# Bismark Methylation caller 0.17.0
 	RUN wget -O ~/bismark.zip https://github.com/FelixKrueger/Bismark/archive/0.17.0.zip
 	RUN unzip ~/bismark.zip
 	ENV PATH="/Bismark-0.17.0:${PATH}"
 
-# HISAT2
+# hisat2 2.0.5
 	RUN wget -O ~/hisat.zip ftp://ftp.ccb.jhu.edu/pub/infphilo/hisat2/downloads/hisat2-2.0.5-source.zip
 	RUN unzip ~/hisat.zip
 	RUN cd hisat2-2.0.5 && make
@@ -54,12 +53,12 @@ MAINTAINER Nathan Sheffield <nathan@code.databio.org>
 	ADD includes/twoBitToFa bin/twoBitToFa
 	RUN apt-get install -y libpng-dev
 
-# bwa
+# bwa 0.7.17
 	RUN wget -O ~/bwa-0.7.17.tar.bz2 https://github.com/lh3/bwa/releases/download/v0.7.17/bwa-0.7.17.tar.bz2
 	RUN tar -xf ~/bwa-0.7.17.tar.bz2
 	run cd /bwa-0.7.17 && make
 	ENV PATH="/bwa-0.7.17:${PATH}"
 
 # STAR 2.7.1a
-    RUN wget -O ~/STAR.tar.gz https://github.com/alexdobin/STAR/archive/2.7.1a.tar.gz && tar -xf ~/STAR.tar.gz && cd STAR-2.7.1a/source && make STAR
-    ENV PATH="/STAR-2.7.1a/source:${PATH}"
+  RUN wget -O ~/STAR.tar.gz https://github.com/alexdobin/STAR/archive/2.7.1a.tar.gz && tar -xf ~/STAR.tar.gz && cd STAR-2.7.1a/source && make STAR
+  ENV PATH="/STAR-2.7.1a/source:${PATH}"
