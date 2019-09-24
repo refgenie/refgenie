@@ -300,9 +300,8 @@ def refgenie_initg(rgc, genome, collection_checksum, content_checksums):
     :param dict content_checksums: checksums of individual content_checksums, e.g. chromosomes
     """
     rgc.update_genomes(genome, {
-        CFG_CHECKSUM_KEY: collection_checksum,
+        CFG_CHECKSUM_KEY: collection_checksum
     })
-    rgc.write()
     genome_dir = os.path.join(rgc[CFG_FOLDER_KEY], genome)
     if is_writable(genome_dir):
         output_file = os.path.join(genome_dir, "{}_sequence_digests.tsv".format(genome))
@@ -315,13 +314,14 @@ def refgenie_initg(rgc, genome, collection_checksum, content_checksums):
         _LOGGER.warning("Could not save the genome sequence digests. '{}' is not writable".format(genome_dir))
 
 
-def refgenie_build(rgc, genome, asset_list, args):
+def refgenie_build(gencfg, genome, asset_list, args):
     """
     Runs the refgenie build recipe.
 
-    :param refgenconf.RefGenConf rgc: genome configuration instance
+    :param str gencfg: path to the genome configuration file
     :param argparse.Namespace args: parsed command-line options/arguments
     """
+    rgc = RefGenConf(gencfg, ro=False)
     specific_args = {k: getattr(args, k) for k in BUILD_SPECIFIC_ARGS}
 
     if not hasattr(args, "outfolder") or not args.outfolder:
@@ -575,9 +575,8 @@ def main():
         _LOGGER.error("No command given")
         sys.exit(1)
 
-    gencfg = yacman.select_config(
-        args.genome_config, CFG_ENV_VARS,
-        check_exist=not args.command == INIT_CMD, on_missing=lambda fp: fp)
+    gencfg = yacman.select_config(args.genome_config, CFG_ENV_VARS, check_exist=not args.command == INIT_CMD,
+                                  on_missing=lambda fp: fp)
     if gencfg is None:
         raise MissingGenomeConfigError(args.genome_config)
     _LOGGER.debug("Determined genome config: {}".format(gencfg))
@@ -617,8 +616,6 @@ def main():
         refgenie_init(gencfg, args.genome_server)
         sys.exit(0)
 
-    rgc = RefGenConf(gencfg)
-
     if args.command == BUILD_CMD:
         if not all([x["genome"] == asset_list[0]["genome"] for x in asset_list]):
             _LOGGER.error("Build can only build assets from one genome")
@@ -630,37 +627,47 @@ def main():
             _LOGGER.info("'{}/{}' build requirements: ".format(a["genome"], a["asset"]))
             _make_asset_build_reqs(a["asset"])
             sys.exit(0)
-        refgenie_build(rgc, asset_list[0]["genome"], asset_list, args)
+        refgenie_build(gencfg, asset_list[0]["genome"], asset_list, args)
 
     elif args.command == GET_ASSET_CMD:
+        rgc = RefGenConf(gencfg, ro=True)
         for a in asset_list:
             _LOGGER.debug("getting asset: '{}/{}.{}:{}'".format(a["genome"], a["asset"], a["seek_key"], a["tag"]))
             print(rgc.get_asset(a["genome"], a["asset"], a["tag"], a["seek_key"]))
         return
 
     elif args.command == INSERT_CMD:
+        rgc = RefGenConf(gencfg, ro=False)
         if len(asset_list) > 1:
             raise NotImplementedError("Can only add 1 asset at a time")
         else:
             refgenie_add(rgc, asset_list[0], args.path)
 
     elif args.command == PULL_CMD:
+        rgc = RefGenConf(gencfg, ro=False)
         outdir = rgc[CFG_FOLDER_KEY]
         if not os.path.exists(outdir):
             raise MissingFolderError(outdir)
         target = _key_to_name(CFG_FOLDER_KEY)
         if not perm_check_x(outdir, target):
+            rgc.unlock()
             return
         if not _single_folder_writeable(outdir):
-            _LOGGER.error("Insufficient permissions to write to {}: "
-                          "{}".format(target, outdir))
+            _LOGGER.error("Insufficient permissions to write to {}: {}".format(target, outdir))
+            rgc.unlock()
             return
 
         for a in asset_list:
-            rgc.pull_asset(a["genome"], a["asset"], a["tag"], gencfg,
-                           unpack=not args.no_untar)
+            try:
+                _, asset_dir = rgc.pull_asset(a["genome"], a["asset"], a["tag"], gencfg, unpack=not args.no_untar)
+                if asset_dir is None:
+                    rgc.unlock()
+            except Exception as e:
+                rgc.unlock()
+                raise e
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
+        rgc = RefGenConf(gencfg, ro=True)  # not going to write to the genome cfg, create object in read only mode
         pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
         _LOGGER.info("{} genomes: {}".format(pfx, genomes))
         if args.command != LIST_REMOTE_CMD:  # Not implemented yet
@@ -668,9 +675,11 @@ def main():
         _LOGGER.info("{} assets:\n{}".format(pfx, assets))
 
     elif args.command == GETSEQ_CMD:
+        rgc = RefGenConf(gencfg, ro=True)
         refgenie_getseq(rgc, args.genome, args.locus)
 
     elif args.command == REMOVE_CMD:
+        rgc = RefGenConf(gencfg, ro=False)
         for a in asset_list:
             a["tag"] = a["tag"] or rgc.get_default_tag(a["genome"], a["asset"], use_existing=False)
             _LOGGER.debug("Determined tag for removal: {}".format(a["tag"]))
@@ -686,16 +695,19 @@ def main():
                     rgc.get_asset(*bundle, enclosing_dir=True)
             except (KeyError, MissingAssetError, MissingGenomeError):
                 _LOGGER.info("Asset '{}/{}:{}' does not exist".format(*bundle))
+                rgc.unlock()
                 return
         if len(asset_list) > 1:
             if not query_yes_no("Are you sure you want to remove {} assets?".format(len(asset_list))):
                 _LOGGER.info("Action aborted by the user")
+                rgc.unlock()
                 return
         else:
             a = asset_list[0]
             bundle = [a["genome"], a["asset"], a["tag"]]
             if not query_yes_no("Remove '{}/{}:{}'?".format(*bundle)):
                 _LOGGER.info("Action aborted by the user")
+                rgc.unlock()
                 return
         removed = []
         for a in asset_list:
@@ -725,11 +737,13 @@ def main():
         _LOGGER.info("Successfully removed entities:\n- {}".format("\n- ".join(removed)))
 
     elif args.command == TAG_CMD:
+        rgc = RefGenConf(gencfg, ro=False)
         if len(asset_list) > 1:
             raise NotImplementedError("Can only tag 1 asset at a time")
         ori_path = rgc.get_asset(a["genome"], a["asset"], a["tag"], enclosing_dir=True)
         new_path = os.path.abspath(os.path.join(ori_path, os.pardir, args.tag))
         if not rgc.tag_asset(a["genome"], a["asset"], a["tag"], args.tag):  # tagging in the RefGenConf object
+            rgc.unlock()
             sys.exit(0)
         try:
             if os.path.exists(new_path):

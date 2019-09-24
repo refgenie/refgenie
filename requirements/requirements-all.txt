@@ -2,5 +2,5 @@ attmap>=0.12.5
 logmuse>=0.2
 refgenconf>=0.4.0
 ubiquerg>=0.4.8
-yacman>=0.4.2
+yacman>=0.6.0
 piper>=0.11.0
