@@ -106,6 +106,14 @@ def build_argparser():
     # Add any arguments specific to subcommands.
 
     sps[BUILD_CMD].add_argument(
+        '--tag-description', required=False, default=None, type=str,
+        help="Add tag level description (e.g. built with version 0.3.2)")
+
+    sps[BUILD_CMD].add_argument(
+        '--genome-description', required=False, default=None, type=str,
+        help="Add genome level description (e.g. The mouse mitochondrial genome, released in Dec 2013)")
+
+    sps[BUILD_CMD].add_argument(
         "-d", "--docker", action="store_true", help="Run all commands in the refgenie docker container.")
 
     sps[BUILD_CMD].add_argument(
@@ -461,6 +469,13 @@ def refgenie_build(rgc, genome, asset_list, args):
                 parsed_parent = prp(i)
                 rgc.update_relatives_assets(genome, parsed_parent["item"], parsed_parent["tag"],
                                             ["{}:{}".format(asset_key, asset_tag)], True)  # adds children
+            if args.genome_description is not None:
+                _LOGGER.debug("adding genome ({}) description: '{}'".format(genome, args.genome_description))
+                rgc.update_genomes(genome, {CFG_GENOME_DESC_KEY: args.genome_description})
+            if args.tag_description is not None:
+                _LOGGER.debug("adding tag ({}/{}:{}) description: '{}'".format(genome, asset_key, asset_tag,
+                                                                               args.tag_description))
+                rgc.update_tags(genome, asset_key, asset_tag, {CFG_TAG_DESC_KEY: args.tag_description})
             rgc.write()
         else:
             _LOGGER.warn("Recipe does not exist for asset '{}'".format(asset_key))
