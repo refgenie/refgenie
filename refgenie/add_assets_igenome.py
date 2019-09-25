@@ -54,6 +54,7 @@ def untar_or_copy(p, dest):
             dest = os.path.join(dest, os.path.basename(p))
         elif tarfile.is_tarfile(p):
             fun = untar
+            print("Extracting '{}'".format(p))
         else:
             raise ValueError("Provided path is neither a directory nor a tar archive.")
         fun(p, dest)
@@ -69,7 +70,7 @@ def main():
     cfg = select_config(args.config, refgenconf.CFG_ENV_VARS, check_exist=True)
     if not cfg:
         raise MissingGenomeConfigError(args.config)
-    rgc = refgenconf.RefGenConf(cfg)
+    rgc = refgenconf.RefGenConf(cfg, ro=False)
     pths = [args.path, mkabs(args.path, rgc.genome_folder)]
     if not untar_or_copy(pths[0], os.path.join(rgc.genome_folder, args.genome)) \
             and not untar_or_copy(pths[1], os.path.join(rgc.genome_folder, args.genome)):
