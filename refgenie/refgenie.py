@@ -322,7 +322,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
     :param str gencfg: path to the genome configuration file
     :param argparse.Namespace args: parsed command-line options/arguments
     """
-    rgc = RefGenConf(gencfg, ro=False, wait_max=120)  # genome cfg will be updated, create object in non read-only mode
+    rgc = RefGenConf(filepath=gencfg, ro=False, wait_max=120)  # genome cfg will be updated, create object in non read-only mode
     specific_args = {k: getattr(args, k) for k in BUILD_SPECIFIC_ARGS}
 
     if not hasattr(args, "outfolder") or not args.outfolder:
@@ -495,7 +495,7 @@ def refgenie_init(genome_config_path, genome_server=DEFAULT_SERVER, config_versi
     """
 
     # Set up default
-    rgc = RefGenConf(OrderedDict({
+    rgc = RefGenConf(entries=OrderedDict({
         CFG_VERSION_KEY: config_version,
         CFG_FOLDER_KEY: os.path.dirname(os.path.abspath(genome_config_path)),
         CFG_SERVER_KEY: genome_server,
@@ -632,21 +632,21 @@ def main():
         refgenie_build(gencfg, asset_list[0]["genome"], asset_list, args)
 
     elif args.command == GET_ASSET_CMD:
-        rgc = RefGenConf(gencfg, ro=True)
+        rgc = RefGenConf(filepath=gencfg, ro=True)
         for a in asset_list:
             _LOGGER.debug("getting asset: '{}/{}.{}:{}'".format(a["genome"], a["asset"], a["seek_key"], a["tag"]))
             print(rgc.get_asset(a["genome"], a["asset"], a["tag"], a["seek_key"]))
         return
 
     elif args.command == INSERT_CMD:
-        rgc = RefGenConf(gencfg, ro=False)  # genome cfg will be updated, create object in non read-only mode
+        rgc = RefGenConf(filepath=gencfg, ro=False)  # genome cfg will be updated, create object in non read-only mode
         if len(asset_list) > 1:
             raise NotImplementedError("Can only add 1 asset at a time")
         else:
             refgenie_add(rgc, asset_list[0], args.path)
 
     elif args.command == PULL_CMD:
-        rgc = RefGenConf(gencfg, ro=False)  # genome cfg will be updated, create object in non read-only mode
+        rgc = RefGenConf(filepath=gencfg, ro=False)  # genome cfg will be updated, create object in non read-only mode
         outdir = rgc[CFG_FOLDER_KEY]
         if not os.path.exists(outdir):
             raise MissingFolderError(outdir)
@@ -669,7 +669,7 @@ def main():
                 raise e
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
-        rgc = RefGenConf(gencfg, ro=True)  # genome cfg will not be updated, create object in read-only mode
+        rgc = RefGenConf(filepath=gencfg, ro=True)  # genome cfg will not be updated, create object in read-only mode
         pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
         _LOGGER.info("{} genomes: {}".format(pfx, genomes))
         if args.command != LIST_REMOTE_CMD:  # Not implemented yet
@@ -677,11 +677,11 @@ def main():
         _LOGGER.info("{} assets:\n{}".format(pfx, assets))
 
     elif args.command == GETSEQ_CMD:
-        rgc = RefGenConf(gencfg, ro=True)  # genome cfg will not be updated, create object in read-only mode
+        rgc = RefGenConf(filepath=gencfg, ro=True)  # genome cfg will not be updated, create object in read-only mode
         refgenie_getseq(rgc, args.genome, args.locus)
 
     elif args.command == REMOVE_CMD:
-        rgc = RefGenConf(gencfg, ro=False)  # genome cfg will be updated, create object in non read-only mode
+        rgc = RefGenConf(filepath=gencfg, ro=False)  # genome cfg will be updated, create object in non read-only mode
         for a in asset_list:
             a["tag"] = a["tag"] or rgc.get_default_tag(a["genome"], a["asset"], use_existing=False)
             _LOGGER.debug("Determined tag for removal: {}".format(a["tag"]))
@@ -739,7 +739,7 @@ def main():
         _LOGGER.info("Successfully removed entities:\n- {}".format("\n- ".join(removed)))
 
     elif args.command == TAG_CMD:
-        rgc = RefGenConf(gencfg, ro=False)  # genome cfg will be updated, create object in non read-only mode
+        rgc = RefGenConf(filepath=gencfg, ro=False)  # genome cfg will be updated, create object in non read-only mode
         if len(asset_list) > 1:
             raise NotImplementedError("Can only tag 1 asset at a time")
         ori_path = rgc.get_asset(a["genome"], a["asset"], a["tag"], enclosing_dir=True)
