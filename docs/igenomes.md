@@ -46,6 +46,7 @@ Example:
 ```console
 $ import_igenome -g staph -p Staphylococcus_aureus_NCTC_8325_NCBI_2006-02-13.tar.gz
 
+Extracting 'Staphylococcus_aureus_NCTC_8325_NCBI_2006-02-13.tar.gz'
 Moved 'Staphylococcus_aureus_NCTC_8325_NCBI_2006-02-13.tar.gz' to '/Users/mstolarczyk/Desktop/testing/test_genomes/staph'
 Added assets: 
 - staph/Chromosomes

@@ -632,7 +632,7 @@ def main():
         refgenie_build(gencfg, asset_list[0]["genome"], asset_list, args)
 
     elif args.command == GET_ASSET_CMD:
-        rgc = RefGenConf(gencfg)
+        rgc = RefGenConf(gencfg, ro=True)
         for a in asset_list:
             _LOGGER.debug("getting asset: '{}/{}.{}:{}'".format(a["genome"], a["asset"], a["seek_key"], a["tag"]))
             print(rgc.get_asset(a["genome"], a["asset"], a["tag"], a["seek_key"]))
@@ -669,7 +669,7 @@ def main():
                 raise e
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
-        rgc = RefGenConf(gencfg)  # genome cfg will not be updated, create object in read-only mode
+        rgc = RefGenConf(gencfg, ro=True)  # genome cfg will not be updated, create object in read-only mode
         pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
         _LOGGER.info("{} genomes: {}".format(pfx, genomes))
         if args.command != LIST_REMOTE_CMD:  # Not implemented yet
@@ -677,7 +677,7 @@ def main():
         _LOGGER.info("{} assets:\n{}".format(pfx, assets))
 
     elif args.command == GETSEQ_CMD:
-        rgc = RefGenConf(gencfg)  # genome cfg will not be updated, create object in read-only mode
+        rgc = RefGenConf(gencfg, ro=True)  # genome cfg will not be updated, create object in read-only mode
         refgenie_getseq(rgc, args.genome, args.locus)
 
     elif args.command == REMOVE_CMD:
