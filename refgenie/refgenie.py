@@ -376,6 +376,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
             pm.run(command_list_populated, target, container=pm.container)
         except pypiper.exceptions.SubprocessError:
             _LOGGER.error("asset '{}' build failed".format(asset_key))
+            rgc.unlock()
             return False
         else:
             # update and write refgenie genome configuration

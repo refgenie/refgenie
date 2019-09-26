@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Each iGenomes has the following nested directory structure:
+Each iGenome has the following nested directory structure:
     Species/
     Source/
     Build/
@@ -70,10 +70,11 @@ def main():
     cfg = select_config(args.config, refgenconf.CFG_ENV_VARS, check_exist=True)
     if not cfg:
         raise MissingGenomeConfigError(args.config)
-    rgc = refgenconf.RefGenConf(cfg, ro=False)
+    rgc = refgenconf.RefGenConf(filepath=cfg, ro=False)
     pths = [args.path, mkabs(args.path, rgc.genome_folder)]
     if not untar_or_copy(pths[0], os.path.join(rgc.genome_folder, args.genome)) \
             and not untar_or_copy(pths[1], os.path.join(rgc.genome_folder, args.genome)):
+        rgc.unlock()
         raise OSError("Path '{}' does not exist. Tried: {}".format(args.path, " and ".join(pths)))
     path_components = [rgc.genome_folder] + [args.genome] + ["*"] * 3 + ["Sequence"]
     assets_paths = glob(os.path.join(*path_components))
