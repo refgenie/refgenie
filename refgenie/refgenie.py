@@ -662,7 +662,7 @@ def main():
 
         for a in asset_list:
             try:
-                _, asset_dir = rgc.pull_asset(a["genome"], a["asset"], a["tag"], gencfg, unpack=not args.no_untar)
+                _, asset_dir = rgc.pull_asset(a["genome"], a["asset"], a["tag"], unpack=not args.no_untar)
                 if asset_dir is None:
                     rgc.unlock()
             except Exception as e:
@@ -687,6 +687,7 @@ def main():
             a["tag"] = a["tag"] or rgc.get_default_tag(a["genome"], a["asset"], use_existing=False)
             _LOGGER.debug("Determined tag for removal: {}".format(a["tag"]))
             if a["seek_key"] is not None:
+                rgc.unlock()
                 raise NotImplementedError("You can't remove a specific seek_key within an asset.")
             bundle = [a["genome"], a["asset"], a["tag"]]
             try:
@@ -735,6 +736,7 @@ def main():
                     except (KeyError, TypeError):
                         _LOGGER.debug("Could not remove genome '{}' from the config; it does not exist".
                                       format(a["genome"]))
+                        rgc.unlock()
             else:
                 rgc.write()
         _LOGGER.info("Successfully removed entities:\n- {}".format("\n- ".join(removed)))
