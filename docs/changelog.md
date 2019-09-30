@@ -7,19 +7,20 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Added
 - `import_igenome` command line tool for iGenomes integration with Refgenie
 - `--genome/tag-description` arguments to the `refgenie build` command
-- `-r/--requirements` argument to the `refgenie build` command recipe requirements to display required inputs and required assets for a particular recipe
+- `-r`/`--requirements` argument to the `refgenie build` command recipe requirements to display required inputs and required assets for a particular recipe
 - config manipulation support in multi-user contexts, it's racefree, uses file locks
 - `dbNSFP` asset recipe
 - assets tagging
 - `refgenie tag` command that assigns a tag to an assets (re-tags it)
 - `refgenie getseq` command that retrieves sequence ranges from a genome
-- `seek_keys`; add finer control over files within an asset
+- `seek_keys`, which provide control over files within an asset
 - `asset_digests`, which are calculated after asset building and used to assure asset provenance 
 - asset relationships recording (`asset_children`,`asset_parents` fields)
 
 ### Changed
 - assets can be referred to by registry paths: `genome/asset.seek_key:tag`
-- config v0.3 is required now
+- config v0.3 is required
+- `refgenie pull` uses `refgenieserver` API v2
 
 ## [0.6.0] - 2019-08-05
 
@@ -35,7 +36,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [0.5.0] - 2019-07-11
 ### Changed
-- `refgenie build` uses dict-like recipies for build instructions
+- `refgenie build` uses dict-like recipes for build instructions
 - Major genome configuration file format changes
     - Added `config_version` entry
     - Added `assets` section in `genomes` section
