@@ -11,3 +11,7 @@ Not to the central server -- at least, not automatically. But what you *can* do 
 ## Can I maintain multiple versions of an asset?
 
 Yes, you can. In `refgenie v0.7.0` we've introduced [tagging](tag.md), to facilitate just that!
+
+## Can a research group/organisation share a single genome config?
+
+Yes. Latest release, `refgenie 0.5.0`, supports genome config file locks and race-free writes. Consequently, only one user (`refgenie` process) at a time can edit and write to the shared config file, which prevents assets metadata loss. 
