@@ -18,7 +18,7 @@ from .asset_build_packages import *
 import logmuse
 import pypiper
 import refgenconf
-from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError
+from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError, MissingRecipeError
 from refgenconf.const import *
 from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, VersionInHelpParser, is_command_callable
 from ubiquerg.system import is_writable
@@ -480,7 +480,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
                 rgc.update_tags(genome, asset_key, asset_tag, {CFG_TAG_DESC_KEY: args.tag_description})
             rgc.write()
         else:
-            _LOGGER.warn("Recipe does not exist for asset '{}'".format(asset_key))
+            pm.fail_pipeline(e=MissingRecipeError)
     pm.stop_pipeline()
 
 
