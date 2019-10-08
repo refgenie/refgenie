@@ -584,8 +584,8 @@ def main():
         _LOGGER.error("No command given")
         sys.exit(1)
 
-    gencfg = yacman.select_config(args.genome_config, CFG_ENV_VARS, check_exist=not args.command == INIT_CMD,
-                                  on_missing=lambda fp: fp)
+    gencfg = yacman.select_config(args.genome_config, CFG_ENV_VARS, check_exist=True, on_missing=lambda fp: fp,
+                                  strict_env=True)
     if gencfg is None:
         raise MissingGenomeConfigError(args.genome_config)
     _LOGGER.debug("Determined genome config: {}".format(gencfg))
