@@ -536,7 +536,7 @@ def _exec_list(rgc, remote, genome):
         pfx = "Local"
         assemblies, assets = rgc.list_local(genome=genome)
         # also get recipes
-        recipes = ", ".join(list(asset_build_packages.keys()))
+        recipes = ", ".join(sorted(list(asset_build_packages.keys())))
 
     return pfx, assemblies, assets, recipes
 
