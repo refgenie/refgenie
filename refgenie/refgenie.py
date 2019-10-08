@@ -123,7 +123,7 @@ def build_argparser():
 
     sps[BUILD_CMD].add_argument(
         '-v', '--volumes', nargs="+", required=False, default=None,
-        help='If using docker, also mount these folders as volumes')
+        help='If using docker, also mount these folders as volumes.')
 
     sps[BUILD_CMD].add_argument(
         '-o', '--outfolder', dest='outfolder', required=False, default=None,
@@ -131,7 +131,8 @@ def build_argparser():
              'genome_folder attribute in the genome configuration file.')
 
     sps[BUILD_CMD].add_argument(
-        "-r", "--requirements", action="store_true", help="Show the build requirements for the specified asset.")
+        "-r", "--requirements", action="store_true",
+        help="Show the build requirements for the specified asset and exit.")
 
     # add 'genome' argument to many commands
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD,
@@ -153,15 +154,21 @@ def build_argparser():
 
     sps[INSERT_CMD].add_argument(
         "-p", "--path", required=True,
-        help="Relative local path to asset")
+        help="Relative local path to asset.")
 
     sps[GETSEQ_CMD].add_argument(
         "-l", "--locus", required=True,
         help="Coordinates to retrieve sequence for; such has 'chr1:50000-50200'.")
 
-    sps[TAG_CMD].add_argument(
-        "-t", "--tag", required=True, type=str,
-        help="Tag to assign to an asset")
+    group = sps[TAG_CMD].add_mutually_exclusive_group(required=True)
+
+    group.add_argument(
+        "-t", "--tag", type=str,
+        help="Tag to assign to an asset.")
+
+    group.add_argument(
+        "-d", "--default", action="store_true",
+        help="Set the selected asset tag as the default one.")
 
     # Finally, arguments to the build command to give the files needed to do
     # the building. These should eventually move to a more flexible system that
@@ -731,6 +738,11 @@ def main():
         rgc = RefGenConf(filepath=gencfg, writable=True)  # genome cfg will be updated, create object in RW mode mode
         if len(asset_list) > 1:
             raise NotImplementedError("Can only tag 1 asset at a time")
+        if args.default:
+            # set the default tag and exit
+            rgc.set_default_pointer(a["genome"], a["asset"], a["tag"], force=True)
+            rgc.write()
+            sys.exit(0)
         ori_path = rgc.get_asset(a["genome"], a["asset"], a["tag"], enclosing_dir=True)
         new_path = os.path.abspath(os.path.join(ori_path, os.pardir, args.tag))
         if not rgc.tag_asset(a["genome"], a["asset"], a["tag"], args.tag):  # tagging in the RefGenConf object
