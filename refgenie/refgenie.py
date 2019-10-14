@@ -47,13 +47,6 @@ ASSET_REQUIRED = [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, TAG_CMD]
 
 BUILD_SPECIFIC_ARGS = ('fasta', 'ensembl_gtf', 'gencode_gtf', 'gff', 'context', 'refgene', 'dbnsfp')
 
-# This establishes the API with the server
-refgenie_server_api = {
-    "list_available_genomes": "/genomes",
-    'list_assets_by_genome': "/genome/{genome}",
-    'download_asset': "/asset/{genome}/{asset}",
-}
-
 
 def build_argparser():
     """
@@ -487,7 +480,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
                 rgc.update_tags(genome, asset_key, asset_tag, {CFG_TAG_DESC_KEY: args.tag_description})
             rgc.write()
         else:
-            pm.fail_pipeline(e=MissingRecipeError)
+            pm.fail_pipeline(e=MissingRecipeError("There is no '{}' recipe defined".format(asset_key)))
     pm.stop_pipeline()
 
 
