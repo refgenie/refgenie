@@ -67,10 +67,10 @@ def main():
     """ main workflow """
     parser = build_argparser()
     args, remaining_args = parser.parse_known_args()
-    cfg = select_config(args.config, refgenconf.CFG_ENV_VARS, check_exist=True)
+    cfg = select_config(args.config, refgenconf.CFG_ENV_VARS, check_exist=True, strict_env=True)
     if not cfg:
         raise MissingGenomeConfigError(args.config)
-    rgc = refgenconf.RefGenConf(filepath=cfg, ro=False)
+    rgc = refgenconf.RefGenConf(filepath=cfg, writable=True)
     pths = [args.path, mkabs(args.path, rgc.genome_folder)]
     if not untar_or_copy(pths[0], os.path.join(rgc.genome_folder, args.genome)) \
             and not untar_or_copy(pths[1], os.path.join(rgc.genome_folder, args.genome)):
