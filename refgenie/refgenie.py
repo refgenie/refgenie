@@ -330,19 +330,15 @@ def refgenie_build(gencfg, genome, asset_list, args):
         _LOGGER.debug("No outfolder provided, using genome config.")
         args.outfolder = rgc.genome_folder
 
-    outfolder = os.path.abspath(os.path.join(args.outfolder, genome))
-    if not _writeable(outfolder):
-        _LOGGER.error("Insufficient permissions to write to output folder: {}".
-                      format(outfolder))
-        return
-
-    _LOGGER.info("Output to: {} {} {}".format(genome, args.outfolder, outfolder))
-    _LOGGER.debug("Default config file: {}".format(default_config_file()))
+     _LOGGER.debug("Default config file: {}".format(default_config_file()))
 
     if args.config_file and not os.path.isfile(args.config_file):
         _LOGGER.debug("Config file path isn't a file: {}".
                       format(args.config_file))
         args.config_file = default_config_file()
+
+
+
 
     def build_asset(genome, asset_key, tag, build_pkg, outfolder, specific_args, **kwargs):
         """
@@ -358,6 +354,27 @@ def refgenie_build(gencfg, genome, asset_list, args):
             assets.
         """
 
+       outfolder = os.path.abspath(os.path.join(args.outfolder, genome, asset_key, tag, "_refgenie_build",))
+ 
+        if args.docker:
+            # Set up some docker stuff
+            if args.volumes:
+                # TODO: is volumes list defined here?
+                volumes = volumes.append(outfolder)
+            else:
+                volumes = outfolder
+
+        if not _writeable(outfolder):
+            _LOGGER.error("Insufficient permissions to write to output folder: {}".
+                          format(outfolder))
+            return
+
+        _LOGGER.info("Output to: {} {} {}".format(genome, args.outfolder, outfolder))
+
+        pm = pypiper.PipelineManager(name="refgenie", outfolder=outfolder, args=args)
+        tk = pypiper.NGSTk(pm=pm)
+        if args.docker:
+            pm.get_container(build_pkg[CONT], volumes)
         _LOGGER.debug("Asset build package: " + str(build_pkg))
         gat = [genome, asset_key, tag]  # create a bundle list to simplify calls below
         # collect variables required to populate the command templates
@@ -366,7 +383,9 @@ def refgenie_build(gencfg, genome, asset_list, args):
         command_list_populated = [x.format(**asset_vars) for x in build_pkg[CMD_LST]]
         # create output directory
         tk.make_dir(asset_vars["asset_outfolder"])
-        target = os.path.join(asset_vars["asset_outfolder"], "build_complete.flag")
+
+        target =  os.path.join(outfolder, "{}_{}__{}.flag".format(genome, asset_key, tag))
+        #target = os.path.join(asset_vars["asset_outfolder"], "build_complete.flag")
         # add target command
         command_list_populated.append("touch {target}".format(target=target))
         _LOGGER.debug("Command populated: '{}'".format(" ".join(command_list_populated)))
@@ -387,18 +406,10 @@ def refgenie_build(gencfg, genome, asset_list, args):
                 genome, asset_key, tag, enclosing_dir=True), pm)})
             rgc.set_default_pointer(*gat)
             rgc.write()
+
+        pm.stop_pipeline()
+        
         return True
-
-    pm = pypiper.PipelineManager(name="refgenie", outfolder=outfolder, args=args)
-    tk = pypiper.NGSTk(pm=pm)
-
-    if args.docker:
-        # Set up some docker stuff
-        if args.volumes:
-            # TODO: is volumes list defined here?
-            volumes = volumes.append(outfolder)
-        else:
-            volumes = outfolder
 
     for a in asset_list:
         asset_key = a["asset"]
@@ -446,9 +457,6 @@ def refgenie_build(gencfg, genome, asset_list, args):
                         raise ValueError(error_req_template.format(ra, asset_key))
                 except refgenconf.exceptions.MissingGenomeError:
                     raise ValueError(error_req_template.format(ra, asset_key))
-            if args.docker:
-                pm.get_container(asset_build_package[CONT], volumes)
-
             _LOGGER.info("Building asset '{}'".format(asset_key))    
             if not build_asset(genome, asset_key, asset_tag, asset_build_package, outfolder, specific_args, **input_assets):
                 _LOGGER.info("'{}/{}:{}' was not added to the config, but directory has been left in place. "
@@ -480,8 +488,8 @@ def refgenie_build(gencfg, genome, asset_list, args):
                 rgc.update_tags(genome, asset_key, asset_tag, {CFG_TAG_DESC_KEY: args.tag_description})
             rgc.write()
         else:
-            pm.fail_pipeline(e=MissingRecipeError("There is no '{}' recipe defined".format(asset_key)))
-    pm.stop_pipeline()
+            raise MissingRecipeError("There is no '{}' recipe defined".format(asset_key))
+
 
 
 def refgenie_init(genome_config_path, genome_server=DEFAULT_SERVER, config_version=REQ_CFG_VERSION):
