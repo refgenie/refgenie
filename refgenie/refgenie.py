@@ -354,20 +354,21 @@ def refgenie_build(gencfg, genome, asset_list, args):
             assets.
         """
 
+        parent_outfolder = os.path.join(outfolder, genome)
         content_outfolder = os.path.abspath(os.path.join(args.outfolder, genome, asset_key, tag,))
-        log_outfolder = os.path.abspath(os.path.join(args.outfolder, genome, asset_key, tag, "_refgenie_build"))
-        _LOGGER.info("Output content: {}; logs: {}".format(content_outfolder, log_outfolder))
+        log_outfolder = os.path.abspath(os.path.join(parent_outfolder, genome, asset_key, tag, "_refgenie_build"))
+        _LOGGER.info("Output content: {}; logs: {}".format(parent_outfolder, log_outfolder))
         if args.docker:
             # Set up some docker stuff
             if args.volumes:
                 # TODO: is volumes list defined here?
-                volumes = volumes.append(content_outfolder)
+                volumes = volumes.append(parent_outfolder)
             else:
-                volumes = content_outfolder
+                volumes = parent_outfolder
 
-        if not _writeable(content_outfolder):
+        if not _writeable(parent_outfolder):
             _LOGGER.error("Insufficient permissions to write to output folder: {}".
-                          format(content_outfolder))
+                          format(parent_outfolder))
             return
 
 
@@ -379,7 +380,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
         _LOGGER.debug("Asset build package: " + str(build_pkg))
         gat = [genome, asset_key, tag]  # create a bundle list to simplify calls below
         # collect variables required to populate the command templates
-        asset_vars = get_asset_vars(*gat, content_outfolder, specific_args, **kwargs)
+        asset_vars = get_asset_vars(*gat, parent_outfolder, specific_args, **kwargs)
         # populate command templates
         command_list_populated = [x.format(**asset_vars) for x in build_pkg[CMD_LST]]
         # create output directory
