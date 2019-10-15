@@ -330,7 +330,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
         _LOGGER.debug("No outfolder provided, using genome config.")
         args.outfolder = rgc.genome_folder
 
-     _LOGGER.debug("Default config file: {}".format(default_config_file()))
+    _LOGGER.debug("Default config file: {}".format(default_config_file()))
 
     if args.config_file and not os.path.isfile(args.config_file):
         _LOGGER.debug("Config file path isn't a file: {}".
@@ -354,7 +354,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
             assets.
         """
 
-       outfolder = os.path.abspath(os.path.join(args.outfolder, genome, asset_key, tag, "_refgenie_build",))
+        outfolder = os.path.abspath(os.path.join(args.outfolder, genome, asset_key, tag, "_refgenie_build",))
  
         if args.docker:
             # Set up some docker stuff
