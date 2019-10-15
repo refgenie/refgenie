@@ -8,6 +8,7 @@ import os
 import sys
 import csv
 import signal
+import json
 
 import pyfaidx
 
@@ -337,9 +338,6 @@ def refgenie_build(gencfg, genome, asset_list, args):
                       format(args.config_file))
         args.config_file = default_config_file()
 
-
-    
-
     def build_asset(genome, asset_key, tag, build_pkg, genome_outfolder, specific_args, **kwargs):
         """
         Builds assets with pypiper and updates a genome config file.
@@ -369,8 +367,6 @@ def refgenie_build(gencfg, genome, asset_list, args):
                           format(genome_outfolder))
             return
 
-
-
         pm = pypiper.PipelineManager(name="refgenie", outfolder=log_outfolder, args=args)
         tk = pypiper.NGSTk(pm=pm)
         if args.docker:
@@ -384,8 +380,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
         # create output directory
         tk.make_dir(asset_vars["asset_outfolder"])
 
-        target =  os.path.join(log_outfolder, "{}_{}__{}.flag".format(genome, asset_key, tag))
-        #target = os.path.join(asset_vars["asset_outfolder"], "build_complete.flag")
+        target = os.path.join(log_outfolder, "{}_{}__{}.flag".format(genome, asset_key, tag))
         # add target command
         command_list_populated.append("touch {target}".format(target=target))
         _LOGGER.debug("Command populated: '{}'".format(" ".join(command_list_populated)))
@@ -397,6 +392,9 @@ def refgenie_build(gencfg, genome, asset_list, args):
             _LOGGER.error("asset '{}' build failed".format(asset_key))
             return False
         else:
+            # save build recipe to the JSON-formatted file
+            with open(os.path.join(log_outfolder, "build_recipe.json"), 'w') as outfile:
+                json.dump(build_pkg, outfile)
             # update and write refgenie genome configuration
             rgc.update_assets(*gat[0:2], data={CFG_ASSET_DESC_KEY: build_pkg[DESC]})
             rgc.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key})
@@ -406,7 +404,6 @@ def refgenie_build(gencfg, genome, asset_list, args):
                 genome, asset_key, tag, enclosing_dir=True), pm)})
             rgc.set_default_pointer(*gat)
             rgc.write()
-
         pm.stop_pipeline()
         
         return True
@@ -467,10 +464,6 @@ def refgenie_build(gencfg, genome, asset_list, args):
             if asset_key == 'fasta':
                 _LOGGER.info("Computing initial genome digest...")
                 collection_checksum, content_checksums = fasta_checksum(specific_args["fasta"])
-                if genome in rgc.genomes and CFG_CHECKSUM_KEY in rgc.genomes[genome] \
-                        and collection_checksum != rgc.genomes[genome][CFG_CHECKSUM_KEY]:
-                    _LOGGER.info("Checksum doesn't match")
-                    return False
                 _LOGGER.info("Initializing genome...")
                 refgenie_initg(rgc, genome, collection_checksum, content_checksums)
             _LOGGER.info("Finished building asset '{}'".format(asset_key))
@@ -490,7 +483,6 @@ def refgenie_build(gencfg, genome, asset_list, args):
             rgc.write()
         else:
             raise MissingRecipeError("There is no '{}' recipe defined".format(asset_key))
-
 
 
 def refgenie_init(genome_config_path, genome_server=DEFAULT_SERVER, config_version=REQ_CFG_VERSION):
