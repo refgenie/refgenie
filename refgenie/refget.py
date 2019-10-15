@@ -21,6 +21,8 @@ def parse_fasta(fa_file):
         # unzip the file for checksumming, then rezip it for the rest of the
         # asset build.
         # TODO: streamline this to avoid repeated compress/decompress
+        # in refgenie we feed this function with uncompressed, newly built
+        # FASTA file, so compression issues are not relevant
         os.system("gunzip {}".format(fa_file))
         fa_file_unzipped = fa_file.replace(".gz", "")
         fa_object = pyfaidx.Fasta(fa_file_unzipped)
