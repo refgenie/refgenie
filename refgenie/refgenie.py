@@ -858,7 +858,7 @@ def get_dir_digest(path, pm=None):
     if not is_command_callable("md5sum"):
         raise OSError("md5sum command line tool is required for asset digest calculation. \n"
                       "Install and try again, e.g on macOS: 'brew install md5sha1sum'")
-    cmd = "cd {}; find . -type f -not -path '_refgenie_build' " \
+    cmd = "cd {}; find . -type f -not -path './_refgenie_build*' " \
           "-exec md5sum {{}} \; |" \
           " sort -k 2 | awk '{{print $1}}' | " \
           "md5sum".format(path)
