@@ -354,7 +354,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
             assets.
         """
 
-        log_outfolder = os.path.abspath(os.path.join(asset_outfolder, genome, asset_key, tag, "_refgenie_build"))
+        log_outfolder = os.path.abspath(os.path.join(asset_outfolder, "_refgenie_build"))
         _LOGGER.info("Output content: {}; logs: {}".format(asset_outfolder, log_outfolder))
         if args.docker:
             # Set up some docker stuff
