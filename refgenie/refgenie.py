@@ -463,7 +463,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
             # If the asset was a fasta, we init the genome
             if asset_key == 'fasta':
                 _LOGGER.info("Computing initial genome digest...")
-                collection_checksum, content_checksums = fasta_checksum(specific_args["fasta"])
+                collection_checksum, content_checksums = fasta_checksum(rgc.get_asset(genome, "fasta", asset_tag))
                 _LOGGER.info("Initializing genome...")
                 refgenie_initg(rgc, genome, collection_checksum, content_checksums)
             _LOGGER.info("Finished building asset '{}'".format(asset_key))
