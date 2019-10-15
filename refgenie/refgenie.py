@@ -569,8 +569,7 @@ def main():
     parser = logmuse.add_logging_options(build_argparser())
     args, remaining_args = parser.parse_known_args()
     global _LOGGER
-    _LOGGER = logmuse.logger_via_cli(args)
-    logmuse.logger_via_cli(args, name=refgenconf.__name__)
+    _LOGGER = logmuse.logger_via_cli(args, make_root=True)
     _LOGGER.debug("refgenie {}".format(__version__))
     _LOGGER.debug("Args: {}".format(args))
 
