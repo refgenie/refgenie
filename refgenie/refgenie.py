@@ -391,7 +391,8 @@ def refgenie_build(gencfg, genome, asset_list, args):
             return False
         else:
             # save build recipe to the JSON-formatted file
-            with open(os.path.join(log_outfolder, "build_recipe.json"), 'w') as outfile:
+            recipe_file_name = "build_recipe_{}__{}.json".format(asset_key, tag)
+            with open(os.path.join(log_outfolder, recipe_file_name), 'w') as outfile:
                 json.dump(build_pkg, outfile)
             # update and write refgenie genome configuration
             rgc_rw = RefGenConf(filepath=gencfg, writable=True, wait_max=120)
