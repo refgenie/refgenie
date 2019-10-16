@@ -483,6 +483,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
                                                                                args.tag_description))
                 rgc_rw.update_tags(genome, asset_key, asset_tag, {CFG_TAG_DESC_KEY: args.tag_description})
             rgc_rw.write()
+            del rgc_rw
         else:
             raise MissingRecipeError("There is no '{}' recipe defined".format(asset_key))
 
