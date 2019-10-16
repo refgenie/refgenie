@@ -56,7 +56,8 @@ asset_build_packages = {
             "cat {asset_outfolder}/dbNSFP*variant.chr* | grep -v '#' >> {asset_outfolder}/{genome}_dbNSFP.txt",
             "rm {asset_outfolder}/dbNSFP*_variant.chr*",
             "bgzip -@ 4 {asset_outfolder}/{genome}_dbNSFP.txt",
-            "tabix -s 1 -b 2 -e 2 {asset_outfolder}/{genome}_dbNSFP.txt.gz"
+            "tabix -s 1 -b 2 -e 2 {asset_outfolder}/{genome}_dbNSFP.txt.gz",
+            "rm `find . -type f -not -path './_refgenie_build*' -not -path './hg38_dbNSFP.txt.*'`"
         ]
     },
     "bowtie2_index": {
