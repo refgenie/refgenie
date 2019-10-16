@@ -378,7 +378,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
         # create output directory
         tk.make_dir(asset_vars["asset_outfolder"])
 
-        target = os.path.join(log_outfolder, "{}_{}__{}.flag".format(genome, asset_key, tag))
+        target = os.path.join(log_outfolder, TEMPLATE_TARGET.format(genome, asset_key, tag))
         # add target command
         command_list_populated.append("touch {target}".format(target=target))
         _LOGGER.debug("Command populated: '{}'".format(" ".join(command_list_populated)))
@@ -391,11 +391,11 @@ def refgenie_build(gencfg, genome, asset_list, args):
             return False
         else:
             # save build recipe to the JSON-formatted file
-            recipe_file_name = "build_recipe_{}__{}.json".format(asset_key, tag)
+            recipe_file_name = TEMPLATE_RECIPE_JSON.format(asset_key, tag)
             with open(os.path.join(log_outfolder, recipe_file_name), 'w') as outfile:
                 json.dump(build_pkg, outfile)
             # update and write refgenie genome configuration
-            rgc_rw = RefGenConf(filepath=gencfg, writable=True, wait_max=120)
+            rgc_rw = RefGenConf(filepath=gencfg, writable=True, wait_max=600)
             rgc_rw.update_assets(*gat[0:2], data={CFG_ASSET_DESC_KEY: build_pkg[DESC]})
             rgc_rw.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key})
             rgc_rw.update_seek_keys(*gat, keys={k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
@@ -460,7 +460,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
                 _LOGGER.info("'{}/{}:{}' was not added to the config, but directory has been left in place. "
                              "See the log file for details".format(genome, asset_key, asset_tag))
                 return
-            rgc_rw = RefGenConf(filepath=gencfg, writable=True, wait_max=120)  # create object for writing
+            rgc_rw = RefGenConf(filepath=gencfg, writable=True, wait_max=600)  # create object for writing
             # If the asset was a fasta, we init the genome
             if asset_key == 'fasta':
                 _LOGGER.info("Computing initial genome digest...")
