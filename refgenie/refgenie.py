@@ -457,9 +457,12 @@ def refgenie_build(gencfg, genome, asset_list, args):
                     raise ValueError(error_req_template.format(ra, asset_key))
             _LOGGER.info("Building asset '{}'".format(asset_key))
             genome_outfolder = os.path.join(args.outfolder, genome)
-            if not build_asset(genome, asset_key, asset_tag, asset_build_package, genome_outfolder, specific_args, **input_assets):
+            if not build_asset(genome, asset_key, asset_tag, asset_build_package, genome_outfolder,
+                               specific_args, **input_assets):
+                log_path = os.path.abspath(os.path.join(genome_outfolder, asset_key, asset_tag,
+                                                        "_refgenie_build", "refgenie_log.md"))
                 _LOGGER.info("'{}/{}:{}' was not added to the config, but directory has been left in place. "
-                             "See the log file for details".format(genome, asset_key, asset_tag))
+                             "See the log file for details: {}".format(genome, asset_key, asset_tag, log_path))
                 return
             rgc_rw = RefGenConf(filepath=gencfg, writable=True, wait_max=600)  # create object for writing
             # If the asset was a fasta, we init the genome
