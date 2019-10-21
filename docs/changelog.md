@@ -2,7 +2,7 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
-## [0.7.0] - Unreleased
+## [0.7.0] - 2019-10-21
 
 ### Added
 - `import_igenome` command line tool for iGenomes integration with Refgenie
