@@ -400,8 +400,9 @@ def refgenie_build(gencfg, genome, asset_list, args):
             rgc_rw.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key})
             rgc_rw.update_seek_keys(*gat, keys={k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
             # in order to conveniently get the path to digest we update the tags metadata in two steps
-            rgc_rw.update_tags(*gat, data={CFG_ASSET_CHECKSUM_KEY: get_dir_digest(rgc_rw.get_asset(
-                genome, asset_key, tag, enclosing_dir=True), pm)})
+            digest = get_dir_digest(rgc_rw.get_asset(genome, asset_key, tag, enclosing_dir=True), pm)
+            rgc_rw.update_tags(*gat, data={CFG_ASSET_CHECKSUM_KEY: digest})
+            _LOGGER.info("Asset digest: {}".format(digest))
             rgc_rw.set_default_pointer(*gat)
             rgc_rw.write()
         pm.stop_pipeline()
