@@ -1,6 +1,6 @@
 # Refgenie genome configuration file
 
-Refgenie will read and write a genome configuration file in yaml format. In general, you shouldn't need to mess with the config file. You create one with `refgenie init -c genome_config.yaml`, then you add assets using either `refgenie pull` or `refgenie build`. You can also add your own custom assets with `refgenie add`, which is explained in [using external assets](external_assets.md).  Refgenie will use the config file to remember what assets are available and where they are.
+Refgenie will read and write a genome configuration file in yaml format. In general, you shouldn't need to mess with the config file. You create one with `refgenie init -c genome_config.yaml`, then you add assets using either `refgenie pull` or `refgenie build`. You can also add your own custom assets with `refgenie add`, which is explained in [using custom assets](custom_assets.md).  Refgenie will use the config file to remember what assets are available and where they are.
 
 But here's how the config file works, in case for some reason you do need to edit some things by hand. Here's an example file to get you started: 
 
@@ -63,7 +63,7 @@ genomes:
 
 Note that for a fully operational config just `genome_folder`, `genome_server`, `genomes`, `assets`, `tags` and `seek_keys` keys are required.
 
-For genomes that are managed by `refgenie` (that is, they were built or pulled with `refgenie`), these asset attributes will be automatically populated. You can edit them and refgenie will respect your edits (unless you re-build or re-pull the asset, which will overwrite those fields). You can also add your own assets and `refgenie` won't touch them. For more info, see [using external assets](external_assets.md).
+For genomes that are managed by `refgenie` (that is, they were built or pulled with `refgenie`), these asset attributes will be automatically populated. You can edit them and refgenie will respect your edits (unless you re-build or re-pull the asset, which will overwrite those fields). You can also add your own assets and `refgenie` won't touch them. For more info, see [using custom assets](custom_assets.md).
 
 ## Genome config versions
 

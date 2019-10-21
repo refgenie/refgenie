@@ -15,7 +15,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `refgenie getseq` command that retrieves sequence ranges from a genome
 - `seek_keys`, which provide control over files within an asset
 - `asset_digests`, which are calculated after asset building and used to assure asset provenance 
-- asset relationships recording (`asset_children`,`asset_parents` fields)
+- asset relationships recording (`asset_children`, `asset_parents` fields)
 
 ### Changed
 - assets can be referred to by registry paths: `genome/asset.seek_key:tag`

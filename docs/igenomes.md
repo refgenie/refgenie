@@ -11,14 +11,12 @@ refgenie init -c $REFGENIE
 
 And then you have two options:
 
-## `import_igenome` tool (recommended)
+## Option 1: `import_igenome` (recommended)
 
-This command line tool is distributed with `refgenie` via PyPi (ready to use after `refgenie` installation)
-
-It adds all the assets enclosed in the genome archive downloaded from the iGenomes website to the `refgenie` local asset inventory. The required inputs are:
+This command line tool is distributed with `refgenie` and is ready to use after installing `refgenie`. It adds all the assets enclosed in the genome archive downloaded from the iGenomes website to the `refgenie` local asset inventory. The required inputs are:
 
 * `-g`: name of the genome that should be assigned to the assets,
-* `-p`: a path to the downloaded archive or a directory (unarchived archive).
+* `-p`: a path to the downloaded archive or a directory (unarchived iGenomes folder).
 
 usage: 
 
@@ -57,9 +55,9 @@ Added assets:
 - staph/WholeGenomeFasta
 ```
 
-## `refgenie add`
+## Option 2: `refgenie add`
 
-Or add individual assets you want `refgenie` to track with `refgenie add`. This way of iGenomes integration with `refgenie` is useful if you do not plan to add all of the assets for the downloaded iGenome
+You can also add individual assets you want `refgenie` to track with `refgenie add`. This way of iGenomes integration with `refgenie` is useful if you do not plan to add all of the assets for the downloaded iGenome. It is also useful beyond iGenomes, since you can technically add whatever assets you want, from whatever sources, into your refgenie.
  
 
 ```console
@@ -70,11 +68,11 @@ So, after downloading an archive from iGenomes website:
 
 ```console
 tar -xf Staphylococcus_aureus_NCTC_8325_NCBI_2006-02-13.tar.gz
-refgenie init $REFGENIE
-refgenie add staph/bowtie2_index -p Staphylococcus_aureus_NCTC_8325/NCBI/2006-02-13/Sequence/Bowtie2Index
+refgenie add staph/bowtie2_index \
+  -p Staphylococcus_aureus_NCTC_8325/NCBI/2006-02-13/Sequence/Bowtie2Index
 ```
 
-Now we can `seek` any of those assets:
+Now we can `seek` any added assets:
 
 ```console
 refgenie seek staph/BWAIndex

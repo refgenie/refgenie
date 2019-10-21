@@ -2,7 +2,7 @@
 
 ## Can I use `refgenie` with my own genome resources I've already set up?
 
-Yes, you can. Of course, one of refgenie's strengths is that it makes it easy to start a new genome resource folder from scratch. But if you've already set yours up and want to use *other* parts of the refgenie system (like the Python API, for instance), you can also do that. All you need to do is write your assets into your genome configuration file manually. Refgenie's automatic management of the configuration file won't alter these so you can use them for whatever you need.
+Yes, you can. Of course, one of refgenie's strengths is that it makes it easy to start a new genome resource folder from scratch. But if you've already set yours up and want to use *other* parts of the refgenie system (like the Python API, for instance), you can also do that. All you need to do is write your assets into your genome configuration file, which is easy using [refgenie add](custom_assets).
 
 ## Can I add an asset to refgenie server?
 
@@ -12,6 +12,10 @@ Not to the central server -- at least, not automatically. But what you *can* do 
 
 Yes, you can. In `refgenie v0.7.0` we've introduced [tagging](tag.md), to facilitate just that!
 
-## Can a research group/organisation share a single genome config?
+## Can multiple users share a single refgenie configuration file?
 
-Yes. Latest release, `refgenie v0.7.0`, supports genome config file locks and race-free writes. Consequently, only one user (`refgenie` process) at a time can edit and write to the shared config file, which prevents assets metadata loss. 
+Yes, this is now the recommended way to use refgenie for groups. Starting with release `v0.7.0`, refgenie now supports genome config file locks and race-free writes, so refgenie will now automatically control multi-user conflicts to prevent metadata loss. With this change, multiple users can simultaneously read and write a single group-level configuration file. 
+
+## How can track how a downloaded asset was created?
+
+Starting with the server API `v2`, you can use an endpoint that will provide a detailed log output: `/v2/asset/{genome}/{asset}/log`. This log file specifies exactly how the asset was created.
