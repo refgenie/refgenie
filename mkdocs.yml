@@ -3,6 +3,7 @@ site_logo: img/refgenie_logo_light.svg
 site_url: http://refgenie.databio.org/
 repo_url: http://github.com/databio/refgenie
 pypi_name: refgenie
+paper_link: https://doi.org/10.1101/698704
 
 nav:
   - Getting Started: 
@@ -10,10 +11,12 @@ nav:
     - Overview: overview.md
     - Install and configure: install.md
   - How-to guides:
+    - Refer to assets: asset_registry_paths.md
     - Download pre-built assets: pull.md
     - Use custom genomes: build.md
     - Retrieve paths to assets: seek.md
-    - Use refgenie from python: refgenconf.md
+    - Use asset tags: tag.md
+    - Use refgenie from Python: refgenconf.md
     - Use refgenie with iGenomes: igenomes.md
     - Use custom assets: custom_assets.md
     - Run my own asset server: refgenieserver.md

@@ -13,18 +13,18 @@ refgenie listr
 The `pull` *downloads* the specific asset of your choice:
 
 ```console
-refgenie pull -g GENOME -a ASSET
+refgenie pull GENOME/ASSET
 ```
 Where `GENOME` refers to a genome key (*e.g.* hg38) and `ASSET` refers to one or more specific asset keys (*e.g.* bowtie2_index). For example:
 
 ```console
-refgenie pull -g hg38 -a bowtie2_index
+refgenie pull hg38/bowtie2_index
 ```
 
 You can also pull many assets at once:
 
 ```console
-refgenie pull --genome mm10 --asset bowtie2_index hisat2_index
+refgenie pull --genome mm10 bowtie2_index hisat2_index
 ```
 
 
@@ -34,7 +34,7 @@ That's it! Easy.
 
 ## Downloading manually
 
-You can also browse and download pre-built refgenie assemblies manually at [refgenomes.databio.org](http://refgenomes.databio.org).
+You can also browse and download pre-built `refgenie` assemblies manually at [refgenomes.databio.org](http://refgenomes.databio.org).
 
 <!-- 
 ## Older builds (deprecated)

@@ -14,7 +14,7 @@ It's pretty simple: the software that runs refgenie server is [available on GitH
 docker run --rm -d -p 80:80 \
 	-v /path/to/genomes_archive:/genomes \
 	--name refgenieservercon \
-	refgenieserverim refgenieserver -c /genomes/genome_config.yaml serve 
+	refgenieserverim refgenieserver serve -c /genomes/genome_config.yaml 
 ```
 
 Mount your archived genomes folder to `/genomes` in the container, and you're essentially good to go.

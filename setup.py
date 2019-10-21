@@ -25,9 +25,11 @@ with open("refgenie/_version.py", 'r') as versionfile:
 try:
     import pypandoc
     long_description = pypandoc.convert_file('README.md', 'rst')
+    msg = "\033[032mPandoc conversion succeeded.\033[0m"
 except(IOError, ImportError, OSError):
-    print("Warning -- couldn't convert README to rst")
+    msg = "\033[0;31mWarning: pandoc conversion failed!\033[0m"
     long_description = open('README.md').read()
+
 
 setup(
     name='refgenie',
@@ -48,7 +50,8 @@ setup(
     license="BSD2",
     entry_points={
         "console_scripts": [
-            'refgenie = refgenie.refgenie:main'
+            'refgenie = refgenie.refgenie:main',
+            'import_igenome = refgenie.add_assets_igenome:main'
         ],
     },
     keywords="bioinformatics, sequencing, ngs",
@@ -58,3 +61,5 @@ setup(
     author=u'Nathan Sheffield, Vince Reuter, Michal Stolarczyk',
     **extra
 )
+
+print(msg)

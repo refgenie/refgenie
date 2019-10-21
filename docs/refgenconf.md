@@ -1,13 +1,13 @@
 # Refgenie from within Python
 
-Third-party python tools can rely on our Python object for access to refgenie assets. For this we have a Python package called `refgenconf` which provides a data type with methods to access local and remote genome assets.
+Third-party python tools can rely on our Python object for access to refgenie assets. For this we have a Python package called `refgenconf` which provides a class with methods to access local and remote genome assets.
 
 ## Installing
 
-You should already have `refgenconf` if you've installed `refgenie`, but if needed you can also install it separately with some variant of `pip install refgenconf`, depending on context.
+You should already have `refgenconf` if you've installed `refgenie`, but if needed you can also install it separately with some variant of `pip install refgenconf`.
 
 ## Quick start
-Create a `RefGenConf` object, which is the package's main data type. You just need to give it a genome configuration file (in YAML format).
+Create a `RefGenConf` object, which is the package's main data type. You just need to give it a refgenie genome configuration file (in YAML format). You can create a template using `refgenie init`.
 
 ```python
 import refgenconf

@@ -2,9 +2,9 @@
 
 We welcome contributions from the community.
 
-## New indexers
+## New assets
 
-If you want to add a new indexer, please update the Dockerfile with instructions for how to install the index builder software, and how to index a `.fa.gz` file using it. 
+We are interested in working with groups who want to add assets into the refgenie system. If you want to add an asset, you can do so by following the templates in the [asset build recipes file](https://github.com/databio/refgenie/blob/master/refgenie/asset_build_packages.py). We are exploring ways of making this more approachable but for now, that's the way to do it.
 
 ## Suggestions and feedback
 
