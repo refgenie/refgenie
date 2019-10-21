@@ -56,7 +56,7 @@ def build_argparser():
     :return argparse.ArgumentParser
     """
 
-    banner = "%(prog)s - builds and manages reference genome assemblies"
+    banner = "%(prog)s - reference genome asset manager"
     additional_description = "\nhttps://refgenie.databio.org"
 
     parser = VersionInHelpParser(
@@ -80,7 +80,7 @@ def build_argparser():
         INSERT_CMD: "Add local asset to the config file.",
         REMOVE_CMD: "Remove a local asset.",
         GETSEQ_CMD: "Get sequences from a genome.",
-        TAG_CMD: "Assign a selected tag to an asset."
+        TAG_CMD: "Tag an asset."
     }
 
     sps = {}
@@ -152,7 +152,7 @@ def build_argparser():
 
     sps[GETSEQ_CMD].add_argument(
         "-l", "--locus", required=True,
-        help="Coordinates to retrieve sequence for; such has 'chr1:50000-50200'.")
+        help="Coordinates of desired sequence; e.g. 'chr1:50000-50200'.")
 
     group = sps[TAG_CMD].add_mutually_exclusive_group(required=True)
 
