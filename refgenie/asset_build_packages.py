@@ -51,12 +51,13 @@ asset_build_packages = {
         CMD_LST: [
             "cp {dbnsfp} {asset_outfolder}/{genome}.zip",
             "unzip {asset_outfolder}/{genome}.zip -d {asset_outfolder}",
-            "gunzip {asset_outfolder}/*variant.chr*.gz",
+            "gunzip -v {asset_outfolder}/*variant.chr*.gz",
             "head -n1 {asset_outfolder}/dbNSFP*_variant.chr1 > {asset_outfolder}/{genome}_dbNSFP.txt",
             "cat {asset_outfolder}/dbNSFP*variant.chr* | grep -v '#' >> {asset_outfolder}/{genome}_dbNSFP.txt",
             "rm {asset_outfolder}/dbNSFP*_variant.chr*",
             "bgzip -@ 4 {asset_outfolder}/{genome}_dbNSFP.txt",
-            "tabix -s 1 -b 2 -e 2 {asset_outfolder}/{genome}_dbNSFP.txt.gz"
+            "tabix -s 1 -b 2 -e 2 {asset_outfolder}/{genome}_dbNSFP.txt.gz",
+            "rm `find {asset_outfolder} -type f -not -path '{asset_outfolder}/_refgenie_build*' -not -path '{asset_outfolder}/hg38_dbNSFP.txt.*'`"
         ]
     },
     "bowtie2_index": {

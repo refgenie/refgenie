@@ -301,9 +301,7 @@ def refgenie_initg(rgc, genome, collection_checksum, content_checksums):
     :param str collection_checksum: genome checksum
     :param dict content_checksums: checksums of individual content_checksums, e.g. chromosomes
     """
-    rgc.update_genomes(genome, {
-        CFG_CHECKSUM_KEY: collection_checksum
-    })
+    rgc.update_genomes(genome, data={CFG_CHECKSUM_KEY: collection_checksum})
     genome_dir = os.path.join(rgc[CFG_FOLDER_KEY], genome)
     if is_writable(genome_dir):
         output_file = os.path.join(genome_dir, "{}_sequence_digests.tsv".format(genome))
@@ -323,7 +321,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
     :param str gencfg: path to the genome configuration file
     :param argparse.Namespace args: parsed command-line options/arguments
     """
-    rgc = RefGenConf(filepath=gencfg, writable=True, wait_max=120)  # genome cfg will be updated, create object in RW mode
+    rgc = RefGenConf(filepath=gencfg, writable=False)
     specific_args = {k: getattr(args, k) for k in BUILD_SPECIFIC_ARGS}
 
     if not hasattr(args, "outfolder") or not args.outfolder:
@@ -380,30 +378,32 @@ def refgenie_build(gencfg, genome, asset_list, args):
         # create output directory
         tk.make_dir(asset_vars["asset_outfolder"])
 
-        target = os.path.join(log_outfolder, "{}_{}__{}.flag".format(genome, asset_key, tag))
+        target = os.path.join(log_outfolder, TEMPLATE_TARGET.format(genome, asset_key, tag))
         # add target command
         command_list_populated.append("touch {target}".format(target=target))
         _LOGGER.debug("Command populated: '{}'".format(" ".join(command_list_populated)))
         try:
             # run build command
-            signal.signal(signal.SIGINT, _handle_sigint(gat, rgc))
+            signal.signal(signal.SIGINT, _handle_sigint(gat))
             pm.run(command_list_populated, target, container=pm.container)
         except pypiper.exceptions.SubprocessError:
             _LOGGER.error("asset '{}' build failed".format(asset_key))
             return False
         else:
             # save build recipe to the JSON-formatted file
-            with open(os.path.join(log_outfolder, "build_recipe.json"), 'w') as outfile:
+            recipe_file_name = TEMPLATE_RECIPE_JSON.format(asset_key, tag)
+            with open(os.path.join(log_outfolder, recipe_file_name), 'w') as outfile:
                 json.dump(build_pkg, outfile)
             # update and write refgenie genome configuration
-            rgc.update_assets(*gat[0:2], data={CFG_ASSET_DESC_KEY: build_pkg[DESC]})
-            rgc.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key})
-            rgc.update_seek_keys(*gat, keys={k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
+            rgc_rw = RefGenConf(filepath=gencfg, writable=True, wait_max=600)
+            rgc_rw.update_assets(*gat[0:2], data={CFG_ASSET_DESC_KEY: build_pkg[DESC]})
+            rgc_rw.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key})
+            rgc_rw.update_seek_keys(*gat, keys={k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
             # in order to conveniently get the path to digest we update the tags metadata in two steps
-            rgc.update_tags(*gat, data={CFG_ASSET_CHECKSUM_KEY: get_dir_digest(rgc.get_asset(
+            rgc_rw.update_tags(*gat, data={CFG_ASSET_CHECKSUM_KEY: get_dir_digest(rgc_rw.get_asset(
                 genome, asset_key, tag, enclosing_dir=True), pm)})
-            rgc.set_default_pointer(*gat)
-            rgc.write()
+            rgc_rw.set_default_pointer(*gat)
+            rgc_rw.write()
         pm.stop_pipeline()
         
         return True
@@ -460,28 +460,30 @@ def refgenie_build(gencfg, genome, asset_list, args):
                 _LOGGER.info("'{}/{}:{}' was not added to the config, but directory has been left in place. "
                              "See the log file for details".format(genome, asset_key, asset_tag))
                 return
+            rgc_rw = RefGenConf(filepath=gencfg, writable=True, wait_max=600)  # create object for writing
             # If the asset was a fasta, we init the genome
             if asset_key == 'fasta':
                 _LOGGER.info("Computing initial genome digest...")
                 collection_checksum, content_checksums = \
-                    fasta_checksum(rgc.get_asset(genome, "fasta", asset_tag, "fasta"))
+                    fasta_checksum(rgc_rw.get_asset(genome, "fasta", asset_tag, "fasta"))
                 _LOGGER.info("Initializing genome...")
-                refgenie_initg(rgc, genome, collection_checksum, content_checksums)
+                refgenie_initg(rgc_rw, genome, collection_checksum, content_checksums)
             _LOGGER.info("Finished building asset '{}'".format(asset_key))
             # update asset relationships
-            rgc.update_relatives_assets(genome, asset_key, asset_tag, parent_assets)  # adds parents
+            rgc_rw.update_relatives_assets(genome, asset_key, asset_tag, parent_assets)  # adds parents
             for i in parent_assets:
                 parsed_parent = prp(i)
-                rgc.update_relatives_assets(genome, parsed_parent["item"], parsed_parent["tag"],
+                rgc_rw.update_relatives_assets(genome, parsed_parent["item"], parsed_parent["tag"],
                                             ["{}:{}".format(asset_key, asset_tag)], True)  # adds children
             if args.genome_description is not None:
                 _LOGGER.debug("adding genome ({}) description: '{}'".format(genome, args.genome_description))
-                rgc.update_genomes(genome, {CFG_GENOME_DESC_KEY: args.genome_description})
+                rgc_rw.update_genomes(genome, {CFG_GENOME_DESC_KEY: args.genome_description})
             if args.tag_description is not None:
                 _LOGGER.debug("adding tag ({}/{}:{}) description: '{}'".format(genome, asset_key, asset_tag,
                                                                                args.tag_description))
-                rgc.update_tags(genome, asset_key, asset_tag, {CFG_TAG_DESC_KEY: args.tag_description})
-            rgc.write()
+                rgc_rw.update_tags(genome, asset_key, asset_tag, {CFG_TAG_DESC_KEY: args.tag_description})
+            rgc_rw.write()
+            del rgc_rw
         else:
             raise MissingRecipeError("There is no '{}' recipe defined".format(asset_key))
 
@@ -647,7 +649,7 @@ def main():
             refgenie_add(rgc, asset_list[0], args.path)
 
     elif args.command == PULL_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=True)  # genome cfg will be updated, create object in RW mode mode
+        rgc = RefGenConf(filepath=gencfg)
         outdir = rgc[CFG_FOLDER_KEY]
         if not os.path.exists(outdir):
             raise MissingFolderError(outdir)
@@ -659,10 +661,19 @@ def main():
             return
 
         for a in asset_list:
-            rgc.pull_asset(a["genome"], a["asset"], a["tag"], unpack=not args.no_untar)
+            gat, archive_data = rgc.pull_asset(a["genome"], a["asset"], a["tag"], unpack=not args.no_untar)
+            if archive_data is not None:
+                rgc_rw = RefGenConf(filepath=gencfg, writable=True)
+                [rgc_rw.chk_digest_update_child(a["genome"], x, "{}:{}".format(gat[1], gat[2]))
+                 for x in archive_data[CFG_ASSET_PARENTS_KEY] if CFG_ASSET_PARENTS_KEY in archive_data]
+                rgc_rw.update_tags(*gat,
+                                   data={attr: archive_data[attr] for attr in ATTRS_COPY_PULL if attr in archive_data})
+                rgc_rw.set_default_pointer(*gat)
+                rgc_rw.write()
+                del rgc_rw
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
-        rgc = RefGenConf(filepath=gencfg, writable=False)  # genome cfg will not be updated, create object in read-only mode
+        rgc = RefGenConf(filepath=gencfg, writable=False)
         pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
         _LOGGER.info("{} genomes: {}".format(pfx, genomes))
         if args.command != LIST_REMOTE_CMD:  # Not implemented yet
@@ -849,7 +860,10 @@ def get_dir_digest(path, pm=None):
     if not is_command_callable("md5sum"):
         raise OSError("md5sum command line tool is required for asset digest calculation. \n"
                       "Install and try again, e.g on macOS: 'brew install md5sha1sum'")
-    cmd = "cd {}; find . -type f -exec md5sum {{}} \; | sort -k 2 | awk '{{print $1}}' | md5sum".format(path)
+    cmd = "cd {}; find . -type f -not -path './_refgenie_build*' " \
+          "-exec md5sum {{}} \; |" \
+          " sort -k 2 | awk '{{print $1}}' | " \
+          "md5sum".format(path)
     if isinstance(pm, pypiper.PipelineManager):
         x = pm.checkprint(cmd)
     else:
@@ -862,18 +876,16 @@ def get_dir_digest(path, pm=None):
     return sub(r'\W+', '', x)  # strips non-alphanumeric
 
 
-def _handle_sigint(gat, rgc):
+def _handle_sigint(gat):
     """
     SIGINT handler, unlocks the config file and exists the program
 
     :param list gat: a list of genome, asset and tag. Used for a message generation.
-    :param refgenconf.RefGenConf rgc: object bound to the file to unlock
     :return function: the SIGINT handling function
     """
     def handle(sig, frame):
         _LOGGER.warning("\nThe build was interrupted: {}/{}:{}".format(*gat))
         sys.exit(0)
-
     return handle
 
 
