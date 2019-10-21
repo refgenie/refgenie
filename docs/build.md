@@ -12,13 +12,13 @@ $ refgenie build hg38/bowtie2_index -r
 'hg38/bowtie2_index' build requirements: 
 - assets: fasta
 ```  
-In this case you'll need to build the `fasta` asset for `hg38` genome before building `bowtie2_index`.
+In this case you'll need to build the `fasta` asset for `hg38` genome before building `bowtie2_index`. Notice how 'fasta' appears under `assets` and not under `arguments`. What this means is that to build a bowtie2 index, you do *not* provide a fasta file as an argument, as you might expect. Instead, you *must already have a fasta asset managed by refgenie*. One of the advantages of this is that it allows refgenie to keep a record of how you've built your assets, so refgenie can remember the link between this bowtie2 asset and the fasta asset, which turns out to be very useful for maintaining provenance of your assets. It also makes it easier to build these kind of derived assets, because you don't actually have to pass any additional arguments to build them.
 
 ## What assets can refgenie build?
 
-At the moment the building functionality is under rapid development and may change in the future. While `refgenie` is totally flexible with respect to genome, it is more restricted in terms of what assets it can build. We are planning to allow users to specify their own recipes for arbitrary assets, but at the moment, `refgenie` can only build a handful of assets for which we have already created building recipes. Refgenie comes with built-in recipes to build indexes for common tools like bowtie2, hisat2, bismark, salmon, bwa, and a few others. If you type `refgenie list`, you'll get a list of all the assets you can build with refgenie. If you want to add a new asset, you'll have to work with us to provide a script that can build it, and we can incorporate it into `refgenie`. We expect this will get much easier in the future.
+At the moment the building functionality is under rapid development and may change in the future. While `refgenie` is totally flexible with respect to genome, it is more restricted in terms of what assets it can build. We are planning to allow users to specify their own recipes for arbitrary assets, but at the moment, `refgenie` can only build a handful of assets for which we have already created building recipes. Refgenie comes with built-in recipes to build indexes for common tools like bowtie2, hisat2, bismark, salmon, bwa, and a few others. If you type `refgenie list`, you'll get a list of all the assets you can build with refgenie (these show up under *recipes*). If you want to add a new asset, you'll have to work with us to provide a script that can build it, and we can incorporate it into `refgenie`. We expect this will get much easier in the future.
 
-Below, we go through the assets you can build and how to build them
+Below, we go through the assets you can build and how to build them.
 
 ## Examples for top-level assets you can build
 

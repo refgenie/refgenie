@@ -3,13 +3,15 @@
 ## Why to tag assets?
 It is natural in a research environment to use various flavors of the reference genome related resources that may result from different versions of the software used to create them. And this is what inspired the introduction of assets tagging concept in `refgenie`.
 
-Tag can be **any text or number**, so it is well suited to contain software version information or even a concise description, like `0.4.1` or `new_build_strategy`
+Tag can be **any text or number**, so it is well suited to contain software version information or even a concise description, like `0.4.1` or `new_build_strategy`.
 
 ## How to tag assets?
 
-Asset tagging was designed to be very flexible -- assets can be tagged at any point:
+Asset tagging is very flexible. You can tag assets when you build them, add or change tags to already built assets, or just not use tags at all if you don't need them.
 
-- **tagging when assets are built:**
+### Tagging when assets are built
+
+Here we'll demonstrate how you can specify a tag when building an asset:
 
 ```console
 export REFGENIE="genome_config.yaml"
@@ -22,17 +24,20 @@ or
 refgenie build hg38/bowtie2_index:2.3.3.1
 ```
 
-- **tagging already built/pulled assets (re-tagging):**
+### Tagging already built/pulled assets (re-tagging)
+
+If you already built an asset, you can add a tag to it. Here, we'll add a tag for `most_recent` to our bowtie2 index asset:
+
 
 ```console
 refgenie tag hg38/bowtie2_index:2.3.5.1 --tag most_recent
 ```
 
-- **no tagging at all:**
+Now you could retrieve this asset using either of those tags. In other words, *assets can have more than 1 tag*.
 
-Importantly, you don't have to care about tags at all if you don't need to because there is a **default** representative for every asset in your assets inventory.
+### No tagging at all
 
-Building without specifying a tag will tag the asset as `default`
+Importantly, you don't have to care about tags at all if you don't need to because there is a **default** tag for every asset in your assets inventory. Building without specifying a tag will tag the asset as `default`. If you don't specify a tag when trying to retrieve an asset path, it will assume you're looking for the default tagged asset.
 
 ```console
 refgenie build hg38/bwa_index
