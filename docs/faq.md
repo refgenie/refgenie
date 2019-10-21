@@ -16,6 +16,6 @@ Yes, you can. In `refgenie v0.7.0` we've introduced [tagging](tag.md), to facili
 
 Yes, this is now the recommended way to use refgenie for groups. Starting with release `v0.7.0`, refgenie now supports genome config file locks and race-free writes, so refgenie will now automatically control multi-user conflicts to prevent metadata loss. With this change, multiple users can simultaneously read and write a single group-level configuration file. 
 
-## How can track how a downloaded asset was created?
+## How can I track how a downloaded asset was created?
 
 Starting with the server API `v2`, you can use an endpoint that will provide a detailed log output: `/v2/asset/{genome}/{asset}/log`. This log file specifies exactly how the asset was created.
