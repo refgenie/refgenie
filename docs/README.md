@@ -6,7 +6,7 @@
 
 ## What is refgenie?
 
-Refgenie is full-service reference genome manager that organizes storage, access, and transfer of reference genomes. It provides command-line and python interfaces to download pre-built reference genome "assets" like indexes used by bioinformatics tools. It can also build assets for custom genome assemblies. Refgenie provides programmatic access to a standard genome folder structure, so software can swap from one genome to another.
+Refgenie is manages storage, access, and transfer of reference genome resources. It provides command-line and Python interfaces to *download* pre-built reference genome "assets", like indexes used by bioinformatics tools. It can also *build* assets for custom genome assemblies. Refgenie provides programmatic access to a standard genome folder structure, so software can swap from one genome to another.
 
 ## What makes refgenie better?
 
@@ -16,12 +16,14 @@ Refgenie is full-service reference genome manager that organizes storage, access
 
 3. **It simplifies finding local asset locations**. When you need a path to an asset, you can `seek` it, making your pipelines portable across computing environments: `refgenie seek hg38/salmon_index`.
 
-4. **It includes a python API**. For tool developers, you use `cfg = refgenie.RefGenConf("genomes.yaml")` to get a python object with paths to any genome asset, *e.g.*, `cfg.get_asset("hg38", "kallisto_index")`.
+4. **It includes a python API**. For tool developers, you use `cfg = refgenie.RefGenConf("genomes.yaml")` to get a Python object with paths to any genome asset, *e.g.*, `cfg.get_asset("hg38", "kallisto_index")`.
 
 
 ## Quick example
 
 ### Install and initialize
+
+Refgenie keeps track of what's available using a configuration file initialized by `refgenie init`:
 
 ```console
 pip install --user refgenie
@@ -31,7 +33,7 @@ refgenie init -c $REFGENIE
 
 ### Download indexes and assets for a remote reference genome
 
-First, view available remote assets:
+Use `refgenie pull` to download pre-built assets from a remote server. View available remote assets with `listr`:
 
 ```console
 refgenie listr
@@ -62,6 +64,8 @@ See [further reading on downloading assets](pull.md).
 
 ### Build your own indexes and assets for a custom reference genome
 
+Refgenie assets are scripted, so if what you need is not available remotely, you can use `build` it locally:
+
 
 ```console
 refgenie build mygenome/bwa_index --fasta mygenome.fa.gz
@@ -71,7 +75,7 @@ See [further reading on building assets](build.md).
 
 ### Retrieve paths to refgenie-managed assets
 
-Once you've populated your refgenie with a few assets, it's easy to get paths to them:
+Once you've populated your refgenie with a few assets, use `seek` to retrieve their local file paths:
 
 ```console
 refgenie seek mm10/bowtie2_index

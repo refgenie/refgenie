@@ -1,8 +1,8 @@
 # Building assets for custom genomes
 
-Once you've [installed refgenie](install.md), you can use `refgenie pull` to [download pre-built assets](download.md) without installing any additional software. However, you may need to use the `build` function for genomes or assets that are not available on the server. You can build assets for any genome for which you can provide the required inputs.
+Once you've [installed refgenie](install.md), you can use `refgenie pull` to [download pre-built assets](pull.md) without installing any additional software. However, you may need to use the `build` function for genomes or assets that are not available on the server. You can build assets for any genome for which you can provide the required inputs.
 
-Building assets is a bit more complicated than pulling them. If you want to build assets, you'll need to get the software required by the asset you want to build. You have two choices to get that software: you can either install it natively, or use a docker image (details further down this page). This will start a pipeline that will create the requested asset and populate the genome config file for you. You can see the [example build output](build_output.md).  
+Building assets is a bit more complicated than pulling them. If you want to build assets, you'll need to get the software required by the asset you want to build. You have three choices to get that software: you can either install it natively, or use a docker image (details further down this page), or you can use our new bulker manifest. This will start a pipeline that will create the requested asset and populate the genome config file for you. You can see the [example build output](build_output.md).  
 
 Once you're set up, you simply run `refgenie build`, passing it any necessary input arguments called for by the asset recipe. Each asset requires some input. For many of the built-in recipes, this is just a FASTA file. To learn what are the required inputs or other asset depedancies, add an `-r` flag to the `refgenie build` command: 
 
