@@ -58,3 +58,11 @@ To retrieve the path to any other asset, you need to specify the tag:
 ```console
 refgenie seek hg38/bowtie2_index:2.3.3.1 
 ``` 
+
+### Changing the default tag
+
+If you want to make a tag the default one, use the `-d`/`--default` option in `refgenie tag` command:
+
+```console
+refgenie tag hg38/bowtie2_index:2.3.3.1 -d 
+``` 
