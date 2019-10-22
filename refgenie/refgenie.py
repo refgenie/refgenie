@@ -704,10 +704,9 @@ def main():
                 except DownloadJsonError:
                     bad_servers.append(server_url)
                     #_LOGGER.warning("Could not list assets from {}".format(server_url))  # JPS DEBUG
-                    if num_servers == len(server_list):
-                        _LOGGER.error("Could not list assets from the following server(s): {}".format(bad_servers))  # JPS DEBUG
-                    else:
-                        continue
+                    continue
+            if num_servers >= len(server_list):
+                _LOGGER.error("Could not list assets from the following server(s): {}".format(bad_servers))  # JPS DEBUG
             rgc.genome_server = server_list
         else:  # Only check local assets once
             pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
