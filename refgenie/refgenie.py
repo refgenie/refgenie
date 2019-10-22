@@ -690,6 +690,7 @@ def main():
         # JPS do the server cycling here
         if args.command == LIST_REMOTE_CMD:
             num_servers = 0
+            # Keep all servers so that child updates maintain server list
             server_list = rgc.genome_server
             bad_servers = []
             for server_url in rgc.genome_server:
@@ -707,6 +708,7 @@ def main():
                     continue
             if num_servers >= len(server_list):
                 _LOGGER.error("Could not list assets from the following server(s): {}".format(bad_servers))  # JPS DEBUG
+            # Restore original server list, even when we couldn't find assets on a server
             rgc.genome_server = server_list
         else:  # Only check local assets once
             pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
