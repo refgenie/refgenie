@@ -688,26 +688,33 @@ def main():
         rgc = RefGenConf(filepath=gencfg, writable=False)
         #_LOGGER.info("JPS list_remote_cmd genome_server: {}".format(rgc.genome_server)) # JPS DEBUG
         # JPS do the server cycling here
-        num_servers = 0
-        server_list = rgc.genome_server
-        bad_servers = []
-        for server_url in rgc.genome_server:
-            num_servers += 1
-            try:
-                rgc.genome_server = server_url
-                pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
-                _LOGGER.info("{} genomes: {}".format(pfx, genomes))
-                if args.command != LIST_REMOTE_CMD:  # Not implemented yet
-                    _LOGGER.info("{} recipes: {}".format(pfx, recipes))
-                _LOGGER.info("{} assets:\n{}\n".format(pfx, assets))
-            except DownloadJsonError:
-                bad_servers.append(server_url)
-                _LOGGER.warning("Could not list assets from {}".format(server_url))  # JPS DEBUG
-                if num_servers == len(server_list):
-                    _LOGGER.error("Could not list assets from the following server(s), {}".format(bad_servers))  # JPS DEBUG
-                else:
-                    continue
-        rgc.genome_server = server_list
+        if args.command == LIST_REMOTE_CMD:
+            num_servers = 0
+            server_list = rgc.genome_server
+            bad_servers = []
+            for server_url in rgc.genome_server:
+                num_servers += 1
+                try:
+                    rgc.genome_server = server_url
+                    pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
+                    _LOGGER.info("{} genomes: {}".format(pfx, genomes))
+                    if args.command != LIST_REMOTE_CMD:  # Not implemented yet
+                        _LOGGER.info("{} recipes: {}".format(pfx, recipes))
+                    _LOGGER.info("{} assets:\n{}\n".format(pfx, assets))
+                except DownloadJsonError:
+                    bad_servers.append(server_url)
+                    _LOGGER.warning("Could not list assets from {}".format(server_url))  # JPS DEBUG
+                    if num_servers == len(server_list):
+                        _LOGGER.error("Could not list assets from any of the following server(s), {}".format(bad_servers))  # JPS DEBUG
+                    else:
+                        continue
+            rgc.genome_server = server_list
+        else:  # Only check local assets once
+            pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
+            _LOGGER.info("{} genomes: {}".format(pfx, genomes))
+            if args.command != LIST_REMOTE_CMD:  # Not implemented yet
+                _LOGGER.info("{} recipes: {}".format(pfx, recipes))
+            _LOGGER.info("{} assets:\n{}".format(pfx, assets))
 
     elif args.command == GETSEQ_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)  # genome cfg will not be updated, create object in read-only mode
