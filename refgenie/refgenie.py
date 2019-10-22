@@ -508,7 +508,7 @@ def refgenie_init(genome_config_path, genome_server=DEFAULT_SERVER, config_versi
     :param list genome_server: URL for a server  # JPS convert to list
     :param str config_version: config version name, e.g. 0.2
     """
-    _LOGGER.info("JPS genome_server: {}".format(genome_server)) # JPS DEBUG
+    #_LOGGER.info("JPS genome_server: {}".format(genome_server)) # JPS DEBUG
     # Set up default
     rgc = RefGenConf(entries=OrderedDict({
         CFG_VERSION_KEY: config_version,
