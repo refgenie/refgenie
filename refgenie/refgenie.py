@@ -19,7 +19,7 @@ from .asset_build_packages import *
 import logmuse
 import pypiper
 import refgenconf
-from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError, MissingRecipeError
+from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError, MissingRecipeError, DownloadJsonError
 from refgenconf.const import *
 from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, VersionInHelpParser, is_command_callable
 from ubiquerg.system import is_writable
@@ -92,9 +92,16 @@ def build_argparser():
             help="Path to local genome configuration file. Optional if {} environment variable is set."
                 .format(", ".join(refgenconf.CFG_ENV_VARS)))
 
-    sps[INIT_CMD].add_argument('-s', '--genome-server', default=DEFAULT_SERVER,
-                               help="URL to use for the genome_server attribute in config file. Default: {}"
-                               .format(DEFAULT_SERVER))
+    # ORIGINAL
+    #sps[INIT_CMD].add_argument('-s', '--genome-server', default=DEFAULT_SERVER,
+    #                           help="URL to use for the genome_server attribute in config file. Default: {}"
+    #                           .format(DEFAULT_SERVER))
+    # JPS DEFAULT_SERVER stems from refgenconf const.py
+    # So, need to ADD to DEFAULT_SERVER or replace with this argument.
+    # Do I change DEFAULT_SERVER in refgenconf to a list object to begin with?
+    sps[INIT_CMD].add_argument('-s', '--genome-server', action='append', default=DEFAULT_SERVER,
+                               help="URL(s) to use for the genome_server attribute in config file. Default: {}"
+                               .format(DEFAULT_SERVER[0]))
     sps[BUILD_CMD] = pypiper.add_pypiper_args(
         sps[BUILD_CMD], groups=None, args=["recover", "config", "new-start"])
 
@@ -498,15 +505,15 @@ def refgenie_init(genome_config_path, genome_server=DEFAULT_SERVER, config_versi
 
     :param str genome_config_path: path to genome configuration file to
         create/initialize
-    :param str genome_server: URL for a server
+    :param list genome_server: URL for a server  # JPS convert to list
     :param str config_version: config version name, e.g. 0.2
     """
-
+    _LOGGER.info("JPS genome_server: {}".format(genome_server)) # JPS DEBUG
     # Set up default
     rgc = RefGenConf(entries=OrderedDict({
         CFG_VERSION_KEY: config_version,
         CFG_FOLDER_KEY: os.path.dirname(os.path.abspath(genome_config_path)),
-        CFG_SERVER_KEY: genome_server,
+        CFG_SERVER_KEY: genome_server,  # Need to have this default to first list entry... (Right now all of RefGenConf expects single string here)
         CFG_GENOMES_KEY: None
     }))
 
@@ -538,6 +545,7 @@ def refgenie_getseq(rgc, genome, locus):
 def _exec_list(rgc, remote, genome):
     if remote:
         pfx = "Remote"
+        #_LOGGER.info("JPS _exec_list genome_server: {}".format(rgc.genome_server)) # JPS DEBUG
         assemblies, assets = rgc.list_remote(genome=genome)
         recipes = None  # Not implemented
     else:
@@ -678,11 +686,28 @@ def main():
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         rgc = RefGenConf(filepath=gencfg, writable=False)
-        pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
-        _LOGGER.info("{} genomes: {}".format(pfx, genomes))
-        if args.command != LIST_REMOTE_CMD:  # Not implemented yet
-            _LOGGER.info("{} recipes: {}".format(pfx, recipes))
-        _LOGGER.info("{} assets:\n{}".format(pfx, assets))
+        #_LOGGER.info("JPS list_remote_cmd genome_server: {}".format(rgc.genome_server)) # JPS DEBUG
+        # JPS do the server cycling here
+        num_servers = 0
+        server_list = rgc.genome_server
+        bad_servers = []
+        for server_url in rgc.genome_server:
+            num_servers += 1
+            try:
+                rgc.genome_server = server_url
+                pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
+                _LOGGER.info("{} genomes: {}".format(pfx, genomes))
+                if args.command != LIST_REMOTE_CMD:  # Not implemented yet
+                    _LOGGER.info("{} recipes: {}".format(pfx, recipes))
+                _LOGGER.info("{} assets:\n{}\n".format(pfx, assets))
+            except DownloadJsonError:
+                bad_servers.append(server_url)
+                _LOGGER.warning("Could not list assets from {}".format(server_url))  # JPS DEBUG
+                if num_servers == len(server_list):
+                    _LOGGER.error("Could not list assets from the following server(s), {}".format(bad_servers))  # JPS DEBUG
+                else:
+                    continue
+        rgc.genome_server = server_list
 
     elif args.command == GETSEQ_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)  # genome cfg will not be updated, create object in read-only mode
