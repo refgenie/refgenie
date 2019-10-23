@@ -129,12 +129,15 @@ def build_argparser():
         help="Show the build requirements for the specified asset and exit.")
 
     # add 'genome' argument to many commands
-    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD,
-                LIST_REMOTE_CMD, LIST_LOCAL_CMD, GETSEQ_CMD, TAG_CMD]:
+    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, GETSEQ_CMD, TAG_CMD]:
         # genome is not required for listing actions
         sps[cmd].add_argument(
             "-g", "--genome", required=cmd in GETSEQ_CMD,
             help="Reference assembly ID, e.g. mm10")
+
+    for cmd in LIST_REMOTE_CMD, LIST_LOCAL_CMD:
+        sps[cmd].add_argument("-g", "--genome", required=False, type=str,
+                              nargs="*", help="Reference assembly ID, e.g. mm10")
 
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, TAG_CMD]:
         sps[cmd].add_argument(
