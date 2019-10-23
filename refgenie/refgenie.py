@@ -690,6 +690,8 @@ def main():
                 try:
                     rgc.genome_server = server_url
                     pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
+                    if assets is None and genomes is None:
+                        continue
                     _LOGGER.info("{} genomes: {}".format(pfx, genomes))
                     if args.command != LIST_REMOTE_CMD:  # Not implemented yet
                         _LOGGER.info("{} recipes: {}".format(pfx, recipes))
