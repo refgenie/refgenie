@@ -706,7 +706,7 @@ def main():
                     bad_servers.append(server_url)
                     #_LOGGER.warning("Could not list assets from {}".format(server_url))  # JPS DEBUG
                     continue
-            if num_servers >= len(server_list):
+            if num_servers >= len(server_list) and bad_servers:
                 _LOGGER.error("Could not list assets from the following server(s): {}".format(bad_servers))  # JPS DEBUG
             # Restore original server list, even when we couldn't find assets on a server
             rgc.genome_server = server_list
