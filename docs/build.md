@@ -122,7 +122,11 @@ refgenie build test/dbnsfp --dbnsfp dbNSFP4.0a.zip
 
 ## Derived assets you can build
 
+For many of the following derived assets, you will need the corresponding software to build the asset.  You can either [install software on a case-by-case basis natively](build.md#install-building-software-natively), or you can [build the assets using `docker`](build.md#building-assets-with-docker).
+
 ### bowtie2 index
+
+<i class="fas fa-exclamation-circle"></i> requires [bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml)
 
 The `bowtie2_index` asset doesn't require any input, but does require that you've already built the `fasta` asset. So, first [build the `fasta` asset](build.md#fasta) for your genome of interest, and then you just build the `bowtie2_index` asset with no other requirements:
 
@@ -131,6 +135,9 @@ refgenie build test/bowtie2_index
 ```
 
 ### bismark indexes
+
+<i class="fas fa-exclamation-circle"></i> requires [bismark](https://www.bioinformatics.babraham.ac.uk/projects/bismark/)
+
 
 The `bismark_bt1_index` and `bismark_bt2_index`  assets don't require any input, but do require that you've already [built the `fasta` asset](build.md#fasta).
 
@@ -141,6 +148,8 @@ refgenie build test/bismark_bt2_index
 
 ### bwa index
 
+<i class="fas fa-exclamation-circle"></i> requires [bwa](http://bio-bwa.sourceforge.net/)
+
 The `bwa_index` asset doesn't require any input, but does require that you've already [built the `fasta` asset](build.md#fasta). Then, you just build the `bwa_index` asset with no other requirements:
 
 ```
@@ -148,6 +157,8 @@ refgenie build test/bwa_index
 ```
 
 ### hisat2 index
+
+<i class="fas fa-exclamation-circle"></i> requires [hisat2](https://ccb.jhu.edu/software/hisat2/index.shtml)
 
 The `hisat2_index` asset doesn't require any input, but does require that you've already [built the `fasta` asset](build.md#fasta). Then, you just build the `hisat2_index` asset with no other requirements:
 
@@ -157,6 +168,8 @@ refgenie build test/hisat2_index
 
 ### epilog index
 
+<i class="fas fa-exclamation-circle"></i> requires [epilog](https://github.com/databio/epilog)
+
 The `epilog_index` asset [requires the call site context as input](https://github.com/databio/epilog), in addition to requiring that you've already [built the `fasta` asset](build.md#fasta). To build an epilog index, you pass the context as an additional argument:
 
 ```
@@ -164,6 +177,8 @@ refgenie build test/epilog_index --context CG
 ```
 
 ### kallisto index
+
+<i class="fas fa-exclamation-circle"></i> requires [kallisto](https://pachterlab.github.io/kallisto/)
 
 The `kallisto_index` asset doesn't require any input, but does require that you've already [built the `fasta` asset](build.md#fasta). Then, you just build the `kallisto_index` asset with no other requirements:
 
@@ -173,6 +188,8 @@ refgenie build test/kallisto_index
 
 ### salmon index
 
+<i class="fas fa-exclamation-circle"></i> requires [salmon](https://salmon.readthedocs.io/en/latest/salmon.html)
+
 The `salmon_index` asset doesn't require any input, but does require that you've already [built the `fasta` asset](build.md#fasta). Then, you just build the `salmon_index` asset with no other requirements:
 
 ```
@@ -180,6 +197,8 @@ refgenie build test/salmon_index
 ```
 
 ### star index
+
+<i class="fas fa-exclamation-circle"></i> requires [star](https://github.com/alexdobin/STAR)
 
 The `star_index` asset doesn't require any input, but does require that you've already [built the `fasta` asset](build.md#fasta). Then, you just build the `star_index` asset with no other requirements:
 
