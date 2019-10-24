@@ -144,7 +144,7 @@ For many of the following derived assets, you will need the corresponding softwa
 ### bowtie2 index
 
 <i class="fas fa-exclamation"></i> required input: *none*  
-<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](build.md#fasta)  
+<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
 <i class="fas fa-exclamation-circle"></i> required software: [bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml)
 
 ```
@@ -154,7 +154,7 @@ refgenie build test/bowtie2_index
 ### bismark indexes
 
 <i class="fas fa-exclamation"></i> required input: *none*  
-<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](build.md#fasta)  
+<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
 <i class="fas fa-exclamation-circle"></i> required software: [bismark](https://www.bioinformatics.babraham.ac.uk/projects/bismark/)
 
 ```
@@ -165,7 +165,7 @@ refgenie build test/bismark_bt2_index
 ### bwa index
 
 <i class="fas fa-exclamation"></i> required input: *none*  
-<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](build.md#fasta)  
+<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
 <i class="fas fa-exclamation-circle"></i> required software: [bwa](http://bio-bwa.sourceforge.net/)
 
 ```
@@ -175,7 +175,7 @@ refgenie build test/bwa_index
 ### hisat2 index
 
 <i class="fas fa-exclamation"></i> required input: *none*  
-<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](build.md#fasta)  
+<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
 <i class="fas fa-exclamation-circle"></i> required software: [hisat2](https://ccb.jhu.edu/software/hisat2/index.shtml)
 
 ```
@@ -185,7 +185,7 @@ refgenie build test/hisat2_index
 ### epilog index
 
 <i class="fas fa-exclamation"></i> required input: --context (*e.g.* CG)  
-<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](build.md#fasta)  
+<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
 <i class="fas fa-exclamation-circle"></i> required software: [epilog](https://github.com/databio/epilog)
 
 ```
@@ -195,7 +195,7 @@ refgenie build test/epilog_index --context CG
 ### kallisto index
 
 <i class="fas fa-exclamation"></i> required input: *none*  
-<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](build.md#fasta)  
+<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
 <i class="fas fa-exclamation-circle"></i> required software: [kallisto](https://pachterlab.github.io/kallisto/)
 
 ```
@@ -205,7 +205,7 @@ refgenie build test/kallisto_index
 ### salmon index
 
 <i class="fas fa-exclamation"></i> required input: *none*  
-<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](build.md#fasta)  
+<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
 <i class="fas fa-exclamation-circle"></i> required software: [salmon](https://salmon.readthedocs.io/en/latest/salmon.html)
 
 ```
@@ -215,7 +215,7 @@ refgenie build test/salmon_index
 ### star index
 
 <i class="fas fa-exclamation"></i> required input: *none*  
-<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](build.md#fasta)  
+<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
 <i class="fas fa-exclamation-circle"></i> required software: [star](https://github.com/alexdobin/STAR)
 
 ```
