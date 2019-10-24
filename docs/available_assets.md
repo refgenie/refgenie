@@ -28,8 +28,8 @@ Below, we go through the assets you can build and how to build them.
 ### fasta
 
 <i class="fas fa-exclamation"></i>required input: `--fasta` [example_genome.fa.gz](http://big.databio.org/example_data/rCRS.fa.gz)  
-<i class="fas fa-exclamation-triangle"></i>required asset: *None*  
-<i class="fas fa-exclamation-circle"></i>required software: *None*
+<i class="fas fa-exclamation-triangle"></i>required asset: *none*  
+<i class="fas fa-exclamation-circle"></i>required software: *none*
 
 We recommend for every genome, you first build the `fasta` asset, because it's a starting point for building a lot of other assets.
 
@@ -49,8 +49,8 @@ refgenie seek rCRS/fasta
 ### refgene_anno
 
 <i class="fas fa-exclamation"></i> required input: `--refgene` [refGene.txt.gz](http://varianttools.sourceforge.net/Annotation/RefGene)  
-<i class="fas fa-exclamation-triangle"></i> required asset: *None*  
-<i class="fas fa-exclamation-circle"></i> required software: *None*
+<i class="fas fa-exclamation-triangle"></i> required asset: *none*  
+<i class="fas fa-exclamation-circle"></i> required software: *none*
 
 The `refgene_anno` asset is used to produce derived assets including transcription start sites (TSSs), exons, introns, and premature mRNA sequences.
 
@@ -69,8 +69,8 @@ refgenie build hg38/refgene_anno --refgene refGene.txt.gz
 ### gencode_gtf
 
 <i class="fas fa-exclamation"></i> required input: `--gencode` [gencode.gtf.gz](ftp://ftp.ebi.ac.uk/pub/databases/gencode/_README.TXT)  
-<i class="fas fa-exclamation-triangle"></i> required asset: *None*  
-<i class="fas fa-exclamation-circle"></i> required software: *None*
+<i class="fas fa-exclamation-triangle"></i> required asset: *none*  
+<i class="fas fa-exclamation-circle"></i> required software: *none*
 
 The `gencode_gtf` asset contains all annotated transcripts.
 
@@ -88,8 +88,8 @@ refgenie build mm10/gencode_gtf --gencode_gtf gencode.vM23.annotation.gtf.gz
 ### ensembl_gtf
 
 <i class="fas fa-exclamation"></i> required input: `--ensembl` [ensembl.gtf.gz](https://useast.ensembl.org/info/genome/genebuild/genome_annotation.html)  
-<i class="fas fa-exclamation-triangle"></i> required asset: *None*  
-<i class="fas fa-exclamation-circle"></i> required software: *None*
+<i class="fas fa-exclamation-triangle"></i> required asset: *none*  
+<i class="fas fa-exclamation-circle"></i> required software: *none*
 
 The `ensembl_gtf` asset is used to build other derived assets including a comprehensive TSS annotation and gene body annotation.
 
@@ -108,8 +108,8 @@ refgenie build hg38/ensembl-gtf --ensembl_gtf Homo_sapiens.GRCh38.97.gtf.gz
 ### ensembl_rb
 
 <i class="fas fa-exclamation"></i> required input: `--gff` [regulatory_features.gff.gz](http://useast.ensembl.org/info/genome/funcgen/regulatory_build.html)  
-<i class="fas fa-exclamation-triangle"></i> required asset: *None*  
-<i class="fas fa-exclamation-circle"></i> required software: *None*
+<i class="fas fa-exclamation-triangle"></i> required asset: *none*  
+<i class="fas fa-exclamation-circle"></i> required software: *none*
 
 The `ensembl_rb` asset is used to produce derived assets including feature annotations.
 
@@ -127,8 +127,8 @@ refgenie build hg38/ensembl_rb --gff homo_sapiens.GRCh38.Regulatory_Build.regula
 ### dbnsfp
 
 <i class="fas fa-exclamation"></i> required input: `--dbnsfp` [dbNSFP4.0a.zip](http://varianttools.sourceforge.net/Annotation/dbNSFP)  
-<i class="fas fa-exclamation-triangle"></i> required asset: *None*  
-<i class="fas fa-exclamation-circle"></i> required software: *None*
+<i class="fas fa-exclamation-triangle"></i> required asset: *none*  
+<i class="fas fa-exclamation-circle"></i> required software: *none*
 
 The `dbnsfp` asset is the annotation database for non-synonymous SNPs.
 
@@ -143,7 +143,7 @@ For many of the following derived assets, you will need the corresponding softwa
 
 ### bowtie2 index
 
-<i class="fas fa-exclamation"></i> required input: *None*  
+<i class="fas fa-exclamation"></i> required input: *none*  
 <i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](build.md#fasta)  
 <i class="fas fa-exclamation-circle"></i> required software: [bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml)
 
@@ -153,7 +153,7 @@ refgenie build test/bowtie2_index
 
 ### bismark indexes
 
-<i class="fas fa-exclamation"></i> required input: *None*  
+<i class="fas fa-exclamation"></i> required input: *none*  
 <i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](build.md#fasta)  
 <i class="fas fa-exclamation-circle"></i> required software:[bismark](https://www.bioinformatics.babraham.ac.uk/projects/bismark/)
 
@@ -164,7 +164,7 @@ refgenie build test/bismark_bt2_index
 
 ### bwa index
 
-<i class="fas fa-exclamation"></i> required input: *None*  
+<i class="fas fa-exclamation"></i> required input: *none*  
 <i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](build.md#fasta)  
 <i class="fas fa-exclamation-circle"></i> required software:[bwa](http://bio-bwa.sourceforge.net/)
 
@@ -174,7 +174,7 @@ refgenie build test/bwa_index
 
 ### hisat2 index
 
-<i class="fas fa-exclamation"></i> required input: *None*  
+<i class="fas fa-exclamation"></i> required input: *none*  
 <i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](build.md#fasta)  
 <i class="fas fa-exclamation-circle"></i> required software: [hisat2](https://ccb.jhu.edu/software/hisat2/index.shtml)
 
@@ -194,7 +194,7 @@ refgenie build test/epilog_index --context CG
 
 ### kallisto index
 
-<i class="fas fa-exclamation"></i> required input: *None*  
+<i class="fas fa-exclamation"></i> required input: *none*  
 <i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](build.md#fasta)  
 <i class="fas fa-exclamation-circle"></i> required software:[kallisto](https://pachterlab.github.io/kallisto/)
 
@@ -204,7 +204,7 @@ refgenie build test/kallisto_index
 
 ### salmon index
 
-<i class="fas fa-exclamation"></i> required input: *None*  
+<i class="fas fa-exclamation"></i> required input: *none*  
 <i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](build.md#fasta)  
 <i class="fas fa-exclamation-circle"></i> required software:[salmon](https://salmon.readthedocs.io/en/latest/salmon.html)
 
@@ -214,7 +214,7 @@ refgenie build test/salmon_index
 
 ### star index
 
-<i class="fas fa-exclamation"></i> required input: *None*  
+<i class="fas fa-exclamation"></i> required input: *none*  
 <i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](build.md#fasta)  
 <i class="fas fa-exclamation-circle"></i> required software:[star](https://github.com/alexdobin/STAR)
 
@@ -224,9 +224,9 @@ refgenie build test/star_index
 
 ### feature annotation
 
-<i class="fas fa-exclamation"></i> required input: *None*  
+<i class="fas fa-exclamation"></i> required input: *none*  
 <i class="fas fa-exclamation-triangle"></i> required asset: [`ensembl_gtf`](build.md#ensembl-gtf), [`ensembl_rb`](build.md#ensembl-rb)  
-<i class="fas fa-exclamation-circle"></i> required software: *None*
+<i class="fas fa-exclamation-circle"></i> required software: *none*
 
 The `feat_annotation` asset includes the following genomic feature annotations: enhancers, promoters, promoter flanking regions, 5' UTR, 3' UTR, exons, and introns.
 
