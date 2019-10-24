@@ -23,6 +23,7 @@ nav:
   - Reference:
     - Genome configuration file: genome_config.md
     - Glossary: glossary.md
+    - Buildable assets: available_assets.md
     - Usage: usage.md
     - Python API: autodoc_build/refgenconf.md
     - FAQ: faq.md
