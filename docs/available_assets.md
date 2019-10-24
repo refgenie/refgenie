@@ -33,7 +33,7 @@ Below, we go through the assets you can build and how to build them.
 
 We recommend for every genome, you first build the `fasta` asset, because it's a starting point for building a lot of other assets.
 
-Some examples are:
+Example fasta files:
 
 - [hg19 fasta](http://hgdownload.cse.ucsc.edu/goldenPath/hg19/bigZips/hg19.fa.gz)
 - [hg38 fasta](http://hgdownload.cse.ucsc.edu/goldenPath/hg38/bigZips/hg38.fa.gz)
@@ -54,7 +54,7 @@ refgenie seek rCRS/fasta
 
 The `refgene_anno` asset is used to produce derived assets including transcription start sites (TSSs), exons, introns, and premature mRNA sequences.
 
-Some examples:
+Example refGene annotation files:
 
 - [hg19 refGene](http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/refGene.txt.gz)
 - [hg38 refGene](http://hgdownload.cse.ucsc.edu/goldenPath/hg38/database/refGene.txt.gz)
@@ -74,7 +74,7 @@ refgenie build hg38/refgene_anno --refgene refGene.txt.gz
 
 The `gencode_gtf` asset contains all annotated transcripts.
 
-Some examples are:
+Example gencode files:
 
 - [hg19 comprehensive gene annotation](ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_32/GRCh37_mapping/gencode.v32lift37.annotation.gtf.gz)
 - [hg38 comprehensive gene annotation](ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_32/gencode.v32.annotation.gtf.gz)
@@ -93,7 +93,7 @@ refgenie build mm10/gencode_gtf --gencode_gtf gencode.vM23.annotation.gtf.gz
 
 The `ensembl_gtf` asset is used to build other derived assets including a comprehensive TSS annotation and gene body annotation.
 
-Some examples are:
+Example Ensembl files:
 
 - [hg38 ensembl annotations](ftp://ftp.ensembl.org/pub/current_gtf/homo_sapiens/Homo_sapiens.GRCh38.98.gtf.gz)
 - [hg19 ensembl annotations](ftp://ftp.ensembl.org/pub/grch37/current/gtf/homo_sapiens/Homo_sapiens.GRCh37.87.gtf.gz)
@@ -113,7 +113,7 @@ refgenie build hg38/ensembl-gtf --ensembl_gtf Homo_sapiens.GRCh38.97.gtf.gz
 
 The `ensembl_rb` asset is used to produce derived assets including feature annotations.
 
-Some examples are:
+Example Ensembl files:
 
 - [hg38 regulatory build](ftp://ftp.ensembl.org/pub/current_regulation/homo_sapiens/homo_sapiens.GRCh38.Regulatory_Build.regulatory_features.20190329.gff.gz)
 - [hg19 regulatory build](ftp://ftp.ensembl.org/pub/grch37/current/regulation/homo_sapiens/homo_sapiens.GRCh37.Regulatory_Build.regulatory_features.20180925.gff.gz)
