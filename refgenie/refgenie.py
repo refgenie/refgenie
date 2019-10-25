@@ -4,6 +4,7 @@ from argparse import SUPPRESS
 from collections import OrderedDict
 from shutil import rmtree
 from re import sub
+from requests import ConnectionError
 import os
 import sys
 import csv
@@ -696,7 +697,7 @@ def main():
                     if args.command != LIST_REMOTE_CMD:  # Not implemented yet
                         _LOGGER.info("{} recipes: {}".format(pfx, recipes))
                     _LOGGER.info("{} assets:\n{}\n".format(pfx, assets))
-                except DownloadJsonError:
+                except (DownloadJsonError, ConnectionError):
                     bad_servers.append(server_url)
                     continue
             if num_servers >= len(server_list) and bad_servers:
