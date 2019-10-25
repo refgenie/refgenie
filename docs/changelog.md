@@ -5,7 +5,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [0.7.1] - 2019-10-2X
 
 ### Changed
-- `--genome_server` can now be called multiple times to add additional refgenieservers
+- `--genome-server` can now be called multiple times to add additional refgenieservers
 - `listr` will check each available refgenieserver and display assets
 - `pull` will check each available refgenieserver and take the first matching asset found
 
