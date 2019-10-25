@@ -2,7 +2,7 @@
 # <img src="img/refgenie_logo.svg" class="img-header"> reference genome manager
 
 [![PEP compatible](https://pepkit.github.io/img/PEP-compatible-green.svg)](https://pepkit.github.io)
-
+[![PyPi](https://img.shields.io/pypi/v/refgenie.svg)](https://pypi.org/project/refgenie/)
 
 ## What is refgenie?
 
