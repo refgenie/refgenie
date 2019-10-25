@@ -9,9 +9,7 @@
 
 # Buildable assets
 
-`Refgenie` can build a handful of assets for which we have already created building recipes. 
-
-Typing `refgenie list` will net you a list of all the assets you can build with refgenie.
+`Refgenie` can build a handful of assets for which we have already created building recipes. `refgenie list` lists all assets refegenie can build:
 
 ```
 $ refgenie list
