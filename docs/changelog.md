@@ -10,7 +10,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `pull` will check each available refgenieserver and take the first matching asset found
 
 ### Added
-- possibility to list **multiple** selected genomes in `refgenie list -g`
+- possibility to list **multiple** selected genomes in `refgenie list/listr -g`
 
 ## [0.7.0] - 2019-10-21
 
