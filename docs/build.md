@@ -6,7 +6,7 @@ Building assets is a bit more complicated than pulling them. You'll need to set 
 
 ## What assets can refgenie build?
 
-At the moment the building functionality is under rapid development and may change in the future. While `refgenie` is totally flexible with respect to genome, it is more restricted in terms of what assets it can build. We are planning to allow users to specify their own recipes for arbitrary assets, but at the moment, `refgenie` can only build a handful of assets for which we have already created building recipes. If you type `refgenie list`, you'll get a list of all the assets you can build with refgenie (under *recipes*). You can also browse the [list of available assets](available_assets.md) here. If you need refgenie to manage an asset not in this list, you can either 1) wait for our pending implementation of custom recipes, or 2 [add custom assets](custom_assets.md), which you would build separately and then use refgenie just to manage them.
+At the moment the building functionality is under rapid development and may change in the future. While `refgenie` is totally flexible with respect to genome, it is more restricted in terms of what assets it can build. We are planning to allow users to specify their own recipes for arbitrary assets, but at the moment, `refgenie` can only build a handful of assets for which we have already created building recipes. If you type `refgenie list`, you'll get a list of all the assets you can build with refgenie (under *recipes*). You can also browse the [list of available assets](available_assets.md) here. If you need refgenie to manage an asset not in this list, you can either 1) wait for our pending implementation of custom recipes, or 2) [add custom assets](custom_assets.md), which you would build separately and then use refgenie just to manage them.
 
 
 ## 1. Required asset inputs
@@ -76,9 +76,9 @@ docker pull databio/refgenie
 
 ### Build assets with bulker
 
-For an even more seamless integration of containers with `refgenie`, learn about [`bulker`](http://bulker.databio.org/en/latest/refgenie_tutorial/), our multi-container environment manager. Here, you'd just need to do this:
+For an even more seamless integration of containers with `refgenie`, learn about [bulker](http://bulker.io), our multi-container environment manager. Here, you'd just need to do this:
 
-```
+```console
 pip install bulker
 
 # Next, configure bulker according to your local compute environment
@@ -88,7 +88,7 @@ bulker activate databio/refgenie:0.7.0
 refgenie build ...
 ```
 
-Bulker works on both singularity and docker systems.
+Bulker works on both singularity and docker systems. The bulker docs also contain a [more complete tutorial of using bulker and refgenie together](http://bulker.databio.org/en/latest/refgenie_tutorial/).
 
 ## Versioning the assets
 

@@ -27,7 +27,7 @@ Below, we go through the assets you can build and how to build them.
 
 <i class="fas fa-exclamation"></i>required input: `--fasta` [example_genome.fa.gz](http://big.databio.org/example_data/rCRS.fa.gz)  
 <i class="fas fa-exclamation-triangle"></i>required asset: *none*  
-<i class="fas fa-exclamation-circle"></i>required software: *none*
+<i class="fas fa-exclamation-circle"></i>required software: samtools
 
 We recommend for every genome, you first build the `fasta` asset, because it's a starting point for building a lot of other assets.
 
