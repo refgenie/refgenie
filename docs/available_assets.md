@@ -139,7 +139,7 @@ refgenie build test/dbnsfp --dbnsfp dbNSFP4.0a.zip
 
 For many of the following derived assets, you will need the corresponding software to build the asset.  You can either [install software on a case-by-case basis natively](build.md#install-building-software-natively), or you can [build the assets using `docker`](build.md#building-assets-with-docker).
 
-### bowtie2 index
+### bowtie2_index
 
 <i class="fas fa-exclamation"></i> required input: *none*  
 <i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
@@ -149,7 +149,7 @@ For many of the following derived assets, you will need the corresponding softwa
 refgenie build test/bowtie2_index
 ```
 
-### bismark indexes
+### bismark_bt1_index and bismark_bt2_index
 
 <i class="fas fa-exclamation"></i> required input: *none*  
 <i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
@@ -160,7 +160,7 @@ refgenie build test/bismark_bt1_index
 refgenie build test/bismark_bt2_index
 ```
 
-### bwa index
+### bwa_index
 
 <i class="fas fa-exclamation"></i> required input: *none*  
 <i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
@@ -170,7 +170,7 @@ refgenie build test/bismark_bt2_index
 refgenie build test/bwa_index
 ```
 
-### hisat2 index
+### hisat2_index
 
 <i class="fas fa-exclamation"></i> required input: *none*  
 <i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
@@ -180,7 +180,7 @@ refgenie build test/bwa_index
 refgenie build test/hisat2_index
 ```
 
-### epilog index
+### epilog_index
 
 <i class="fas fa-exclamation"></i> required input: --context (*e.g.* CG)  
 <i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
@@ -190,7 +190,7 @@ refgenie build test/hisat2_index
 refgenie build test/epilog_index --context CG
 ```
 
-### kallisto index
+### kallisto_index
 
 <i class="fas fa-exclamation"></i> required input: *none*  
 <i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
@@ -200,7 +200,7 @@ refgenie build test/epilog_index --context CG
 refgenie build test/kallisto_index
 ```
 
-### salmon index
+### salmon_index
 
 <i class="fas fa-exclamation"></i> required input: *none*  
 <i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
@@ -210,7 +210,7 @@ refgenie build test/kallisto_index
 refgenie build test/salmon_index
 ```
 
-### star index
+### star_index
 
 <i class="fas fa-exclamation"></i> required input: *none*  
 <i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
@@ -220,7 +220,7 @@ refgenie build test/salmon_index
 refgenie build test/star_index
 ```
 
-### feature annotation
+### feat_annotation
 
 <i class="fas fa-exclamation"></i> required input: *none*  
 <i class="fas fa-exclamation-triangle"></i> required asset: [`ensembl_gtf`](build.md#ensembl-gtf), [`ensembl_rb`](build.md#ensembl-rb)  
