@@ -667,10 +667,10 @@ def main():
             return
 
         for a in asset_list:
-            gat, archive_data = rgc.pull_asset(a["genome"], a["asset"], a["tag"], unpack=not args.no_untar)
+            gat, archive_data, server_url = rgc.pull_asset(a["genome"], a["asset"], a["tag"], unpack=not args.no_untar)
             if archive_data is not None:
                 rgc_rw = RefGenConf(filepath=gencfg, writable=True)
-                [rgc_rw.chk_digest_update_child(a["genome"], x, "{}:{}".format(gat[1], gat[2]))
+                [rgc_rw.chk_digest_update_child(a["genome"], x, "{}:{}".format(gat[1], gat[2]), server_url)
                  for x in archive_data[CFG_ASSET_PARENTS_KEY] if CFG_ASSET_PARENTS_KEY in archive_data]
                 rgc_rw.update_tags(*gat,
                                    data={attr: archive_data[attr] for attr in ATTRS_COPY_PULL if attr in archive_data})
