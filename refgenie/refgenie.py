@@ -252,7 +252,7 @@ def refgenie_add(rgc, asset_dict, path):
     # remove the first directory from the provided path if it is the genome name
     path = os.path.join(*path.split(os.sep)[1:]) if path.split(os.sep)[0] == asset_dict["genome"] else path
     tag = asset_dict["tag"] or rgc.get_default_tag(asset_dict["genome"], asset_dict["asset"])
-    outfolder = os.path.abspath(os.path.join(rgc.genome_folder, asset_dict["genome"]))
+    outfolder = os.path.abspath(os.path.join(rgc[CFG_FOLDER_KEY], asset_dict["genome"]))
     abs_asset_path = os.path.join(outfolder, path)
     if asset_dict["seek_key"] is None:
         # if seek_key is not specified we're about to move a directory to the tag subdir
@@ -275,7 +275,7 @@ def refgenie_add(rgc, asset_dict, path):
                 cp(abs_asset_path, tag_path)
     else:
         raise OSError("Absolute path '{}' does not exist. The provided path must be relative to: {}".
-                      format(abs_asset_path, rgc.genome_folder))
+                      format(abs_asset_path, rgc[CFG_FOLDER_KEY]))
     gat_bundle = [asset_dict["genome"], asset_dict["asset"], tag]
     rgc.update_tags(*gat_bundle,
                     data={CFG_ASSET_PATH_KEY: path if os.path.isdir(abs_asset_path) else os.path.dirname(path)})
@@ -331,7 +331,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
     if not hasattr(args, "outfolder") or not args.outfolder:
         # Default to genome_folder
         _LOGGER.debug("No outfolder provided, using genome config.")
-        args.outfolder = rgc.genome_folder
+        args.outfolder = rgc[CFG_FOLDER_KEY]
 
     _LOGGER.debug("Default config file: {}".format(default_config_file()))
 
@@ -684,12 +684,12 @@ def main():
         if args.command == LIST_REMOTE_CMD:
             num_servers = 0
             # Keep all servers so that child updates maintain server list
-            server_list = rgc.genome_server
+            server_list = rgc[CFG_SERVERS_KEY]
             bad_servers = []
-            for server_url in rgc.genome_server:
+            for server_url in rgc[CFG_SERVERS_KEY]:
                 num_servers += 1
                 try:
-                    rgc.genome_server = server_url
+                    rgc[CFG_SERVERS_KEY] = server_url
                     pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
                     if assets is None and genomes is None:
                         continue
@@ -703,7 +703,7 @@ def main():
             if num_servers >= len(server_list) and bad_servers:
                 _LOGGER.error("Could not list assets from the following server(s): {}".format(bad_servers))
             # Restore original server list, even when we couldn't find assets on a server
-            rgc.genome_server = server_list
+            rgc[CFG_SERVERS_KEY] = server_list
         else:  # Only check local assets once
             pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
             _LOGGER.info("{} genomes: {}".format(pfx, genomes))
