@@ -4,6 +4,7 @@ from argparse import SUPPRESS
 from collections import OrderedDict
 from shutil import rmtree
 from re import sub
+from requests import ConnectionError
 import os
 import sys
 import csv
@@ -19,7 +20,7 @@ from .asset_build_packages import *
 import logmuse
 import pypiper
 import refgenconf
-from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError, MissingRecipeError
+from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError, MissingRecipeError, DownloadJsonError
 from refgenconf.const import *
 from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, VersionInHelpParser, is_command_callable
 from ubiquerg.system import is_writable
@@ -92,8 +93,8 @@ def build_argparser():
             help="Path to local genome configuration file. Optional if {} environment variable is set."
                 .format(", ".join(refgenconf.CFG_ENV_VARS)))
 
-    sps[INIT_CMD].add_argument('-s', '--genome-server', default=DEFAULT_SERVER,
-                               help="URL to use for the genome_server attribute in config file. Default: {}"
+    sps[INIT_CMD].add_argument('-s', '--genome-server', nargs='+', default=DEFAULT_SERVER,
+                               help="URL(s) to use for the genome_servers attribute in config file. Default: {}"
                                .format(DEFAULT_SERVER))
     sps[BUILD_CMD] = pypiper.add_pypiper_args(
         sps[BUILD_CMD], groups=None, args=["recover", "config", "new-start"])
@@ -129,12 +130,15 @@ def build_argparser():
         help="Show the build requirements for the specified asset and exit.")
 
     # add 'genome' argument to many commands
-    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD,
-                LIST_REMOTE_CMD, LIST_LOCAL_CMD, GETSEQ_CMD, TAG_CMD]:
+    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, GETSEQ_CMD, TAG_CMD]:
         # genome is not required for listing actions
         sps[cmd].add_argument(
             "-g", "--genome", required=cmd in GETSEQ_CMD,
             help="Reference assembly ID, e.g. mm10")
+
+    for cmd in LIST_REMOTE_CMD, LIST_LOCAL_CMD:
+        sps[cmd].add_argument("-g", "--genome", required=False, type=str,
+                              nargs="*", help="Reference assembly ID, e.g. mm10")
 
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, TAG_CMD]:
         sps[cmd].add_argument(
@@ -248,7 +252,7 @@ def refgenie_add(rgc, asset_dict, path):
     # remove the first directory from the provided path if it is the genome name
     path = os.path.join(*path.split(os.sep)[1:]) if path.split(os.sep)[0] == asset_dict["genome"] else path
     tag = asset_dict["tag"] or rgc.get_default_tag(asset_dict["genome"], asset_dict["asset"])
-    outfolder = os.path.abspath(os.path.join(rgc.genome_folder, asset_dict["genome"]))
+    outfolder = os.path.abspath(os.path.join(rgc[CFG_FOLDER_KEY], asset_dict["genome"]))
     abs_asset_path = os.path.join(outfolder, path)
     if asset_dict["seek_key"] is None:
         # if seek_key is not specified we're about to move a directory to the tag subdir
@@ -271,7 +275,7 @@ def refgenie_add(rgc, asset_dict, path):
                 cp(abs_asset_path, tag_path)
     else:
         raise OSError("Absolute path '{}' does not exist. The provided path must be relative to: {}".
-                      format(abs_asset_path, rgc.genome_folder))
+                      format(abs_asset_path, rgc[CFG_FOLDER_KEY]))
     gat_bundle = [asset_dict["genome"], asset_dict["asset"], tag]
     rgc.update_tags(*gat_bundle,
                     data={CFG_ASSET_PATH_KEY: path if os.path.isdir(abs_asset_path) else os.path.dirname(path)})
@@ -327,7 +331,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
     if not hasattr(args, "outfolder") or not args.outfolder:
         # Default to genome_folder
         _LOGGER.debug("No outfolder provided, using genome config.")
-        args.outfolder = rgc.genome_folder
+        args.outfolder = rgc[CFG_FOLDER_KEY]
 
     _LOGGER.debug("Default config file: {}".format(default_config_file()))
 
@@ -498,10 +502,9 @@ def refgenie_init(genome_config_path, genome_server=DEFAULT_SERVER, config_versi
 
     :param str genome_config_path: path to genome configuration file to
         create/initialize
-    :param str genome_server: URL for a server
+    :param list genome_server: URL for a server
     :param str config_version: config version name, e.g. 0.2
     """
-
     # Set up default
     rgc = RefGenConf(entries=OrderedDict({
         CFG_VERSION_KEY: config_version,
@@ -665,10 +668,10 @@ def main():
             return
 
         for a in asset_list:
-            gat, archive_data = rgc.pull_asset(a["genome"], a["asset"], a["tag"], unpack=not args.no_untar)
+            gat, archive_data, server_url = rgc.pull_asset(a["genome"], a["asset"], a["tag"], unpack=not args.no_untar)
             if archive_data is not None:
                 rgc_rw = RefGenConf(filepath=gencfg, writable=True)
-                [rgc_rw.chk_digest_update_child(a["genome"], x, "{}:{}".format(gat[1], gat[2]))
+                [rgc_rw.chk_digest_update_child(a["genome"], x, "{}:{}".format(gat[1], gat[2]), server_url)
                  for x in archive_data[CFG_ASSET_PARENTS_KEY] if CFG_ASSET_PARENTS_KEY in archive_data]
                 rgc_rw.update_tags(*gat,
                                    data={attr: archive_data[attr] for attr in ATTRS_COPY_PULL if attr in archive_data})
@@ -678,11 +681,35 @@ def main():
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         rgc = RefGenConf(filepath=gencfg, writable=False)
-        pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
-        _LOGGER.info("{} genomes: {}".format(pfx, genomes))
-        if args.command != LIST_REMOTE_CMD:  # Not implemented yet
-            _LOGGER.info("{} recipes: {}".format(pfx, recipes))
-        _LOGGER.info("{} assets:\n{}".format(pfx, assets))
+        if args.command == LIST_REMOTE_CMD:
+            num_servers = 0
+            # Keep all servers so that child updates maintain server list
+            server_list = rgc[CFG_SERVERS_KEY]
+            bad_servers = []
+            for server_url in rgc[CFG_SERVERS_KEY]:
+                num_servers += 1
+                try:
+                    rgc[CFG_SERVERS_KEY] = server_url
+                    pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
+                    if assets is None and genomes is None:
+                        continue
+                    _LOGGER.info("{} genomes: {}".format(pfx, genomes))
+                    if args.command != LIST_REMOTE_CMD:  # Not implemented yet
+                        _LOGGER.info("{} recipes: {}".format(pfx, recipes))
+                    _LOGGER.info("{} assets:\n{}\n".format(pfx, assets))
+                except (DownloadJsonError, ConnectionError):
+                    bad_servers.append(server_url)
+                    continue
+            if num_servers >= len(server_list) and bad_servers:
+                _LOGGER.error("Could not list assets from the following server(s): {}".format(bad_servers))
+            # Restore original server list, even when we couldn't find assets on a server
+            rgc[CFG_SERVERS_KEY] = server_list
+        else:  # Only check local assets once
+            pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
+            _LOGGER.info("{} genomes: {}".format(pfx, genomes))
+            if args.command != LIST_REMOTE_CMD:  # Not implemented yet
+                _LOGGER.info("{} recipes: {}".format(pfx, recipes))
+            _LOGGER.info("{} assets:\n{}".format(pfx, assets))
 
     elif args.command == GETSEQ_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)  # genome cfg will not be updated, create object in read-only mode
