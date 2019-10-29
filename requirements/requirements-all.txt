@@ -1,7 +1,4 @@
-attmap>=0.12.5
 logmuse>=0.2
-refgenconf>=0.5.0
-ubiquerg>=0.4.8
-yacman>=0.6.2
+refgenconf>=0.5.3
 piper>=0.12.1
 pyfaidx>=0.5.5.2
