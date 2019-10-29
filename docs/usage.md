@@ -45,7 +45,7 @@ optional arguments:
                         Path to local genome configuration file. Optional if
                         REFGENIE environment variable is set.
   -s GENOME_SERVER, --genome-server GENOME_SERVER
-                        URL to use for the genome_server attribute in config
+                        URL to use for the genome_servers attribute in config
                         file. Default: http://refgenomes.databio.org
 ```
 

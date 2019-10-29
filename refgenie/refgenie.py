@@ -94,8 +94,8 @@ def build_argparser():
                 .format(", ".join(refgenconf.CFG_ENV_VARS)))
 
     sps[INIT_CMD].add_argument('-s', '--genome-server', nargs='+', default=DEFAULT_SERVER,
-                               help="URL(s) to use for the genome_server attribute in config file. Default: {}"
-                               .format(DEFAULT_SERVER[0]))
+                               help="URL(s) to use for the genome_servers attribute in config file. Default: {}"
+                               .format(DEFAULT_SERVER))
     sps[BUILD_CMD] = pypiper.add_pypiper_args(
         sps[BUILD_CMD], groups=None, args=["recover", "config", "new-start"])
 

@@ -6,7 +6,7 @@ But here's how the config file works, in case for some reason you do need to edi
 
 ```yaml
 genome_folder: /path/to/active/genomes
-genome_server: http://refgenomes.databio.org
+genome_servers: http://refgenomes.databio.org
 genome_archive: /path/to/archived/genomes
 genomes:
     rCRSd:
@@ -50,7 +50,7 @@ genomes:
 ## Details of config attributes
 
 - **genome_folder**: Path to parent folder refgenie-managed assets.
-- **genome_server**: URL to a refgenieserver instance (currently only 1 URL allowed).
+- **genome_servers**: URL to a refgenieserver instances.
 - **genome_archive**: (optional; used by refgenieserver) Path to folder where asset archives will be stored.
 - **genomes**: A list of genomes, each genome has a list of assets. Any relative paths in the asset `path` attributes are considered relative to the genome folder in the config file (or the file itself if not folder path is specified), with the genome name as an intervening path component, e.g. `folder/mm10/indexed_bowtie2`.
 - **tags**: A collection of tags defined for the asset
