@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 - `dbsnp` recipe
+- distribute the license file with the package
 
 ## [0.7.1] - 2019-10-29
 
