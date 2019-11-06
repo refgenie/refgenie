@@ -60,6 +60,20 @@ asset_build_packages = {
             "rm `find {asset_outfolder} -type f -not -path '{asset_outfolder}/_refgenie_build*' -not -path '{asset_outfolder}/hg38_dbNSFP.txt.*'`"
         ]
     },
+    "dbsnp": {
+        DESC: "The database of single nucleotide polymorphisms (SNPs) and multiple small-scale variations that include insertions/deletions, microsatellites, and non-polymorphic variants",
+        ASSETS: {
+            "dbsnp": "{genome}_dbSNP.gz",
+            "tabix": "{genome}_dbSNP.gz.tbi"
+        },
+        REQ_IN: ["dbsnp"],
+        REQ_ASSETS: [],
+        CONT: "databio/refgenie",
+        CMD_LST: [
+            "cp {dbsnp} {asset_outfolder}/{genome}_dbSNP.gz",
+            "cp {dbsnp}.tbi {asset_outfolder}/{genome}_dbSNP.gz.tbi"
+        ]
+    },
     "bowtie2_index": {
         DESC: "Genome index for bowtie, produced with bowtie-build",
         ASSETS: {
