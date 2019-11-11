@@ -41,11 +41,12 @@ INSERT_CMD = "add"
 REMOVE_CMD = "remove"
 GETSEQ_CMD = "getseq"
 TAG_CMD = "tag"
+ID_CMD = "id"
 
 GENOME_ONLY_REQUIRED = [REMOVE_CMD, GETSEQ_CMD]
 
 # For each asset we assume a genome is also required
-ASSET_REQUIRED = [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, TAG_CMD]
+ASSET_REQUIRED = [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, TAG_CMD, ID_CMD]
 
 BUILD_SPECIFIC_ARGS = ('fasta', 'ensembl_gtf', 'gencode_gtf', 'gff', 'context', 'refgene', 'dbnsfp', 'dbsnp')
 
@@ -81,7 +82,8 @@ def build_argparser():
         INSERT_CMD: "Add local asset to the config file.",
         REMOVE_CMD: "Remove a local asset.",
         GETSEQ_CMD: "Get sequences from a genome.",
-        TAG_CMD: "Tag an asset."
+        TAG_CMD: "Tag an asset.",
+        ID_CMD: "Return the asset digest."
     }
 
     sps = {}
@@ -130,7 +132,7 @@ def build_argparser():
         help="Show the build requirements for the specified asset and exit.")
 
     # add 'genome' argument to many commands
-    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, GETSEQ_CMD, TAG_CMD]:
+    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, GETSEQ_CMD, TAG_CMD, ID_CMD]:
         # genome is not required for listing actions
         sps[cmd].add_argument(
             "-g", "--genome", required=cmd in GETSEQ_CMD,
@@ -140,7 +142,7 @@ def build_argparser():
         sps[cmd].add_argument("-g", "--genome", required=False, type=str,
                               nargs="*", help="Reference assembly ID, e.g. mm10")
 
-    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, TAG_CMD]:
+    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, TAG_CMD, ID_CMD]:
         sps[cmd].add_argument(
             "asset_registry_paths", metavar="asset-registry-paths", type=str, nargs='+',
             help="One or more registry path strings that identify assets  (e.g. hg38/fasta or hg38/fasta:tag"
@@ -796,6 +798,11 @@ def main():
                           format(a["genome"], a["asset"], a["tag"]))
             _LOGGER.debug("Original asset has been moved from '{}' to '{}'".format(ori_path, new_path))
         rgc.write()
+
+    elif args.command == ID_CMD:
+        rgc = RefGenConf(filepath=gencfg, writable=False)
+        print(rgc.get_asset_digest(a["genome"], a["asset"], a["tag"]))
+        return
 
 
 def _entity_dir_removal_log(directory, entity_class, asset_dict, removed_entities):
