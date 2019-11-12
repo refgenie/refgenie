@@ -448,7 +448,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
                 _LOGGER.info("Inputs required to build '{}': {}".
                              format(asset_key, ", ".join(asset_build_package[REQ_IN])))
             for required_input in asset_build_package[REQ_IN]:
-                if specific_args is None or not required_input not in specific_args:
+                if specific_args is None or required_input not in specific_args:
                     raise ValueError("Argument '{}' is required, but not provided.".format(required_input, asset_key))
             _LOGGER.info("Building asset '{}'".format(asset_key))
             genome_outfolder = os.path.join(args.outfolder, genome)
