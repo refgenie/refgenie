@@ -441,7 +441,11 @@ def refgenie_build(gencfg, genome, asset_list, args):
                     g, a, t, s = genome, default["asset"], \
                                  rgc.get_default_tag(genome, default["asset"]), req_asset_data["seek_key"]
                 parent_assets.append("{}/{}:{}".format(g, a, t))
-                input_assets[a] = rgc.get_asset(g, a, t, s)
+                if req_asset != a:
+                    _LOGGER.warning("Specified asset ({}) is not the same type as the requested one ({}). "
+                                    "Make sure it does not corrupt your workflow.".
+                                    format(a, req_asset))
+                input_assets[req_asset] = rgc.get_asset(g, a, t, s)
             _LOGGER.debug("Using parents: {}".format(", ".join(parent_assets)))
             _LOGGER.debug("Provided inputs: {}".format(specific_args))
             if asset_build_package[REQ_IN]:

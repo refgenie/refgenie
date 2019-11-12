@@ -80,7 +80,7 @@ asset_build_packages = {
             "bowtie2_index": "."
         },
         REQ_IN: [],
-        REQ_ASSETS: ["fasta.fasta"],
+        REQ_ASSETS: ["fasta"],
         CONT: "databio/refgenie",
         CMD_LST: [
             "bowtie2-build {fasta} {asset_outfolder}/{genome}",
@@ -92,7 +92,7 @@ asset_build_packages = {
             "bwa_index": "."
         },
         REQ_IN: [],
-        REQ_ASSETS: ["fasta.fasta"],
+        REQ_ASSETS: ["fasta"],
         CONT: "databio/refgenie",
         CMD_LST: [
             "ln -sf {fasta} {asset_outfolder}",
@@ -105,7 +105,7 @@ asset_build_packages = {
             "hisat2_index": "."
         },
         REQ_IN: [],
-        REQ_ASSETS: ["fasta.fasta"],
+        REQ_ASSETS: ["fasta"],
         CONT: "databio/refgenie",
         CMD_LST: [
             "hisat2-build {fasta} {asset_outfolder}/{genome}"
@@ -114,7 +114,7 @@ asset_build_packages = {
     "bismark_bt2_index": {
         DESC: "Genome index for Bisulfite-Seq applications, produced by bismark_genome_preparation using bowtie2",
         REQ_IN: [],
-        REQ_ASSETS: ["fasta.fasta"],
+        REQ_ASSETS: ["fasta"],
         CONT: "databio/refgenie",
         ASSETS: {
             "bismark_bt2_index": "."
@@ -127,7 +127,7 @@ asset_build_packages = {
     "bismark_bt1_index": {
         DESC: "Genome index for Bisulfite-Seq applications, produced by bismark_genome_preparation using bowtie1",
         REQ_IN: [],
-        REQ_ASSETS: ["fasta.fasta"],
+        REQ_ASSETS: ["fasta"],
         CONT: "databio/refgenie",
         ASSETS: {
             "bismark_bt1_index": "."
@@ -140,7 +140,7 @@ asset_build_packages = {
     "kallisto_index": {
         DESC: "Genome index for kallisto, produced with kallisto index",
         REQ_IN: [],
-        REQ_ASSETS: ["fasta.fasta"],
+        REQ_ASSETS: ["fasta"],
         CONT: "databio/refgenie",
         ASSETS: {
             "kallisto_index": "."
@@ -152,7 +152,7 @@ asset_build_packages = {
     "salmon_index": {
         DESC: "Transcriptome index for salmon, produced with salmon index",
         REQ_IN: [],
-        REQ_ASSETS: ["fasta.fasta"],
+        REQ_ASSETS: ["fasta"],
         CONT: "combinelab/salmon",
         ASSETS: {
             "salmon_index": "."
@@ -164,7 +164,7 @@ asset_build_packages = {
     "epilog_index": {
         DESC: "Genome index for CpG sites, produced by the epilog DNA methylation caller",
         REQ_IN: ["context"],
-        REQ_ASSETS: ["fasta.fasta"],
+        REQ_ASSETS: ["fasta"],
         CONT: "databio/refgenie",
         ASSETS: {
             "epilog_index": "."
@@ -176,7 +176,7 @@ asset_build_packages = {
     "star_index": {
         DESC: "Genome index for STAR RNA-seq aligner, produced with STAR --runMode genomeGenerate",
         REQ_IN: [],
-        REQ_ASSETS: ["fasta.fasta"],
+        REQ_ASSETS: ["fasta"],
         CONT: "databio/refgenie",
         ASSETS: {
             "star_index": "."
