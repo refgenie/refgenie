@@ -115,8 +115,13 @@ def build_argparser():
         "-d", "--docker", action="store_true", help="Run all commands in the refgenie docker container.")
 
     sps[BUILD_CMD].add_argument(
-        '-t', '--tags', nargs="+", required=False, default=None,
-        help='Override the default tags of the parent assets (e.g. asset:tag).')
+        '--assets', nargs="+", required=False, default=None,
+        help='Override the default genome, asset and tag of the parents'
+             ' (e.g. fasta=hg38/fasta:default gtf=mm10/gencode_gtf:default).')
+
+    sps[BUILD_CMD].add_argument(
+        '--paths', nargs="+", required=False, default=None,
+        help='Provide paths to the required inputs (e.g. fasta=/path/to/file.fa.gz).')
 
     sps[BUILD_CMD].add_argument(
         '-v', '--volumes', nargs="+", required=False, default=None,
@@ -425,28 +430,24 @@ def refgenie_build(gencfg, genome, asset_list, args):
             # handle user-requested tags for the required assets
             input_assets = {}
             parent_assets = []
-            parent_tags = args.tags
-            selected_parent_tags = [p["item"] for p in [prp(x) for x in parent_tags]] if isinstance(parent_tags, list) \
-                else None  # if tags specified construct asset_package.asset names
+            _LOGGER.debug("Custom assets: {}".format(args.assets))
+            specified_asset_keys, specified_assets = _parse_parent_input(args.assets)
+            if not specified_asset_keys and isinstance(args.assets, list):
+                _LOGGER.warning("Specified parent assets are invalid. Using defaults.")
             for req_asset in asset_build_package[REQ_ASSETS]:
-                req_asset_data = prp(req_asset)
+                req_asset_data = parse_registry_path(req_asset)
                 # for each req asset see if non-default tag was requested
-                if selected_parent_tags is not None and req_asset_data["item"] in selected_parent_tags:
+                if specified_asset_keys is not None and req_asset_data["asset"] in specified_asset_keys:
                     # if requested, add the path to the asset to the dictionary
-                    parent_data = prp(parent_tags[asset_build_package[REQ_ASSETS].index(req_asset)])
-                    if parent_data["tag"] is None:
-                        raise ValueError("Parent asset tag was not specified. "
-                                         "To use the default one, skip the -t/--tags option.")
-                    input_assets[parent_data["item"]] = rgc.get_asset(genome, parent_data["item"], parent_data["tag"],
-                                                                      req_asset_data["subitem"])
-                    parent_assets.append("{}:{}".format(parent_data["item"], parent_data["tag"]))
+                    parent_data = parse_registry_path(specified_assets[asset_build_package[REQ_ASSETS].index(req_asset)])
+                    input_assets[parent_data["asset"]] = rgc.get_asset(parent_data["genome"], parent_data["asset"], parent_data["tag"], req_asset_data["seek_key"])
+                    parent_assets.append("{}/{}:{}".format(parent_data["genome"], parent_data["asset"], parent_data["tag"]))
                 else:  # if no tag was requested for the req asset, use one tagged with default
-                    default = prp(req_asset)
-                    dafault_tag = rgc.get_default_tag(genome, default["item"])
-                    input_assets[default["item"]] = rgc.get_asset(genome, default["item"], dafault_tag,
-                                                                  default["subitem"])
-                    parent_assets.append("{}:{}".format(default["item"], dafault_tag))
-            _LOGGER.debug("parents: {}".format(", ".join(parent_assets)))
+                    default = parse_registry_path(req_asset)
+                    dafault_tag = rgc.get_default_tag(genome, default["asset"])
+                    input_assets[default["asset"]] = rgc.get_asset(genome, default["asset"], dafault_tag, default["seek_key"])
+                    parent_assets.append("{}/{}:{}".format(genome, default["asset"], dafault_tag))
+            _LOGGER.info("parents: {}".format(", ".join(parent_assets)))  # debug
             _LOGGER.info("Inputs required to build '{}': {}".format(asset_key, ", ".join(asset_build_package[REQ_IN])))
             for required_input in asset_build_package[REQ_IN]:
                 if not specific_args[required_input]:
@@ -456,8 +457,8 @@ def refgenie_build(gencfg, genome, asset_list, args):
             error_req_template = "Asset '{}' is required to build asset '{}', but not provided"
             for ra in asset_build_package[REQ_ASSETS]:
                 try:
-                    req_data = prp(ra)
-                    if not rgc.get_asset(genome, req_data["item"], req_data["tag"], req_data["subitem"]):
+                    req_data = parse_registry_path(ra)
+                    if not rgc.get_asset(genome, req_data["asset"], req_data["tag"], req_data["seek_key"]):
                         raise ValueError(error_req_template.format(ra, asset_key))
                 except refgenconf.exceptions.MissingGenomeError:
                     raise ValueError(error_req_template.format(ra, asset_key))
@@ -482,9 +483,9 @@ def refgenie_build(gencfg, genome, asset_list, args):
             # update asset relationships
             rgc_rw.update_relatives_assets(genome, asset_key, asset_tag, parent_assets)  # adds parents
             for i in parent_assets:
-                parsed_parent = prp(i)
-                rgc_rw.update_relatives_assets(genome, parsed_parent["item"], parsed_parent["tag"],
-                                            ["{}:{}".format(asset_key, asset_tag)], True)  # adds children
+                parsed_parent = parse_registry_path(i)
+                rgc_rw.update_relatives_assets(parsed_parent["genome"], parsed_parent["asset"], parsed_parent["tag"],
+                                               ["{}/{}:{}".format(genome, asset_key, asset_tag)], True)  # adds children
             if args.genome_description is not None:
                 _LOGGER.debug("adding genome ({}) description: '{}'".format(genome, args.genome_description))
                 rgc_rw.update_genomes(genome, {CFG_GENOME_DESC_KEY: args.genome_description})
@@ -673,7 +674,7 @@ def main():
             gat, archive_data, server_url = rgc.pull_asset(a["genome"], a["asset"], a["tag"], unpack=not args.no_untar)
             if archive_data is not None:
                 rgc_rw = RefGenConf(filepath=gencfg, writable=True)
-                [rgc_rw.chk_digest_update_child(a["genome"], x, "{}:{}".format(gat[1], gat[2]), server_url)
+                [rgc_rw.chk_digest_update_child(a["genome"], x, "{}/{}:{}".format(*gat), server_url)
                  for x in archive_data[CFG_ASSET_PARENTS_KEY] if CFG_ASSET_PARENTS_KEY in archive_data]
                 rgc_rw.update_tags(*gat,
                                    data={attr: archive_data[attr] for attr in ATTRS_COPY_PULL if attr in archive_data})
@@ -926,6 +927,16 @@ def _handle_sigint(gat):
         sys.exit(0)
     return handle
 
+
+def _parse_parent_input(input):
+    """
+    Parse user parent specification
+
+    :param list input: user command line input, formatted as follows: [fasta=g/a:t, test=g/a:t]
+    :return (list, list): list of asset keys and registry paths
+    """
+    return [x.split("=")[0] for x in input if "=" in x], \
+           [x.split("=")[1] for x in input if "=" in x]
 
 if __name__ == '__main__':
     try:
