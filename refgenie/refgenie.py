@@ -430,38 +430,34 @@ def refgenie_build(gencfg, genome, asset_list, args):
             # handle user-requested tags for the required assets
             input_assets = {}
             parent_assets = []
-            _LOGGER.debug("Custom assets: {}".format(args.assets))
-            specified_asset_keys, specified_assets = _parse_parent_input(args.assets)
+            specified_asset_keys, specified_assets = None, None
+            if args.assets is not None:
+                specified_asset_keys, specified_assets = _parse_parent_input(args.assets)
+                _LOGGER.debug("Custom assets requested: {}".format(args.assets))
             if not specified_asset_keys and isinstance(args.assets, list):
-                _LOGGER.warning("Specified parent assets are invalid. Using defaults.")
+                _LOGGER.warning("Specified parent assets format is invalid. Using defaults.")
             for req_asset in asset_build_package[REQ_ASSETS]:
                 req_asset_data = parse_registry_path(req_asset)
-                # for each req asset see if non-default tag was requested
+                # for each req asset see if non-default parents were requested
                 if specified_asset_keys is not None and req_asset_data["asset"] in specified_asset_keys:
-                    # if requested, add the path to the asset to the dictionary
                     parent_data = parse_registry_path(specified_assets[asset_build_package[REQ_ASSETS].index(req_asset)])
-                    input_assets[parent_data["asset"]] = rgc.get_asset(parent_data["genome"], parent_data["asset"], parent_data["tag"], req_asset_data["seek_key"])
-                    parent_assets.append("{}/{}:{}".format(parent_data["genome"], parent_data["asset"], parent_data["tag"]))
-                else:  # if no tag was requested for the req asset, use one tagged with default
+                    g, a, t, s = parent_data["genome"], parent_data["asset"], \
+                                 parent_data["tag"], req_asset_data["seek_key"]
+                else:  # if no custom parents requested for the req asset, use default one
                     default = parse_registry_path(req_asset)
-                    dafault_tag = rgc.get_default_tag(genome, default["asset"])
-                    input_assets[default["asset"]] = rgc.get_asset(genome, default["asset"], dafault_tag, default["seek_key"])
-                    parent_assets.append("{}/{}:{}".format(genome, default["asset"], dafault_tag))
-            _LOGGER.info("parents: {}".format(", ".join(parent_assets)))  # debug
-            _LOGGER.info("Inputs required to build '{}': {}".format(asset_key, ", ".join(asset_build_package[REQ_IN])))
+                    g, a, t, s = genome, default["asset"], \
+                                 rgc.get_default_tag(genome, default["asset"]), req_asset_data["seek_key"]
+                parent_assets.append("{}/{}:{}".format(g, a, t))
+                input_assets[a] = rgc.get_asset(g, a, t, s)
+            _LOGGER.info("Using parents: {}".format(", ".join(parent_assets)))
+            if asset_build_package[REQ_IN]:
+                _LOGGER.info("Inputs required to build '{}': {}".
+                             format(asset_key, ", ".join(asset_build_package[REQ_IN])))
             for required_input in asset_build_package[REQ_IN]:
                 if not specific_args[required_input]:
                     raise ValueError(
                         "Argument '{}' is required to build asset '{}', but not provided".format(required_input,
                                                                                                  asset_key))
-            error_req_template = "Asset '{}' is required to build asset '{}', but not provided"
-            for ra in asset_build_package[REQ_ASSETS]:
-                try:
-                    req_data = parse_registry_path(ra)
-                    if not rgc.get_asset(genome, req_data["asset"], req_data["tag"], req_data["seek_key"]):
-                        raise ValueError(error_req_template.format(ra, asset_key))
-                except refgenconf.exceptions.MissingGenomeError:
-                    raise ValueError(error_req_template.format(ra, asset_key))
             _LOGGER.info("Building asset '{}'".format(asset_key))
             genome_outfolder = os.path.join(args.outfolder, genome)
             if not build_asset(genome, asset_key, asset_tag, asset_build_package, genome_outfolder,
@@ -937,6 +933,7 @@ def _parse_parent_input(input):
     """
     return [x.split("=")[0] for x in input if "=" in x], \
            [x.split("=")[1] for x in input if "=" in x]
+
 
 if __name__ == '__main__':
     try:
