@@ -2,6 +2,11 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
+## [0.7.3] - unreleased
+
+### Added
+- `refgenie id` command for asset digest retrieval
+
 ## [0.7.2] - 2019-11-06
 
 ### Added
