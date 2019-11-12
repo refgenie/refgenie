@@ -48,8 +48,6 @@ GENOME_ONLY_REQUIRED = [REMOVE_CMD, GETSEQ_CMD]
 # For each asset we assume a genome is also required
 ASSET_REQUIRED = [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, TAG_CMD, ID_CMD]
 
-BUILD_SPECIFIC_ARGS = ('fasta', 'ensembl_gtf', 'gencode_gtf', 'gff', 'context', 'refgene', 'dbnsfp', 'dbsnp')
-
 
 def build_argparser():
     """
@@ -174,14 +172,6 @@ def build_argparser():
     group.add_argument(
         "-d", "--default", action="store_true",
         help="Set the selected asset tag as the default one.")
-
-    # Finally, arguments to the build command to give the files needed to do
-    # the building. These should eventually move to a more flexible system that
-    # doesn't require them to be hard-coded here in order to be recognized
-
-    for arg in BUILD_SPECIFIC_ARGS:
-        sps[BUILD_CMD].add_argument(
-            "--{arg}".format(arg=arg), required=False, help=SUPPRESS)
 
     return parser
 
@@ -333,7 +323,10 @@ def refgenie_build(gencfg, genome, asset_list, args):
     :param argparse.Namespace args: parsed command-line options/arguments
     """
     rgc = RefGenConf(filepath=gencfg, writable=False)
-    specific_args = {k: getattr(args, k) for k in BUILD_SPECIFIC_ARGS}
+
+    specific_args = None
+    if args.paths is not None:
+        specific_args = _parse_user_build_input(args.paths)
 
     if not hasattr(args, "outfolder") or not args.outfolder:
         # Default to genome_folder
@@ -417,7 +410,6 @@ def refgenie_build(gencfg, genome, asset_list, args):
             rgc_rw.set_default_pointer(*gat)
             rgc_rw.write()
         pm.stop_pipeline()
-        
         return True
 
     for a in asset_list:
@@ -426,13 +418,13 @@ def refgenie_build(gencfg, genome, asset_list, args):
 
         if asset_key in asset_build_packages.keys():
             asset_build_package = asset_build_packages[asset_key]
-            _LOGGER.debug(specific_args)
-            # handle user-requested tags for the required assets
+            # handle user-requested parents for the required assets
             input_assets = {}
             parent_assets = []
             specified_asset_keys, specified_assets = None, None
             if args.assets is not None:
-                specified_asset_keys, specified_assets = _parse_parent_input(args.assets)
+                parsed_parents_input = _parse_user_build_input(args.assets)
+                specified_asset_keys, specified_assets = [*parsed_parents_input], [*parsed_parents_input.values()]
                 _LOGGER.debug("Custom assets requested: {}".format(args.assets))
             if not specified_asset_keys and isinstance(args.assets, list):
                 _LOGGER.warning("Specified parent assets format is invalid. Using defaults.")
@@ -440,7 +432,8 @@ def refgenie_build(gencfg, genome, asset_list, args):
                 req_asset_data = parse_registry_path(req_asset)
                 # for each req asset see if non-default parents were requested
                 if specified_asset_keys is not None and req_asset_data["asset"] in specified_asset_keys:
-                    parent_data = parse_registry_path(specified_assets[asset_build_package[REQ_ASSETS].index(req_asset)])
+                    parent_data = \
+                        parse_registry_path(specified_assets[asset_build_package[REQ_ASSETS].index(req_asset)])
                     g, a, t, s = parent_data["genome"], parent_data["asset"], \
                                  parent_data["tag"], req_asset_data["seek_key"]
                 else:  # if no custom parents requested for the req asset, use default one
@@ -449,15 +442,14 @@ def refgenie_build(gencfg, genome, asset_list, args):
                                  rgc.get_default_tag(genome, default["asset"]), req_asset_data["seek_key"]
                 parent_assets.append("{}/{}:{}".format(g, a, t))
                 input_assets[a] = rgc.get_asset(g, a, t, s)
-            _LOGGER.info("Using parents: {}".format(", ".join(parent_assets)))
+            _LOGGER.debug("Using parents: {}".format(", ".join(parent_assets)))
+            _LOGGER.debug("Provided inputs: {}".format(specific_args))
             if asset_build_package[REQ_IN]:
                 _LOGGER.info("Inputs required to build '{}': {}".
                              format(asset_key, ", ".join(asset_build_package[REQ_IN])))
             for required_input in asset_build_package[REQ_IN]:
-                if not specific_args[required_input]:
-                    raise ValueError(
-                        "Argument '{}' is required to build asset '{}', but not provided".format(required_input,
-                                                                                                 asset_key))
+                if specific_args is None or not required_input not in specific_args:
+                    raise ValueError("Argument '{}' is required, but not provided.".format(required_input, asset_key))
             _LOGGER.info("Building asset '{}'".format(asset_key))
             genome_outfolder = os.path.join(args.outfolder, genome)
             if not build_asset(genome, asset_key, asset_tag, asset_build_package, genome_outfolder,
@@ -480,8 +472,9 @@ def refgenie_build(gencfg, genome, asset_list, args):
             rgc_rw.update_relatives_assets(genome, asset_key, asset_tag, parent_assets)  # adds parents
             for i in parent_assets:
                 parsed_parent = parse_registry_path(i)
+                # adds child (currently built asset) to the parent
                 rgc_rw.update_relatives_assets(parsed_parent["genome"], parsed_parent["asset"], parsed_parent["tag"],
-                                               ["{}/{}:{}".format(genome, asset_key, asset_tag)], True)  # adds children
+                                               ["{}/{}:{}".format(genome, asset_key, asset_tag)], True)
             if args.genome_description is not None:
                 _LOGGER.debug("adding genome ({}) description: '{}'".format(genome, args.genome_description))
                 rgc_rw.update_genomes(genome, {CFG_GENOME_DESC_KEY: args.genome_description})
@@ -924,15 +917,14 @@ def _handle_sigint(gat):
     return handle
 
 
-def _parse_parent_input(input):
+def _parse_user_build_input(input):
     """
-    Parse user parent specification
+    Parse user input specification. Used in build for specific parents and input parsing.
 
-    :param list input: user command line input, formatted as follows: [fasta=g/a:t, test=g/a:t]
-    :return (list, list): list of asset keys and registry paths
+    :param list input: user command line input, formatted as follows: [fasta=txt, test=txt]
+    :return dict: mapping of keys, which are asset names and values
     """
-    return [x.split("=")[0] for x in input if "=" in x], \
-           [x.split("=")[1] for x in input if "=" in x]
+    return {x.split("=")[0]: x.split("=")[1] for x in input if "=" in x}
 
 
 if __name__ == '__main__':
