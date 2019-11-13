@@ -549,7 +549,6 @@ def refgenie_link(gencfg, target, source):
     :param dict source: a dictionary produced by parse_registry_path function
     """
     from shutil import copytree
-    from copy import deepcopy
     rgc_rw = RefGenConf(filepath=gencfg, writable=True)
     g, a = target["genome"], target["asset"]
     t = target["tag"] or rgc_rw.get_default_tag(g, a)
@@ -558,18 +557,33 @@ def refgenie_link(gencfg, target, source):
     try:
         copytree(source_path, rgc_rw.filepath(genome=g, asset=a, tag=t, dir=True), copy_function=os.link)
     except FileExistsError:
-        _LOGGER.error("Target '{}' exists. Cannot create the link.".format(rgc_rw.filepath(genome=g, asset=a, tag=t, dir=True)))
+        _LOGGER.error("Target '{}' exists. Cannot create the link.".
+                      format(rgc_rw.filepath(genome=g, asset=a, tag=t, dir=True)))
         sys.exit(1)
-    source_data = \
-        deepcopy(rgc_rw[CFG_GENOMES_KEY][source["genome"]][CFG_ASSETS_KEY][source["asset"]][CFG_ASSET_TAGS_KEY][source_tag])
-    source_data[CFG_ASSET_PATH_KEY] = a
-    source_data.update({CFG_TAG_SOURCE_KEY: ["{}/{}:{}".format(source["genome"], source["asset"], source_tag)]})
-    rgc_rw.update_tags(g, a, t, source_data)
+    rgc_rw.update_tags(g, a, t, _prep_link_source_metadata(rgc_rw, source["genome"], source["asset"], source_tag))
     rgc_rw.set_default_pointer(g, a, t)
     rgc_rw.write()
     del rgc_rw
     _LOGGER.info("Created hard link for '{}/{}:{}' from: {}".format(g, a, t, source_path))
     return
+
+
+def _prep_link_source_metadata(rgc, genome, asset, tag):
+    """
+    Preprocess the source tag metadata that will be used to populate the newly created link target
+
+    :param refgenconf.RefGenConf rgc: config object
+    :param str genome: genome to source the mapping from
+    :param str asset: asset to source the mapping from
+    :param str tag: tag to source the mapping from
+    :return yacman.yacman.YacAttMap: preprocessed mapping
+    """
+    from copy import deepcopy
+    data = deepcopy(rgc[CFG_GENOMES_KEY][genome][CFG_ASSETS_KEY][asset][CFG_ASSET_TAGS_KEY][tag])
+    data[CFG_ASSET_PATH_KEY] = asset
+    data[CFG_ASSET_CHILDREN_KEY] = []
+    data.update({CFG_TAG_SOURCE_KEY: ["{}/{}:{}".format(genome, asset, tag)]})
+    return data
 
 
 def _exec_list(rgc, remote, genome):
