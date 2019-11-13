@@ -857,27 +857,11 @@ def _make_asset_build_reqs(asset):
 
     :params str asset: name of the asset
     """
-
-    def _format_req(req):
-        """
-        Format the asset requirements.
-
-        Some of them specify seek_keys named as the assets, but we dont wanto to display that
-
-        :param str req: requirement str
-        :return str: formatted requirement
-        """
-        reqs = req.split(".")
-        assert len(reqs) == 2, ValueError("Length of requirement '{}' after splitting is not 2. Specified requirement "
-                                          "is invalid, it should be formatted as follows: 'asset.seek_key'".format(req))
-        return reqs if reqs[1] != reqs[0] else reqs[1]
-
     reqs_list = []
     if asset_build_packages[asset][REQ_IN]:
         reqs_list.append("- arguments: {}".format(", ".join(asset_build_packages[asset][REQ_IN])))
     if asset_build_packages[asset][REQ_ASSETS]:
-        reqs_list.append("- assets: {}".
-                         format(", ".join(_format_req(r) for r in asset_build_packages[asset][REQ_ASSETS])))
+        reqs_list.append("- assets: {}".format(", ".join(asset_build_packages[asset][REQ_ASSETS])))
     _LOGGER.info("\n".join(reqs_list))
 
 
