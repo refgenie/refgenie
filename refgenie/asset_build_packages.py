@@ -172,7 +172,8 @@ asset_build_packages = {
         },
         CMD_LST: [
             "grep '^>' {fasta} | cut -d ' ' -f 1 > {asset_outfolder}/decoys.txt",
-            "sed -i -e 's/>//g' {asset_outfolder}/decoys.txt",
+            "sed -i.bak -e 's/>//g' {asset_outfolder}/decoys.txt",
+            "rm {asset_outfolder}/decoys.txt.bak",
             "cat {txfasta} {fasta} > {asset_outfolder}/gentrome.fa",
             "salmon index -t {asset_outfolder}/gentrome.fa -d {asset_outfolder}/decoys.txt -p 8 -i {asset_outfolder}",
             "rm {asset_outfolder}/gentrome.fa {asset_outfolder}/decoys.txt"
@@ -269,7 +270,7 @@ asset_build_packages = {
             "feat_annotation": "{genome}_annotations.bed.gz",
         },
         REQ_IN: [],
-        REQ_ASSETS: ["ensembl_gtf.ensembl_gtf", "ensembl_rb.ensembl_rb"],
+        REQ_ASSETS: ["ensembl_gtf", "ensembl_rb"],
         CONT: "databio/refgenie",
         CMD_LST: [
             "gzip -dc {ensembl_gtf} | awk '$3==\"exon\"' | grep -v 'pseudogene' | awk -v OFS='\t' '{{print \"chr\"$1, $4-1, $5, \"Exon\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u > {asset_outfolder}/{genome}_exons.bed",
