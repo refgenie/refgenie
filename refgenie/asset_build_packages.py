@@ -159,7 +159,24 @@ asset_build_packages = {
         },
         CMD_LST: [
             "salmon index -k 31 -i {asset_outfolder} -t {fasta}"
-            ] 
+            ]
+    },
+    "salmon_sa_index": {
+        DESC: "Transcriptome index for salmon, produced with salmon index using selective alignment method. "
+              "Improves quantification accuracy compared to the regular index.",
+        REQ_IN: [],
+        REQ_ASSETS: ["fasta", "txfasta"],
+        CONT: "combinelab/salmon",
+        ASSETS: {
+            "salmon_index": "."
+        },
+        CMD_LST: [
+            "grep '^>' {fasta} | cut -d ' ' -f 1 > {asset_outfolder}/decoys.txt",
+            "sed -i -e 's/>//g' {asset_outfolder}/decoys.txt",
+            "cat {txfasta} {fasta} > {asset_outfolder}/gentrome.fa",
+            "salmon index -t {asset_outfolder}/gentrome.fa -d {asset_outfolder}/decoys.txt -p 8 -i {asset_outfolder}",
+            "rm {asset_outfolder}/gentrome.fa {asset_outfolder}/decoys.txt"
+        ]
     },
     "epilog_index": {
         DESC: "Genome index for CpG sites, produced by the epilog DNA methylation caller",
