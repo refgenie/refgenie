@@ -134,6 +134,10 @@ def build_argparser():
         "-r", "--requirements", action="store_true",
         help="Show the build requirements for the specified asset and exit.")
 
+    sps[BUILD_CMD].add_argument(
+        "-l", "--link", nargs="+", required=False, default=None, type=str,
+        help="Do not trigger build process, but create a hard link to the provided asset.")
+
     # add 'genome' argument to many commands
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, GETSEQ_CMD, TAG_CMD, ID_CMD]:
         # genome is not required for listing actions
@@ -533,6 +537,41 @@ def refgenie_getseq(rgc, genome, locus):
         print(fa[locus_split[0]])
 
 
+def refgenie_link(gencfg, target, source):
+    """
+    Create a hard link to the target tag from the source one.
+
+    This function performs both the file hard linking on disk and
+    RefGenConf object updates/manipulation and saving.
+
+    :param str gencfg: path to the config file
+    :param dict target: a dictionary produced by parse_registry_path function
+    :param dict source: a dictionary produced by parse_registry_path function
+    """
+    from shutil import copytree
+    from copy import deepcopy
+    rgc_rw = RefGenConf(filepath=gencfg, writable=True)
+    g, a = target["genome"], target["asset"]
+    t = target["tag"] or rgc_rw.get_default_tag(g, a)
+    source_tag = source["tag"] or rgc_rw.get_default_tag(source["genome"], source["asset"])
+    source_path = rgc_rw.get_asset(source["genome"], source["asset"], source_tag, enclosing_dir=True)
+    try:
+        copytree(source_path, rgc_rw.filepath(genome=g, asset=a, tag=t, dir=True), copy_function=os.link)
+    except FileExistsError:
+        _LOGGER.error("Target '{}' exists. Cannot create the link.".format(rgc_rw.filepath(genome=g, asset=a, tag=t, dir=True)))
+        sys.exit(1)
+    source_data = \
+        deepcopy(rgc_rw[CFG_GENOMES_KEY][source["genome"]][CFG_ASSETS_KEY][source["asset"]][CFG_ASSET_TAGS_KEY][source_tag])
+    source_data[CFG_ASSET_PATH_KEY] = a
+    source_data.update({CFG_TAG_SOURCE_KEY: ["{}/{}:{}".format(source["genome"], source["asset"], source_tag)]})
+    rgc_rw.update_tags(g, a, t, source_data)
+    rgc_rw.set_default_pointer(g, a, t)
+    rgc_rw.write()
+    del rgc_rw
+    _LOGGER.info("Created hard link for '{}/{}:{}' from: {}".format(g, a, t, source_path))
+    return
+
+
 def _exec_list(rgc, remote, genome):
     if remote:
         pfx = "Remote"
@@ -625,7 +664,7 @@ def main():
 
     if args.command == BUILD_CMD:
         if not all([x["genome"] == asset_list[0]["genome"] for x in asset_list]):
-            _LOGGER.error("Build can only build assets from one genome")
+            _LOGGER.error("Build can only build assets for one genome")
             sys.exit(1)
         if args.requirements:
             if a["asset"] not in asset_build_packages.keys():
@@ -633,6 +672,14 @@ def main():
                 sys.exit(1)
             _LOGGER.info("'{}/{}' build requirements: ".format(a["genome"], a["asset"]))
             _make_asset_build_reqs(a["asset"])
+            sys.exit(0)
+        if args.link:
+            if len(asset_list) + len(args.link) > 2:
+                raise NotImplementedError("Refgenie can link just one asset at a time")
+            if asset_list[0]["seek_key"] is not None:
+                _LOGGER.error("Refgenie cannot create links for seek keys. Consider linking an asset instead.")
+                sys.exit(1)
+            refgenie_link(gencfg, asset_list[0], parse_registry_path(args.link[0]))
             sys.exit(0)
         refgenie_build(gencfg, asset_list[0]["genome"], asset_list, args)
 
