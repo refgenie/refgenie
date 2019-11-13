@@ -433,9 +433,9 @@ def refgenie_build(gencfg, genome, asset_list, args):
                 # for each req asset see if non-default parents were requested
                 if specified_asset_keys is not None and req_asset_data["asset"] in specified_asset_keys:
                     parent_data = \
-                        parse_registry_path(specified_assets[asset_build_package[REQ_ASSETS].index(req_asset)])
+                        parse_registry_path(specified_assets[specified_asset_keys.index(req_asset_data["asset"])])
                     g, a, t, s = parent_data["genome"], parent_data["asset"], \
-                                 parent_data["tag"], req_asset_data["seek_key"]
+                                 parent_data["tag"], parent_data["seek_key"]
                 else:  # if no custom parents requested for the req asset, use default one
                     default = parse_registry_path(req_asset)
                     g, a, t, s = genome, default["asset"], \
@@ -443,8 +443,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
                 parent_assets.append("{}/{}:{}".format(g, a, t))
                 if req_asset != a:
                     _LOGGER.warning("Specified asset ({}) is not the same type as the requested one ({}). "
-                                    "Make sure it does not corrupt your workflow.".
-                                    format(a, req_asset))
+                                    "Make sure it does not corrupt your workflow.".format(a, req_asset))
                 input_assets[req_asset] = rgc.get_asset(g, a, t, s)
             _LOGGER.debug("Using parents: {}".format(", ".join(parent_assets)))
             _LOGGER.debug("Provided inputs: {}".format(specific_args))
