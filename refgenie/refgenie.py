@@ -523,9 +523,13 @@ def refgenie_init(genome_config_path, genome_server=DEFAULT_SERVER, config_versi
 
 def refgenie_getseq(rgc, genome, locus):
     """
+    Return the sequence found in a selected reange and chromosome.
     Something like the refget protocol.
-    """
 
+    :param refgenconf.RefGenConf rgc: genome configuration object
+    :param str genome: name of the sequence identifier
+    :param str locus: desired sequence range, splittable by colon, e.g. '1:2'
+    """
     fa = pyfaidx.Fasta(rgc.get_asset(genome, "fasta"))
     locus_split = locus.split(":")
 
@@ -567,7 +571,7 @@ def refgenie_link(gencfg, target, source):
         _LOGGER.error("Target '{}' exists. Cannot create the link.".
                       format(rgc_rw.filepath(genome=g, asset=a, tag=t, dir=True)))
         sys.exit(1)
-    rgc_rw.update_tags(g, a, t, _prep_link_source_metadata(rgc_rw, source["genome"], source["asset"], source_tag))
+    rgc_rw.update_tags(g, a, t, _prep_link_source_metadata(rgc_rw, source["genome"], source["asset"], source_tag, a))
     rgc_rw.set_default_pointer(g, a, t)
     rgc_rw.write()
     del rgc_rw
@@ -575,7 +579,7 @@ def refgenie_link(gencfg, target, source):
     return
 
 
-def _prep_link_source_metadata(rgc, genome, asset, tag):
+def _prep_link_source_metadata(rgc, genome, asset, tag, asset_path=None):
     """
     Preprocess the source tag metadata that will be used to populate the newly created link target
 
@@ -587,7 +591,7 @@ def _prep_link_source_metadata(rgc, genome, asset, tag):
     """
     from copy import deepcopy
     data = deepcopy(rgc[CFG_GENOMES_KEY][genome][CFG_ASSETS_KEY][asset][CFG_ASSET_TAGS_KEY][tag])
-    data[CFG_ASSET_PATH_KEY] = asset
+    data[CFG_ASSET_PATH_KEY] = asset_path or asset
     data[CFG_ASSET_CHILDREN_KEY] = []
     data.update({CFG_TAG_SOURCE_KEY: ["{}/{}:{}".format(genome, asset, tag)]})
     return data
@@ -683,7 +687,7 @@ def main():
         refgenie_init(gencfg, args.genome_server)
         sys.exit(0)
 
-    if args.command == BUILD_CMD:
+    elif args.command == BUILD_CMD:
         if not all([x["genome"] == asset_list[0]["genome"] for x in asset_list]):
             _LOGGER.error("Build can only build assets for one genome")
             sys.exit(1)
