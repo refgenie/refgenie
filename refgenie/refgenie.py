@@ -685,18 +685,18 @@ def main():
         _LOGGER.info("Initializing refgenie genome configuration")
         _writeable(os.path.dirname(gencfg), strict_exists=True)
         refgenie_init(gencfg, args.genome_server)
-        sys.exit(0)
 
     elif args.command == BUILD_CMD:
         if not all([x["genome"] == asset_list[0]["genome"] for x in asset_list]):
             _LOGGER.error("Build can only build assets for one genome")
             sys.exit(1)
         if args.requirements:
-            if a["asset"] not in asset_build_packages.keys():
-                _LOGGER.error("Recipe does not exist for asset '{}'".format(a["asset"]))
-                sys.exit(1)
-            _LOGGER.info("'{}/{}' build requirements: ".format(a["genome"], a["asset"]))
-            _make_asset_build_reqs(a["asset"])
+            for a in asset_list:
+                if a["asset"] not in asset_build_packages.keys():
+                    _LOGGER.error("Recipe does not exist for asset '{}'".format(a["asset"]))
+                    sys.exit(1)
+                _LOGGER.info("'{}/{}' build requirements: ".format(a["genome"], a["asset"]))
+                _make_asset_build_reqs(a["asset"])
             sys.exit(0)
         if args.link:
             if len(asset_list) + len(args.link) > 2:
@@ -933,7 +933,7 @@ def _make_asset_build_reqs(asset):
     """
     reqs_list = []
     if asset_build_packages[asset][REQ_IN]:
-        reqs_list.append("- arguments: {}".format(", ".join(asset_build_packages[asset][REQ_IN])))
+        reqs_list.append("- paths: {}".format(", ".join(asset_build_packages[asset][REQ_IN])))
     if asset_build_packages[asset][REQ_ASSETS]:
         reqs_list.append("- assets: {}".format(", ".join(asset_build_packages[asset][REQ_ASSETS])))
     _LOGGER.info("\n".join(reqs_list))
