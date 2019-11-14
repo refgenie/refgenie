@@ -359,7 +359,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
         """
 
         log_outfolder = os.path.abspath(os.path.join(genome_outfolder, asset_key, tag, BUILD_STATS_DIR))
-        _LOGGER.info("Output content: {}; logs: {}".format(genome_outfolder, log_outfolder))
+        _LOGGER.info("Output:\n- content: {}\n- logs: {}".format(genome_outfolder, log_outfolder))
         if args.docker:
             # Set up some docker stuff
             if args.volumes:
@@ -382,7 +382,9 @@ def refgenie_build(gencfg, genome, asset_list, args):
         # collect variables required to populate the command templates
         asset_vars = get_asset_vars(*gat, genome_outfolder, specific_args, **kwargs)
         # populate command templates
-        command_list_populated = [x.format(**asset_vars) for x in build_pkg[CMD_LST]]
+        # prior to populating, remove any seek_key parts from the keys, since these are not supported by format method
+        command_list_populated = [x.format(**{k.split(".")[0]: v for k, v in asset_vars.items()})
+                                  for x in build_pkg[CMD_LST]]
         # create output directory
         tk.make_dir(asset_vars["asset_outfolder"])
 
@@ -950,16 +952,14 @@ def get_dir_digest(path, pm=None):
     if not is_command_callable("md5sum"):
         raise OSError("md5sum command line tool is required for asset digest calculation. \n"
                       "Install and try again, e.g on macOS: 'brew install md5sha1sum'")
-    cmd = "cd {}; find . -type f -not -path './" + BUILD_STATS_DIR + "*' " \
-          "-exec md5sum {{}} \; |" \
-          " sort -k 2 | awk '{{print $1}}' | " \
-          "md5sum".format(path)
+    cmd = "cd {}; find . -type f -not -path './" + BUILD_STATS_DIR + \
+          "*' -exec md5sum {{}} \; | sort -k 2 | awk '{{print $1}}' | md5sum"
     if isinstance(pm, pypiper.PipelineManager):
-        x = pm.checkprint(cmd)
+        x = pm.checkprint(cmd.format(path))
     else:
         try:
             from subprocess import check_output
-            x = check_output(cmd, shell=True).decode("utf-8")
+            x = check_output(cmd.format(path), shell=True).decode("utf-8")
         except Exception as e:
             _LOGGER.warning("{}: could not calculate digest for '{}'".format(e.__class__.__name__, path))
             return
