@@ -131,12 +131,12 @@ def build_argparser():
              'genome_folder attribute in the genome configuration file.')
 
     sps[BUILD_CMD].add_argument(
-        "-r", "--requirements", action="store_true",
+        "-q", "--requirements", action="store_true",
         help="Show the build requirements for the specified asset and exit.")
 
     sps[BUILD_CMD].add_argument(
-        "-l", "--link", nargs="+", required=False, default=None, type=str,
-        help="Do not trigger build process, but create a hard link to the provided asset.")
+        "-r", "--recipe", required=False, default=None, type=str,
+        help="Provide a recipe to use.")
 
     # add 'genome' argument to many commands
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, GETSEQ_CMD, TAG_CMD, ID_CMD]:
@@ -319,7 +319,7 @@ def refgenie_initg(rgc, genome, collection_checksum, content_checksums):
         _LOGGER.warning("Could not save the genome sequence digests. '{}' is not writable".format(genome_dir))
 
 
-def refgenie_build(gencfg, genome, asset_list, args):
+def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
     """
     Runs the refgenie build recipe.
 
@@ -359,7 +359,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
         """
 
         log_outfolder = os.path.abspath(os.path.join(genome_outfolder, asset_key, tag, BUILD_STATS_DIR))
-        _LOGGER.info("Output:\n- content: {}\n- logs: {}".format(genome_outfolder, log_outfolder))
+        _LOGGER.info("Saving outputs to:\n- content: {}\n- logs: {}".format(genome_outfolder, log_outfolder))
         if args.docker:
             # Set up some docker stuff
             if args.volumes:
@@ -421,9 +421,10 @@ def refgenie_build(gencfg, genome, asset_list, args):
     for a in asset_list:
         asset_key = a["asset"]
         asset_tag = a["tag"] or rgc.get_default_tag(genome, a["asset"], use_existing=False)
+        recipe_name = recipe_name or asset_key
 
-        if asset_key in asset_build_packages.keys():
-            asset_build_package = asset_build_packages[asset_key]
+        if recipe_name in asset_build_packages.keys():
+            asset_build_package = asset_build_packages[recipe_name]
             # handle user-requested parents for the required assets
             input_assets = {}
             parent_assets = []
@@ -447,20 +448,15 @@ def refgenie_build(gencfg, genome, asset_list, args):
                     g, a, t, s = genome, default["asset"], \
                                  rgc.get_default_tag(genome, default["asset"]), req_asset_data["seek_key"]
                 parent_assets.append("{}/{}:{}".format(g, a, t))
-                if req_asset != a:
-                    _LOGGER.warning("Specified asset ({}) is not the same type as the requested one ({}). "
-                                    "Make sure it does not corrupt your workflow.".format(a, req_asset))
                 input_assets[req_asset] = rgc.get_asset(g, a, t, s)
             _LOGGER.debug("Using parents: {}".format(", ".join(parent_assets)))
             _LOGGER.debug("Provided inputs: {}".format(specific_args))
-            if asset_build_package[REQ_IN]:
-                _LOGGER.info("Inputs required to build '{}': {}".
-                             format(asset_key, ", ".join(asset_build_package[REQ_IN])))
             for required_input in asset_build_package[REQ_IN]:
                 if specific_args is None or required_input not in specific_args:
                     raise ValueError("Argument '{}' is required, but not provided.".format(required_input, asset_key))
-            _LOGGER.info("Building asset '{}'".format(asset_key))
             genome_outfolder = os.path.join(args.outfolder, genome)
+            _LOGGER.info("Building '{}/{}:{}' using '{}' recipe, which requires:".format(genome, asset_key, asset_tag, recipe_name))
+            _make_asset_build_reqs(recipe_name)
             if not build_asset(genome, asset_key, asset_tag, asset_build_package, genome_outfolder,
                                specific_args, **input_assets):
                 log_path = os.path.abspath(os.path.join(genome_outfolder, asset_key, asset_tag,
@@ -469,14 +465,14 @@ def refgenie_build(gencfg, genome, asset_list, args):
                              "See the log file for details: {}".format(genome, asset_key, asset_tag, log_path))
                 return
             rgc_rw = RefGenConf(filepath=gencfg, writable=True, wait_max=600)  # create object for writing
-            # If the asset was a fasta, we init the genome
-            if asset_key == 'fasta':
+            # If the recipe was a fasta, we init the genome
+            if recipe_name == 'fasta':
                 _LOGGER.info("Computing initial genome digest...")
                 collection_checksum, content_checksums = \
-                    fasta_checksum(rgc_rw.get_asset(genome, "fasta", asset_tag, "fasta"))
+                    fasta_checksum(rgc_rw.get_asset(genome, asset_key, asset_tag, "fasta"))
                 _LOGGER.info("Initializing genome...")
                 refgenie_initg(rgc_rw, genome, collection_checksum, content_checksums)
-            _LOGGER.info("Finished building asset '{}'".format(asset_key))
+            _LOGGER.info("Finished building '{}' asset".format(asset_key))
             # update asset relationships
             rgc_rw.update_relatives_assets(genome, asset_key, asset_tag, parent_assets)  # adds parents
             for i in parent_assets:
@@ -494,7 +490,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
             rgc_rw.write()
             del rgc_rw
         else:
-            raise MissingRecipeError("There is no '{}' recipe defined".format(asset_key))
+            raise MissingRecipeError("There is no '{}' recipe defined".format(recipe_name))
 
 
 def refgenie_init(genome_config_path, genome_server=DEFAULT_SERVER, config_version=REQ_CFG_VERSION):
@@ -541,62 +537,6 @@ def refgenie_getseq(rgc, genome, locus):
         print(fa[locus_split[0]][int(start):int(end)])
     else:
         print(fa[locus_split[0]])
-
-
-def refgenie_link(gencfg, target, source):
-    """
-    Create a hard link to the target tag from the source one.
-
-    This function performs both the file hard linking on disk and
-    RefGenConf object updates/manipulation and saving.
-
-    :param str gencfg: path to the config file
-    :param dict target: a dictionary produced by parse_registry_path function
-    :param dict source: a dictionary produced by parse_registry_path function
-    """
-    from shutil import copytree
-    rgc_rw = RefGenConf(filepath=gencfg, writable=True)
-    g, a = target["genome"], target["asset"]
-    t = target["tag"] or rgc_rw.get_default_tag(g, a)
-    source_tag = source["tag"] or rgc_rw.get_default_tag(source["genome"], source["asset"])
-    if rgc_rw.is_tag_link(source["genome"], source["asset"], source_tag):
-        src = rgc_rw[CFG_GENOMES_KEY][source["genome"]][CFG_ASSETS_KEY][source["asset"]]\
-            [CFG_ASSET_TAGS_KEY][source_tag][CFG_TAG_SOURCE_KEY]
-        _LOGGER.error("The link source '{}/{}:{}' is a link itself. Refgenie cannot create links from links. "
-                      "Consider using its source for the new link: {}".
-                      format(source["genome"], source["asset"], source_tag, ",".join(src)))
-        sys.exit(1)
-    source_path = rgc_rw.get_asset(source["genome"], source["asset"], source_tag, enclosing_dir=True)
-    try:
-        copytree(source_path, rgc_rw.filepath(genome=g, asset=a, tag=t, dir=True), copy_function=os.link)
-    except FileExistsError:
-        _LOGGER.error("Target '{}' exists. Cannot create the link.".
-                      format(rgc_rw.filepath(genome=g, asset=a, tag=t, dir=True)))
-        sys.exit(1)
-    rgc_rw.update_tags(g, a, t, _prep_link_source_metadata(rgc_rw, source["genome"], source["asset"], source_tag, a))
-    rgc_rw.set_default_pointer(g, a, t)
-    rgc_rw.write()
-    del rgc_rw
-    _LOGGER.info("Created hard link for '{}/{}:{}' from: {}".format(g, a, t, source_path))
-    return
-
-
-def _prep_link_source_metadata(rgc, genome, asset, tag, asset_path=None):
-    """
-    Preprocess the source tag metadata that will be used to populate the newly created link target
-
-    :param refgenconf.RefGenConf rgc: config object
-    :param str genome: genome to source the mapping from
-    :param str asset: asset to source the mapping from
-    :param str tag: tag to source the mapping from
-    :return yacman.yacman.YacAttMap: preprocessed mapping
-    """
-    from copy import deepcopy
-    data = deepcopy(rgc[CFG_GENOMES_KEY][genome][CFG_ASSETS_KEY][asset][CFG_ASSET_TAGS_KEY][tag])
-    data[CFG_ASSET_PATH_KEY] = asset_path or asset
-    data[CFG_ASSET_CHILDREN_KEY] = []
-    data.update({CFG_TAG_SOURCE_KEY: ["{}/{}:{}".format(genome, asset, tag)]})
-    return data
 
 
 def _exec_list(rgc, remote, genome):
@@ -700,15 +640,13 @@ def main():
                 _LOGGER.info("'{}/{}' build requirements: ".format(a["genome"], a["asset"]))
                 _make_asset_build_reqs(a["asset"])
             sys.exit(0)
-        if args.link:
-            if len(asset_list) + len(args.link) > 2:
-                raise NotImplementedError("Refgenie can link just one asset at a time")
-            if asset_list[0]["seek_key"] is not None:
-                _LOGGER.error("Refgenie cannot create links for seek keys. Consider linking an asset instead.")
+        recipe_name = None
+        if args.recipe:
+            if len(asset_list) > 1:
+                _LOGGER.error("Recipes cannot be specified for multi-asset builds")
                 sys.exit(1)
-            refgenie_link(gencfg, asset_list[0], parse_registry_path(args.link[0]))
-            sys.exit(0)
-        refgenie_build(gencfg, asset_list[0]["genome"], asset_list, args)
+            recipe_name = args.recipe
+        refgenie_build(gencfg, asset_list[0]["genome"], asset_list, recipe_name, args)
 
     elif args.command == GET_ASSET_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
