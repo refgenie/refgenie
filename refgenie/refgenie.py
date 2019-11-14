@@ -553,6 +553,13 @@ def refgenie_link(gencfg, target, source):
     g, a = target["genome"], target["asset"]
     t = target["tag"] or rgc_rw.get_default_tag(g, a)
     source_tag = source["tag"] or rgc_rw.get_default_tag(source["genome"], source["asset"])
+    if rgc_rw.is_tag_link(source["genome"], source["asset"], source_tag):
+        src = rgc_rw[CFG_GENOMES_KEY][source["genome"]][CFG_ASSETS_KEY][source["asset"]]\
+            [CFG_ASSET_TAGS_KEY][source_tag][CFG_TAG_SOURCE_KEY]
+        _LOGGER.error("The link source '{}/{}:{}' is a link itself. Refgenie cannot create links from links. "
+                      "Consider using its source for the new link: {}".
+                      format(source["genome"], source["asset"], source_tag, ",".join(src)))
+        sys.exit(1)
     source_path = rgc_rw.get_asset(source["genome"], source["asset"], source_tag, enclosing_dir=True)
     try:
         copytree(source_path, rgc_rw.filepath(genome=g, asset=a, tag=t, dir=True), copy_function=os.link)
