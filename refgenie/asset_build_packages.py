@@ -165,7 +165,7 @@ asset_build_packages = {
         DESC: "Transcriptome index for salmon, produced with salmon index using selective alignment method. "
               "Improves quantification accuracy compared to the regular index.",
         REQ_IN: [],
-        REQ_ASSETS: ["fasta", "txfasta.fasta"],  # need to add support for an optional seek_key requirement specification
+        REQ_ASSETS: ["fasta", "txfasta.fasta"],
         CONT: "combinelab/salmon",
         ASSETS: {
             "salmon_index": "."
