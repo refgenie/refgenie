@@ -866,7 +866,10 @@ def main():
 
     elif args.command == ID_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
-        print(rgc.get_asset_digest(a["genome"], a["asset"], a["tag"]))
+        for asset in asset_list:
+            g, a = asset["genome"], asset["asset"]
+            t = asset["tag"] or rgc.get_default_tag(g, a)
+            print("{}/{}:{},".format(g, a, t) + rgc.get_asset_digest(g, a, t))
         return
 
 
