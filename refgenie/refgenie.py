@@ -358,7 +358,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
             assets.
         """
 
-        log_outfolder = os.path.abspath(os.path.join(genome_outfolder, asset_key, tag, "_refgenie_build"))
+        log_outfolder = os.path.abspath(os.path.join(genome_outfolder, asset_key, tag, BUILD_STATS_DIR))
         _LOGGER.info("Output content: {}; logs: {}".format(genome_outfolder, log_outfolder))
         if args.docker:
             # Set up some docker stuff
@@ -462,7 +462,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
             if not build_asset(genome, asset_key, asset_tag, asset_build_package, genome_outfolder,
                                specific_args, **input_assets):
                 log_path = os.path.abspath(os.path.join(genome_outfolder, asset_key, asset_tag,
-                                                        "_refgenie_build", "refgenie_log.md"))
+                                                        BUILD_STATS_DIR, ORI_LOG_NAME))
                 _LOGGER.info("'{}/{}:{}' was not added to the config, but directory has been left in place. "
                              "See the log file for details: {}".format(genome, asset_key, asset_tag, log_path))
                 return
@@ -943,7 +943,7 @@ def get_dir_digest(path, pm=None):
     if not is_command_callable("md5sum"):
         raise OSError("md5sum command line tool is required for asset digest calculation. \n"
                       "Install and try again, e.g on macOS: 'brew install md5sha1sum'")
-    cmd = "cd {}; find . -type f -not -path './_refgenie_build*' " \
+    cmd = "cd {}; find . -type f -not -path './" + BUILD_STATS_DIR + "*' " \
           "-exec md5sum {{}} \; |" \
           " sort -k 2 | awk '{{print $1}}' | " \
           "md5sum".format(path)
