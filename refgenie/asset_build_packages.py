@@ -19,7 +19,8 @@ REQ_IN = "required_inputs"
 REQ_ASSETS = "required_assets"
 CONT = "container"
 CMD_LST = "command_list"
-
+KEY = "KEY"
+DEFAULT_PTH = "default_path"
 
 asset_build_packages = {
     "fasta": {
@@ -29,7 +30,12 @@ asset_build_packages = {
             "fai": "{genome}.fa.fai",
             "chrom_sizes": "{genome}.chrom.sizes"
         },
-        REQ_IN: ["fasta"],
+        REQ_IN: [
+            {
+                KEY: "fasta",
+                DESC: "gzipped fasta file"
+            }
+        ],
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
         CMD_LST: [
@@ -45,7 +51,12 @@ asset_build_packages = {
             "dbnsfp": "{genome}_dbNSFP.txt.gz",
             "tabix": "{genome}_dbNSFP.txt.gz.tbi"
         },
-        REQ_IN: ["dbnsfp"],
+        REQ_IN: [
+            {
+                KEY: "dbnsfp",
+                DESC: "zipped dbSNFP database file"
+            }
+        ],
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
         CMD_LST: [
@@ -66,12 +77,21 @@ asset_build_packages = {
             "dbsnp": "{genome}_dbSNP.gz",
             "tabix": "{genome}_dbSNP.gz.tbi"
         },
-        REQ_IN: ["dbsnp"],
+        REQ_IN: [
+            {
+                KEY: "dbsnp_vcf",
+                DESC: "SNP database file in Variant Call Format (VCF)"
+            },
+            {
+                KEY: "dbsnp_tbi",
+                DESC: "tabix index of the dbsnp.vcf file"
+            }
+        ],
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
         CMD_LST: [
-            "cp {dbsnp} {asset_outfolder}/{genome}_dbSNP.gz",
-            "cp {dbsnp}.tbi {asset_outfolder}/{genome}_dbSNP.gz.tbi"
+            "cp {dbsnp_vcf} {asset_outfolder}/{genome}_dbSNP.gz",
+            "cp {dbsnp_tbi} {asset_outfolder}/{genome}_dbSNP.gz.tbi"
         ]
     },
     "bowtie2_index": {
@@ -80,7 +100,13 @@ asset_build_packages = {
             "bowtie2_index": "."
         },
         REQ_IN: [],
-        REQ_ASSETS: ["fasta"],
+        REQ_ASSETS: [
+            {
+                KEY: "fasta",
+                DEFAULT_PTH: "fasta",
+                DESC: "fasta asset for transcriptome"
+            }
+        ],
         CONT: "databio/refgenie",
         CMD_LST: [
             "bowtie2-build {fasta} {asset_outfolder}/{genome}",
@@ -92,7 +118,13 @@ asset_build_packages = {
             "bwa_index": "."
         },
         REQ_IN: [],
-        REQ_ASSETS: ["fasta"],
+        REQ_ASSETS: [
+            {
+                KEY: "fasta",
+                DEFAULT_PTH: "fasta",
+                DESC: "fasta asset for transcriptome"
+            }
+        ],
         CONT: "databio/refgenie",
         CMD_LST: [
             "ln -sf {fasta} {asset_outfolder}",
@@ -105,7 +137,13 @@ asset_build_packages = {
             "hisat2_index": "."
         },
         REQ_IN: [],
-        REQ_ASSETS: ["fasta"],
+        REQ_ASSETS: [
+            {
+                KEY: "fasta",
+                DEFAULT_PTH: "fasta",
+                DESC: "fasta asset for transcriptome"
+            }
+        ],
         CONT: "databio/refgenie",
         CMD_LST: [
             "hisat2-build {fasta} {asset_outfolder}/{genome}"
@@ -114,7 +152,13 @@ asset_build_packages = {
     "bismark_bt2_index": {
         DESC: "Genome index for Bisulfite-Seq applications, produced by bismark_genome_preparation using bowtie2",
         REQ_IN: [],
-        REQ_ASSETS: ["fasta"],
+        REQ_ASSETS: [
+            {
+                KEY: "fasta",
+                DEFAULT_PTH: "fasta",
+                DESC: "fasta asset for transcriptome"
+            }
+        ],
         CONT: "databio/refgenie",
         ASSETS: {
             "bismark_bt2_index": "."
@@ -127,7 +171,13 @@ asset_build_packages = {
     "bismark_bt1_index": {
         DESC: "Genome index for Bisulfite-Seq applications, produced by bismark_genome_preparation using bowtie1",
         REQ_IN: [],
-        REQ_ASSETS: ["fasta"],
+        REQ_ASSETS: [
+            {
+                KEY: "fasta",
+                DEFAULT_PTH: "fasta",
+                DESC: "fasta asset for transcriptome"
+            }
+        ],
         CONT: "databio/refgenie",
         ASSETS: {
             "bismark_bt1_index": "."
@@ -140,7 +190,13 @@ asset_build_packages = {
     "kallisto_index": {
         DESC: "Genome index for kallisto, produced with kallisto index",
         REQ_IN: [],
-        REQ_ASSETS: ["fasta"],
+        REQ_ASSETS: [
+            {
+                KEY: "fasta",
+                DEFAULT_PTH: "fasta",
+                DESC: "fasta asset for transcriptome"
+            }
+        ],
         CONT: "databio/refgenie",
         ASSETS: {
             "kallisto_index": "."
@@ -152,7 +208,13 @@ asset_build_packages = {
     "salmon_index": {
         DESC: "Transcriptome index for salmon, produced with salmon index",
         REQ_IN: [],
-        REQ_ASSETS: ["fasta"],
+        REQ_ASSETS: [
+            {
+                KEY: "fasta",
+                DEFAULT_PTH: "fasta",
+                DESC: "fasta asset for transcriptome"
+            }
+        ],
         CONT: "combinelab/salmon",
         ASSETS: {
             "salmon_index": "."
@@ -165,7 +227,18 @@ asset_build_packages = {
         DESC: "Transcriptome index for salmon, produced with salmon index using selective alignment method. "
               "Improves quantification accuracy compared to the regular index.",
         REQ_IN: [],
-        REQ_ASSETS: ["fasta", "txfasta.fasta"],
+        REQ_ASSETS: [
+            {
+                KEY: "genome",
+                DEFAULT_PTH: "txomefa",
+                DESC: "fasta asset for genome"
+            },
+            {
+                KEY: "txome",
+                DEFAULT_PTH: "genomefa",
+                DESC: "fasta asset for transcriptome"
+            }
+        ],
         CONT: "combinelab/salmon",
         ASSETS: {
             "salmon_index": "."
@@ -182,7 +255,13 @@ asset_build_packages = {
     "epilog_index": {
         DESC: "Genome index for CpG sites, produced by the epilog DNA methylation caller",
         REQ_IN: ["context"],
-        REQ_ASSETS: ["fasta"],
+        REQ_ASSETS: [
+            {
+                KEY: "fasta",
+                DEFAULT_PTH: "fasta",
+                DESC: "fasta asset for transcriptome"
+            }
+        ],
         CONT: "databio/refgenie",
         ASSETS: {
             "epilog_index": "."
@@ -194,7 +273,13 @@ asset_build_packages = {
     "star_index": {
         DESC: "Genome index for STAR RNA-seq aligner, produced with STAR --runMode genomeGenerate",
         REQ_IN: [],
-        REQ_ASSETS: ["fasta"],
+        REQ_ASSETS: [
+            {
+                KEY: "fasta",
+                DEFAULT_PTH: "fasta",
+                DESC: "fasta asset for transcriptome"
+            }
+        ],
         CONT: "databio/refgenie",
         ASSETS: {
             "star_index": "."
@@ -206,7 +291,12 @@ asset_build_packages = {
     },
     "gencode_gtf": {
         DESC: "GTF annotation asset which provides access to all annotated transcripts which make up an Ensembl gene set.",
-        REQ_IN: ["gencode_gtf"],
+        REQ_IN: [
+            {
+                KEY: "gencode_gtf",
+                DESC: "Annotation file in Gene Transfer Format (GTF) from Gencode"
+            }
+        ],
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
         ASSETS: {
@@ -218,7 +308,12 @@ asset_build_packages = {
     },
     "ensembl_gtf": {
         DESC: "Ensembl GTF, TSS, and gene body annotation",
-        REQ_IN: ["ensembl_gtf"],
+        REQ_IN: [
+            {
+                KEY: "ensembl_gtf",
+                DESC: "Annotation file in Gene Transfer Format (GTF) from Ensembl"
+            }
+        ],
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
         ASSETS: {
@@ -234,7 +329,12 @@ asset_build_packages = {
     },
     "ensembl_rb": {
         DESC: "A regulatory annotation file",
-        REQ_IN: ["gff"],
+        REQ_IN: [
+            {
+                KEY: "gff",
+                DESC: "Regulatory build annotation file in Gene Feature Format (GFF) from Ensembl"
+            }
+        ],
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
         ASSETS: {
@@ -246,7 +346,12 @@ asset_build_packages = {
     },
     "refgene_anno": {
         DESC: "gene, TSS, exon, intron, and premature mRNA annotation files",
-        REQ_IN: ["refgene"],
+        REQ_IN: [
+            {
+                KEY: "refgene",
+                DESC: "gzipped RefGene database annotation file"
+            }
+        ],
         REQ_ASSETS: [],
         CONT: "databio/refgenie",
         ASSETS: {
@@ -270,7 +375,18 @@ asset_build_packages = {
             "feat_annotation": "{genome}_annotations.bed.gz",
         },
         REQ_IN: [],
-        REQ_ASSETS: ["ensembl_gtf", "ensembl_rb"],
+        REQ_ASSETS: [
+            {
+                KEY: "ensembl_gtf",
+                DEFAULT_PTH: "ensembl_gtf",
+                DESC: ""
+            },
+            {
+                KEY: "ensembl_rb",
+                DEFAULT_PTH: "ensembl_rb",
+                DESC: ""
+            }
+        ],
         CONT: "databio/refgenie",
         CMD_LST: [
             "gzip -dc {ensembl_gtf} | awk '$3==\"exon\"' | grep -v 'pseudogene' | awk -v OFS='\t' '{{print \"chr\"$1, $4-1, $5, \"Exon\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u > {asset_outfolder}/{genome}_exons.bed",
