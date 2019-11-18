@@ -19,8 +19,10 @@ REQ_IN = "required_inputs"
 REQ_ASSETS = "required_assets"
 CONT = "container"
 CMD_LST = "command_list"
-KEY = "KEY"
+KEY = "key"
 DEFAULT_PTH = "default_path"
+
+RECIPE_CONSTS = ["DESC", "ASSET_DESC", "ASSETS", "PTH", "REQ_IN", "REQ_ASSETS", "CONT", "CMD_LST", "KEY", "DEFAULT_PTH"]
 
 asset_build_packages = {
     "fasta": {
@@ -104,7 +106,7 @@ asset_build_packages = {
             {
                 KEY: "fasta",
                 DEFAULT_PTH: "fasta",
-                DESC: "fasta asset for transcriptome"
+                DESC: "fasta asset for genome"
             }
         ],
         CONT: "databio/refgenie",
@@ -122,7 +124,7 @@ asset_build_packages = {
             {
                 KEY: "fasta",
                 DEFAULT_PTH: "fasta",
-                DESC: "fasta asset for transcriptome"
+                DESC: "fasta asset for genome"
             }
         ],
         CONT: "databio/refgenie",
@@ -141,7 +143,7 @@ asset_build_packages = {
             {
                 KEY: "fasta",
                 DEFAULT_PTH: "fasta",
-                DESC: "fasta asset for transcriptome"
+                DESC: "fasta asset for genome"
             }
         ],
         CONT: "databio/refgenie",
@@ -156,7 +158,7 @@ asset_build_packages = {
             {
                 KEY: "fasta",
                 DEFAULT_PTH: "fasta",
-                DESC: "fasta asset for transcriptome"
+                DESC: "fasta asset for genome"
             }
         ],
         CONT: "databio/refgenie",
@@ -175,7 +177,7 @@ asset_build_packages = {
             {
                 KEY: "fasta",
                 DEFAULT_PTH: "fasta",
-                DESC: "fasta asset for transcriptome"
+                DESC: "fasta asset for genome"
             }
         ],
         CONT: "databio/refgenie",
@@ -259,7 +261,7 @@ asset_build_packages = {
             {
                 KEY: "fasta",
                 DEFAULT_PTH: "fasta",
-                DESC: "fasta asset for transcriptome"
+                DESC: "fasta asset for genome"
             }
         ],
         CONT: "databio/refgenie",
@@ -277,7 +279,7 @@ asset_build_packages = {
             {
                 KEY: "fasta",
                 DEFAULT_PTH: "fasta",
-                DESC: "fasta asset for transcriptome"
+                DESC: "fasta asset for genome"
             }
         ],
         CONT: "databio/refgenie",

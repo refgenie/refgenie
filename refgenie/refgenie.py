@@ -452,13 +452,11 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             _LOGGER.debug("Using parents: {}".format(", ".join(parent_assets)))
             _LOGGER.debug("Provided inputs: {}".format(specific_args))
             for required_input in asset_build_package[REQ_IN]:
-                if specific_args is None or required_input not in specific_args:
+                if specific_args is None or required_input[KEY] not in specific_args.keys():
                     raise ValueError("Path to the '{ri}' input is required, but not provided. "
                                      "Specify it with: --paths {ri}=/path/to/{ri}_file".format(ri=required_input))
             genome_outfolder = os.path.join(args.outfolder, genome)
-            _LOGGER.info("Building '{}/{}:{}' using '{}' recipe, "
-                         "which requires:".format(genome, asset_key, asset_tag, recipe_name))
-            _make_asset_build_reqs(recipe_name)
+            _LOGGER.info("Building '{}/{}:{}' using '{}' recipe".format(genome, asset_key, asset_tag, recipe_name))
             if not build_asset(genome, asset_key, asset_tag, asset_build_package, genome_outfolder,
                                specific_args, **input_assets):
                 log_path = os.path.abspath(os.path.join(genome_outfolder, asset_key, asset_tag,
