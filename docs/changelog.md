@@ -5,7 +5,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [0.7.3] - unreleased
 
 ### Changed
-- in `refgenie build` command arguments naming scheme: `--{input_name} <path>` to `--paths {input_name}=<path>`
+- in `refgenie build` command arguments naming scheme: `--{input_name} <path>` to `--files {input_name}=<path>`
 - `-r`/`--requirements` in `refgenie build` command to `-q`/`--requirements`
 - recipe format: requirements (both assets and inputs) are lists of dicts rather that lists of strings
 

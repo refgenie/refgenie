@@ -118,8 +118,8 @@ def build_argparser():
              ' (e.g. fasta=hg38/fasta:default gtf=mm10/gencode_gtf:default).')
 
     sps[BUILD_CMD].add_argument(
-        '--paths', nargs="+", required=False, default=None,
-        help='Provide paths to the required inputs (e.g. fasta=/path/to/file.fa.gz).')
+        '--files', nargs="+", required=False, default=None,
+        help='Provide paths to the required files (e.g. fasta=/path/to/file.fa.gz).')
 
     sps[BUILD_CMD].add_argument(
         '-v', '--volumes', nargs="+", required=False, default=None,
@@ -329,8 +329,8 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
     rgc = RefGenConf(filepath=gencfg, writable=False)
 
     specific_args = None
-    if args.paths is not None:
-        specific_args = _parse_user_build_input(args.paths)
+    if args.files is not None:
+        specific_args = _parse_user_build_input(args.files)
 
     if not hasattr(args, "outfolder") or not args.outfolder:
         # Default to genome_folder
@@ -453,8 +453,8 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             _LOGGER.debug("Provided inputs: {}".format(specific_args))
             for required_input in asset_build_package[REQ_IN]:
                 if specific_args is None or required_input[KEY] not in specific_args.keys():
-                    raise ValueError("Path to the '{ri}' input is required, but not provided. "
-                                     "Specify it with: --paths {ri}=/path/to/{ri}_file".format(ri=required_input[KEY]))
+                    raise ValueError("Path to the '{x}' input is required, but not provided. "
+                                     "Specify it with: --files {x}=/path/to/{x}_file".format(x=required_input[KEY]))
             genome_outfolder = os.path.join(args.outfolder, genome)
             _LOGGER.info("Building '{}/{}:{}' using '{}' recipe".format(genome, asset_key, asset_tag, recipe_name))
             if not build_asset(genome, asset_key, asset_tag, asset_build_package, genome_outfolder,
@@ -882,7 +882,7 @@ def _make_asset_build_reqs(asset):
 
     reqs_list = []
     if asset_build_packages[asset][REQ_IN]:
-        reqs_list.append("- paths:\n{}".format("\n".join(_format_reqs(asset_build_packages[asset][REQ_IN]))))
+        reqs_list.append("- files:\n{}".format("\n".join(_format_reqs(asset_build_packages[asset][REQ_IN]))))
     if asset_build_packages[asset][REQ_ASSETS]:
         reqs_list.append("- assets:\n{}".format("\n".join(_format_reqs(asset_build_packages[asset][REQ_ASSETS]))))
     _LOGGER.info("\n".join(reqs_list))
