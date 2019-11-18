@@ -436,7 +436,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             if not specified_asset_keys and isinstance(args.assets, list):
                 _LOGGER.warning("Specified parent assets format is invalid. Using defaults.")
             for req_asset in asset_build_package[REQ_ASSETS]:
-                req_asset_data = parse_registry_path(req_asset)
+                req_asset_data = parse_registry_path(req_asset[KEY])
                 # for each req asset see if non-default parents were requested
                 if specified_asset_keys is not None and req_asset_data["asset"] in specified_asset_keys:
                     parent_data = \
@@ -444,17 +444,17 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                     g, a, t, s = parent_data["genome"], parent_data["asset"], \
                                  parent_data["tag"], parent_data["seek_key"]
                 else:  # if no custom parents requested for the req asset, use default one
-                    default = parse_registry_path(req_asset)
+                    default = parse_registry_path(req_asset[DEFAULT_PTH])
                     g, a, t, s = genome, default["asset"], \
                                  rgc.get_default_tag(genome, default["asset"]), req_asset_data["seek_key"]
                 parent_assets.append("{}/{}:{}".format(g, a, t))
-                input_assets[req_asset] = rgc.get_asset(g, a, t, s)
+                input_assets[req_asset[KEY]] = rgc.get_asset(g, a, t, s)
             _LOGGER.debug("Using parents: {}".format(", ".join(parent_assets)))
             _LOGGER.debug("Provided inputs: {}".format(specific_args))
             for required_input in asset_build_package[REQ_IN]:
                 if specific_args is None or required_input[KEY] not in specific_args.keys():
                     raise ValueError("Path to the '{ri}' input is required, but not provided. "
-                                     "Specify it with: --paths {ri}=/path/to/{ri}_file".format(ri=required_input))
+                                     "Specify it with: --paths {ri}=/path/to/{ri}_file".format(ri=required_input[KEY]))
             genome_outfolder = os.path.join(args.outfolder, genome)
             _LOGGER.info("Building '{}/{}:{}' using '{}' recipe".format(genome, asset_key, asset_tag, recipe_name))
             if not build_asset(genome, asset_key, asset_tag, asset_build_package, genome_outfolder,
