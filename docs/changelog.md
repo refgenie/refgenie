@@ -4,14 +4,26 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [0.7.3] - unreleased
 
+### Changed
+- in `refgenie build` command arguments naming scheme: `--{input_name} <path>` to `--paths {input_name}=<path>`
+- `-r`/`--requirements` in `refgenie build` command to `-q`/`--requirements`
+- recipe format: requirements (both assets and inputs) are lists of dicts rather that lists of strings
+
 ### Added
 - `refgenie id` command for asset digest retrieval
+- cross-namespace asset relationships support 
+- `--assets` argument in `refgenie build` command to provide parent assets, if required
+- `-r`/`--recipe` in `refgenie build` command argument to provide the recipe for the build
+
+### Removed
+- `-t`/`--tag` in `refgenie build`. Use more flexible `--assets` instead.
 
 ## [0.7.2] - 2019-11-06
 
 ### Added
 - `dbsnp` recipe
 - distribute the license file with the package
+
 
 ## [0.7.1] - 2019-10-29
 
