@@ -492,8 +492,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             rgc_rw.write()
             del rgc_rw
         else:
-            raise MissingRecipeError("There is no '{}' recipe defined".format(recipe_name))
-
+            _raise_missing_recipe_error(recipe_name)
 
 def refgenie_init(genome_config_path, genome_server=DEFAULT_SERVER, config_version=REQ_CFG_VERSION):
     """
@@ -634,20 +633,20 @@ def main():
         if not all([x["genome"] == asset_list[0]["genome"] for x in asset_list]):
             _LOGGER.error("Build can only build assets for one genome")
             sys.exit(1)
-        if args.requirements:
-            for a in asset_list:
-                if a["asset"] not in asset_build_packages.keys():
-                    _LOGGER.error("Recipe does not exist for asset '{}'".format(a["asset"]))
-                    sys.exit(1)
-                _LOGGER.info("'{}/{}' build requirements: ".format(a["genome"], a["asset"]))
-                _make_asset_build_reqs(a["asset"])
-            sys.exit(0)
         recipe_name = None
         if args.recipe:
             if len(asset_list) > 1:
                 _LOGGER.error("Recipes cannot be specified for multi-asset builds")
                 sys.exit(1)
             recipe_name = args.recipe
+        if args.requirements:
+            for a in asset_list:
+                recipe = recipe_name or a["asset"]
+                if recipe not in asset_build_packages.keys():
+                    _raise_missing_recipe_error(recipe)
+                _LOGGER.info("'{}' recipe requirements: ".format(recipe))
+                _make_asset_build_reqs(recipe)
+            sys.exit(0)
         refgenie_build(gencfg, asset_list[0]["genome"], asset_list, recipe_name, args)
 
     elif args.command == GET_ASSET_CMD:
@@ -873,11 +872,21 @@ def _make_asset_build_reqs(asset):
 
     :params str asset: name of the asset
     """
+    def _format_reqs(req_list):
+        """
+
+        :param list[dict] req_list:
+        :return list[str]:
+        """
+        templ = "\t{} ({})"
+        return [templ.format(req[KEY], req[DESC]) if DEFAULT_PTH not in req
+                else (templ + "; default: {}").format(req[KEY], req[DESC], req[DEFAULT_PTH]) for req in req_list]
+
     reqs_list = []
     if asset_build_packages[asset][REQ_IN]:
-        reqs_list.append("- paths: {}".format(", ".join(asset_build_packages[asset][REQ_IN])))
+        reqs_list.append("- paths:\n{}".format("\n".join(_format_reqs(asset_build_packages[asset][REQ_IN]))))
     if asset_build_packages[asset][REQ_ASSETS]:
-        reqs_list.append("- assets: {}".format(", ".join(asset_build_packages[asset][REQ_ASSETS])))
+        reqs_list.append("- assets:\n{}".format("\n".join(_format_reqs(asset_build_packages[asset][REQ_ASSETS]))))
     _LOGGER.info("\n".join(reqs_list))
 
 
@@ -927,6 +936,16 @@ def _parse_user_build_input(input):
     :return dict: mapping of keys, which are asset names and values
     """
     return {x.split("=")[0]: x.split("=")[1] for x in input if "=" in x}
+
+
+def _raise_missing_recipe_error(recipe):
+    """
+
+    :param recipe:
+    :return:
+    """
+    raise MissingRecipeError("Recipe '{}' not found. Available recipes: {}".
+                             format(recipe, ", ".join([*asset_build_packages])))
 
 
 if __name__ == '__main__':
