@@ -441,20 +441,24 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                 if specified_asset_keys is not None and req_asset_data["asset"] in specified_asset_keys:
                     parent_data = \
                         parse_registry_path(specified_assets[specified_asset_keys.index(req_asset_data["asset"])])
-                    g, a, t, s = parent_data["genome"], parent_data["asset"], \
-                                 parent_data["tag"], parent_data["seek_key"]
+                    g, a, t, s = parent_data["genome"], \
+                                 parent_data["asset"], \
+                                 parent_data["tag"] or rgc.get_default_tag(genome, parent_data["asset"]), \
+                                 parent_data["seek_key"]
                 else:  # if no custom parents requested for the req asset, use default one
                     default = parse_registry_path(req_asset[DEFAULT_PTH])
                     g, a, t, s = genome, default["asset"], \
-                                 rgc.get_default_tag(genome, default["asset"]), req_asset_data["seek_key"]
+                                 rgc.get_default_tag(genome, default["asset"]), \
+                                 req_asset_data["seek_key"]
                 parent_assets.append("{}/{}:{}".format(g, a, t))
                 input_assets[req_asset[KEY]] = rgc.get_asset(g, a, t, s)
             _LOGGER.debug("Using parents: {}".format(", ".join(parent_assets)))
             _LOGGER.debug("Provided inputs: {}".format(specific_args))
             for required_input in asset_build_package[REQ_IN]:
                 if specific_args is None or required_input[KEY] not in specific_args.keys():
-                    raise ValueError("Path to the '{x}' input is required, but not provided. "
-                                     "Specify it with: --files {x}=/path/to/{x}_file".format(x=required_input[KEY]))
+                    raise ValueError("Path to the '{x}' input ({desc}) is required, but not provided. "
+                                     "Specify it with: --files {x}=/path/to/{x}_file"
+                                     .format(x=required_input[KEY], desc=required_input[DESC]))
             genome_outfolder = os.path.join(args.outfolder, genome)
             _LOGGER.info("Building '{}/{}:{}' using '{}' recipe".format(genome, asset_key, asset_tag, recipe_name))
             if not build_asset(genome, asset_key, asset_tag, asset_build_package, genome_outfolder,
@@ -491,6 +495,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             del rgc_rw
         else:
             _raise_missing_recipe_error(recipe_name)
+
 
 def refgenie_init(genome_config_path, genome_server=DEFAULT_SERVER, config_version=REQ_CFG_VERSION):
     """
@@ -574,7 +579,6 @@ def perm_check_x(file_to_check, message_tag):
 
 def main():
     """ Primary workflow """
-
     parser = logmuse.add_logging_options(build_argparser())
     args, remaining_args = parser.parse_known_args()
     global _LOGGER
@@ -938,9 +942,10 @@ def _parse_user_build_input(input):
 
 def _raise_missing_recipe_error(recipe):
     """
+    Raise an error for a missing recipe, when one is requested
 
-    :param recipe:
-    :return:
+    :param str recipe: recipe name
+    :raise MissingRecipeError: always
     """
     raise MissingRecipeError("Recipe '{}' not found. Available recipes: {}".
                              format(recipe, ", ".join([*asset_build_packages])))
