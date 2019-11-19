@@ -122,6 +122,10 @@ def build_argparser():
         help='Provide paths to the required files (e.g. fasta=/path/to/file.fa.gz).')
 
     sps[BUILD_CMD].add_argument(
+        '--params', nargs="+", required=False, default=None,
+        help='Provide required parameter values (e.g. param1=value1).')
+
+    sps[BUILD_CMD].add_argument(
         '-v', '--volumes', nargs="+", required=False, default=None,
         help='If using docker, also mount these folders as volumes.')
 
@@ -226,7 +230,7 @@ def default_config_file():
     return os.path.join(os.path.dirname(__file__), "refgenie.yaml")
 
 
-def get_asset_vars(genome, asset_key, tag, outfolder, specific_args=None, **kwargs):
+def get_asset_vars(genome, asset_key, tag, outfolder, specific_args=None, specific_params=None, **kwargs):
     """
     Gives a dict with variables used to populate an asset path.
     """
@@ -237,6 +241,8 @@ def get_asset_vars(genome, asset_key, tag, outfolder, specific_args=None, **kwar
                   "asset_outfolder": asset_outfolder}
     if specific_args:
         asset_vars.update(specific_args)
+    if specific_params:
+        asset_vars.update(specific_params)
     asset_vars.update(**kwargs)
     return asset_vars
 
@@ -332,6 +338,10 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
     if args.files is not None:
         specific_args = _parse_user_build_input(args.files)
 
+    specific_params = None
+    if args.params is not None:
+        specific_params = _parse_user_build_input(args.params)
+
     if not hasattr(args, "outfolder") or not args.outfolder:
         # Default to genome_folder
         _LOGGER.debug("No outfolder provided, using genome config.")
@@ -344,7 +354,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                       format(args.config_file))
         args.config_file = default_config_file()
 
-    def build_asset(genome, asset_key, tag, build_pkg, genome_outfolder, specific_args, **kwargs):
+    def build_asset(genome, asset_key, tag, build_pkg, genome_outfolder, specific_args, specific_params, **kwargs):
         """
         Builds assets with pypiper and updates a genome config file.
 
@@ -380,7 +390,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
         _LOGGER.debug("Asset build package: " + str(build_pkg))
         gat = [genome, asset_key, tag]  # create a bundle list to simplify calls below
         # collect variables required to populate the command templates
-        asset_vars = get_asset_vars(*gat, genome_outfolder, specific_args, **kwargs)
+        asset_vars = get_asset_vars(*gat, genome_outfolder, specific_args, specific_params, **kwargs)
         # populate command templates
         # prior to populating, remove any seek_key parts from the keys, since these are not supported by format method
         command_list_populated = [x.format(**{k.split(".")[0]: v for k, v in asset_vars.items()})
@@ -446,23 +456,34 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                                  parent_data["tag"] or rgc.get_default_tag(genome, parent_data["asset"]), \
                                  parent_data["seek_key"]
                 else:  # if no custom parents requested for the req asset, use default one
-                    default = parse_registry_path(req_asset[DEFAULT_PTH])
+                    default = parse_registry_path(req_asset[DEFAULT])
                     g, a, t, s = genome, default["asset"], \
                                  rgc.get_default_tag(genome, default["asset"]), \
                                  req_asset_data["seek_key"]
                 parent_assets.append("{}/{}:{}".format(g, a, t))
                 input_assets[req_asset[KEY]] = rgc.get_asset(g, a, t, s)
             _LOGGER.debug("Using parents: {}".format(", ".join(parent_assets)))
-            _LOGGER.debug("Provided inputs: {}".format(specific_args))
-            for required_input in asset_build_package[REQ_IN]:
-                if specific_args is None or required_input[KEY] not in specific_args.keys():
+            _LOGGER.debug("Provided files: {}".format(specific_args))
+            _LOGGER.debug("Provided parameters: {}".format(specific_params))
+            for required_file in asset_build_package[REQ_IN]:
+                if specific_args is None or required_file[KEY] not in specific_args.keys():
                     raise ValueError("Path to the '{x}' input ({desc}) is required, but not provided. "
                                      "Specify it with: --files {x}=/path/to/{x}_file"
-                                     .format(x=required_input[KEY], desc=required_input[DESC]))
+                                     .format(x=required_file[KEY], desc=required_file[DESC]))
+            for required_param in asset_build_package[REQ_PARAMS]:
+                if specific_params is None:
+                    specific_params = {}
+                if required_param[KEY] not in specific_params.keys():
+                    if required_param[DEFAULT] is None:
+                        raise ValueError("Value for the parameter '{x}' ({desc}) is required, but not provided. "
+                                         "Specify it with: --params {x}=value"
+                                         .format(x=required_param[KEY], desc=required_param[DESC]))
+                    else:
+                        specific_params.update({required_param[KEY]: required_param[DEFAULT]})
             genome_outfolder = os.path.join(args.outfolder, genome)
             _LOGGER.info("Building '{}/{}:{}' using '{}' recipe".format(genome, asset_key, asset_tag, recipe_name))
             if not build_asset(genome, asset_key, asset_tag, asset_build_package, genome_outfolder,
-                               specific_args, **input_assets):
+                               specific_args, specific_params, **input_assets):
                 log_path = os.path.abspath(os.path.join(genome_outfolder, asset_key, asset_tag,
                                                         BUILD_STATS_DIR, ORI_LOG_NAME))
                 _LOGGER.info("'{}/{}:{}' was not added to the config, but directory has been left in place. "
@@ -881,14 +902,16 @@ def _make_asset_build_reqs(asset):
         :return list[str]:
         """
         templ = "\t{} ({})"
-        return [templ.format(req[KEY], req[DESC]) if DEFAULT_PTH not in req
-                else (templ + "; default: {}").format(req[KEY], req[DESC], req[DEFAULT_PTH]) for req in req_list]
+        return [templ.format(req[KEY], req[DESC]) if DEFAULT not in req
+                else (templ + "; default: {}").format(req[KEY], req[DESC], req[DEFAULT]) for req in req_list]
 
     reqs_list = []
     if asset_build_packages[asset][REQ_IN]:
         reqs_list.append("- files:\n{}".format("\n".join(_format_reqs(asset_build_packages[asset][REQ_IN]))))
     if asset_build_packages[asset][REQ_ASSETS]:
         reqs_list.append("- assets:\n{}".format("\n".join(_format_reqs(asset_build_packages[asset][REQ_ASSETS]))))
+    if asset_build_packages[asset][REQ_ASSETS]:
+        reqs_list.append("- params:\n{}".format("\n".join(_format_reqs(asset_build_packages[asset][REQ_PARAMS]))))
     _LOGGER.info("\n".join(reqs_list))
 
 
