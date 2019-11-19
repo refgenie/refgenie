@@ -434,7 +434,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
         recipe_name = recipe_name or asset_key
 
         if recipe_name in asset_build_packages.keys():
-            asset_build_package = asset_build_packages[recipe_name]
+            asset_build_package = _check_recipe(asset_build_packages[recipe_name])
             # handle user-requested parents for the required assets
             input_assets = {}
             parent_assets = []
@@ -465,7 +465,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             _LOGGER.debug("Using parents: {}".format(", ".join(parent_assets)))
             _LOGGER.debug("Provided files: {}".format(specific_args))
             _LOGGER.debug("Provided parameters: {}".format(specific_params))
-            for required_file in asset_build_package[REQ_IN]:
+            for required_file in asset_build_package[REQ_FILES]:
                 if specific_args is None or required_file[KEY] not in specific_args.keys():
                     raise ValueError("Path to the '{x}' input ({desc}) is required, but not provided. "
                                      "Specify it with: --files {x}=/path/to/{x}_file"
@@ -906,11 +906,11 @@ def _make_asset_build_reqs(asset):
                 else (templ + "; default: {}").format(req[KEY], req[DESC], req[DEFAULT]) for req in req_list]
 
     reqs_list = []
-    if asset_build_packages[asset][REQ_IN]:
-        reqs_list.append("- files:\n{}".format("\n".join(_format_reqs(asset_build_packages[asset][REQ_IN]))))
+    if asset_build_packages[asset][REQ_FILES]:
+        reqs_list.append("- files:\n{}".format("\n".join(_format_reqs(asset_build_packages[asset][REQ_FILES]))))
     if asset_build_packages[asset][REQ_ASSETS]:
         reqs_list.append("- assets:\n{}".format("\n".join(_format_reqs(asset_build_packages[asset][REQ_ASSETS]))))
-    if asset_build_packages[asset][REQ_ASSETS]:
+    if asset_build_packages[asset][REQ_PARAMS]:
         reqs_list.append("- params:\n{}".format("\n".join(_format_reqs(asset_build_packages[asset][REQ_PARAMS]))))
     _LOGGER.info("\n".join(reqs_list))
 
@@ -972,6 +972,27 @@ def _raise_missing_recipe_error(recipe):
     """
     raise MissingRecipeError("Recipe '{}' not found. Available recipes: {}".
                              format(recipe, ", ".join([*asset_build_packages])))
+
+
+def _check_recipe(recipe):
+    """
+    Check whether there are any key name clashes in the recipe requirements
+    and raise an error if there are
+
+    :param dict recipe: asset_build_package
+    :raise ValueError: if any key names are duplicated
+    """
+    req_keys = []
+    for req in [REQ_PARAMS, REQ_ASSETS, REQ_FILES]:
+        req_keys.extend([req_dict[KEY] for req_dict in recipe[req]])
+    unique = []
+    for k in req_keys:
+        if k not in unique:
+            unique.append(k)
+        else:
+            raise ValueError("The recipe contains a duplicated requirement key '{}', "
+                             "which is not permitted.".format(k))
+    return recipe
 
 
 if __name__ == '__main__':

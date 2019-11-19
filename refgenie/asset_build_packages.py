@@ -15,7 +15,7 @@ DESC = "description"
 ASSET_DESC = "asset_description"
 ASSETS = "assets"
 PTH = "path"
-REQ_IN = "required_files"
+REQ_FILES = "required_files"
 REQ_ASSETS = "required_assets"
 REQ_PARAMS = "required_parameters"
 CONT = "container"
@@ -23,7 +23,7 @@ CMD_LST = "command_list"
 KEY = "key"
 DEFAULT = "default"
 
-RECIPE_CONSTS = ["DESC", "ASSET_DESC", "ASSETS", "PTH", "REQ_IN", "REQ_ASSETS", "CONT", "CMD_LST", "KEY", "DEFAULT"]
+RECIPE_CONSTS = ["DESC", "ASSET_DESC", "ASSETS", "PTH", "REQ_FILES", "REQ_ASSETS", "CONT", "CMD_LST", "KEY", "DEFAULT"]
 
 asset_build_packages = {
     "fasta": {
@@ -33,7 +33,7 @@ asset_build_packages = {
             "fai": "{genome}.fa.fai",
             "chrom_sizes": "{genome}.chrom.sizes"
         },
-        REQ_IN: [
+        REQ_FILES: [
             {
                 KEY: "fasta",
                 DESC: "gzipped fasta file"
@@ -55,7 +55,7 @@ asset_build_packages = {
             "dbnsfp": "{genome}_dbNSFP.txt.gz",
             "tabix": "{genome}_dbNSFP.txt.gz.tbi"
         },
-        REQ_IN: [
+        REQ_FILES: [
             {
                 KEY: "dbnsfp",
                 DESC: "zipped dbSNFP database file"
@@ -82,7 +82,7 @@ asset_build_packages = {
             "dbsnp": "{genome}_dbSNP.gz",
             "tabix": "{genome}_dbSNP.gz.tbi"
         },
-        REQ_IN: [
+        REQ_FILES: [
             {
                 KEY: "dbsnp_vcf",
                 DESC: "SNP database file in Variant Call Format (VCF)"
@@ -105,7 +105,7 @@ asset_build_packages = {
         ASSETS: {
             "bowtie2_index": "."
         },
-        REQ_IN: [],
+        REQ_FILES: [],
         REQ_ASSETS: [
             {
                 KEY: "fasta",
@@ -124,7 +124,7 @@ asset_build_packages = {
         ASSETS: {
             "bwa_index": "."
         },
-        REQ_IN: [],
+        REQ_FILES: [],
         REQ_ASSETS: [
             {
                 KEY: "fasta",
@@ -144,7 +144,7 @@ asset_build_packages = {
         ASSETS: {
             "hisat2_index": "."
         },
-        REQ_IN: [],
+        REQ_FILES: [],
         REQ_ASSETS: [
             {
                 KEY: "fasta",
@@ -160,7 +160,7 @@ asset_build_packages = {
     },
     "bismark_bt2_index": {
         DESC: "Genome index for Bisulfite-Seq applications, produced by bismark_genome_preparation using bowtie2",
-        REQ_IN: [],
+        REQ_FILES: [],
         REQ_ASSETS: [
             {
                 KEY: "fasta",
@@ -180,7 +180,7 @@ asset_build_packages = {
     },
     "bismark_bt1_index": {
         DESC: "Genome index for Bisulfite-Seq applications, produced by bismark_genome_preparation using bowtie1",
-        REQ_IN: [],
+        REQ_FILES: [],
         REQ_ASSETS: [
             {
                 KEY: "fasta",
@@ -200,7 +200,7 @@ asset_build_packages = {
     },  
     "kallisto_index": {
         DESC: "Genome index for kallisto, produced with kallisto index",
-        REQ_IN: [],
+        REQ_FILES: [],
         REQ_ASSETS: [
             {
                 KEY: "fasta",
@@ -219,7 +219,7 @@ asset_build_packages = {
     },
     "salmon_index": {
         DESC: "Transcriptome index for salmon, produced with salmon index",
-        REQ_IN: [],
+        REQ_FILES: [],
         REQ_ASSETS: [
             {
                 KEY: "fasta",
@@ -239,7 +239,7 @@ asset_build_packages = {
     "salmon_sa_index": {
         DESC: "Transcriptome index for salmon, produced with salmon index using selective alignment method. "
               "Improves quantification accuracy compared to the regular index.",
-        REQ_IN: [],
+        REQ_FILES: [],
         REQ_ASSETS: [
             {
                 KEY: "genome",
@@ -268,7 +268,7 @@ asset_build_packages = {
     },
     "epilog_index": {
         DESC: "Genome index for CpG sites, produced by the epilog DNA methylation caller",
-        REQ_IN: [],
+        REQ_FILES: [],
         REQ_ASSETS: [
             {
                 KEY: "fasta",
@@ -293,7 +293,7 @@ asset_build_packages = {
     },
     "star_index": {
         DESC: "Genome index for STAR RNA-seq aligner, produced with STAR --runMode genomeGenerate",
-        REQ_IN: [],
+        REQ_FILES: [],
         REQ_ASSETS: [
             {
                 KEY: "fasta",
@@ -313,7 +313,7 @@ asset_build_packages = {
     },
     "gencode_gtf": {
         DESC: "GTF annotation asset which provides access to all annotated transcripts which make up an Ensembl gene set.",
-        REQ_IN: [
+        REQ_FILES: [
             {
                 KEY: "gencode_gtf",
                 DESC: "Annotation file in Gene Transfer Format (GTF) from Gencode"
@@ -331,7 +331,7 @@ asset_build_packages = {
     },
     "ensembl_gtf": {
         DESC: "Ensembl GTF, TSS, and gene body annotation",
-        REQ_IN: [
+        REQ_FILES: [
             {
                 KEY: "ensembl_gtf",
                 DESC: "Annotation file in Gene Transfer Format (GTF) from Ensembl"
@@ -353,7 +353,7 @@ asset_build_packages = {
     },
     "ensembl_rb": {
         DESC: "A regulatory annotation file",
-        REQ_IN: [
+        REQ_FILES: [
             {
                 KEY: "gff",
                 DESC: "Regulatory build annotation file in Gene Feature Format (GFF) from Ensembl"
@@ -371,7 +371,7 @@ asset_build_packages = {
     },
     "refgene_anno": {
         DESC: "gene, TSS, exon, intron, and premature mRNA annotation files",
-        REQ_IN: [
+        REQ_FILES: [
             {
                 KEY: "refgene",
                 DESC: "gzipped RefGene database annotation file"
@@ -400,7 +400,7 @@ asset_build_packages = {
         ASSETS: {
             "feat_annotation": "{genome}_annotations.bed.gz",
         },
-        REQ_IN: [],
+        REQ_FILES: [],
         REQ_ASSETS: [
             {
                 KEY: "ensembl_gtf",
