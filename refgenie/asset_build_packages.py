@@ -440,14 +440,21 @@ asset_build_packages = {
                 KEY: "esa",
                 DEFAULT: "suffixerator_index",
                 DESC: "enhanced suffix array index for genome"
+            },
+            {
+                KEY: "fasta",
+                DEFAULT: "fasta",
+                DESC: "fasta asset for genome"
             }
         ],
         CONT: "databio/refgenie",
         ASSETS: {
-            "tindex_{mersize}": "{genome}.tal_{mersize}"
+            "tindex": "{genome}.tal_{mersize}",
+            "search_file": "{genome}.tal_{mersize}.gtTxt"
         },
         CMD_LST: [
-            "gt tallymer mkindex -v -counts -pl -mersize {mersize} -minocc {minocc} -indexname {asset_outfolder}/{genome}.tal_{mersize} -esa {esa}/{genome}.sft"
+            "gt tallymer mkindex -v -counts -pl -mersize {mersize} -minocc {minocc} -indexname {asset_outfolder}/{genome}.tal_{mersize} -esa {esa}/{genome}.sft",
+            "gt tallymer search -output qseqnum qpos -strand fp -tyr {asset_outfolder}/{genome}.tal_{mersize} -q {fasta} > {asset_outfolder}/{genome}.tal_{mersize}.gtTxt"
         ] 
     },
     "feat_annotation": {
