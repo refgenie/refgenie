@@ -390,10 +390,65 @@ asset_build_packages = {
         CMD_LST: [
             "cp {refgene} {asset_outfolder}/{genome}_refGene.txt.gz",
             "gzip -dc {asset_outfolder}/{genome}_refGene.txt.gz | awk '{{if($4==\"+\"){{print $3\"\t\"$5\"\t\"$5\"\t\"$13\"\t.\t\"$4}}else{{print $3\"\t\"$6\"\t\"$6\"\t\"$13\"\t.\t\"$4}}}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_TSS.bed",
-            "gzip -dc {asset_outfolder}/{genome}_refGene.txt.gz  | awk -v OFS='\t' '$9>1' | awk -v OFS='\t' '{{ n = split($10, a, \",\"); split($11, b, \",\"); for(i=1; i<n; ++i) print $3, a[i], b[i], $13, i, $4 }}' | awk -v OFS='\t' '$6==\"+\" && $5!=1 {{print $0}} $6==\"-\" {{print $0}}' | awk '$4!=prev4 && prev6==\"-\" {{prev4=$4; prev6=$6; delete line[NR-1]; idx-=1}} {{line[++idx]=$0; prev4=$4; prev6=$6}} END {{for (x=1; x<=idx; x++) print line[x]}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_exons.bed",
-            "gzip -dc {asset_outfolder}/{genome}_refGene.txt.gz  | awk -v OFS='\t' '$9>1' | awk -F'\t' '{{ exonCount=int($9);split($10,exonStarts,\"[,]\"); split($11,exonEnds,\"[,]\"); for(i=1;i<exonCount;i++) {{printf(\"%s\\t%s\\t%s\\t%s\\t%d\\t%s\\n\",$3,exonEnds[i],exonStarts[i+1],$13,($3==\"+\"?i:exonCount-i),$4);}}}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_introns.bed",
-            "gzip -dc {asset_outfolder}/{genome}_refGene.txt.gz  | grep 'cmpl' | awk  '{{print $3\"\t\"$5\"\t\"$6\"\t\"$13\"\t.\t\"$4}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u >  {asset_outfolder}/{genome}_pre-mRNA.bed"
+            "gzip -dc {asset_outfolder}/{genome}_refGene.txt.gz | awk -v OFS='\t' '$9>1' | awk -v OFS='\t' '{{ n = split($10, a, \",\"); split($11, b, \",\"); for(i=1; i<n; ++i) print $3, a[i], b[i], $13, i, $4 }}' | awk -v OFS='\t' '$6==\"+\" && $5!=1 {{print $0}} $6==\"-\" {{print $0}}' | awk '$4!=prev4 && prev6==\"-\" {{prev4=$4; prev6=$6; delete line[NR-1]; idx-=1}} {{line[++idx]=$0; prev4=$4; prev6=$6}} END {{for (x=1; x<=idx; x++) print line[x]}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_exons.bed",
+            "gzip -dc {asset_outfolder}/{genome}_refGene.txt.gz | awk -v OFS='\t' '$9>1' | awk -F'\t' '{{ exonCount=int($9);split($10,exonStarts,\"[,]\"); split($11,exonEnds,\"[,]\"); for(i=1;i<exonCount;i++) {{printf(\"%s\\t%s\\t%s\\t%s\\t%d\\t%s\\n\",$3,exonEnds[i],exonStarts[i+1],$13,($3==\"+\"?i:exonCount-i),$4);}}}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_introns.bed",
+            "gzip -dc {asset_outfolder}/{genome}_refGene.txt.gz | grep 'cmpl' | awk  '{{print $3\"\t\"$5\"\t\"$6\"\t\"$13\"\t.\t\"$4}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u >  {asset_outfolder}/{genome}_pre-mRNA.bed"
             ]
+    },
+    "suffixerator_index": {
+        DESC: "Enhanced suffix array index for genomes using gt (GenomeTools) suffixerator program",
+        REQ_PARAMS: [
+            {
+                KEY: "memlimit",
+                DEFAULT: "8GB",
+                DESC: "The maximum amount of memory available to be used during index construction."
+            }
+        ],
+        REQ_IN: [],
+        REQ_ASSETS: [
+            {
+                KEY: "fasta",
+                DEFAULT: "fasta",
+                DESC: "fasta asset for genome"
+            }
+        ],
+        CONT: "databio/refgenie",
+        ASSETS: {
+            "esa": "{genome}.sft"
+        },
+        CMD_LST: [
+            "gt suffixerator -dna -pl -tis -suf -lcp -v -showprogress -memlimit {memlimit} -db {fasta} -indexname {asset_outfolder}/{genome}.sft"
+        ] 
+    },
+    "tallymer_index": {
+        DESC: "Indexed k-mers for a given enhanced suffix array at a fixed value of k",
+        REQ_PARAMS: [
+            {
+                KEY: "mersize",
+                DEFAULT: "30",
+                DESC: "The mer size."
+            },
+            {
+                KEY: "minocc",
+                DEFAULT: "2",
+                DESC: "The minimum occurrence number for the mers to index."
+            }
+        ],
+        REQ_IN: [],
+        REQ_ASSETS: [
+            {
+                KEY: "esa",
+                DEFAULT: "suffixerator_index",
+                DESC: "enhanced suffix array index for genome"
+            }
+        ],
+        CONT: "databio/refgenie",
+        ASSETS: {
+            "tindex_{mersize}": "{genome}.tal_{mersize}"
+        },
+        CMD_LST: [
+            "gt tallymer mkindex -v -counts -pl -mersize {mersize} -minocc {minocc} -indexname {asset_outfolder}/{genome}.tal_{mersize} -esa {esa}/{genome}.sft"
+        ] 
     },
     "feat_annotation": {
         DESC: "Combined genomic feature annotation created using an Ensembl GTF annotation asset and an Ensembl regulatory build annotation asset",
