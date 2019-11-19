@@ -404,7 +404,7 @@ asset_build_packages = {
                 DESC: "The maximum amount of memory available to be used during index construction."
             }
         ],
-        REQ_IN: [],
+        REQ_FILES: [],
         REQ_ASSETS: [
             {
                 KEY: "fasta",
@@ -434,7 +434,7 @@ asset_build_packages = {
                 DESC: "The minimum occurrence number for the mers to index."
             }
         ],
-        REQ_IN: [],
+        REQ_FILES: [],
         REQ_ASSETS: [
             {
                 KEY: "esa",
