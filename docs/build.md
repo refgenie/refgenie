@@ -6,20 +6,41 @@ Building assets is a bit more complicated than pulling them. You'll need to set 
 
 ## What assets can refgenie build?
 
-At the moment the building functionality is under rapid development and may change in the future. While `refgenie` is totally flexible with respect to genome, it is more restricted in terms of what assets it can build. We are planning to allow users to specify their own recipes for arbitrary assets, but at the moment, `refgenie` can only build a handful of assets for which we have already created building recipes. If you type `refgenie list`, you'll get a list of all the assets you can build with refgenie (under *recipes*). You can also browse the [list of available assets](available_assets.md) here. If you need refgenie to manage an asset not in this list, you can either 1) wait for our pending implementation of custom recipes, or 2) [add custom assets](custom_assets.md), which you would build separately and then use refgenie just to manage them.
+At the moment the building functionality is under rapid development and may change in the future. While `refgenie` is totally flexible with respect to genome, it is more restricted in terms of what assets it can build. We are planning to allow users to specify their own recipes for arbitrary assets, but at the moment, `refgenie` can only build a handful of assets for which we have already created building recipes. If you type `refgenie list`, you'll get a list of all the assets you can build with refgenie (under *recipes*). You can also browse the [list of available assets](available_assets.md) here. If you need refgenie to manage an asset not in this list, you can either 1) wait for our pending implementation of custom recipes, or 2) [add custom assets](custom_assets.md), which you would build separately and then use refgenie just to manage them as recipes define reasonable defaults, which rarely require changing. 
 
+## Specifying a recipe for a build
 
-## 1. Required asset inputs
+By default refgenie will use an asset-named recipe if no other recipe is specified. However, if you wish to have two assets built the same way in one namespace, you can add `-r` or `--recipe` argument to achieve that.
 
-Each asset requires some inputs, which can be either arguments (external files) or pre-existing assets already managed by refgenie. To view required inputs for an asset, add an `-r` flag to the `refgenie build` command: 
+In the example below we build genome and transcriptome `fasta` assets for a single namespace (`hg38`):
 
 ```
-$ refgenie build hg38/bowtie2_index -r
-
-'hg38/bowtie2_index' build requirements: 
-- assets: fasta
+$ refgenie build hg38/genomefa -r fasta --files fasta=/path/genome.fa.gz
+$ refgenie build hg38/txomefa -r fasta --files fasta=/path/txome.fa.gz
 ```  
-Notice how 'fasta' appears under `assets` and not under `arguments`. This means to build a bowtie2 index, you do *not* provide a fasta file as an *argument*; instead, you *must already have a fasta asset managed by `refgenie`*. One advantage of this is that it allows refgenie to keep a record of how you've built your assets, so `refgenie` can remember the link between this bowtie2 asset and the fasta asset, which turns out to be very useful for maintaining provenance of your assets. It also makes it easier to build derived assets like this, because you don't actually have to pass any additional arguments to build them.
+
+## Recipes require inputs
+
+Each asset requires some inputs, which we classify as _assets_, _files_ or _parameters_. 
+
+| **input class** |    **recipe name**   | **command line argument** |    **input type**   |
+|:---------------:|:--------------------:|:-------------------------:|:-------------------:|
+| assets          |   `required_assets`  |         `--assets`        | asset registry path |
+| files           |   `required_files`   |         `--files`         |    file/dir path    |
+| parameters      | `required_parametes` |       `--params`          |        string       |
+
+
+ To view required inputs for an asset, add an `-q` or `--requirements` flag to the `refgenie build` command: 
+
+```
+$ refgenie build hg38/bowtie2_index -q
+
+'bowtie2_index' recipe requirements: 
+- assets:
+	fasta (fasta asset for genome); default: fasta
+```  
+
+Notice how 'fasta' appears under `assets` and not under `files` or `params`. This means to build a bowtie2 index, you do *not* provide a fasta file as an *argument*; instead, you *must already have a fasta asset managed by `refgenie`*. One advantage of this is that it allows refgenie to keep a record of how you've built your assets, so `refgenie` can remember the link between this bowtie2 asset and the fasta asset, which turns out to be very useful for maintaining provenance of your assets. It also makes it easier to build derived assets like this, because you don't actually have to pass any additional arguments to build them.
 
 So, you'll need to build the `fasta` asset for `hg38` genome before building `bowtie2_index`, but once you have that, building this asset is as simple as typing:
 
@@ -27,24 +48,34 @@ So, you'll need to build the `fasta` asset for `hg38` genome before building `bo
 $ refgenie build hg38/bowtie2_index
 ```
 
-For many of the built-in recipes, a pre-existing FASTA asset is the only requirement. Next, here's an example of an asset that requires an argument, but not a pre-existing asset:
+For many of the built-in recipes, a pre-existing `fasta` asset is the only requirement and refgenie will use the correct one by default. However, if you wish to build an asset with a different asset as an input, refgenie provides full flexibility. For instance, you can use `fasta:other_tag` (non-default tag) or even `hg38_cdna/fasta` (`fasta` asset from a different namespace) by adding `--assets` argument to the `refgenie build` command, like so:
 
 ```
-$ refgenie build hg38/refgene_anno -r
+$ refgenie build hg38/bowtie2_index --assets fasta=hg38_cdna/fasta
+``` 
 
-'hg38/refgene_anno' build requirements: 
-- arguments: refgene
+This will build a `bowtie2_index` asset in `hg38` namespace but based on a transcriptome `fasta`.
+
+
+Next, here's an example of an asset that requires an argument, but not a pre-existing asset:
+
+```
+$ refgenie build hg38/refgene_anno -q
+
+'refgene_anno' recipe requirements: 
+- files:
+	refgene (gzipped RefGene database annotation file)
 ```
 
-You'll need to provide this recipe with a `refgene` argument, like this:
+You'll need to provide this recipe with a `refgene` file, like this:
 
 ```
-$ refgenie build hg38/refgene_anno --refgene REFGENE_FILE.txt.gz
+$ refgenie build hg38/refgene_anno --files refgene=REFGENE_FILE.txt.gz
 ```
 
 You can see the [example build output](build_output.md).
 
-## 2. Required asset software
+## Recipes require software
 
 If you want to build assets, you'll need to get the software required by the asset you want to build. You have three choices to get that software: you can either install it natively, use a docker image, or use a bulker manifest.   
 
