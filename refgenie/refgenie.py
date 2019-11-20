@@ -334,13 +334,8 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
     """
     rgc = RefGenConf(filepath=gencfg, writable=False)
 
-    specific_args = None
-    if args.files is not None:
-        specific_args = _parse_user_build_input(args.files)
-
-    specific_params = None
-    if args.params is not None:
-        specific_params = _parse_user_build_input(args.params)
+    specified_args = _parse_user_build_input(args.files)
+    specified_params = _parse_user_build_input(args.params)
 
     if not hasattr(args, "outfolder") or not args.outfolder:
         # Default to genome_folder
@@ -463,27 +458,27 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                 parent_assets.append("{}/{}:{}".format(g, a, t))
                 input_assets[req_asset[KEY]] = rgc.get_asset(g, a, t, s)
             _LOGGER.debug("Using parents: {}".format(", ".join(parent_assets)))
-            _LOGGER.debug("Provided files: {}".format(specific_args))
-            _LOGGER.debug("Provided parameters: {}".format(specific_params))
+            _LOGGER.debug("Provided files: {}".format(specified_args))
+            _LOGGER.debug("Provided parameters: {}".format(specified_params))
             for required_file in asset_build_package[REQ_FILES]:
-                if specific_args is None or required_file[KEY] not in specific_args.keys():
+                if specified_args is None or required_file[KEY] not in specified_args.keys():
                     raise ValueError("Path to the '{x}' input ({desc}) is required, but not provided. "
                                      "Specify it with: --files {x}=/path/to/{x}_file"
                                      .format(x=required_file[KEY], desc=required_file[DESC]))
             for required_param in asset_build_package[REQ_PARAMS]:
-                if specific_params is None:
-                    specific_params = {}
-                if required_param[KEY] not in specific_params.keys():
+                if specified_params is None:
+                    specified_params = {}
+                if required_param[KEY] not in specified_params.keys():
                     if required_param[DEFAULT] is None:
                         raise ValueError("Value for the parameter '{x}' ({desc}) is required, but not provided. "
                                          "Specify it with: --params {x}=value"
                                          .format(x=required_param[KEY], desc=required_param[DESC]))
                     else:
-                        specific_params.update({required_param[KEY]: required_param[DEFAULT]})
+                        specified_params.update({required_param[KEY]: required_param[DEFAULT]})
             genome_outfolder = os.path.join(args.outfolder, genome)
             _LOGGER.info("Building '{}/{}:{}' using '{}' recipe".format(genome, asset_key, asset_tag, recipe_name))
             if not build_asset(genome, asset_key, asset_tag, asset_build_package, genome_outfolder,
-                               specific_args, specific_params, **input_assets):
+                               specified_args, specified_params, **input_assets):
                 log_path = os.path.abspath(os.path.join(genome_outfolder, asset_key, asset_tag,
                                                         BUILD_STATS_DIR, ORI_LOG_NAME))
                 _LOGGER.info("'{}/{}:{}' was not added to the config, but directory has been left in place. "
@@ -960,7 +955,7 @@ def _parse_user_build_input(input):
     :param list input: user command line input, formatted as follows: [fasta=txt, test=txt]
     :return dict: mapping of keys, which are asset names and values
     """
-    return {x.split("=")[0]: x.split("=")[1] for x in input if "=" in x}
+    return {x.split("=")[0]: x.split("=")[1] for x in input if "=" in x} if input is not None else input
 
 
 def _raise_missing_recipe_error(recipe):
