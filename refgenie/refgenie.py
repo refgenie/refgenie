@@ -16,12 +16,13 @@ import pyfaidx
 from ._version import __version__
 from .exceptions import MissingGenomeConfigError, MissingFolderError
 from .asset_build_packages import *
+from .const import *
 
 import logmuse
 import pypiper
 import refgenconf
 from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError, MissingRecipeError, DownloadJsonError
-from refgenconf.const import *
+# from refgenconf.const import *
 from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, VersionInHelpParser, is_command_callable
 from ubiquerg.system import is_writable
 import yacman
@@ -30,23 +31,6 @@ import yacman
 from .refget import fasta_checksum
 
 _LOGGER = None
-
-BUILD_CMD = "build"
-INIT_CMD = "init"
-PULL_CMD = "pull"
-LIST_LOCAL_CMD = "list"
-LIST_REMOTE_CMD = "listr"
-GET_ASSET_CMD = "seek"
-INSERT_CMD = "add"
-REMOVE_CMD = "remove"
-GETSEQ_CMD = "getseq"
-TAG_CMD = "tag"
-ID_CMD = "id"
-
-GENOME_ONLY_REQUIRED = [REMOVE_CMD, GETSEQ_CMD]
-
-# For each asset we assume a genome is also required
-ASSET_REQUIRED = [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, TAG_CMD, ID_CMD]
 
 
 def build_argparser():
@@ -70,22 +54,8 @@ def build_argparser():
         return subparsers.add_parser(
             cmd, description=description, help=description)
 
-    subparser_messages = {
-        INIT_CMD: "Initialize a genome configuration.",
-        LIST_LOCAL_CMD: "List available local assets.",
-        LIST_REMOTE_CMD: "List available remote assets.",
-        PULL_CMD: "Download assets.",
-        BUILD_CMD: "Build genome assets.",
-        GET_ASSET_CMD: "Get the path to a local asset.",
-        INSERT_CMD: "Add local asset to the config file.",
-        REMOVE_CMD: "Remove a local asset.",
-        GETSEQ_CMD: "Get sequences from a genome.",
-        TAG_CMD: "Tag an asset.",
-        ID_CMD: "Return the asset digest."
-    }
-
     sps = {}
-    for cmd, desc in subparser_messages.items():
+    for cmd, desc in SUBPARSER_MESSAGES.items():
         sps[cmd] = add_subparser(cmd, desc)
         # It's required for init
         sps[cmd].add_argument(
