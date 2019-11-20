@@ -22,7 +22,6 @@ import logmuse
 import pypiper
 import refgenconf
 from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError, MissingRecipeError, DownloadJsonError
-# from refgenconf.const import *
 from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, VersionInHelpParser, is_command_callable
 from ubiquerg.system import is_writable
 import yacman
@@ -667,11 +666,7 @@ def main():
             gat, archive_data, server_url = rgc.pull_asset(a["genome"], a["asset"], a["tag"], unpack=not args.no_untar)
             if archive_data is not None:
                 rgc_rw = RefGenConf(filepath=gencfg, writable=True)
-                [rgc_rw.chk_digest_update_child(a["genome"], x, "{}/{}:{}".format(*gat), server_url)
-                 for x in archive_data[CFG_ASSET_PARENTS_KEY] if CFG_ASSET_PARENTS_KEY in archive_data]
-                rgc_rw.update_tags(*gat,
-                                   data={attr: archive_data[attr] for attr in ATTRS_COPY_PULL if attr in archive_data})
-                rgc_rw.set_default_pointer(*gat)
+                rgc_rw.post_pull_update(gat, archive_data, server_url)
                 rgc_rw.write()
                 del rgc_rw
 
