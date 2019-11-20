@@ -28,7 +28,7 @@ Below, we go through the assets you can build and how to build them.
 <i class="fas fa-file-import"></i> required files: `--files fasta=/path/to/fasta_file` (*e.g.* [example_genome.fa.gz](http://big.databio.org/example_data/rCRS.fa.gz))  
 <i class="fas fa-sliders-h"></i> required parameters: *none*  
 <i class="fas fa-exclamation-triangle"></i> required asset: *none*  
-<i class="fas fa-tools"></i> required software: samtools
+<i class="fas fa-tools"></i> required software: [samtools](http://www.htslib.org/)
 
 We recommend for every genome, you first build the `fasta` asset, because it's a starting point for building a lot of other assets.
 
