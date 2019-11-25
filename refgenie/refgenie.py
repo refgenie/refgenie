@@ -252,6 +252,7 @@ def refgenie_add(rgc, asset_dict, path):
     else:
         raise OSError("Absolute path '{}' does not exist. The provided path must be relative to: {}".
                       format(abs_asset_path, rgc[CFG_FOLDER_KEY]))
+    rgc.make_writable()
     gat_bundle = [asset_dict["genome"], asset_dict["asset"], tag]
     rgc.update_tags(*gat_bundle,
                     data={CFG_ASSET_PATH_KEY: path if os.path.isdir(abs_asset_path) else os.path.dirname(path)})
@@ -263,6 +264,7 @@ def refgenie_add(rgc, asset_dict, path):
     rgc.update_tags(*gat_bundle, data={CFG_ASSET_CHECKSUM_KEY: get_dir_digest(rgc.get_asset(*gat_bundle))})
     # Write the updated refgenie genome configuration
     rgc.write()
+    rgc.make_readonly()
     return True
 
 
