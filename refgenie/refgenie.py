@@ -646,14 +646,14 @@ def main():
         return
 
     elif args.command == INSERT_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=True)  # genome cfg will be updated, create object in RW mode mode
+        rgc = RefGenConf(filepath=gencfg, writable=False)
         if len(asset_list) > 1:
             raise NotImplementedError("Can only add 1 asset at a time")
         else:
             refgenie_add(rgc, asset_list[0], args.path)
 
     elif args.command == PULL_CMD:
-        rgc = RefGenConf(filepath=gencfg)
+        rgc = RefGenConf(filepath=gencfg, writable=False)
         outdir = rgc[CFG_FOLDER_KEY]
         if not os.path.exists(outdir):
             raise MissingFolderError(outdir)
@@ -665,12 +665,7 @@ def main():
             return
 
         for a in asset_list:
-            gat, archive_data, server_url = rgc.pull_asset(a["genome"], a["asset"], a["tag"], unpack=not args.no_untar)
-            if archive_data is not None:
-                rgc_rw = RefGenConf(filepath=gencfg, writable=True)
-                rgc_rw.post_pull_update(gat, archive_data, server_url)
-                rgc_rw.write()
-                del rgc_rw
+            rgc.pull_asset(a["genome"], a["asset"], a["tag"], unpack=not args.no_untar)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         rgc = RefGenConf(filepath=gencfg, writable=False)
@@ -709,7 +704,7 @@ def main():
         refgenie_getseq(rgc, args.genome, args.locus)
 
     elif args.command == REMOVE_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=True)  # genome cfg will be updated, create object in RW mode mode
+        rgc = RefGenConf(filepath=gencfg, writable=True)  # genome cfg will be updated, create object in RW mode
         for a in asset_list:
             a["tag"] = a["tag"] or rgc.get_default_tag(a["genome"], a["asset"], use_existing=False)
             _LOGGER.debug("Determined tag for removal: {}".format(a["tag"]))
