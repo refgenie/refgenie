@@ -21,7 +21,7 @@ from .const import *
 import logmuse
 import pypiper
 import refgenconf
-from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError, MissingRecipeError, DownloadJsonError, select_genome_config
+from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError, MissingRecipeError, DownloadJsonError
 from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, VersionInHelpParser, is_command_callable
 from ubiquerg.system import is_writable
 import yacman
@@ -149,6 +149,15 @@ def build_argparser():
     group.add_argument(
         "-d", "--default", action="store_true",
         help="Set the selected asset tag as the default one.")
+
+    sps[SUBSCRIBE_CMD].add_argument(
+        "-r", "--reset", action="store_true",
+        help="Overwrite the current list of server URLs")
+
+    for cmd in [SUBSCRIBE_CMD, UNSUBSCRIBE_CMD]:
+        sps[cmd].add_argument(
+            "-s", "--genome-server", nargs='+', required=True,
+            help="One or URLs to add to the genome_servers attribute in config file")
 
     return parser
 
@@ -792,6 +801,26 @@ def main():
             t = asset["tag"] or rgc.get_default_tag(g, a)
             print("{}/{}:{},".format(g, a, t) + rgc.get_asset_digest(g, a, t))
         return
+    elif args.command == SUBSCRIBE_CMD:
+        rgc = RefGenConf(filepath=gencfg, writable=False)
+        with rgc as r:
+            r.update_genome_servers(args.genome_server, reset=args.reset)
+        _LOGGER.info("Subscribed to: {}".format(", ".join(args.genome_server)))
+        return
+    elif args.command == UNSUBSCRIBE_CMD:
+        rgc = RefGenConf(filepath=gencfg, writable=False)
+        unsub_list = []
+        ori_servers = rgc[CFG_SERVERS_KEY]
+        for s in args.genome_server:
+            try:
+                ori_servers.remove(s)
+                unsub_list.append(s)
+            except ValueError:
+                _LOGGER.warning("URL '{}' not in genome_servers list: {}".format(s, ori_servers))
+        with rgc as r:
+            r.update_genome_servers(ori_servers, reset=True)
+        if unsub_list:
+            _LOGGER.info("Unsubscribed from: {}".format(", ".join(unsub_list)))
 
 
 def _entity_dir_removal_log(directory, entity_class, asset_dict, removed_entities):
