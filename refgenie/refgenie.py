@@ -549,7 +549,6 @@ def _exec_list(rgc, remote, genome):
         assemblies, assets = rgc.list_local(genome=genome)
         # also get recipes
         recipes = ", ".join(sorted(list(asset_build_packages.keys())))
-
     return pfx, assemblies, assets, recipes
 
 
@@ -702,6 +701,7 @@ def main():
             # Restore original server list, even when we couldn't find assets on a server
             rgc[CFG_SERVERS_KEY] = server_list
         else:  # Only check local assets once
+            _LOGGER.info("Server subscriptions: {}".format(", ".join(rgc[CFG_SERVERS_KEY])))
             pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
             _LOGGER.info("{} genomes: {}".format(pfx, genomes))
             if args.command != LIST_REMOTE_CMD:  # Not implemented yet
