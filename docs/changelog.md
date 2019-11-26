@@ -5,15 +5,17 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [0.7.3] - unreleased
 
 ### Changed
-- in `refgenie build` command arguments naming scheme: `--{input_name} <path>` to `--files {input_name}=<path>`
+- `refgenie build` command arguments naming scheme: `--{input_name} <path>` to `--files {input_name}=<path>`
 - `-r`/`--requirements` in `refgenie build` command to `-q`/`--requirements`
 - recipe format: requirements (both assets and inputs) are lists of dicts rather that lists of strings
+- `refgenie list` displays current server subscriptions
 
 ### Added
 - `refgenie id` command for asset digest retrieval
 - cross-namespace asset relationships support 
 - `--assets` argument in `refgenie build` command to provide parent assets, if required
 - `-r`/`--recipe` in `refgenie build` command argument to provide the recipe for the build
+- `subscribe` and `unsubscribe` subcommands to enable controlling server list manipulation in the config file (`genome_servers` entry in the refgenie configuration file)  
 
 ### Removed
 - `-t`/`--tag` in `refgenie build`. Use more flexible `--assets` instead.
