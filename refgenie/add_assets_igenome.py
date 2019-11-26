@@ -67,7 +67,7 @@ def main():
     """ main workflow """
     parser = build_argparser()
     args, remaining_args = parser.parse_known_args()
-    cfg = select_config(args.config, refgenconf.CFG_ENV_VARS, check_exist=True, strict_env=True)
+    cfg = refgenconf.select_genome_config(filename=args.config, check_exist=True, strict_env=True)
     if not cfg:
         raise MissingGenomeConfigError(args.config)
     rgc = refgenconf.RefGenConf(filepath=cfg, writable=False)

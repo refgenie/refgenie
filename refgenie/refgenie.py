@@ -21,7 +21,7 @@ from .const import *
 import logmuse
 import pypiper
 import refgenconf
-from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError, MissingRecipeError, DownloadJsonError
+from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError, MissingRecipeError, DownloadJsonError, select_genome_config
 from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, VersionInHelpParser, is_command_callable
 from ubiquerg.system import is_writable
 import yacman
@@ -578,8 +578,8 @@ def main():
         _LOGGER.error("No command given")
         sys.exit(1)
 
-    gencfg = yacman.select_config(args.genome_config, CFG_ENV_VARS, check_exist=not args.command == INIT_CMD,
-                                  on_missing=lambda fp: fp, strict_env=True)
+    gencfg = refgenconf.select_genome_config(filename=args.genome_config, check_exist=not args.command == INIT_CMD,
+                                             on_missing=lambda fp: fp, strict_env=True)
     if gencfg is None:
         raise MissingGenomeConfigError(args.genome_config)
     _LOGGER.debug("Determined genome config: {}".format(gencfg))
