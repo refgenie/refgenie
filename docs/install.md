@@ -30,7 +30,7 @@ Refgenie will automatically use the config file in this environmental variable i
 
 # Listing assets
 
-Now you can use the `list` command to show local assets (which will be empty at first) or the `listr` command to show available remote assets:
+Now you can use the `refgenie list` command to show local assets (which will be empty at first) or the `listr` command to show available remote assets:
 
 ```console
 refgenie list
@@ -49,7 +49,7 @@ You can also read more about [building refgenie assets](build.md).
 
 # Seeking assets
 
-Use the `seek` command to get paths to local assets you have already built or pulled. For example, the one we just pulled:
+Use the `refgenie seek` command to get paths to local assets you have already built or pulled. For example, the one we just pulled:
 
 ```console
 refgenie seek rCRSd/bowtie2_index
@@ -62,3 +62,30 @@ refgenie seek GENOME/ASSET
 ```
 
 That's it! Explore the HOW-TO guides in the navigation bar for further details about what you can do with these functions.
+
+# Managing server subscriptions
+
+Refgenie populates the server list with [http://refgenomes.databio.org](http://refgenomes.databio.org) by default. In case you want to `pull` assets from other servers, which may serve a different set of assets refgenie privides a command line access to the `genome_servers` entry in the config file. Current list of server subscriptions is displayed by `refgenie list` command.
+
+## Add new server
+
+Use the `refgenie subscribe` command to add an additional `refgenieserver` instance to the config file:
+
+```console
+refgenie subscribe -s http://another.refgenomes.server.org
+```
+
+This will append the provided argument to the current list of subscriptions. To start a new one, use `-r`/`--reset` flag:
+
+```console
+refgenie subscribe -s http://new.refgenomes.server.org -r
+```
+
+## Remove server
+
+Use the `refgenie unsubscribe` command to remove `refgenieserver` instance from the config file:
+
+```console
+refgenie unsubscribe -s http://refgenomes.databio.org
+```
+
