@@ -63,7 +63,7 @@ def build_argparser():
                 .format(", ".join(refgenconf.CFG_ENV_VARS)))
 
     sps[INIT_CMD].add_argument('-s', '--genome-server', nargs='+', default=DEFAULT_SERVER,
-                               help="URL(s) to use for the {} attribute in config file. Default: {}"
+                               help="URL(s) to use for the {} attribute in config file. Default: {}."
                                .format(DEFAULT_SERVER, CFG_SERVERS_KEY))
     sps[BUILD_CMD] = pypiper.add_pypiper_args(
         sps[BUILD_CMD], groups=None, args=["recover", "config", "new-start"])
@@ -72,11 +72,11 @@ def build_argparser():
 
     sps[BUILD_CMD].add_argument(
         '--tag-description', required=False, default=None, type=str,
-        help="Add tag level description (e.g. built with version 0.3.2)")
+        help="Add tag level description (e.g. built with version 0.3.2).")
 
     sps[BUILD_CMD].add_argument(
         '--genome-description', required=False, default=None, type=str,
-        help="Add genome level description (e.g. The mouse mitochondrial genome, released in Dec 2013)")
+        help="Add genome level description (e.g. The mouse mitochondrial genome, released in Dec 2013).")
 
     sps[BUILD_CMD].add_argument(
         "-d", "--docker", action="store_true", help="Run all commands in the refgenie docker container.")
@@ -116,17 +116,17 @@ def build_argparser():
         # genome is not required for listing actions
         sps[cmd].add_argument(
             "-g", "--genome", required=cmd in GETSEQ_CMD,
-            help="Reference assembly ID, e.g. mm10")
+            help="Reference assembly ID, e.g. mm10.")
 
     for cmd in LIST_REMOTE_CMD, LIST_LOCAL_CMD:
         sps[cmd].add_argument("-g", "--genome", required=False, type=str,
-                              nargs="*", help="Reference assembly ID, e.g. mm10")
+                              nargs="*", help="Reference assembly ID, e.g. mm10.")
 
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, TAG_CMD, ID_CMD]:
         sps[cmd].add_argument(
             "asset_registry_paths", metavar="asset-registry-paths", type=str, nargs='+',
             help="One or more registry path strings that identify assets  (e.g. hg38/fasta or hg38/fasta:tag"
-                 + (" or hg38/fasta.fai:tag)" if cmd == GET_ASSET_CMD else ")"))
+                 + (" or hg38/fasta.fai:tag)." if cmd == GET_ASSET_CMD else ")."))
 
     sps[PULL_CMD].add_argument(
         "-u", "--no-untar", action="store_true",
@@ -152,12 +152,13 @@ def build_argparser():
 
     sps[SUBSCRIBE_CMD].add_argument(
         "-r", "--reset", action="store_true",
-        help="Overwrite the current list of server URLs")
+        help="Overwrite the current list of server URLs.")
 
     for cmd in [SUBSCRIBE_CMD, UNSUBSCRIBE_CMD]:
         sps[cmd].add_argument(
             "-s", "--genome-server", nargs='+', required=True,
-            help="One or more URLs to add to the {} attribute in config file".format(CFG_SERVERS_KEY))
+            help="One or more URLs to {action} the {key} attribute in config file.".
+                format(action="add to" if cmd == SUBSCRIBE_CMD else "remove from", key=CFG_SERVERS_KEY))
 
     return parser
 
