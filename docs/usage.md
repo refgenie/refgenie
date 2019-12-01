@@ -3,14 +3,15 @@
 ## `refgenie --help`
 
 ```console
-version: 0.7.0
+version: 0.7.3
 usage: refgenie [-h] [--version] [--silent] [--verbosity V] [--logdev]
-                {init,list,listr,pull,build,seek,add,remove,getseq,tag} ...
+                {init,list,listr,pull,build,seek,add,remove,getseq,tag,id,subscribe,unsubscribe}
+                ...
 
-refgenie - builds and manages reference genome assemblies
+refgenie - reference genome asset manager
 
 positional arguments:
-  {init,list,listr,pull,build,seek,add,remove,getseq,tag}
+  {init,list,listr,pull,build,seek,add,remove,getseq,tag,id,subscribe,unsubscribe}
     init                Initialize a genome configuration.
     list                List available local assets.
     listr               List available remote assets.
@@ -20,7 +21,10 @@ positional arguments:
     add                 Add local asset to the config file.
     remove              Remove a local asset.
     getseq              Get sequences from a genome.
-    tag                 Assign a selected tag to an asset.
+    tag                 Tag an asset.
+    id                  Return the asset digest.
+    subscribe           Add a refgenieserver URL to the config.
+    unsubscribe         Remove a refgenieserver URL from the config
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -30,6 +34,7 @@ optional arguments:
   --logdev              Expand content of logging message format.
 
 https://refgenie.databio.org
+
 ```
 
 ## `refgenie init --help`
@@ -106,9 +111,14 @@ optional arguments:
 ## `refgenie build --help`
 
 ```console
-usage: refgenie build [-h] [-c GENOME_CONFIG] [-R] [-C CONFIG_FILE] [-N] [-d]
-                      [-t TAGS [TAGS ...]] [-v VOLUMES [VOLUMES ...]]
-                      [-o OUTFOLDER] [-r] [-g GENOME]
+usage: refgenie build [-h] [-c GENOME_CONFIG] [-R] [-C CONFIG_FILE] [-N]
+                      [--tag-description TAG_DESCRIPTION]
+                      [--genome-description GENOME_DESCRIPTION] [-d]
+                      [--assets ASSETS [ASSETS ...]]
+                      [--files FILES [FILES ...]]
+                      [--params PARAMS [PARAMS ...]]
+                      [-v VOLUMES [VOLUMES ...]] [-o OUTFOLDER] [-q]
+                      [-r RECIPE] [-g GENOME]
                       asset-registry-paths [asset-registry-paths ...]
 
 Build genome assets.
@@ -127,17 +137,33 @@ optional arguments:
                         Pipeline configuration file (YAML). Relative paths are
                         with respect to the pipeline script.
   -N, --new-start       Overwrite all results to start a fresh run
+  --tag-description TAG_DESCRIPTION
+                        Add tag level description (e.g. built with version
+                        0.3.2)
+  --genome-description GENOME_DESCRIPTION
+                        Add genome level description (e.g. The mouse
+                        mitochondrial genome, released in Dec 2013)
   -d, --docker          Run all commands in the refgenie docker container.
-  -t TAGS [TAGS ...], --tags TAGS [TAGS ...]
-                        Override the default tags of the parent assets (e.g.
-                        asset:tag).
+  --assets ASSETS [ASSETS ...]
+                        Override the default genome, asset and tag of the
+                        parents (e.g. fasta=hg38/fasta:default
+                        gtf=mm10/gencode_gtf:default).
+  --files FILES [FILES ...]
+                        Provide paths to the required files (e.g.
+                        fasta=/path/to/file.fa.gz).
+  --params PARAMS [PARAMS ...]
+                        Provide required parameter values (e.g.
+                        param1=value1).
   -v VOLUMES [VOLUMES ...], --volumes VOLUMES [VOLUMES ...]
-                        If using docker, also mount these folders as volumes
+                        If using docker, also mount these folders as volumes.
   -o OUTFOLDER, --outfolder OUTFOLDER
                         Override the default path to genomes folder, which is
                         the genome_folder attribute in the genome
                         configuration file.
-  -r, --requirements    Show the build requirements for the specified asset.
+  -q, --requirements    Show the build requirements for the specified asset
+                        and exit.
+  -r RECIPE, --recipe RECIPE
+                        Provide a recipe to use.
   -g GENOME, --genome GENOME
                         Reference assembly ID, e.g. mm10
 ```
@@ -245,4 +271,64 @@ optional arguments:
   -g GENOME, --genome GENOME
                         Reference assembly ID, e.g. mm10
   -t TAG, --tag TAG     Tag to assign to an asset
+```
+
+
+## `refgenie id --help`
+
+```console
+usage: refgenie id [-h] [-c GENOME_CONFIG] [-g GENOME]
+                   asset-registry-paths [asset-registry-paths ...]
+
+Return the asset digest.
+
+positional arguments:
+  asset-registry-paths  One or more registry path strings that identify assets
+                        (e.g. hg38/fasta or hg38/fasta:tag)
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -c GENOME_CONFIG, --genome-config GENOME_CONFIG
+                        Path to local genome configuration file. Optional if
+                        REFGENIE environment variable is set.
+  -g GENOME, --genome GENOME
+                        Reference assembly ID, e.g. mm10
+```
+
+## `refgenie subscribe --help`
+
+```console
+usage: refgenie subscribe [-h] [-c GENOME_CONFIG] [-r] -s GENOME_SERVER
+                          [GENOME_SERVER ...]
+
+Add a refgenieserver URL to the config.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -c GENOME_CONFIG, --genome-config GENOME_CONFIG
+                        Path to local genome configuration file. Optional if
+                        REFGENIE environment variable is set.
+  -r, --reset           Overwrite the current list of server URLs
+  -s GENOME_SERVER [GENOME_SERVER ...], --genome-server GENOME_SERVER [GENOME_SERVER ...]
+                        One or more URLs to add to the genome_servers
+                        attribute in config file
+```
+
+
+## `refgenie unsubscribe --help`
+
+```console
+usage: refgenie unsubscribe [-h] [-c GENOME_CONFIG] -s GENOME_SERVER
+                            [GENOME_SERVER ...]
+
+Remove a refgenieserver URL from the config
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -c GENOME_CONFIG, --genome-config GENOME_CONFIG
+                        Path to local genome configuration file. Optional if
+                        REFGENIE environment variable is set.
+  -s GENOME_SERVER [GENOME_SERVER ...], --genome-server GENOME_SERVER [GENOME_SERVER ...]
+                        One or more URLs to add to the genome_servers
+                        attribute in config file
 ```

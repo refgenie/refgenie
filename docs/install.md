@@ -65,7 +65,7 @@ That's it! Explore the HOW-TO guides in the navigation bar for further details a
 
 # Managing server subscriptions
 
-Refgenie populates the server list with [http://refgenomes.databio.org](http://refgenomes.databio.org) by default. In case you want to `pull` assets from other servers, which may serve a different set of assets refgenie privides a command line access to the `genome_servers` entry in the config file. Current list of server subscriptions is displayed by `refgenie list` command.
+Refgenie populates the server list with [http://refgenomes.databio.org](http://refgenomes.databio.org) by default. In case you want to `pull` assets from other servers, which may serve a different set of assets, refgenie provides a command line access to the `genome_servers` entry in the config file. Current list of server subscriptions is displayed by `refgenie list` command.
 
 ## Add new server
 

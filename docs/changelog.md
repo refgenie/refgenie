@@ -15,7 +15,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - cross-namespace asset relationships support 
 - `--assets` argument in `refgenie build` command to provide parent assets, if required
 - `-r`/`--recipe` in `refgenie build` command argument to provide the recipe for the build
-- `subscribe` and `unsubscribe` subcommands to enable controlling server list manipulation in the config file (`genome_servers` entry in the refgenie configuration file)  
+- `subscribe` and `unsubscribe` subcommands to enable server list manipulation in the config file (`genome_servers` entry in the refgenie configuration file)  
 
 ### Removed
 - `-t`/`--tag` in `refgenie build`. Use more flexible `--assets` instead.
