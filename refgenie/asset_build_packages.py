@@ -242,13 +242,13 @@ asset_build_packages = {
         REQ_FILES: [],
         REQ_ASSETS: [
             {
-                KEY: "genome",
-                DEFAULT: "txomefa",
+                KEY: "genomefa",
+                DEFAULT: "genomefa",
                 DESC: "fasta asset for genome"
             },
             {
-                KEY: "txome",
-                DEFAULT: "genomefa",
+                KEY: "txomefa",
+                DEFAULT: "txomefa",
                 DESC: "fasta asset for transcriptome"
             }
         ],
@@ -258,10 +258,10 @@ asset_build_packages = {
             "salmon_index": "."
         },
         CMD_LST: [
-            "grep '^>' {fasta} | cut -d ' ' -f 1 > {asset_outfolder}/decoys.txt",
+            "grep '^>' {genomefa} | cut -d ' ' -f 1 > {asset_outfolder}/decoys.txt",
             "sed -i.bak -e 's/>//g' {asset_outfolder}/decoys.txt",
             "rm {asset_outfolder}/decoys.txt.bak",
-            "cat {txfasta} {fasta} > {asset_outfolder}/gentrome.fa",
+            "cat {txomefa} {genomefa} > {asset_outfolder}/gentrome.fa",
             "salmon index -t {asset_outfolder}/gentrome.fa -d {asset_outfolder}/decoys.txt -p 8 -i {asset_outfolder}",
             "rm {asset_outfolder}/gentrome.fa {asset_outfolder}/decoys.txt"
         ]
