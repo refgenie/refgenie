@@ -237,8 +237,7 @@ asset_build_packages = {
             ]
     },
     "salmon_sa_index": {
-        DESC: "Transcriptome index for salmon, produced with salmon index using selective alignment method. "
-              "Improves quantification accuracy compared to the regular index.",
+        DESC: "Transcriptome index for salmon, produced with salmon index using selective alignment method. Improves quantification accuracy compared to the regular index.",
         REQ_FILES: [],
         REQ_ASSETS: [
             {
@@ -252,17 +251,23 @@ asset_build_packages = {
                 DESC: "fasta asset for transcriptome"
             }
         ],
-        REQ_PARAMS: [],
+        REQ_PARAMS: [
+            {
+                KEY: "threads",
+                DEFAULT: "8",
+                DESC: "Number of threads to use in for parallel computing"
+            }
+        ],
         CONT: "combinelab/salmon",
         ASSETS: {
-            "salmon_index": "."
+            "salmon_sa_index": "."
         },
         CMD_LST: [
             "grep '^>' {genomefa} | cut -d ' ' -f 1 > {asset_outfolder}/decoys.txt",
             "sed -i.bak -e 's/>//g' {asset_outfolder}/decoys.txt",
             "rm {asset_outfolder}/decoys.txt.bak",
             "cat {txomefa} {genomefa} > {asset_outfolder}/gentrome.fa",
-            "salmon index -t {asset_outfolder}/gentrome.fa -d {asset_outfolder}/decoys.txt -p 8 -i {asset_outfolder}",
+            "salmon index -t {asset_outfolder}/gentrome.fa -d {asset_outfolder}/decoys.txt -p {threads} -i {asset_outfolder}",
             "rm {asset_outfolder}/gentrome.fa {asset_outfolder}/decoys.txt"
         ]
     },
@@ -295,16 +300,16 @@ asset_build_packages = {
         ],
         CONT: "combinelab/salmon",
         ASSETS: {
-            "salmon_index": "."
+            "salmon_partial_sa_index": "."
         },
         CMD_LST: [
-            "awk -v OFS='\t' '{if ($3=='exon') {print $1,$4,$5}}' {gtf} > exons.bed",
+            "awk -v OFS='\t' '{if ($3==\"exon\") {print $1,$4,$5}}' {gtf} > exons.bed",
             "bedtools maskfasta -fi {genomefa} -bed exons.bed -fo reference.masked.genome.fa",
             "mashmap -r reference.masked.genome.fa -q {txomefa} -t {threads} --pi 80 -s 500",
             "awk -v OFS='\t' '{print $6,$8,$9}' mashmap.out | sort -k1,1 -k2,2n - > genome_found.sorted.bed",
             "bedtools merge -i genome_found.sorted.bed > genome_found_merged.bed",
             "bedtools getfasta -fi reference.masked.genome.fa -bed genome_found_merged.bed -fo genome_found.fa",
-            "awk '{a=$0; getline;split(a, b, ':');  r[b[1]] = r[b[1]]''$0} END { for (k in r) { print k'\n'r[k] } }' genome_found.fa > decoy.fa",
+            "awk '{a=$0; getline;split(a, b, ':');  r[b[1]] = r[b[1]]\"\"$0} END { for (k in r) { print k'\n'r[k] } }' genome_found.fa > decoy.fa",
             "cat {txomefa} decoy.fa > gentrome.fa",
             "grep '>' decoy.fa | $awk '{print substr($1,2); }' > decoys.txt",
             "rm exons.bed reference.masked.genome.fa mashmap.out genome_found.sorted.bed genome_found_merged.bed genome_found.fa decoy.fa reference.masked.genome.fa.fai"
