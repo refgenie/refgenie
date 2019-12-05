@@ -303,17 +303,17 @@ asset_build_packages = {
             "salmon_partial_sa_index": "."
         },
         CMD_LST: [
-            "awk -v OFS='\t' '{if ($3==\"exon\") {print $1,$4,$5}}' {gtf} > exons.bed",
-            "bedtools maskfasta -fi {genomefa} -bed exons.bed -fo reference.masked.genome.fa",
-            "mashmap -r reference.masked.genome.fa -q {txomefa} -t {threads} --pi 80 -s 500",
-            "awk -v OFS='\t' '{print $6,$8,$9}' mashmap.out | sort -k1,1 -k2,2n - > genome_found.sorted.bed",
-            "bedtools merge -i genome_found.sorted.bed > genome_found_merged.bed",
-            "bedtools getfasta -fi reference.masked.genome.fa -bed genome_found_merged.bed -fo genome_found.fa",
-            "awk '{a=$0; getline;split(a, b, ':');  r[b[1]] = r[b[1]]\"\"$0} END { for (k in r) { print k'\n'r[k] } }' genome_found.fa > decoy.fa",
-            "cat {txomefa} decoy.fa > gentrome.fa",
-            "grep '>' decoy.fa | $awk '{print substr($1,2); }' > decoys.txt",
-            "rm exons.bed reference.masked.genome.fa mashmap.out genome_found.sorted.bed genome_found_merged.bed genome_found.fa decoy.fa reference.masked.genome.fa.fai",
-            "salmon index -t gentrome.fa.gz -d decoys.txt -i {asset_outfolder} -p {threads}"
+            "awk -v OFS='\t' '{if ($3==\"exon\") {print $1,$4,$5}}' {gtf} > {asset_outfolder}/exons.bed",
+            "bedtools maskfasta -fi {genomefa} -bed {asset_outfolder}/exons.bed -fo {asset_outfolder}/reference.masked.genome.fa",
+            "mashmap -r {asset_outfolder}/reference.masked.genome.fa -q {txomefa} -t {threads} --pi 80 -s 500 -o {asset_outfolder}/mashmap.out",
+            "awk -v OFS='\t' '{print $6,$8,$9}' {asset_outfolder}/mashmap.out | sort -k1,1 -k2,2n - > {asset_outfolder}/genome_found.sorted.bed",
+            "bedtools merge -i {asset_outfolder}/genome_found.sorted.bed > {asset_outfolder}/genome_found_merged.bed",
+            "bedtools getfasta -fi {asset_outfolder}/reference.masked.genome.fa -bed {asset_outfolder}/genome_found_merged.bed -fo {asset_outfolder}/genome_found.fa",
+            "awk '{a=$0; getline;split(a, b, ':');  r[b[1]] = r[b[1]]\"\"$0} END { for (k in r) { print k'\n'r[k] } }' {asset_outfolder}/genome_found.fa > {asset_outfolder}/decoy.fa",
+            "cat {txomefa} {asset_outfolder}/decoy.fa > {asset_outfolder}/gentrome.fa",
+            "grep '>' {asset_outfolder}/decoy.fa | awk '{print substr($1,2); }' > {asset_outfolder}/decoys.txt",
+            "rm {asset_outfolder}/exons.bed {asset_outfolder}/reference.masked.genome.fa {asset_outfolder}/mashmap.out {asset_outfolder}/genome_found.sorted.bed {asset_outfolder}/genome_found_merged.bed {asset_outfolder}/genome_found.fa {asset_outfolder}/decoy.fa {asset_outfolder}/reference.masked.genome.fa.fai",
+            "salmon index -t {asset_outfolder}/gentrome.fa.gz -d {asset_outfolder}/decoys.txt -i {asset_outfolder} -p {threads}"
         ]
     },
     "epilog_index": {
