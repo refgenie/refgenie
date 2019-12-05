@@ -255,7 +255,7 @@ asset_build_packages = {
             {
                 KEY: "threads",
                 DEFAULT: "8",
-                DESC: "Number of threads to use in for parallel computing"
+                DESC: "Number of threads to use for parallel computing"
             }
         ],
         CONT: "combinelab/salmon",
@@ -295,7 +295,7 @@ asset_build_packages = {
             {
                 KEY: "threads",
                 DEFAULT: "8",
-                DESC: "Number of threads to use in for parallel computing"
+                DESC: "Number of threads to use for parallel computing"
             }
         ],
         CONT: "combinelab/salmon",
@@ -312,7 +312,8 @@ asset_build_packages = {
             "awk '{a=$0; getline;split(a, b, ':');  r[b[1]] = r[b[1]]\"\"$0} END { for (k in r) { print k'\n'r[k] } }' genome_found.fa > decoy.fa",
             "cat {txomefa} decoy.fa > gentrome.fa",
             "grep '>' decoy.fa | $awk '{print substr($1,2); }' > decoys.txt",
-            "rm exons.bed reference.masked.genome.fa mashmap.out genome_found.sorted.bed genome_found_merged.bed genome_found.fa decoy.fa reference.masked.genome.fa.fai"
+            "rm exons.bed reference.masked.genome.fa mashmap.out genome_found.sorted.bed genome_found_merged.bed genome_found.fa decoy.fa reference.masked.genome.fa.fai",
+            "salmon index -t gentrome.fa.gz -d decoys.txt -i {asset_outfolder} -p {threads}"
         ]
     },
     "epilog_index": {
