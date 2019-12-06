@@ -8,6 +8,8 @@ tools:
   samtools: samtools
   kallisto: kallisto
   hisat2build: hisat2-build
+  suffixerator: gt suffixerator
+  tallymer: gt tallymer mkindex
 
 index:
   bowtie2: True
@@ -16,7 +18,11 @@ index:
   epilog: False
   hisat: False
   kallisto: True
+  suffixerator: False
+  tallymer: False
 
 param:
   epilog:
     context: "cg"
+  tallymer:
+    minocc: 2

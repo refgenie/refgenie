@@ -16,12 +16,12 @@ import pyfaidx
 from ._version import __version__
 from .exceptions import MissingGenomeConfigError, MissingFolderError
 from .asset_build_packages import *
+from .const import *
 
 import logmuse
 import pypiper
 import refgenconf
 from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError, MissingRecipeError, DownloadJsonError
-from refgenconf.const import *
 from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, VersionInHelpParser, is_command_callable
 from ubiquerg.system import is_writable
 import yacman
@@ -30,24 +30,6 @@ import yacman
 from .refget import fasta_checksum
 
 _LOGGER = None
-
-BUILD_CMD = "build"
-INIT_CMD = "init"
-PULL_CMD = "pull"
-LIST_LOCAL_CMD = "list"
-LIST_REMOTE_CMD = "listr"
-GET_ASSET_CMD = "seek"
-INSERT_CMD = "add"
-REMOVE_CMD = "remove"
-GETSEQ_CMD = "getseq"
-TAG_CMD = "tag"
-
-GENOME_ONLY_REQUIRED = [REMOVE_CMD, GETSEQ_CMD]
-
-# For each asset we assume a genome is also required
-ASSET_REQUIRED = [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, TAG_CMD]
-
-BUILD_SPECIFIC_ARGS = ('fasta', 'ensembl_gtf', 'gencode_gtf', 'gff', 'context', 'refgene', 'dbnsfp', 'dbsnp')
 
 
 def build_argparser():
@@ -71,21 +53,8 @@ def build_argparser():
         return subparsers.add_parser(
             cmd, description=description, help=description)
 
-    subparser_messages = {
-        INIT_CMD: "Initialize a genome configuration.",
-        LIST_LOCAL_CMD: "List available local assets.",
-        LIST_REMOTE_CMD: "List available remote assets.",
-        PULL_CMD: "Download assets.",
-        BUILD_CMD: "Build genome assets.",
-        GET_ASSET_CMD: "Get the path to a local asset.",
-        INSERT_CMD: "Add local asset to the config file.",
-        REMOVE_CMD: "Remove a local asset.",
-        GETSEQ_CMD: "Get sequences from a genome.",
-        TAG_CMD: "Tag an asset."
-    }
-
     sps = {}
-    for cmd, desc in subparser_messages.items():
+    for cmd, desc in SUBPARSER_MESSAGES.items():
         sps[cmd] = add_subparser(cmd, desc)
         # It's required for init
         sps[cmd].add_argument(
@@ -94,8 +63,8 @@ def build_argparser():
                 .format(", ".join(refgenconf.CFG_ENV_VARS)))
 
     sps[INIT_CMD].add_argument('-s', '--genome-server', nargs='+', default=DEFAULT_SERVER,
-                               help="URL(s) to use for the genome_servers attribute in config file. Default: {}"
-                               .format(DEFAULT_SERVER))
+                               help="URL(s) to use for the {} attribute in config file. Default: {}."
+                               .format(DEFAULT_SERVER, CFG_SERVERS_KEY))
     sps[BUILD_CMD] = pypiper.add_pypiper_args(
         sps[BUILD_CMD], groups=None, args=["recover", "config", "new-start"])
 
@@ -103,18 +72,27 @@ def build_argparser():
 
     sps[BUILD_CMD].add_argument(
         '--tag-description', required=False, default=None, type=str,
-        help="Add tag level description (e.g. built with version 0.3.2)")
+        help="Add tag level description (e.g. built with version 0.3.2).")
 
     sps[BUILD_CMD].add_argument(
         '--genome-description', required=False, default=None, type=str,
-        help="Add genome level description (e.g. The mouse mitochondrial genome, released in Dec 2013)")
+        help="Add genome level description (e.g. The mouse mitochondrial genome, released in Dec 2013).")
 
     sps[BUILD_CMD].add_argument(
         "-d", "--docker", action="store_true", help="Run all commands in the refgenie docker container.")
 
     sps[BUILD_CMD].add_argument(
-        '-t', '--tags', nargs="+", required=False, default=None,
-        help='Override the default tags of the parent assets (e.g. asset:tag).')
+        '--assets', nargs="+", required=False, default=None,
+        help='Override the default genome, asset and tag of the parents'
+             ' (e.g. fasta=hg38/fasta:default gtf=mm10/gencode_gtf:default).')
+
+    sps[BUILD_CMD].add_argument(
+        '--files', nargs="+", required=False, default=None,
+        help='Provide paths to the required files (e.g. fasta=/path/to/file.fa.gz).')
+
+    sps[BUILD_CMD].add_argument(
+        '--params', nargs="+", required=False, default=None,
+        help='Provide required parameter values (e.g. param1=value1).')
 
     sps[BUILD_CMD].add_argument(
         '-v', '--volumes', nargs="+", required=False, default=None,
@@ -126,25 +104,29 @@ def build_argparser():
              'genome_folder attribute in the genome configuration file.')
 
     sps[BUILD_CMD].add_argument(
-        "-r", "--requirements", action="store_true",
+        "-q", "--requirements", action="store_true",
         help="Show the build requirements for the specified asset and exit.")
 
+    sps[BUILD_CMD].add_argument(
+        "-r", "--recipe", required=False, default=None, type=str,
+        help="Provide a recipe to use.")
+
     # add 'genome' argument to many commands
-    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, GETSEQ_CMD, TAG_CMD]:
+    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, GETSEQ_CMD, TAG_CMD, ID_CMD]:
         # genome is not required for listing actions
         sps[cmd].add_argument(
             "-g", "--genome", required=cmd in GETSEQ_CMD,
-            help="Reference assembly ID, e.g. mm10")
+            help="Reference assembly ID, e.g. mm10.")
 
     for cmd in LIST_REMOTE_CMD, LIST_LOCAL_CMD:
         sps[cmd].add_argument("-g", "--genome", required=False, type=str,
-                              nargs="*", help="Reference assembly ID, e.g. mm10")
+                              nargs="*", help="Reference assembly ID, e.g. mm10.")
 
-    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, TAG_CMD]:
+    for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, TAG_CMD, ID_CMD]:
         sps[cmd].add_argument(
             "asset_registry_paths", metavar="asset-registry-paths", type=str, nargs='+',
             help="One or more registry path strings that identify assets  (e.g. hg38/fasta or hg38/fasta:tag"
-                 + (" or hg38/fasta.fai:tag)" if cmd == GET_ASSET_CMD else ")"))
+                 + (" or hg38/fasta.fai:tag)." if cmd == GET_ASSET_CMD else ")."))
 
     sps[PULL_CMD].add_argument(
         "-u", "--no-untar", action="store_true",
@@ -168,13 +150,15 @@ def build_argparser():
         "-d", "--default", action="store_true",
         help="Set the selected asset tag as the default one.")
 
-    # Finally, arguments to the build command to give the files needed to do
-    # the building. These should eventually move to a more flexible system that
-    # doesn't require them to be hard-coded here in order to be recognized
+    sps[SUBSCRIBE_CMD].add_argument(
+        "-r", "--reset", action="store_true",
+        help="Overwrite the current list of server URLs.")
 
-    for arg in BUILD_SPECIFIC_ARGS:
-        sps[BUILD_CMD].add_argument(
-            "--{arg}".format(arg=arg), required=False, help=SUPPRESS)
+    for cmd in [SUBSCRIBE_CMD, UNSUBSCRIBE_CMD]:
+        sps[cmd].add_argument(
+            "-s", "--genome-server", nargs='+', required=True,
+            help="One or more URLs to {action} the {key} attribute in config file.".
+                format(action="add to" if cmd == SUBSCRIBE_CMD else "remove from", key=CFG_SERVERS_KEY))
 
     return parser
 
@@ -225,7 +209,7 @@ def default_config_file():
     return os.path.join(os.path.dirname(__file__), "refgenie.yaml")
 
 
-def get_asset_vars(genome, asset_key, tag, outfolder, specific_args=None, **kwargs):
+def get_asset_vars(genome, asset_key, tag, outfolder, specific_args=None, specific_params=None, **kwargs):
     """
     Gives a dict with variables used to populate an asset path.
     """
@@ -236,6 +220,8 @@ def get_asset_vars(genome, asset_key, tag, outfolder, specific_args=None, **kwar
                   "asset_outfolder": asset_outfolder}
     if specific_args:
         asset_vars.update(specific_args)
+    if specific_params:
+        asset_vars.update(specific_params)
     asset_vars.update(**kwargs)
     return asset_vars
 
@@ -276,6 +262,7 @@ def refgenie_add(rgc, asset_dict, path):
     else:
         raise OSError("Absolute path '{}' does not exist. The provided path must be relative to: {}".
                       format(abs_asset_path, rgc[CFG_FOLDER_KEY]))
+    rgc.make_writable()
     gat_bundle = [asset_dict["genome"], asset_dict["asset"], tag]
     rgc.update_tags(*gat_bundle,
                     data={CFG_ASSET_PATH_KEY: path if os.path.isdir(abs_asset_path) else os.path.dirname(path)})
@@ -287,6 +274,7 @@ def refgenie_add(rgc, asset_dict, path):
     rgc.update_tags(*gat_bundle, data={CFG_ASSET_CHECKSUM_KEY: get_dir_digest(rgc.get_asset(*gat_bundle))})
     # Write the updated refgenie genome configuration
     rgc.write()
+    rgc.make_readonly()
     return True
 
 
@@ -318,7 +306,7 @@ def refgenie_initg(rgc, genome, collection_checksum, content_checksums):
         _LOGGER.warning("Could not save the genome sequence digests. '{}' is not writable".format(genome_dir))
 
 
-def refgenie_build(gencfg, genome, asset_list, args):
+def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
     """
     Runs the refgenie build recipe.
 
@@ -326,7 +314,9 @@ def refgenie_build(gencfg, genome, asset_list, args):
     :param argparse.Namespace args: parsed command-line options/arguments
     """
     rgc = RefGenConf(filepath=gencfg, writable=False)
-    specific_args = {k: getattr(args, k) for k in BUILD_SPECIFIC_ARGS}
+
+    specified_args = _parse_user_build_input(args.files)
+    specified_params = _parse_user_build_input(args.params)
 
     if not hasattr(args, "outfolder") or not args.outfolder:
         # Default to genome_folder
@@ -340,7 +330,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
                       format(args.config_file))
         args.config_file = default_config_file()
 
-    def build_asset(genome, asset_key, tag, build_pkg, genome_outfolder, specific_args, **kwargs):
+    def build_asset(genome, asset_key, tag, build_pkg, genome_outfolder, specific_args, specific_params, **kwargs):
         """
         Builds assets with pypiper and updates a genome config file.
 
@@ -354,8 +344,8 @@ def refgenie_build(gencfg, genome, asset_list, args):
             assets.
         """
 
-        log_outfolder = os.path.abspath(os.path.join(genome_outfolder, asset_key, tag, "_refgenie_build"))
-        _LOGGER.info("Output content: {}; logs: {}".format(genome_outfolder, log_outfolder))
+        log_outfolder = os.path.abspath(os.path.join(genome_outfolder, asset_key, tag, BUILD_STATS_DIR))
+        _LOGGER.info("Saving outputs to:\n- content: {}\n- logs: {}".format(genome_outfolder, log_outfolder))
         if args.docker:
             # Set up some docker stuff
             if args.volumes:
@@ -376,9 +366,11 @@ def refgenie_build(gencfg, genome, asset_list, args):
         _LOGGER.debug("Asset build package: " + str(build_pkg))
         gat = [genome, asset_key, tag]  # create a bundle list to simplify calls below
         # collect variables required to populate the command templates
-        asset_vars = get_asset_vars(*gat, genome_outfolder, specific_args, **kwargs)
+        asset_vars = get_asset_vars(*gat, genome_outfolder, specific_args, specific_params, **kwargs)
         # populate command templates
-        command_list_populated = [x.format(**asset_vars) for x in build_pkg[CMD_LST]]
+        # prior to populating, remove any seek_key parts from the keys, since these are not supported by format method
+        command_list_populated = [x.format(**{k.split(".")[0]: v for k, v in asset_vars.items()})
+                                  for x in build_pkg[CMD_LST]]
         # create output directory
         tk.make_dir(asset_vars["asset_outfolder"])
 
@@ -410,79 +402,85 @@ def refgenie_build(gencfg, genome, asset_list, args):
             rgc_rw.set_default_pointer(*gat)
             rgc_rw.write()
         pm.stop_pipeline()
-        
         return True
 
     for a in asset_list:
         asset_key = a["asset"]
         asset_tag = a["tag"] or rgc.get_default_tag(genome, a["asset"], use_existing=False)
+        recipe_name = recipe_name or asset_key
 
-        if asset_key in asset_build_packages.keys():
-            asset_build_package = asset_build_packages[asset_key]
-            _LOGGER.debug(specific_args)
-            # handle user-requested tags for the required assets
+        if recipe_name in asset_build_packages.keys():
+            asset_build_package = _check_recipe(asset_build_packages[recipe_name])
+            # handle user-requested parents for the required assets
             input_assets = {}
             parent_assets = []
-            parent_tags = args.tags
-            selected_parent_tags = [p["item"] for p in [prp(x) for x in parent_tags]] if isinstance(parent_tags, list) \
-                else None  # if tags specified construct asset_package.asset names
+            specified_asset_keys, specified_assets = None, None
+            if args.assets is not None:
+                parsed_parents_input = _parse_user_build_input(args.assets)
+                specified_asset_keys, specified_assets = [*parsed_parents_input], [*parsed_parents_input.values()]
+                _LOGGER.debug("Custom assets requested: {}".format(args.assets))
+            if not specified_asset_keys and isinstance(args.assets, list):
+                _LOGGER.warning("Specified parent assets format is invalid. Using defaults.")
             for req_asset in asset_build_package[REQ_ASSETS]:
-                req_asset_data = prp(req_asset)
-                # for each req asset see if non-default tag was requested
-                if selected_parent_tags is not None and req_asset_data["item"] in selected_parent_tags:
-                    # if requested, add the path to the asset to the dictionary
-                    parent_data = prp(parent_tags[asset_build_package[REQ_ASSETS].index(req_asset)])
-                    if parent_data["tag"] is None:
-                        raise ValueError("Parent asset tag was not specified. "
-                                         "To use the default one, skip the -t/--tags option.")
-                    input_assets[parent_data["item"]] = rgc.get_asset(genome, parent_data["item"], parent_data["tag"],
-                                                                      req_asset_data["subitem"])
-                    parent_assets.append("{}:{}".format(parent_data["item"], parent_data["tag"]))
-                else:  # if no tag was requested for the req asset, use one tagged with default
-                    default = prp(req_asset)
-                    dafault_tag = rgc.get_default_tag(genome, default["item"])
-                    input_assets[default["item"]] = rgc.get_asset(genome, default["item"], dafault_tag,
-                                                                  default["subitem"])
-                    parent_assets.append("{}:{}".format(default["item"], dafault_tag))
-            _LOGGER.debug("parents: {}".format(", ".join(parent_assets)))
-            _LOGGER.info("Inputs required to build '{}': {}".format(asset_key, ", ".join(asset_build_package[REQ_IN])))
-            for required_input in asset_build_package[REQ_IN]:
-                if not specific_args[required_input]:
-                    raise ValueError(
-                        "Argument '{}' is required to build asset '{}', but not provided".format(required_input,
-                                                                                                 asset_key))
-            error_req_template = "Asset '{}' is required to build asset '{}', but not provided"
-            for ra in asset_build_package[REQ_ASSETS]:
-                try:
-                    req_data = prp(ra)
-                    if not rgc.get_asset(genome, req_data["item"], req_data["tag"], req_data["subitem"]):
-                        raise ValueError(error_req_template.format(ra, asset_key))
-                except refgenconf.exceptions.MissingGenomeError:
-                    raise ValueError(error_req_template.format(ra, asset_key))
-            _LOGGER.info("Building asset '{}'".format(asset_key))
+                req_asset_data = parse_registry_path(req_asset[KEY])
+                # for each req asset see if non-default parents were requested
+                if specified_asset_keys is not None and req_asset_data["asset"] in specified_asset_keys:
+                    parent_data = \
+                        parse_registry_path(specified_assets[specified_asset_keys.index(req_asset_data["asset"])])
+                    g, a, t, s = parent_data["genome"], \
+                                 parent_data["asset"], \
+                                 parent_data["tag"] or rgc.get_default_tag(genome, parent_data["asset"]), \
+                                 parent_data["seek_key"]
+                else:  # if no custom parents requested for the req asset, use default one
+                    default = parse_registry_path(req_asset[DEFAULT])
+                    g, a, t, s = genome, default["asset"], \
+                                 rgc.get_default_tag(genome, default["asset"]), \
+                                 req_asset_data["seek_key"]
+                parent_assets.append("{}/{}:{}".format(g, a, t))
+                input_assets[req_asset[KEY]] = rgc.get_asset(g, a, t, s)
+            _LOGGER.debug("Using parents: {}".format(", ".join(parent_assets)))
+            _LOGGER.debug("Provided files: {}".format(specified_args))
+            _LOGGER.debug("Provided parameters: {}".format(specified_params))
+            for required_file in asset_build_package[REQ_FILES]:
+                if specified_args is None or required_file[KEY] not in specified_args.keys():
+                    raise ValueError("Path to the '{x}' input ({desc}) is required, but not provided. "
+                                     "Specify it with: --files {x}=/path/to/{x}_file"
+                                     .format(x=required_file[KEY], desc=required_file[DESC]))
+            for required_param in asset_build_package[REQ_PARAMS]:
+                if specified_params is None:
+                    specified_params = {}
+                if required_param[KEY] not in specified_params.keys():
+                    if required_param[DEFAULT] is None:
+                        raise ValueError("Value for the parameter '{x}' ({desc}) is required, but not provided. "
+                                         "Specify it with: --params {x}=value"
+                                         .format(x=required_param[KEY], desc=required_param[DESC]))
+                    else:
+                        specified_params.update({required_param[KEY]: required_param[DEFAULT]})
             genome_outfolder = os.path.join(args.outfolder, genome)
+            _LOGGER.info("Building '{}/{}:{}' using '{}' recipe".format(genome, asset_key, asset_tag, recipe_name))
             if not build_asset(genome, asset_key, asset_tag, asset_build_package, genome_outfolder,
-                               specific_args, **input_assets):
+                               specified_args, specified_params, **input_assets):
                 log_path = os.path.abspath(os.path.join(genome_outfolder, asset_key, asset_tag,
-                                                        "_refgenie_build", "refgenie_log.md"))
+                                                        BUILD_STATS_DIR, ORI_LOG_NAME))
                 _LOGGER.info("'{}/{}:{}' was not added to the config, but directory has been left in place. "
                              "See the log file for details: {}".format(genome, asset_key, asset_tag, log_path))
                 return
             rgc_rw = RefGenConf(filepath=gencfg, writable=True, wait_max=600)  # create object for writing
-            # If the asset was a fasta, we init the genome
-            if asset_key == 'fasta':
+            # If the recipe was a fasta, we init the genome
+            if recipe_name == 'fasta':
                 _LOGGER.info("Computing initial genome digest...")
                 collection_checksum, content_checksums = \
-                    fasta_checksum(rgc_rw.get_asset(genome, "fasta", asset_tag, "fasta"))
+                    fasta_checksum(rgc_rw.get_asset(genome, asset_key, asset_tag, "fasta"))
                 _LOGGER.info("Initializing genome...")
                 refgenie_initg(rgc_rw, genome, collection_checksum, content_checksums)
-            _LOGGER.info("Finished building asset '{}'".format(asset_key))
+            _LOGGER.info("Finished building '{}' asset".format(asset_key))
             # update asset relationships
             rgc_rw.update_relatives_assets(genome, asset_key, asset_tag, parent_assets)  # adds parents
             for i in parent_assets:
-                parsed_parent = prp(i)
-                rgc_rw.update_relatives_assets(genome, parsed_parent["item"], parsed_parent["tag"],
-                                            ["{}:{}".format(asset_key, asset_tag)], True)  # adds children
+                parsed_parent = parse_registry_path(i)
+                # adds child (currently built asset) to the parent
+                rgc_rw.update_relatives_assets(parsed_parent["genome"], parsed_parent["asset"], parsed_parent["tag"],
+                                               ["{}/{}:{}".format(genome, asset_key, asset_tag)], True)
             if args.genome_description is not None:
                 _LOGGER.debug("adding genome ({}) description: '{}'".format(genome, args.genome_description))
                 rgc_rw.update_genomes(genome, {CFG_GENOME_DESC_KEY: args.genome_description})
@@ -493,7 +491,7 @@ def refgenie_build(gencfg, genome, asset_list, args):
             rgc_rw.write()
             del rgc_rw
         else:
-            raise MissingRecipeError("There is no '{}' recipe defined".format(asset_key))
+            _raise_missing_recipe_error(recipe_name)
 
 
 def refgenie_init(genome_config_path, genome_server=DEFAULT_SERVER, config_version=REQ_CFG_VERSION):
@@ -524,9 +522,13 @@ def refgenie_init(genome_config_path, genome_server=DEFAULT_SERVER, config_versi
 
 def refgenie_getseq(rgc, genome, locus):
     """
+    Return the sequence found in a selected reange and chromosome.
     Something like the refget protocol.
-    """
 
+    :param refgenconf.RefGenConf rgc: genome configuration object
+    :param str genome: name of the sequence identifier
+    :param str locus: desired sequence range, splittable by colon, e.g. '1:2'
+    """
     fa = pyfaidx.Fasta(rgc.get_asset(genome, "fasta"))
     locus_split = locus.split(":")
 
@@ -548,7 +550,6 @@ def _exec_list(rgc, remote, genome):
         assemblies, assets = rgc.list_local(genome=genome)
         # also get recipes
         recipes = ", ".join(sorted(list(asset_build_packages.keys())))
-
     return pfx, assemblies, assets, recipes
 
 
@@ -574,7 +575,6 @@ def perm_check_x(file_to_check, message_tag):
 
 def main():
     """ Primary workflow """
-
     parser = logmuse.add_logging_options(build_argparser())
     args, remaining_args = parser.parse_known_args()
     global _LOGGER
@@ -587,8 +587,8 @@ def main():
         _LOGGER.error("No command given")
         sys.exit(1)
 
-    gencfg = yacman.select_config(args.genome_config, CFG_ENV_VARS, check_exist=not args.command == INIT_CMD,
-                                  on_missing=lambda fp: fp, strict_env=True)
+    gencfg = refgenconf.select_genome_config(filename=args.genome_config, check_exist=not args.command == INIT_CMD,
+                                             on_missing=lambda fp: fp, strict_env=True)
     if gencfg is None:
         raise MissingGenomeConfigError(args.genome_config)
     _LOGGER.debug("Determined genome config: {}".format(gencfg))
@@ -626,20 +626,26 @@ def main():
         _LOGGER.info("Initializing refgenie genome configuration")
         _writeable(os.path.dirname(gencfg), strict_exists=True)
         refgenie_init(gencfg, args.genome_server)
-        sys.exit(0)
 
-    if args.command == BUILD_CMD:
+    elif args.command == BUILD_CMD:
         if not all([x["genome"] == asset_list[0]["genome"] for x in asset_list]):
-            _LOGGER.error("Build can only build assets from one genome")
+            _LOGGER.error("Build can only build assets for one genome")
             sys.exit(1)
-        if args.requirements:
-            if a["asset"] not in asset_build_packages.keys():
-                _LOGGER.error("Recipe does not exist for asset '{}'".format(a["asset"]))
+        recipe_name = None
+        if args.recipe:
+            if len(asset_list) > 1:
+                _LOGGER.error("Recipes cannot be specified for multi-asset builds")
                 sys.exit(1)
-            _LOGGER.info("'{}/{}' build requirements: ".format(a["genome"], a["asset"]))
-            _make_asset_build_reqs(a["asset"])
+            recipe_name = args.recipe
+        if args.requirements:
+            for a in asset_list:
+                recipe = recipe_name or a["asset"]
+                if recipe not in asset_build_packages.keys():
+                    _raise_missing_recipe_error(recipe)
+                _LOGGER.info("'{}' recipe requirements: ".format(recipe))
+                _make_asset_build_reqs(recipe)
             sys.exit(0)
-        refgenie_build(gencfg, asset_list[0]["genome"], asset_list, args)
+        refgenie_build(gencfg, asset_list[0]["genome"], asset_list, recipe_name, args)
 
     elif args.command == GET_ASSET_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
@@ -649,14 +655,14 @@ def main():
         return
 
     elif args.command == INSERT_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=True)  # genome cfg will be updated, create object in RW mode mode
+        rgc = RefGenConf(filepath=gencfg, writable=False)
         if len(asset_list) > 1:
             raise NotImplementedError("Can only add 1 asset at a time")
         else:
             refgenie_add(rgc, asset_list[0], args.path)
 
     elif args.command == PULL_CMD:
-        rgc = RefGenConf(filepath=gencfg)
+        rgc = RefGenConf(filepath=gencfg, writable=False)
         outdir = rgc[CFG_FOLDER_KEY]
         if not os.path.exists(outdir):
             raise MissingFolderError(outdir)
@@ -668,16 +674,7 @@ def main():
             return
 
         for a in asset_list:
-            gat, archive_data, server_url = rgc.pull_asset(a["genome"], a["asset"], a["tag"], unpack=not args.no_untar)
-            if archive_data is not None:
-                rgc_rw = RefGenConf(filepath=gencfg, writable=True)
-                [rgc_rw.chk_digest_update_child(a["genome"], x, "{}:{}".format(gat[1], gat[2]), server_url)
-                 for x in archive_data[CFG_ASSET_PARENTS_KEY] if CFG_ASSET_PARENTS_KEY in archive_data]
-                rgc_rw.update_tags(*gat,
-                                   data={attr: archive_data[attr] for attr in ATTRS_COPY_PULL if attr in archive_data})
-                rgc_rw.set_default_pointer(*gat)
-                rgc_rw.write()
-                del rgc_rw
+            rgc.pull_asset(a["genome"], a["asset"], a["tag"], unpack=not args.no_untar)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         rgc = RefGenConf(filepath=gencfg, writable=False)
@@ -705,6 +702,7 @@ def main():
             # Restore original server list, even when we couldn't find assets on a server
             rgc[CFG_SERVERS_KEY] = server_list
         else:  # Only check local assets once
+            _LOGGER.info("Server subscriptions: {}".format(", ".join(rgc[CFG_SERVERS_KEY])))
             pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
             _LOGGER.info("{} genomes: {}".format(pfx, genomes))
             if args.command != LIST_REMOTE_CMD:  # Not implemented yet
@@ -716,7 +714,7 @@ def main():
         refgenie_getseq(rgc, args.genome, args.locus)
 
     elif args.command == REMOVE_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=True)  # genome cfg will be updated, create object in RW mode mode
+        rgc = RefGenConf(filepath=gencfg, writable=True)  # genome cfg will be updated, create object in RW mode
         for a in asset_list:
             a["tag"] = a["tag"] or rgc.get_default_tag(a["genome"], a["asset"], use_existing=False)
             _LOGGER.debug("Determined tag for removal: {}".format(a["tag"]))
@@ -797,6 +795,34 @@ def main():
             _LOGGER.debug("Original asset has been moved from '{}' to '{}'".format(ori_path, new_path))
         rgc.write()
 
+    elif args.command == ID_CMD:
+        rgc = RefGenConf(filepath=gencfg, writable=False)
+        for asset in asset_list:
+            g, a = asset["genome"], asset["asset"]
+            t = asset["tag"] or rgc.get_default_tag(g, a)
+            print("{}/{}:{},".format(g, a, t) + rgc.get_asset_digest(g, a, t))
+        return
+    elif args.command == SUBSCRIBE_CMD:
+        rgc = RefGenConf(filepath=gencfg, writable=False)
+        with rgc as r:
+            r.update_genome_servers(args.genome_server, reset=args.reset)
+        _LOGGER.info("Subscribed to: {}".format(", ".join(args.genome_server)))
+        return
+    elif args.command == UNSUBSCRIBE_CMD:
+        rgc = RefGenConf(filepath=gencfg, writable=False)
+        unsub_list = []
+        ori_servers = rgc[CFG_SERVERS_KEY]
+        for s in args.genome_server:
+            try:
+                ori_servers.remove(s)
+                unsub_list.append(s)
+            except ValueError:
+                _LOGGER.warning("URL '{}' not in genome_servers list: {}".format(s, ori_servers))
+        with rgc as r:
+            r.update_genome_servers(ori_servers, reset=True)
+        if unsub_list:
+            _LOGGER.info("Unsubscribed from: {}".format(", ".join(unsub_list)))
+
 
 def _entity_dir_removal_log(directory, entity_class, asset_dict, removed_entities):
     """
@@ -856,27 +882,23 @@ def _make_asset_build_reqs(asset):
 
     :params str asset: name of the asset
     """
-
-    def _format_req(req):
+    def _format_reqs(req_list):
         """
-        Format the asset requirements.
 
-        Some of them specify seek_keys named as the assets, but we dont wanto to display that
-
-        :param str req: requirement str
-        :return str: formatted requirement
+        :param list[dict] req_list:
+        :return list[str]:
         """
-        reqs = req.split(".")
-        assert len(reqs) == 2, ValueError("Length of requirement '{}' after splitting is not 2. Specified requirement "
-                                          "is invalid, it should be formatted as follows: 'asset.seek_key'".format(req))
-        return reqs if reqs[1] != reqs[0] else reqs[1]
+        templ = "\t{} ({})"
+        return [templ.format(req[KEY], req[DESC]) if DEFAULT not in req
+                else (templ + "; default: {}").format(req[KEY], req[DESC], req[DEFAULT]) for req in req_list]
 
     reqs_list = []
-    if asset_build_packages[asset][REQ_IN]:
-        reqs_list.append("- arguments: {}".format(", ".join(asset_build_packages[asset][REQ_IN])))
+    if asset_build_packages[asset][REQ_FILES]:
+        reqs_list.append("- files:\n{}".format("\n".join(_format_reqs(asset_build_packages[asset][REQ_FILES]))))
     if asset_build_packages[asset][REQ_ASSETS]:
-        reqs_list.append("- assets: {}".
-                         format(", ".join(_format_req(r) for r in asset_build_packages[asset][REQ_ASSETS])))
+        reqs_list.append("- assets:\n{}".format("\n".join(_format_reqs(asset_build_packages[asset][REQ_ASSETS]))))
+    if asset_build_packages[asset][REQ_PARAMS]:
+        reqs_list.append("- params:\n{}".format("\n".join(_format_reqs(asset_build_packages[asset][REQ_PARAMS]))))
     _LOGGER.info("\n".join(reqs_list))
 
 
@@ -891,16 +913,14 @@ def get_dir_digest(path, pm=None):
     if not is_command_callable("md5sum"):
         raise OSError("md5sum command line tool is required for asset digest calculation. \n"
                       "Install and try again, e.g on macOS: 'brew install md5sha1sum'")
-    cmd = "cd {}; find . -type f -not -path './_refgenie_build*' " \
-          "-exec md5sum {{}} \; |" \
-          " sort -k 2 | awk '{{print $1}}' | " \
-          "md5sum".format(path)
+    cmd = "cd {}; find . -type f -not -path './" + BUILD_STATS_DIR + \
+          "*' -exec md5sum {{}} \; | sort -k 2 | awk '{{print $1}}' | md5sum"
     if isinstance(pm, pypiper.PipelineManager):
-        x = pm.checkprint(cmd)
+        x = pm.checkprint(cmd.format(path))
     else:
         try:
             from subprocess import check_output
-            x = check_output(cmd, shell=True).decode("utf-8")
+            x = check_output(cmd.format(path), shell=True).decode("utf-8")
         except Exception as e:
             _LOGGER.warning("{}: could not calculate digest for '{}'".format(e.__class__.__name__, path))
             return
@@ -918,6 +938,48 @@ def _handle_sigint(gat):
         _LOGGER.warning("\nThe build was interrupted: {}/{}:{}".format(*gat))
         sys.exit(0)
     return handle
+
+
+def _parse_user_build_input(input):
+    """
+    Parse user input specification. Used in build for specific parents and input parsing.
+
+    :param list input: user command line input, formatted as follows: [fasta=txt, test=txt]
+    :return dict: mapping of keys, which are asset names and values
+    """
+    return {x.split("=")[0]: x.split("=")[1] for x in input if "=" in x} if input is not None else input
+
+
+def _raise_missing_recipe_error(recipe):
+    """
+    Raise an error for a missing recipe, when one is requested
+
+    :param str recipe: recipe name
+    :raise MissingRecipeError: always
+    """
+    raise MissingRecipeError("Recipe '{}' not found. Available recipes: {}".
+                             format(recipe, ", ".join([*asset_build_packages])))
+
+
+def _check_recipe(recipe):
+    """
+    Check whether there are any key name clashes in the recipe requirements
+    and raise an error if there are
+
+    :param dict recipe: asset_build_package
+    :raise ValueError: if any key names are duplicated
+    """
+    req_keys = []
+    for req in [REQ_PARAMS, REQ_ASSETS, REQ_FILES]:
+        req_keys.extend([req_dict[KEY] for req_dict in recipe[req]])
+    unique = []
+    for k in req_keys:
+        if k not in unique:
+            unique.append(k)
+        else:
+            raise ValueError("The recipe contains a duplicated requirement key '{}', "
+                             "which is not permitted.".format(k))
+    return recipe
 
 
 if __name__ == '__main__':
