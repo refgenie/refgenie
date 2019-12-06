@@ -1,4 +1,4 @@
 logmuse>=0.2
-refgenconf>=0.5.5dev
+refgenconf>=0.6.0
 piper>=0.12.1
 pyfaidx>=0.5.5.2

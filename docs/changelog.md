@@ -2,7 +2,7 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
-## [0.7.3] - unreleased
+## [0.8.0] - 2019-12-06
 
 ### Changed
 - `refgenie build` command arguments naming scheme: `--{input_name} <path>` to `--files {input_name}=<path>`
@@ -15,7 +15,12 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - cross-namespace asset relationships support 
 - `--assets` argument in `refgenie build` command to provide parent assets, if required
 - `-r`/`--recipe` in `refgenie build` command argument to provide the recipe for the build
-- `subscribe` and `unsubscribe` subcommands to enable server list manipulation in the config file (`genome_servers` entry in the refgenie configuration file)  
+- `subscribe` and `unsubscribe` subcommands to enable server list manipulation in the config file (`genome_servers` entry in the refgenie configuration file)
+- new recipes:
+    - `salmon_sa_index`
+    - `salmon_partial_sa_index`
+    - `suffixerator_index`
+    - `tallymer_index`
 
 ### Removed
 - `-t`/`--tag` in `refgenie build`. Use more flexible `--assets` instead.
