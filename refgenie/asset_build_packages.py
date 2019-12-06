@@ -309,11 +309,11 @@ asset_build_packages = {
             "awk -v OFS='\t' '{{print $6,$8,$9}}' {asset_outfolder}/mashmap.out | sort -k1,1 -k2,2n - > {asset_outfolder}/genome_found.sorted.bed",
             "bedtools merge -i {asset_outfolder}/genome_found.sorted.bed > {asset_outfolder}/genome_found_merged.bed",
             "bedtools getfasta -fi {asset_outfolder}/reference.masked.genome.fa -bed {asset_outfolder}/genome_found_merged.bed -fo {asset_outfolder}/genome_found.fa",
-            "awk '{{a=$0; getline;split(a, b, ':');  r[b[1]] = r[b[1]]\"\"$0}} END {{ for (k in r) {{ print k'\n'r[k] }} }}' {asset_outfolder}/genome_found.fa > {asset_outfolder}/decoy.fa",
+            "awk '{{a=$0; getline;split(a, b, \":\");  r[b[1]] = r[b[1]]\"\"$0}} END {{ for (k in r) {{ print k\"\\n\"r[k] }} }}' {asset_outfolder}/genome_found.fa > {asset_outfolder}/decoy.fa",
             "cat {txomefa} {asset_outfolder}/decoy.fa > {asset_outfolder}/gentrome.fa",
             "grep '>' {asset_outfolder}/decoy.fa | awk '{{print substr($1,2); }}' > {asset_outfolder}/decoys.txt",
             "rm {asset_outfolder}/exons.bed {asset_outfolder}/reference.masked.genome.fa {asset_outfolder}/mashmap.out {asset_outfolder}/genome_found.sorted.bed {asset_outfolder}/genome_found_merged.bed {asset_outfolder}/genome_found.fa {asset_outfolder}/decoy.fa {asset_outfolder}/reference.masked.genome.fa.fai",
-            "salmon index -t {asset_outfolder}/gentrome.fa.gz -d {asset_outfolder}/decoys.txt -i {asset_outfolder} -p {threads}"
+            "salmon index -t {asset_outfolder}/gentrome.fa -d {asset_outfolder}/decoys.txt -i {asset_outfolder} -p {threads}"
         ]
     },
     "epilog_index": {
@@ -443,7 +443,7 @@ asset_build_packages = {
             "gzip -dc {asset_outfolder}/{genome}_refGene.txt.gz | awk -v OFS='\t' '$9>1' | awk -v OFS='\t' '{{ n = split($10, a, \",\"); split($11, b, \",\"); for(i=1; i<n; ++i) print $3, a[i], b[i], $13, i, $4 }}' | awk -v OFS='\t' '$6==\"+\" && $5!=1 {{print $0}} $6==\"-\" {{print $0}}' | awk '$4!=prev4 && prev6==\"-\" {{prev4=$4; prev6=$6; delete line[NR-1]; idx-=1}} {{line[++idx]=$0; prev4=$4; prev6=$6}} END {{for (x=1; x<=idx; x++) print line[x]}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_exons.bed",
             "gzip -dc {asset_outfolder}/{genome}_refGene.txt.gz | awk -v OFS='\t' '$9>1' | awk -F'\t' '{{ exonCount=int($9);split($10,exonStarts,\"[,]\"); split($11,exonEnds,\"[,]\"); for(i=1;i<exonCount;i++) {{printf(\"%s\\t%s\\t%s\\t%s\\t%d\\t%s\\n\",$3,exonEnds[i],exonStarts[i+1],$13,($3==\"+\"?i:exonCount-i),$4);}}}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_introns.bed",
             "gzip -dc {asset_outfolder}/{genome}_refGene.txt.gz | grep 'cmpl' | awk  '{{print $3\"\t\"$5\"\t\"$6\"\t\"$13\"\t.\t\"$4}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u >  {asset_outfolder}/{genome}_pre-mRNA.bed"
-            ]
+        ]
     },
     "suffixerator_index": {
         DESC: "Enhanced suffix array index for genomes using gt (GenomeTools) suffixerator program",
