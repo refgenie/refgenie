@@ -62,7 +62,13 @@ asset_build_packages = {
             }
         ],
         REQ_ASSETS: [],
-        REQ_PARAMS: [],
+        REQ_PARAMS: [
+            {
+                KEY: "threads",
+                DEFAULT: "8",
+                DESC: "Number of threads to use for parallel computing"
+            }
+        ],
         CONT: "databio/refgenie",
         CMD_LST: [
             "cp {dbnsfp} {asset_outfolder}/{genome}.zip",
@@ -71,7 +77,7 @@ asset_build_packages = {
             "head -n1 {asset_outfolder}/dbNSFP*_variant.chr1 > {asset_outfolder}/{genome}_dbNSFP.txt",
             "cat {asset_outfolder}/dbNSFP*variant.chr* | grep -v '#' >> {asset_outfolder}/{genome}_dbNSFP.txt",
             "rm {asset_outfolder}/dbNSFP*_variant.chr*",
-            "bgzip -@ 4 {asset_outfolder}/{genome}_dbNSFP.txt",
+            "bgzip -@ {threads} {asset_outfolder}/{genome}_dbNSFP.txt",
             "tabix -s 1 -b 2 -e 2 {asset_outfolder}/{genome}_dbNSFP.txt.gz",
             "rm `find {asset_outfolder} -type f -not -path '{asset_outfolder}/_refgenie_build*' -not -path '{asset_outfolder}/hg38_dbNSFP.txt.*'`"
         ]
@@ -227,13 +233,19 @@ asset_build_packages = {
                 DESC: "fasta asset for transcriptome"
             }
         ],
-        REQ_PARAMS: [],
+        REQ_PARAMS: [
+            {
+                KEY: "threads",
+                DEFAULT: "8",
+                DESC: "Number of threads to use for parallel computing"
+            }
+        ],
         CONT: "combinelab/salmon",
         ASSETS: {
             "salmon_index": "."
         },
         CMD_LST: [
-            "salmon index -k 31 -i {asset_outfolder} -t {fasta}"
+            "salmon index -k 31 -i {asset_outfolder} -t {fasta} -p {threads}"
             ]
     },
     "salmon_sa_index": {
@@ -303,7 +315,8 @@ asset_build_packages = {
             "salmon_partial_sa_index": "."
         },
         CMD_LST: [
-            "awk -v OFS='\t' '{{if ($3==\"exon\") {{print $1,$4,$5}}}}' {gtf} > {asset_outfolder}/exons.bed",
+            "zcat {gtf} > {asset_outfolder}/{genome}.gtf",
+            "awk -v OFS='\t' '{{if ($3==\"exon\") {{print $1,$4,$5}}}}' {asset_outfolder}/{genome}.gtf > {asset_outfolder}/exons.bed",
             "bedtools maskfasta -fi {genomefa} -bed {asset_outfolder}/exons.bed -fo {asset_outfolder}/reference.masked.genome.fa",
             "mashmap -r {asset_outfolder}/reference.masked.genome.fa -q {txomefa} -t {threads} --pi 80 -s 500 -o {asset_outfolder}/mashmap.out",
             "awk -v OFS='\t' '{{print $6,$8,$9}}' {asset_outfolder}/mashmap.out | sort -k1,1 -k2,2n - > {asset_outfolder}/genome_found.sorted.bed",
@@ -351,14 +364,20 @@ asset_build_packages = {
                 DESC: "fasta asset for genome"
             }
         ],
-        REQ_PARAMS: [],
+        REQ_PARAMS: [
+            {
+                KEY: "threads",
+                DEFAULT: "8",
+                DESC: "Number of threads to use for parallel computing"
+            }
+        ],
         CONT: "databio/refgenie",
         ASSETS: {
             "star_index": "."
         },
         CMD_LST: [
             "mkdir -p {asset_outfolder}",
-            "STAR --runThreadN 16 --runMode genomeGenerate --genomeDir {asset_outfolder} --genomeFastaFiles {fasta}"
+            "STAR --runThreadN {threads} --runMode genomeGenerate --genomeDir {asset_outfolder} --genomeFastaFiles {fasta}"
             ]
     },
     "gencode_gtf": {
