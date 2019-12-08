@@ -7,6 +7,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Fixed
 - `salmon_partial_sa_index` recipe
 
+### Changed
+- `refgenie remove` removes the asset relatives links
+
 ### Added
 - `threads` parameter to the following recipes: `dbnsfp`, `salmon_index`, `star_index`
 
