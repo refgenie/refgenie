@@ -2,6 +2,15 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
+## [0.8.1] - 2019-12-XX
+
+### Fixed
+- `salmon_partial_sa_index` recipe
+
+### Added
+- `threads` parameter to the following recipes: `dbnsfp`, `salmon_index`, `star_index`
+
+
 ## [0.8.0] - 2019-12-06
 
 ### Changed
