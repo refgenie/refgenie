@@ -1,2 +1,2 @@
 https://github.com/databio/mkdocs-databio/archive/master.zip
-refgenconf>=0.5.3
+refgenconf>=0.6.1
