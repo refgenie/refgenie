@@ -494,32 +494,6 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             _raise_missing_recipe_error(recipe_name)
 
 
-def refgenie_init(genome_config_path, genome_server=DEFAULT_SERVER, config_version=REQ_CFG_VERSION):
-    """
-    Initialize a genome config file.
-
-    :param str genome_config_path: path to genome configuration file to
-        create/initialize
-    :param list genome_server: URL for a server
-    :param str config_version: config version name, e.g. 0.2
-    """
-    # Set up default
-    rgc = RefGenConf(entries=OrderedDict({
-        CFG_VERSION_KEY: config_version,
-        CFG_FOLDER_KEY: os.path.dirname(os.path.abspath(genome_config_path)),
-        CFG_SERVER_KEY: genome_server,
-        CFG_GENOMES_KEY: None
-    }))
-
-    _LOGGER.debug("RGC: {}".format(rgc))
-
-    if genome_config_path and not os.path.exists(genome_config_path):
-        rgc.write(genome_config_path)
-        _LOGGER.info("Wrote new refgenie genome configuration file: {}".format(genome_config_path))
-    else:
-        _LOGGER.warning("Can't initialize, file exists: {} ".format(genome_config_path))
-
-
 def refgenie_getseq(rgc, genome, locus):
     """
     Return the sequence found in a selected reange and chromosome.
@@ -624,8 +598,13 @@ def main():
 
     if args.command == INIT_CMD:
         _LOGGER.info("Initializing refgenie genome configuration")
-        _writeable(os.path.dirname(gencfg), strict_exists=True)
-        refgenie_init(gencfg, args.genome_server)
+        rgc = RefGenConf(entries=OrderedDict({
+            CFG_VERSION_KEY: REQ_CFG_VERSION,
+            CFG_FOLDER_KEY: os.path.dirname(os.path.abspath(gencfg)),
+            CFG_SERVERS_KEY: args.genome_server or [DEFAULT_SERVER],
+            CFG_GENOMES_KEY: None
+        }))
+        rgc.initialize_config_file(os.path.abspath(gencfg))
 
     elif args.command == BUILD_CMD:
         if not all([x["genome"] == asset_list[0]["genome"] for x in asset_list]):
