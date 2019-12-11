@@ -597,7 +597,7 @@ def main():
             sys.exit(1)
 
     if args.command == INIT_CMD:
-        _LOGGER.info("Initializing refgenie genome configuration")
+        _LOGGER.debug("Initializing refgenie genome configuration")
         rgc = RefGenConf(entries=OrderedDict({
             CFG_VERSION_KEY: REQ_CFG_VERSION,
             CFG_FOLDER_KEY: os.path.dirname(os.path.abspath(gencfg)),
@@ -753,8 +753,8 @@ def main():
             raise NotImplementedError("Can only tag 1 asset at a time")
         if args.default:
             # set the default tag and exit
-            rgc.set_default_pointer(a["genome"], a["asset"], a["tag"], force=True)
-            rgc.write()
+            with rgc as r:
+                r.set_default_pointer(a["genome"], a["asset"], a["tag"], force=True)
             sys.exit(0)
         ori_path = rgc.get_asset(a["genome"], a["asset"], a["tag"], enclosing_dir=True)
         new_path = os.path.abspath(os.path.join(ori_path, os.pardir, args.tag))
@@ -768,7 +768,7 @@ def main():
             _LOGGER.warning("Could not rename original asset tag directory '{}' to the new one '{}'".
                             format(ori_path, new_path))
         else:
-            rgc.remove_assets(a["genome"], a["asset"], a["tag"])
+            rgc.remove_assets(a["genome"], a["asset"], a["tag"], relationships=False)
             _LOGGER.debug("Asset '{}/{}' tagged with '{}' has been removed from the genome config".
                           format(a["genome"], a["asset"], a["tag"]))
             _LOGGER.debug("Original asset has been moved from '{}' to '{}'".format(ori_path, new_path))

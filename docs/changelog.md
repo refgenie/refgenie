@@ -9,6 +9,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 - `refgenie remove` removes the asset relatives links
+- `refgenie init` uses `initialize_config_file` method from `refgenconf`
 
 ### Added
 - `threads` parameter to the following recipes: `dbnsfp`, `salmon_index`, `star_index`
