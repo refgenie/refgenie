@@ -34,6 +34,27 @@ A sort of oracle of available reference genome assembly assets
 
 
 ```python
+def __init__(self, filepath=None, entries=None, writable=False, wait_max=10)
+```
+
+Create the config instance by with a filepath or key-value pairs.
+#### Parameters:
+
+- `filepath` (`str`):  a path to the YAML file to read
+- `entries` (`Iterable[(str, object)] | Mapping[str, object]`): config filepath or collection of key-value pairs
+- `writable` (`bool`):  whether to create the object with write capabilities
+- `wait_max` (`int`):  how long to wait for creating an object when the file that data will be read from is locked
+
+
+#### Raises:
+
+- `refgenconf.MissingConfigDataError`:  if a required configurationitem is missing
+- `ValueError`:  if entries is given as a string and is not a file
+
+
+
+
+```python
 def assets_dict(self, genome=None, order=None, include_tags=False)
 ```
 
@@ -85,7 +106,7 @@ In case the local asset does not exist, the config is populated with the remote 
 - `genome` (`str`):  name of the genome to check the asset digests for
 - `remote_asset_name` (`str`): tag
 - `child_name` (`str`):  name to be appended to the children of the parent
-- `server_url` (`str`):  addres of the server to query for the digests
+- `server_url` (`str`):  address of the server to query for the digests
 
 
 #### Raises:
@@ -157,7 +178,7 @@ Get as single string this configuration's reference genome assembly IDs.
 
 
 ```python
-def get_asset(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=True, check_exist=<function RefGenConf.<lambda> at 0x7f1f4c65b8c0>, enclosing_dir=False)
+def get_asset(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=True, check_exist=<function RefGenConf.<lambda> at 0x10bdfa950>, enclosing_dir=False)
 ```
 
 Get an asset for a particular assembly.
@@ -242,29 +263,33 @@ Get the dictionary attributes, like checksum, contents, description. Does not re
 
 
 ```python
-def is_asset_complete(self, genome, asset, tag)
+def initialize_config_file(self, filepath=None)
 ```
 
-Check whether all required tag attributes are defined in the RefGenConf object. This is the way we determine tag completeness.
+Initialize genome configuration file on disk
 #### Parameters:
 
-- `genome` (`str`):  genome to be checked
-- `asset` (`str`):  asset package to be checked
-- `tag` (`str`):  tag to be checked
+- `filepath` (`str`):  a valid path where the configuration file should be initialized
 
 
 #### Returns:
 
-- `bool`:  the decision
+- `str`:  the filepath the file was initialized at
+
+
+#### Raises:
+
+- `OSError`:  in case the file could not be initialized due to insufficient permissions or pre-existence
+- `TypeError`:  if no valid filepath cat be determined
 
 
 
 
 ```python
-def is_tag_link(self, genome, asset, tag)
+def is_asset_complete(self, genome, asset, tag)
 ```
 
-Check whether the specified tag is a link. Based on a key exitence.
+Check whether all required tag attributes are defined in the RefGenConf object. This is the way we determine tag completeness.
 #### Parameters:
 
 - `genome` (`str`):  genome to be checked
@@ -335,7 +360,7 @@ List locally available reference genome IDs and assets by ID.
 
 
 ```python
-def list_remote(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x7f1f4c65bcb0>)
+def list_remote(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x10bdfad08>)
 ```
 
 List genomes and assets available remotely.
@@ -354,7 +379,7 @@ List genomes and assets available remotely.
 
 
 ```python
-def pull_asset(self, genome, asset, tag, unpack=True, force=None, get_json_url=<function RefGenConf.<lambda> at 0x7f1f4c65bef0>, build_signal_handler=<function _handle_sigint at 0x7f1f4c70eb90>)
+def pull_asset(self, genome, asset, tag, unpack=True, force=None, get_json_url=<function RefGenConf.<lambda> at 0x10bdfaf28>, build_signal_handler=<function _handle_sigint at 0x10bd65620>)
 ```
 
 Download and possibly unpack one or more assets for a given ref gen.
@@ -367,16 +392,32 @@ Download and possibly unpack one or more assets for a given ref gen.
 - `force` (`bool | NoneType`):  how to handle case in which asset pathalready exists; null for prompt (on a per-asset basis), False to effectively auto-reply No to the prompt to replace existing file, and True to auto-replay Yes for existing asset replacement.
 - `get_json_url` (`function(str, str) -> str`):  how to build URL fromgenome server URL base, genome, and asset
 - `build_signal_handler` (`function(str) -> function`):  how to createa signal handler to use during the download; the single argument to this function factory is the download filepath
+- `update` (`bool`):  whether the object should be updated with downloaded archive data
 
 
 #### Returns:
 
-- `list`:  a list of genome, asset, tag names and a key-value pair withwhich genome config file should be updated if pull succeeds, else asset key and a null value.
+- `(list[str], dict, str)`:  a list of genome, asset, tag namesand a key-value pair with which genome config file should be updated if pull succeeds, else asset key and a null value
 
 
 #### Raises:
 
 - `refgenconf.UnboundEnvironmentVariablesError`:  if genome folderpath contains any env. var. that's unbound
+- `refgenconf.RefGenConfError`:  if the object update is requested ina non-writable state
+
+
+
+
+```python
+def remove_asset_from_relatives(self, genome, asset, tag)
+```
+
+Remove any relationship links associated with the selected asset
+#### Parameters:
+
+- `genome` (`str`):  genome to be removed from its relatives' relatives list
+- `asset` (`str`):  asset to be removed from its relatives' relatives list
+- `tag` (`str`):  tag to be removed from its relatives' relatives list
 
 
 
@@ -470,6 +511,21 @@ Updates the genomes in RefGenConf object at any level. If a requested genome-ass
 #### Returns:
 
 - `RefGenConf`:  updated object
+
+
+
+
+```python
+def update_genome_servers(self, url, reset=False)
+```
+
+Update the list of genome_servers.
+
+Use reset argument to overwrite the current list. Otherwise the current one will be appended to.
+#### Parameters:
+
+- `url` (`list[str] | str`):  url(s) to update the genome_servers list with
+- `reset` (`bool`):  whether the current list should be overwritten
 
 
 
@@ -569,6 +625,14 @@ Return writability flag or None if not set
 Exception for invalid genome config file format.
 
 
+```python
+def __init__(self, msg)
+```
+
+Initialize self.  See help(type(self)) for accurate signature.
+
+
+
 ## <a name="MissingAssetError"></a> Class `MissingAssetError`
 Error type for request of an unavailable genome asset.
 
@@ -590,7 +654,7 @@ Use of environment variable that isn't bound to a value.
 
 
 ```python
-def select_genome_config(filename, conf_env_vars=None, **kwargs)
+def select_genome_config(filename=None, conf_env_vars=['REFGENIE'], **kwargs)
 ```
 
 Get path to genome configuration file.
@@ -610,4 +674,4 @@ Get path to genome configuration file.
 
 
 
-*Version Information: `refgenconf` v0.5.5dev, generated by `lucidoc` v0.4.1*
+*Version Information: `refgenconf` v0.6.1, generated by `lucidoc` v0.4.1*
