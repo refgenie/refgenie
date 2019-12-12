@@ -276,13 +276,13 @@ asset_build_packages = {
         REQ_FILES: [],
         REQ_ASSETS: [
             {
-                KEY: "genomefa",
-                DEFAULT: "genomefa",
+                KEY: "fasta",
+                DEFAULT: "fasta",
                 DESC: "fasta asset for genome"
             },
             {
-                KEY: "txomefa",
-                DEFAULT: "txomefa",
+                KEY: "fasta_txome",
+                DEFAULT: "fasta_txome",
                 DESC: "fasta asset for transcriptome"
             }
         ],
@@ -311,18 +311,18 @@ asset_build_packages = {
         REQ_FILES: [],
         REQ_ASSETS: [
             {
-                KEY: "genomefa",
-                DEFAULT: "genomefa",
+                KEY: "fasta",
+                DEFAULT: "fasta",
                 DESC: "fasta asset for genome"
             },
             {
-                KEY: "txomefa",
-                DEFAULT: "txomefa",
+                KEY: "fasta_txome",
+                DEFAULT: "fasta_txome",
                 DESC: "fasta asset for transcriptome"
             },
             {
                 KEY: "gtf",
-                DEFAULT: "gencode_gtf",
+                DEFAULT: "ensembl_gtf",
                 DESC: "GTF file for exonic features extraction"
             }
         ],
