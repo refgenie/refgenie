@@ -458,6 +458,10 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                         specified_params.update({required_param[KEY]: required_param[DEFAULT]})
             genome_outfolder = os.path.join(args.outfolder, genome)
             _LOGGER.info("Building '{}/{}:{}' using '{}' recipe".format(genome, asset_key, asset_tag, recipe_name))
+            if recipe_name == 'fasta' and genome in rgc.genomes_list() \
+                    and 'fasta' in rgc.list_assets_by_genome(genome):
+                _LOGGER.warning("'{g}' genome is already initialized with other fasta asset ({g}/{a}:{t}). "
+                                "It will be re-initialized.".format(g=genome, a=asset_key, t=asset_tag))
             if not build_asset(genome, asset_key, asset_tag, asset_build_package, genome_outfolder,
                                specified_args, specified_params, **input_assets):
                 log_path = os.path.abspath(os.path.join(genome_outfolder, asset_key, asset_tag,
