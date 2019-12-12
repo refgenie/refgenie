@@ -27,7 +27,30 @@ RECIPE_CONSTS = ["DESC", "ASSET_DESC", "ASSETS", "PTH", "REQ_FILES", "REQ_ASSETS
 
 asset_build_packages = {
     "fasta": {
-        DESC: "Sequences in the FASTA format, indexed FASTA (produced with samtools index) and chromosome sizes file",
+        DESC: "DNA sequences in the FASTA format, indexed FASTA (produced with samtools index) and chromosome sizes file",
+        ASSETS: {
+            "fasta": "{genome}.fa",
+            "fai": "{genome}.fa.fai",
+            "chrom_sizes": "{genome}.chrom.sizes"
+        },
+        REQ_FILES: [
+            {
+                KEY: "fasta",
+                DESC: "gzipped fasta file"
+            }
+        ],
+        REQ_ASSETS: [],
+        REQ_PARAMS: [],
+        CONT: "databio/refgenie",
+        CMD_LST: [
+            "cp {fasta} {asset_outfolder}/{genome}.fa.gz",
+            "gzip -d {asset_outfolder}/{genome}.fa.gz",
+            "samtools faidx {asset_outfolder}/{genome}.fa",
+            "cut -f 1,2 {asset_outfolder}/{genome}.fa.fai > {asset_outfolder}/{genome}.chrom.sizes",
+        ]
+    },
+    "fasta_txome": {
+        DESC: "cDNA sequences in the FASTA format, indexed FASTA (produced with samtools index) and chromosome sizes file",
         ASSETS: {
             "fasta": "{genome}.fa",
             "fai": "{genome}.fa.fai",
