@@ -52,7 +52,7 @@ asset_build_packages = {
     "fasta_txome": {
         DESC: "cDNA sequences in the FASTA format, indexed FASTA (produced with samtools index) and chromosome sizes file",
         ASSETS: {
-            "fasta": "{genome}.fa",
+            "fasta_txome": "{genome}.fa",
             "fai": "{genome}.fa.fai",
             "chrom_sizes": "{genome}.chrom.sizes"
         },
@@ -298,10 +298,10 @@ asset_build_packages = {
             "salmon_sa_index": "."
         },
         CMD_LST: [
-            "grep '^>' {genomefa} | cut -d ' ' -f 1 > {asset_outfolder}/decoys.txt",
+            "grep '^>' {fasta} | cut -d ' ' -f 1 > {asset_outfolder}/decoys.txt",
             "sed -i.bak -e 's/>//g' {asset_outfolder}/decoys.txt",
             "rm {asset_outfolder}/decoys.txt.bak",
-            "cat {txomefa} {genomefa} > {asset_outfolder}/gentrome.fa",
+            "cat {fasta_txome} {fasta} > {asset_outfolder}/gentrome.fa",
             "salmon index -t {asset_outfolder}/gentrome.fa -d {asset_outfolder}/decoys.txt -p {threads} -i {asset_outfolder}",
             "rm {asset_outfolder}/gentrome.fa {asset_outfolder}/decoys.txt"
         ]

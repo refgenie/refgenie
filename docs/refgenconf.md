@@ -36,6 +36,6 @@ bt2idx = rgc.get_asset(genome, "bowtie2_index")
 # run bowtie2...
 ```
 
-This enables you to write python software that will work on any computing environment without having to worry about passing around brittle environment-specific file paths.
+This enables you to write python software that will work on any computing environment without having to worry about passing around brittle environment-specific file paths. See [this tutorial](/refgenconf_usage) for more comprehensive example of how to work with `refgenconf` as a tool developer.
 
 See the complete [refgenconf python API](/autodoc_build/refgenconf) for more details.
