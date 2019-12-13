@@ -35,6 +35,8 @@ theme: databio
 
 plugins:
 - databio:
+    jupyter_source: "docs_jupyter"
+    jupyter_build: "docs_jupyter/build"
     autodoc_build: "docs/autodoc_build"
     autodoc_package: "refgenconf"
     no_top_level: true

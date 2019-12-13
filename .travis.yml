@@ -7,8 +7,9 @@ os:
   - linux
 install:
   - pip install .
+  - pip install -r requirements/requirements-dev.txt
   - pip install -r requirements/requirements-all.txt
-  - pip install -r requirements/requirements-test.txt  
+  - pip install -r requirements/requirements-test.txt
 #script: pytest --remote-data --cov=refgenconf
 script:
   - echo "skipping tests"

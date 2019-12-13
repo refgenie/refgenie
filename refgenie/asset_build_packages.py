@@ -27,9 +27,32 @@ RECIPE_CONSTS = ["DESC", "ASSET_DESC", "ASSETS", "PTH", "REQ_FILES", "REQ_ASSETS
 
 asset_build_packages = {
     "fasta": {
-        DESC: "Sequences in the FASTA format, indexed FASTA (produced with samtools index) and chromosome sizes file",
+        DESC: "DNA sequences in the FASTA format, indexed FASTA (produced with samtools index) and chromosome sizes file",
         ASSETS: {
             "fasta": "{genome}.fa",
+            "fai": "{genome}.fa.fai",
+            "chrom_sizes": "{genome}.chrom.sizes"
+        },
+        REQ_FILES: [
+            {
+                KEY: "fasta",
+                DESC: "gzipped fasta file"
+            }
+        ],
+        REQ_ASSETS: [],
+        REQ_PARAMS: [],
+        CONT: "databio/refgenie",
+        CMD_LST: [
+            "cp {fasta} {asset_outfolder}/{genome}.fa.gz",
+            "gzip -d {asset_outfolder}/{genome}.fa.gz",
+            "samtools faidx {asset_outfolder}/{genome}.fa",
+            "cut -f 1,2 {asset_outfolder}/{genome}.fa.fai > {asset_outfolder}/{genome}.chrom.sizes",
+        ]
+    },
+    "fasta_txome": {
+        DESC: "cDNA sequences in the FASTA format, indexed FASTA (produced with samtools index) and chromosome sizes file",
+        ASSETS: {
+            "fasta_txome": "{genome}.fa",
             "fai": "{genome}.fa.fai",
             "chrom_sizes": "{genome}.chrom.sizes"
         },
@@ -62,7 +85,13 @@ asset_build_packages = {
             }
         ],
         REQ_ASSETS: [],
-        REQ_PARAMS: [],
+        REQ_PARAMS: [
+            {
+                KEY: "threads",
+                DEFAULT: "8",
+                DESC: "Number of threads to use for parallel computing"
+            }
+        ],
         CONT: "databio/refgenie",
         CMD_LST: [
             "cp {dbnsfp} {asset_outfolder}/{genome}.zip",
@@ -71,7 +100,7 @@ asset_build_packages = {
             "head -n1 {asset_outfolder}/dbNSFP*_variant.chr1 > {asset_outfolder}/{genome}_dbNSFP.txt",
             "cat {asset_outfolder}/dbNSFP*variant.chr* | grep -v '#' >> {asset_outfolder}/{genome}_dbNSFP.txt",
             "rm {asset_outfolder}/dbNSFP*_variant.chr*",
-            "bgzip -@ 4 {asset_outfolder}/{genome}_dbNSFP.txt",
+            "bgzip -@ {threads} {asset_outfolder}/{genome}_dbNSFP.txt",
             "tabix -s 1 -b 2 -e 2 {asset_outfolder}/{genome}_dbNSFP.txt.gz",
             "rm `find {asset_outfolder} -type f -not -path '{asset_outfolder}/_refgenie_build*' -not -path '{asset_outfolder}/hg38_dbNSFP.txt.*'`"
         ]
@@ -227,13 +256,19 @@ asset_build_packages = {
                 DESC: "fasta asset for transcriptome"
             }
         ],
-        REQ_PARAMS: [],
+        REQ_PARAMS: [
+            {
+                KEY: "threads",
+                DEFAULT: "8",
+                DESC: "Number of threads to use for parallel computing"
+            }
+        ],
         CONT: "combinelab/salmon",
         ASSETS: {
             "salmon_index": "."
         },
         CMD_LST: [
-            "salmon index -k 31 -i {asset_outfolder} -t {fasta}"
+            "salmon index -k 31 -i {asset_outfolder} -t {fasta} -p {threads}"
             ]
     },
     "salmon_sa_index": {
@@ -241,13 +276,13 @@ asset_build_packages = {
         REQ_FILES: [],
         REQ_ASSETS: [
             {
-                KEY: "genomefa",
-                DEFAULT: "genomefa",
+                KEY: "fasta",
+                DEFAULT: "fasta",
                 DESC: "fasta asset for genome"
             },
             {
-                KEY: "txomefa",
-                DEFAULT: "txomefa",
+                KEY: "fasta_txome",
+                DEFAULT: "fasta_txome",
                 DESC: "fasta asset for transcriptome"
             }
         ],
@@ -263,10 +298,10 @@ asset_build_packages = {
             "salmon_sa_index": "."
         },
         CMD_LST: [
-            "grep '^>' {genomefa} | cut -d ' ' -f 1 > {asset_outfolder}/decoys.txt",
+            "grep '^>' {fasta} | cut -d ' ' -f 1 > {asset_outfolder}/decoys.txt",
             "sed -i.bak -e 's/>//g' {asset_outfolder}/decoys.txt",
             "rm {asset_outfolder}/decoys.txt.bak",
-            "cat {txomefa} {genomefa} > {asset_outfolder}/gentrome.fa",
+            "cat {fasta_txome} {fasta} > {asset_outfolder}/gentrome.fa",
             "salmon index -t {asset_outfolder}/gentrome.fa -d {asset_outfolder}/decoys.txt -p {threads} -i {asset_outfolder}",
             "rm {asset_outfolder}/gentrome.fa {asset_outfolder}/decoys.txt"
         ]
@@ -276,18 +311,18 @@ asset_build_packages = {
         REQ_FILES: [],
         REQ_ASSETS: [
             {
-                KEY: "genomefa",
-                DEFAULT: "genomefa",
+                KEY: "fasta",
+                DEFAULT: "fasta",
                 DESC: "fasta asset for genome"
             },
             {
-                KEY: "txomefa",
-                DEFAULT: "txomefa",
+                KEY: "fasta_txome",
+                DEFAULT: "fasta_txome",
                 DESC: "fasta asset for transcriptome"
             },
             {
                 KEY: "gtf",
-                DEFAULT: "gencode_gtf",
+                DEFAULT: "ensembl_gtf",
                 DESC: "GTF file for exonic features extraction"
             }
         ],
@@ -303,14 +338,15 @@ asset_build_packages = {
             "salmon_partial_sa_index": "."
         },
         CMD_LST: [
-            "awk -v OFS='\t' '{{if ($3==\"exon\") {{print $1,$4,$5}}}}' {gtf} > {asset_outfolder}/exons.bed",
-            "bedtools maskfasta -fi {genomefa} -bed {asset_outfolder}/exons.bed -fo {asset_outfolder}/reference.masked.genome.fa",
-            "mashmap -r {asset_outfolder}/reference.masked.genome.fa -q {txomefa} -t {threads} --pi 80 -s 500 -o {asset_outfolder}/mashmap.out",
+            "gunzip -c {gtf} > {asset_outfolder}/{genome}.gtf",
+            "awk -v OFS='\t' '{{if ($3==\"exon\") {{print $1,$4,$5}}}}' {asset_outfolder}/{genome}.gtf > {asset_outfolder}/exons.bed",
+            "bedtools maskfasta -fi {fasta} -bed {asset_outfolder}/exons.bed -fo {asset_outfolder}/reference.masked.genome.fa",
+            "mashmap -r {asset_outfolder}/reference.masked.genome.fa -q {fasta_txome} -t {threads} --pi 80 -s 500 -o {asset_outfolder}/mashmap.out",
             "awk -v OFS='\t' '{{print $6,$8,$9}}' {asset_outfolder}/mashmap.out | sort -k1,1 -k2,2n - > {asset_outfolder}/genome_found.sorted.bed",
             "bedtools merge -i {asset_outfolder}/genome_found.sorted.bed > {asset_outfolder}/genome_found_merged.bed",
             "bedtools getfasta -fi {asset_outfolder}/reference.masked.genome.fa -bed {asset_outfolder}/genome_found_merged.bed -fo {asset_outfolder}/genome_found.fa",
             "awk '{{a=$0; getline;split(a, b, \":\");  r[b[1]] = r[b[1]]\"\"$0}} END {{ for (k in r) {{ print k\"\\n\"r[k] }} }}' {asset_outfolder}/genome_found.fa > {asset_outfolder}/decoy.fa",
-            "cat {txomefa} {asset_outfolder}/decoy.fa > {asset_outfolder}/gentrome.fa",
+            "cat {fasta_txome} {asset_outfolder}/decoy.fa > {asset_outfolder}/gentrome.fa",
             "grep '>' {asset_outfolder}/decoy.fa | awk '{{print substr($1,2); }}' > {asset_outfolder}/decoys.txt",
             "rm {asset_outfolder}/exons.bed {asset_outfolder}/reference.masked.genome.fa {asset_outfolder}/mashmap.out {asset_outfolder}/genome_found.sorted.bed {asset_outfolder}/genome_found_merged.bed {asset_outfolder}/genome_found.fa {asset_outfolder}/decoy.fa {asset_outfolder}/reference.masked.genome.fa.fai",
             "salmon index -t {asset_outfolder}/gentrome.fa -d {asset_outfolder}/decoys.txt -i {asset_outfolder} -p {threads}"
@@ -351,14 +387,20 @@ asset_build_packages = {
                 DESC: "fasta asset for genome"
             }
         ],
-        REQ_PARAMS: [],
+        REQ_PARAMS: [
+            {
+                KEY: "threads",
+                DEFAULT: "8",
+                DESC: "Number of threads to use for parallel computing"
+            }
+        ],
         CONT: "databio/refgenie",
         ASSETS: {
             "star_index": "."
         },
         CMD_LST: [
             "mkdir -p {asset_outfolder}",
-            "STAR --runThreadN 16 --runMode genomeGenerate --genomeDir {asset_outfolder} --genomeFastaFiles {fasta}"
+            "STAR --runThreadN {threads} --runMode genomeGenerate --genomeDir {asset_outfolder} --genomeFastaFiles {fasta}"
             ]
     },
     "gencode_gtf": {

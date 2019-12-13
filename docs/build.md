@@ -8,17 +8,6 @@ Building assets is a bit more complicated than pulling them. You'll need to set 
 
 At the moment the building functionality is under rapid development and may change in the future. While `refgenie` is totally flexible with respect to genome, it is more restricted in terms of what assets it can build. We are planning to allow users to specify their own recipes for arbitrary assets, but at the moment, `refgenie` can only build a handful of assets for which we have already created building recipes. If you type `refgenie list`, you'll get a list of all the assets you can build with refgenie (under *recipes*). You can also browse the [list of available assets](available_assets.md) here. If you need refgenie to manage an asset not in this list, you can either 1) wait for our pending implementation of custom recipes, or 2) [add custom assets](custom_assets.md), which you would build separately and then use refgenie just to manage them as recipes define reasonable defaults, which rarely require changing. 
 
-## Specifying a recipe for a build
-
-By default refgenie will use an asset-named recipe if no other recipe is specified. However, if you wish to have two assets built the same way in one namespace, you can add `-r` or `--recipe` argument to achieve that.
-
-In the example below we build genome and transcriptome `fasta` assets for a single namespace (`hg38`):
-
-```
-$ refgenie build hg38/genomefa -r fasta --files fasta=/path/genome.fa.gz
-$ refgenie build hg38/txomefa -r fasta --files fasta=/path/txome.fa.gz
-```  
-
 ## Recipes require inputs
 
 Each asset requires some inputs, which we classify as _assets_, _files_ or _parameters_. 

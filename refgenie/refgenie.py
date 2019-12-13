@@ -278,7 +278,7 @@ def refgenie_add(rgc, asset_dict, path):
     return True
 
 
-def refgenie_initg(rgc, genome, collection_checksum, content_checksums):
+def refgenie_initg(rgc, genome, content_checksums):
     """
     Initializing a genome means adding `collection_checksum` attributes in the
     genome config file. This should perhaps be a function in refgenconf, but not
@@ -290,10 +290,8 @@ def refgenie_initg(rgc, genome, collection_checksum, content_checksums):
 
     :param refgenconf.RefGenConf rgc: genome configuration object
     :param str genome: name of the genome
-    :param str collection_checksum: genome checksum
     :param dict content_checksums: checksums of individual content_checksums, e.g. chromosomes
     """
-    rgc.update_genomes(genome, data={CFG_CHECKSUM_KEY: collection_checksum})
     genome_dir = os.path.join(rgc[CFG_FOLDER_KEY], genome)
     if is_writable(genome_dir):
         output_file = os.path.join(genome_dir, "{}_sequence_digests.tsv".format(genome))
@@ -391,16 +389,15 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             with open(os.path.join(log_outfolder, recipe_file_name), 'w') as outfile:
                 json.dump(build_pkg, outfile)
             # update and write refgenie genome configuration
-            rgc_rw = RefGenConf(filepath=gencfg, writable=True, wait_max=600)
-            rgc_rw.update_assets(*gat[0:2], data={CFG_ASSET_DESC_KEY: build_pkg[DESC]})
-            rgc_rw.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key})
-            rgc_rw.update_seek_keys(*gat, keys={k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
-            # in order to conveniently get the path to digest we update the tags metadata in two steps
-            digest = get_dir_digest(rgc_rw.get_asset(genome, asset_key, tag, enclosing_dir=True), pm)
-            rgc_rw.update_tags(*gat, data={CFG_ASSET_CHECKSUM_KEY: digest})
-            _LOGGER.info("Asset digest: {}".format(digest))
-            rgc_rw.set_default_pointer(*gat)
-            rgc_rw.write()
+            with rgc as r:
+                r.update_assets(*gat[0:2], data={CFG_ASSET_DESC_KEY: build_pkg[DESC]})
+                r.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key})
+                r.update_seek_keys(*gat, keys={k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
+                # in order to conveniently get the path to digest we update the tags metadata in two steps
+                digest = get_dir_digest(r.get_asset(genome, asset_key, tag, enclosing_dir=True), pm)
+                r.update_tags(*gat, data={CFG_ASSET_CHECKSUM_KEY: digest})
+                _LOGGER.info("Asset digest: {}".format(digest))
+                r.set_default_pointer(*gat)
         pm.stop_pipeline()
         return True
 
@@ -458,6 +455,10 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                         specified_params.update({required_param[KEY]: required_param[DEFAULT]})
             genome_outfolder = os.path.join(args.outfolder, genome)
             _LOGGER.info("Building '{}/{}:{}' using '{}' recipe".format(genome, asset_key, asset_tag, recipe_name))
+            if recipe_name == 'fasta' and genome in rgc.genomes_list() \
+                    and 'fasta' in rgc.list_assets_by_genome(genome):
+                _LOGGER.warning("'{g}' genome is already initialized with other fasta asset ({g}/{a}:{t}). "
+                                "It will be re-initialized.".format(g=genome, a=asset_key, t=asset_tag))
             if not build_asset(genome, asset_key, asset_tag, asset_build_package, genome_outfolder,
                                specified_args, specified_params, **input_assets):
                 log_path = os.path.abspath(os.path.join(genome_outfolder, asset_key, asset_tag,
@@ -465,59 +466,36 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                 _LOGGER.info("'{}/{}:{}' was not added to the config, but directory has been left in place. "
                              "See the log file for details: {}".format(genome, asset_key, asset_tag, log_path))
                 return
-            rgc_rw = RefGenConf(filepath=gencfg, writable=True, wait_max=600)  # create object for writing
             # If the recipe was a fasta, we init the genome
             if recipe_name == 'fasta':
                 _LOGGER.info("Computing initial genome digest...")
                 collection_checksum, content_checksums = \
-                    fasta_checksum(rgc_rw.get_asset(genome, asset_key, asset_tag, "fasta"))
+                    fasta_checksum(rgc.get_asset(genome, asset_key, asset_tag, "fasta"))
                 _LOGGER.info("Initializing genome...")
-                refgenie_initg(rgc_rw, genome, collection_checksum, content_checksums)
+                refgenie_initg(rgc, genome, content_checksums)
             _LOGGER.info("Finished building '{}' asset".format(asset_key))
-            # update asset relationships
-            rgc_rw.update_relatives_assets(genome, asset_key, asset_tag, parent_assets)  # adds parents
-            for i in parent_assets:
-                parsed_parent = parse_registry_path(i)
-                # adds child (currently built asset) to the parent
-                rgc_rw.update_relatives_assets(parsed_parent["genome"], parsed_parent["asset"], parsed_parent["tag"],
-                                               ["{}/{}:{}".format(genome, asset_key, asset_tag)], True)
-            if args.genome_description is not None:
-                _LOGGER.debug("adding genome ({}) description: '{}'".format(genome, args.genome_description))
-                rgc_rw.update_genomes(genome, {CFG_GENOME_DESC_KEY: args.genome_description})
-            if args.tag_description is not None:
-                _LOGGER.debug("adding tag ({}/{}:{}) description: '{}'".format(genome, asset_key, asset_tag,
-                                                                               args.tag_description))
-                rgc_rw.update_tags(genome, asset_key, asset_tag, {CFG_TAG_DESC_KEY: args.tag_description})
-            rgc_rw.write()
-            del rgc_rw
+            with rgc as r:
+                # update asset relationships
+                r.update_relatives_assets(genome, asset_key, asset_tag, parent_assets)  # adds parents
+                for i in parent_assets:
+                    parsed_parent = parse_registry_path(i)
+                    # adds child (currently built asset) to the parent
+                    r.update_relatives_assets(parsed_parent["genome"], parsed_parent["asset"], parsed_parent["tag"],
+                                                   ["{}/{}:{}".format(genome, asset_key, asset_tag)], True)
+                if args.genome_description is not None:
+                    _LOGGER.debug("adding genome ({}) description: '{}'".format(genome, args.genome_description))
+                    r.update_genomes(genome, {CFG_GENOME_DESC_KEY: args.genome_description})
+                if args.tag_description is not None:
+                    _LOGGER.debug("adding tag ({}/{}:{}) description: '{}'".format(genome, asset_key, asset_tag,
+                                                                                   args.tag_description))
+                    r.update_tags(genome, asset_key, asset_tag, {CFG_TAG_DESC_KEY: args.tag_description})
+                if recipe_name == "fasta":
+                    # to save config lock time when building fasta assets
+                    # (genome initialization takes some time for large genomes) we repeat the
+                    # conditional here for writing the computed genome digest
+                    r.update_genomes(genome, data={CFG_CHECKSUM_KEY: collection_checksum})
         else:
             _raise_missing_recipe_error(recipe_name)
-
-
-def refgenie_init(genome_config_path, genome_server=DEFAULT_SERVER, config_version=REQ_CFG_VERSION):
-    """
-    Initialize a genome config file.
-
-    :param str genome_config_path: path to genome configuration file to
-        create/initialize
-    :param list genome_server: URL for a server
-    :param str config_version: config version name, e.g. 0.2
-    """
-    # Set up default
-    rgc = RefGenConf(entries=OrderedDict({
-        CFG_VERSION_KEY: config_version,
-        CFG_FOLDER_KEY: os.path.dirname(os.path.abspath(genome_config_path)),
-        CFG_SERVER_KEY: genome_server,
-        CFG_GENOMES_KEY: None
-    }))
-
-    _LOGGER.debug("RGC: {}".format(rgc))
-
-    if genome_config_path and not os.path.exists(genome_config_path):
-        rgc.write(genome_config_path)
-        _LOGGER.info("Wrote new refgenie genome configuration file: {}".format(genome_config_path))
-    else:
-        _LOGGER.warning("Can't initialize, file exists: {} ".format(genome_config_path))
 
 
 def refgenie_getseq(rgc, genome, locus):
@@ -623,9 +601,14 @@ def main():
             sys.exit(1)
 
     if args.command == INIT_CMD:
-        _LOGGER.info("Initializing refgenie genome configuration")
-        _writeable(os.path.dirname(gencfg), strict_exists=True)
-        refgenie_init(gencfg, args.genome_server)
+        _LOGGER.debug("Initializing refgenie genome configuration")
+        rgc = RefGenConf(entries=OrderedDict({
+            CFG_VERSION_KEY: REQ_CFG_VERSION,
+            CFG_FOLDER_KEY: os.path.dirname(os.path.abspath(gencfg)),
+            CFG_SERVERS_KEY: args.genome_server or [DEFAULT_SERVER],
+            CFG_GENOMES_KEY: None
+        }))
+        rgc.initialize_config_file(os.path.abspath(gencfg))
 
     elif args.command == BUILD_CMD:
         if not all([x["genome"] == asset_list[0]["genome"] for x in asset_list]):
@@ -774,8 +757,8 @@ def main():
             raise NotImplementedError("Can only tag 1 asset at a time")
         if args.default:
             # set the default tag and exit
-            rgc.set_default_pointer(a["genome"], a["asset"], a["tag"], force=True)
-            rgc.write()
+            with rgc as r:
+                r.set_default_pointer(a["genome"], a["asset"], a["tag"], force=True)
             sys.exit(0)
         ori_path = rgc.get_asset(a["genome"], a["asset"], a["tag"], enclosing_dir=True)
         new_path = os.path.abspath(os.path.join(ori_path, os.pardir, args.tag))
@@ -789,7 +772,7 @@ def main():
             _LOGGER.warning("Could not rename original asset tag directory '{}' to the new one '{}'".
                             format(ori_path, new_path))
         else:
-            rgc.remove_assets(a["genome"], a["asset"], a["tag"])
+            rgc.remove_assets(a["genome"], a["asset"], a["tag"], relationships=False)
             _LOGGER.debug("Asset '{}/{}' tagged with '{}' has been removed from the genome config".
                           format(a["genome"], a["asset"], a["tag"]))
             _LOGGER.debug("Original asset has been moved from '{}' to '{}'".format(ori_path, new_path))
