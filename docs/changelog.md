@@ -10,10 +10,13 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ### Changed
 - `refgenie remove` removes the asset relatives links
 - `refgenie init` uses `initialize_config_file` method from `refgenconf`
+- default input assets for `salmon_sa_index` and `salmon_partial_sa_index` recipes to transcriptomes within the namespace
 
 ### Added
 - `threads` parameter to the following recipes: `dbnsfp`, `salmon_index`, `star_index`
 
+### Removed
+- documentation regarding `-r`/`--recipe` option in `refgenie build`. It will be removed in the future
 
 ## [0.8.0] - 2019-12-06
 
