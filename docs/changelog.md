@@ -5,7 +5,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 ## [0.8.2] - 2020-01-XX
 
 ### Fixed
-- `SyntaxError` in python2.7; [#155](https://github.com/databio/refgenie/issues/155)
+- `SyntaxError` in Python 2.7; [#155](https://github.com/databio/refgenie/issues/155)
 
 ## [0.8.1] - 2019-12-13
 
