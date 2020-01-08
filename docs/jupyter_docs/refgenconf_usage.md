@@ -1,7 +1,7 @@
 jupyter:True
-#  How to `refgenconf ` to manage Refgenie assets in a pipeline
+#  How to use `refgenconf ` to manage Refgenie assets in a pipeline
 
-Below we present an example use of `refgenconf` package that is installed automatically with `refgenie` (or separately installable with `pip install refgenconf`). All the asset fetching functionality is impelmented in `refgenconf` package, so pipelines that just use Python API do not need to depend on `refgenie`.
+Below we present an example use of `refgenconf` package. It is installed automatically with `refgenie` (or separately installable with `pip install refgenconf`). All the asset fetching functionality is impelmented in `refgenconf` package, so pipelines that just use Python API do not need to depend on `refgenie`.
 
 ## Goal
 The goal of the code below is to **get a path to the refgenie-managed fasta file for a user-specified genome**. 
@@ -13,7 +13,7 @@ refgenie seek hg38/fasta
 
 ## Steps
 
-First, let's set the `$REFGENIE` environmet variable. It should be set by a pipeline user or the config file path shoulg be provided explictly, e.g. as an input to the pipeline (here shown as `user_provided_cfg_path`, not provided) 
+First, let's set the `$REFGENIE` environmet variable. It should be set by a pipeline user or the config file path should be provided explictly, e.g. as an input to the pipeline (here shown as `user_provided_cfg_path = None` -- not provided) 
 
 
 ```python
@@ -37,7 +37,7 @@ Now, we can use the `select_genome_config` function to determine the preferred p
 refgenie_cfg_path = select_genome_config(filename=user_provided_cfg_path, check_exist=False)
 ```
 
-The function returns `None` none of the above point to a valid path. That's why we raise an aproppriate error below 
+The function returns `None` if none of the above point to a valid path. That's why we raise an aproppriate error below. Obviously, the name of `--rfg-config` argument depends on pipeline design. 
 
 
 ```python
