@@ -364,7 +364,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
         _LOGGER.debug("Asset build package: " + str(build_pkg))
         gat = [genome, asset_key, tag]  # create a bundle list to simplify calls below
         # collect variables required to populate the command templates
-        asset_vars = get_asset_vars(*gat, genome_outfolder, specific_args, specific_params, **kwargs)
+        asset_vars = get_asset_vars(genome, asset_key, tag, genome_outfolder, specific_args, specific_params, **kwargs)
         # populate command templates
         # prior to populating, remove any seek_key parts from the keys, since these are not supported by format method
         command_list_populated = [x.format(**{k.split(".")[0]: v for k, v in asset_vars.items()})
@@ -414,7 +414,8 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             specified_asset_keys, specified_assets = None, None
             if args.assets is not None:
                 parsed_parents_input = _parse_user_build_input(args.assets)
-                specified_asset_keys, specified_assets = [*parsed_parents_input], [*parsed_parents_input.values()]
+                specified_asset_keys, specified_assets = \
+                    list(parsed_parents_input.keys()), list(parsed_parents_input.values())
                 _LOGGER.debug("Custom assets requested: {}".format(args.assets))
             if not specified_asset_keys and isinstance(args.assets, list):
                 _LOGGER.warning("Specified parent assets format is invalid. Using defaults.")
@@ -941,7 +942,7 @@ def _raise_missing_recipe_error(recipe):
     :raise MissingRecipeError: always
     """
     raise MissingRecipeError("Recipe '{}' not found. Available recipes: {}".
-                             format(recipe, ", ".join([*asset_build_packages])))
+                             format(recipe, ", ".join(list(asset_build_packages.keys()))))
 
 
 def _check_recipe(recipe):
