@@ -50,7 +50,7 @@ setup(
     license="BSD2",
     entry_points={
         "console_scripts": [
-            'refgenie = refgenie.refgenie:main',
+            'refgenie = refgenie.__main__:main',
             'import_igenome = refgenie.add_assets_igenome:main'
         ],
     },

@@ -43,6 +43,7 @@ def build_argparser():
     additional_description = "\nhttps://refgenie.databio.org"
 
     parser = VersionInHelpParser(
+        prog="refgenie",
         version=__version__,
         description=banner,
         epilog=additional_description)
@@ -964,11 +965,3 @@ def _check_recipe(recipe):
             raise ValueError("The recipe contains a duplicated requirement key '{}', "
                              "which is not permitted.".format(k))
     return recipe
-
-
-if __name__ == '__main__':
-    try:
-        sys.exit(main())
-    except KeyboardInterrupt:
-        _LOGGER.info("Program canceled by user!")
-        sys.exit(1)
