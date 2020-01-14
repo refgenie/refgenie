@@ -559,12 +559,12 @@ asset_build_packages = {
             {
                 KEY: "ensembl_gtf",
                 DEFAULT: "ensembl_gtf",
-                DESC: ""
+                DESC: "Annotation file in Gene Transfer Format (GTF) from Ensembl"
             },
             {
                 KEY: "ensembl_rb",
                 DEFAULT: "ensembl_rb",
-                DESC: ""
+                DESC: "Regulatory annotation file in General Feature Format (GTF) from Ensembl"
             }
         ],
         REQ_PARAMS: [],
@@ -573,7 +573,7 @@ asset_build_packages = {
             "gzip -dc {ensembl_gtf} | awk '$3==\"exon\"' | grep -v 'pseudogene' | awk -v OFS='\t' '{{print \"chr\"$1, $4-1, $5, \"Exon\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u > {asset_outfolder}/{genome}_exons.bed",
             "gzip -dc {ensembl_gtf} | awk '$3==\"exon\"' | grep -v 'pseudogene' | awk -v OFS='\t' '{{ split($20, a, \"\\\"\"); print \"chr\"$1, $4-1, $5, a[2], $6, $7}}' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u | awk 'seen[$4]++ && seen[$4] > 1' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3nr | env LC_COLLATE=C sort -k1,1 -k2,2n -u | env LC_COLLATE=C sort -k1,1 -k3,3n -u | awk -v OFS='\t' '{{if($4==prev4){{new2=prev3+1;}} {{prev4=$4; prev3=$3; print $1, new2, $2-1, \"Intron\", $5, $6}}}}' | awk -F'\t' '$2' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_introns.bed",
             "gzip -dc {ensembl_gtf} | awk '$3==\"three_prime_utr\"' | grep -v 'pseudogene' | awk -v OFS='\t' '{{print \"chr\"$1, $4-1, $5, \"3\'\\\'\' UTR\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_3utr.bed",
-            "gzip -dc {ensembl_gtf}| awk '$3==\"five_prime_utr\"' | grep -v 'pseudogene' | awk -v OFS='\t' '{{print \"chr\"$1, $4-1, $5, \"5\'\\\'\' UTR\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_5utr.bed",
+            "gzip -dc {ensembl_gtf} | awk '$3==\"five_prime_utr\"' | grep -v 'pseudogene' | awk -v OFS='\t' '{{print \"chr\"$1, $4-1, $5, \"5\'\\\'\' UTR\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_5utr.bed",
             "gzip -dc {ensembl_rb} | awk '$3==\"promoter\"' | awk -v OFS='\t' '{{print \"chr\"$1, $4, $5, \"Promoter\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u > {asset_outfolder}/{genome}_promoter.bed",
             "gzip -dc {ensembl_rb} | awk '$3==\"promoter_flanking_region\"' | awk -v OFS='\t' '{{print \"chr\"$1, $4, $5, \"Promoter Flanking Region\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u > {asset_outfolder}/{genome}_promoter_flanking.bed",
             "gzip -dc {ensembl_rb} | awk '$3==\"enhancer\"' | awk -v OFS='\t' '{{print \"chr\"$1, $4, $5, \"Enhancer\", $6, $7}}' | awk '$2<$3' | env LC_COLLATE=C sort -k1,1 -k2,2n -k3,3n -u > {asset_outfolder}/{genome}_enhancer.bed",
@@ -581,7 +581,38 @@ asset_build_packages = {
             "rm -f {asset_outfolder}/{genome}_enhancer.bed {asset_outfolder}/{genome}_promoter.bed {asset_outfolder}/{genome}_promoter_flanking.bed {asset_outfolder}/{genome}_5utr.bed {asset_outfolder}/{genome}_3utr.bed {asset_outfolder}/{genome}_exons.bed {asset_outfolder}/{genome}_introns.bed",
             "gzip {asset_outfolder}/{genome}_annotations.bed"
             ]
+    },
+    "cellranger_reference": {
+        DESC: "Cell Ranger custom genome reference for read alignment and gene expression quantification",
+        ASSETS: {
+            "cellranger_reference": "ref",
+        },
+        REQ_FILES: [],
+        REQ_ASSETS: [
+            {
+                KEY: "gtf",
+                DEFAULT: "gencode_gtf",
+                DESC: "Annotation file in Gene Transfer Format (GTF) from Gencode"
+            },
+            {
+                KEY: "fasta",
+                DEFAULT: "fasta",
+                DESC: "fasta asset for genome"
+            }
+        ],
+        REQ_PARAMS: [
+            {
+                KEY: "threads",
+                DEFAULT: "8",
+                DESC: "Number of threads to use for parallel computing"
+            }
+        ],
+        CONT: "databio/refgenie",
+        CMD_LST: [
+            "gunzip {gtf} -c > {asset_outfolder}/{genome}.gtf",
+            "cellranger mkgtf {asset_outfolder}/{genome}.gtf {asset_outfolder}/{genome}_filtered.gtf",
+            "rm {asset_outfolder}/{genome}.gtf",
+            "cd {asset_outfolder}; cellranger mkref --genome=ref --fasta={fasta} --genes={asset_outfolder}/{genome}_filtered.gtf --nthreads={threads}"
+        ]
     }
 }
-
-
