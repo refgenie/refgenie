@@ -3,7 +3,7 @@ site_logo: img/refgenie_logo_light.svg
 site_url: http://refgenie.databio.org/
 repo_url: http://github.com/databio/refgenie
 pypi_name: refgenie
-paper_link: https://doi.org/10.1101/698704
+paper_link: https://doi.org/10.1093/gigascience/giz149
 
 nav:
   - Getting Started: 
