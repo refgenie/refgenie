@@ -83,16 +83,16 @@ def build_argparser():
         "-d", "--docker", action="store_true", help="Run all commands in the refgenie docker container.")
 
     sps[BUILD_CMD].add_argument(
-        '--assets', nargs="+", required=False, default=None,
+        '--assets', nargs="+", action='append', required=False, default=None,
         help='Override the default genome, asset and tag of the parents'
              ' (e.g. fasta=hg38/fasta:default gtf=mm10/gencode_gtf:default).')
 
     sps[BUILD_CMD].add_argument(
-        '--files', nargs="+", required=False, default=None,
+        '--files', nargs="+", action='append', required=False, default=None,
         help='Provide paths to the required files (e.g. fasta=/path/to/file.fa.gz).')
 
     sps[BUILD_CMD].add_argument(
-        '--params', nargs="+", required=False, default=None,
+        '--params', nargs="+", action='append', required=False, default=None,
         help='Provide required parameter values (e.g. param1=value1).')
 
     sps[BUILD_CMD].add_argument(
@@ -313,7 +313,6 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
     :param argparse.Namespace args: parsed command-line options/arguments
     """
     rgc = RefGenConf(filepath=gencfg, writable=False)
-
     specified_args = _parse_user_build_input(args.files)
     specified_params = _parse_user_build_input(args.params)
 
@@ -929,10 +928,14 @@ def _parse_user_build_input(input):
     """
     Parse user input specification. Used in build for specific parents and input parsing.
 
-    :param list input: user command line input, formatted as follows: [fasta=txt, test=txt]
-    :return dict: mapping of keys, which are asset names and values
+    :param Iterable[Iterable[str], ...] input: user command line input,
+        formatted as follows: [[fasta=txt, test=txt], ...]
+    :return dict: mapping of keys, which are input names and values
     """
-    return {x.split("=")[0]: x.split("=")[1] for x in input if "=" in x} if input is not None else input
+    lst = []
+    for i in input:
+        lst.extend(i)
+    return {x.split("=")[0]: x.split("=")[1] for x in lst if "=" in x} if lst is not None else lst
 
 
 def _raise_missing_recipe_error(recipe):
