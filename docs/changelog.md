@@ -6,6 +6,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 - possibility to execute library module as a script: `python -m refgenie ...`
+- support for repeated recipe inputs on CLI (arguments: `--files`, `--assets` and `--params`)
 
 ## [0.8.2] - 2020-01-08
 
