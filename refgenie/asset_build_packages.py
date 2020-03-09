@@ -614,5 +614,23 @@ asset_build_packages = {
             "rm {asset_outfolder}/{genome}.gtf",
             "cd {asset_outfolder}; cellranger mkref --genome=ref --fasta={fasta} --genes={asset_outfolder}/{genome}_filtered.gtf --nthreads={threads}"
         ]
+    },
+    "blacklist": {
+        DESC: "Atypical, unstructured, or high signal genomic regions present in next-generation sequencing experiments",
+        ASSETS: {
+            "blacklist": "{genome}_blacklist.bed.gz",
+        },
+        REQ_FILES: [
+            {
+                KEY: "blacklist",
+                DESC: "gzipped blacklist file"
+            }
+        ],
+        REQ_ASSETS: [],
+        REQ_PARAMS: [],
+        CONT: "databio/refgenie",
+        CMD_LST: [
+            "cp {blacklist} {asset_outfolder}/{genome}_blacklist.bed.gz"
+        ]
     }
 }
