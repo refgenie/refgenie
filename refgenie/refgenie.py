@@ -933,7 +933,7 @@ def _parse_user_build_input(input):
     :return dict: mapping of keys, which are input names and values
     """
     lst = []
-    for i in input:
+    for i in input or []:
         lst.extend(i)
     return {x.split("=")[0]: x.split("=")[1] for x in lst if "=" in x} if lst is not None else lst
 
