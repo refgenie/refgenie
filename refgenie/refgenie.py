@@ -790,7 +790,7 @@ def main():
         for asset in asset_list:
             g, a = asset["genome"], asset["asset"]
             t = asset["tag"] or rgc.get_default_tag(g, a)
-            print("{}/{}:{},".format(g, a, t) + rgc.get_asset_digest(g, a, t))
+            print("{}/{}:{},".format(g, a, t) + rgc.id(g, a, t))
         return
     elif args.command == SUBSCRIBE_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
