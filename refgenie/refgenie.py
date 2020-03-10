@@ -141,6 +141,11 @@ def build_argparser():
         "-l", "--locus", required=True,
         help="Coordinates of desired sequence; e.g. 'chr1:50000-50200'.")
 
+    sps[GET_ASSET_CMD].add_argument(
+        "-e", "--check-exists", required=False, action="store_true",
+        help="Whether the returned asset path should be checked for existence "
+             "on disk.")
+
     group = sps[TAG_CMD].add_mutually_exclusive_group(required=True)
 
     group.add_argument(
@@ -522,11 +527,11 @@ def refgenie_getseq(rgc, genome, locus):
 def _exec_list(rgc, remote, genome):
     if remote:
         pfx = "Remote"
-        assemblies, assets = rgc.list_remote(genome=genome)
+        assemblies, assets = rgc.get_remote_data_str(genome=genome)
         recipes = None  # Not implemented
     else:
         pfx = "Local"
-        assemblies, assets = rgc.list_local(genome=genome)
+        assemblies, assets = rgc.get_local_data_str(genome=genome)
         # also get recipes
         recipes = ", ".join(sorted(list(asset_build_packages.keys())))
     return pfx, assemblies, assets, recipes
@@ -633,9 +638,10 @@ def main():
 
     elif args.command == GET_ASSET_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
+        check = args.check_exists if args.check_exists else None
         for a in asset_list:
             _LOGGER.debug("getting asset: '{}/{}.{}:{}'".format(a["genome"], a["asset"], a["seek_key"], a["tag"]))
-            print(rgc.get_asset(a["genome"], a["asset"], a["tag"], a["seek_key"]))
+            print(rgc.seek(a["genome"], a["asset"], a["tag"], a["seek_key"], strict_exists=check))
         return
 
     elif args.command == INSERT_CMD:

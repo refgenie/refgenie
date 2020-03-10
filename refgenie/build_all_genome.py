@@ -2,7 +2,7 @@
 A helper script to create SLURM submission scripts for all the assets
 defined in asset_build_packages for a given genome
 """
-from asset_build_packages import asset_build_packages
+from .asset_build_packages import asset_build_packages
 from ubiquerg import expandpath
 import os
 import argparse
