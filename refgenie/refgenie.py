@@ -914,7 +914,7 @@ def get_dir_digest(path, pm=None):
         except Exception as e:
             _LOGGER.warning("{}: could not calculate digest for '{}'".format(e.__class__.__name__, path))
             return
-    return sub(r'\W+', '', x)  # strips non-alphanumeric
+    return str(sub(r'\W+', '', x))  # strips non-alphanumeric
 
 
 def _handle_sigint(gat):

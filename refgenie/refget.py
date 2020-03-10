@@ -10,7 +10,7 @@ import os
 def trunc512_digest(seq, offset=24):
     digest = hashlib.sha512(seq.encode()).digest()
     hex_digest = binascii.hexlify(digest[:offset])
-    return hex_digest.decode()
+    return str(hex_digest.decode())
 
 
 def parse_fasta(fa_file):
