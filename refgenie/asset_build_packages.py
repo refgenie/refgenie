@@ -616,7 +616,7 @@ asset_build_packages = {
         ]
     },
     "blacklist": {
-        DESC: "Atypical, unstructured, or high signal genomic regions present in next-generation sequencing experiments",
+        DESC: "Atypical, unstructured, or high signal genomic regions present in next-generation sequencing experiments (e.g. from ENCODE)",
         ASSETS: {
             "blacklist": "{genome}_blacklist.bed.gz",
         },
