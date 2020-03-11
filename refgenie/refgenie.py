@@ -664,7 +664,7 @@ def main():
             return
 
         for a in asset_list:
-            rgc.pull_asset(a["genome"], a["asset"], a["tag"], unpack=not args.no_untar)
+            rgc.pull(a["genome"], a["asset"], a["tag"], unpack=not args.no_untar)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         rgc = RefGenConf(filepath=gencfg, writable=False)
@@ -769,7 +769,7 @@ def main():
             sys.exit(0)
         ori_path = rgc.get_asset(a["genome"], a["asset"], a["tag"], enclosing_dir=True)
         new_path = os.path.abspath(os.path.join(ori_path, os.pardir, args.tag))
-        if not rgc.tag_asset(a["genome"], a["asset"], a["tag"], args.tag):  # tagging in the RefGenConf object
+        if not rgc.tag(a["genome"], a["asset"], a["tag"], args.tag):  # tagging in the RefGenConf object
             sys.exit(0)
         try:
             if os.path.exists(new_path):
