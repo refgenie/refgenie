@@ -132,7 +132,7 @@ asset_build_packages = {
     "bowtie2_index": {
         DESC: "Genome index for bowtie, produced with bowtie-build",
         ASSETS: {
-            "bowtie2_index": "."
+            "bowtie2_index": "{genome}"
         },
         REQ_FILES: [],
         REQ_ASSETS: [
