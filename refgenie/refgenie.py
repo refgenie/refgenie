@@ -760,24 +760,12 @@ def main():
         return
     elif args.command == SUBSCRIBE_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
-        with rgc as r:
-            r.update_genome_servers(args.genome_server, reset=args.reset)
-        _LOGGER.info("Subscribed to: {}".format(", ".join(args.genome_server)))
+        rgc.subscribe(urls=args.genome_server, reset=args.reset)
         return
     elif args.command == UNSUBSCRIBE_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
-        unsub_list = []
-        ori_servers = rgc[CFG_SERVERS_KEY]
-        for s in args.genome_server:
-            try:
-                ori_servers.remove(s)
-                unsub_list.append(s)
-            except ValueError:
-                _LOGGER.warning("URL '{}' not in genome_servers list: {}".format(s, ori_servers))
-        with rgc as r:
-            r.update_genome_servers(ori_servers, reset=True)
-        if unsub_list:
-            _LOGGER.info("Unsubscribed from: {}".format(", ".join(unsub_list)))
+        rgc.unsubscribe(urls=args.genome_server)
+        return
 
 
 def _entity_dir_removal_log(directory, entity_class, asset_dict, removed_entities):
