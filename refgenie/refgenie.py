@@ -133,6 +133,10 @@ def build_argparser():
         "-u", "--no-untar", action="store_true",
         help="Do not extract tarballs.")
 
+    sps[REMOVE_CMD].add_argument(
+        "-f", "--force", action="store_true",
+        help="Do not prompt before removal, approve.")
+
     sps[INSERT_CMD].add_argument(
         "-p", "--path", required=True,
         help="Relative local path to asset.")
@@ -704,7 +708,8 @@ def main():
         refgenie_getseq(rgc, args.genome, args.locus)
 
     elif args.command == REMOVE_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=True)  # genome cfg will be updated, create object in RW mode
+        force = args.force
+        rgc = RefGenConf(filepath=gencfg)  # genome cfg will be updated, create object in RW mode
         for a in asset_list:
             a["tag"] = a["tag"] or rgc.get_default_tag(a["genome"], a["asset"], use_existing=False)
             _LOGGER.debug("Determined tag for removal: {}".format(a["tag"]))
@@ -713,7 +718,8 @@ def main():
             bundle = [a["genome"], a["asset"], a["tag"]]
             try:
                 if not rgc.is_asset_complete(*bundle):
-                    rgc.remove_assets(*bundle).write()
+                    with rgc as r:
+                        r.cfg_remove_assets(*bundle)
                     _LOGGER.info("Removed an incomplete asset '{}/{}:{}'".format(*bundle))
                     return
                 else:
@@ -725,38 +731,10 @@ def main():
             if not query_yes_no("Are you sure you want to remove {} assets?".format(len(asset_list))):
                 _LOGGER.info("Action aborted by the user")
                 return
-        else:
-            a = asset_list[0]
-            bundle = [a["genome"], a["asset"], a["tag"]]
-            if not query_yes_no("Remove '{}/{}:{}'?".format(*bundle)):
-                _LOGGER.info("Action aborted by the user")
-                return
-        removed = []
+            force = True
         for a in asset_list:
-            bundle = [a["genome"], a["asset"], a["tag"]]
-            asset_path = rgc.get_asset(*bundle, enclosing_dir=True)
-            if os.path.exists(asset_path):
-                removed.append(_remove(asset_path))
-                rgc.remove_assets(*bundle).write()
-            try:
-                rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY][a["asset"]]
-            except (KeyError, TypeError):
-                asset_dir = os.path.abspath(os.path.join(asset_path, os.path.pardir))
-                _entity_dir_removal_log(asset_dir, "asset", a, removed)
-                try:
-                    rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY]
-                except (KeyError, TypeError):
-                    genome_dir = os.path.abspath(os.path.join(asset_dir, os.path.pardir))
-                    _entity_dir_removal_log(genome_dir, "genome", a, removed)
-                    try:
-                        del rgc[CFG_GENOMES_KEY][a["genome"]]
-                        rgc.write()
-                    except (KeyError, TypeError):
-                        _LOGGER.debug("Could not remove genome '{}' from the config; it does not exist".
-                                      format(a["genome"]))
-            else:
-                rgc.write()
-        _LOGGER.info("Successfully removed entities:\n- {}".format("\n- ".join(removed)))
+            with rgc as r:
+                r.remove(genome=a["genome"], asset=a["asset"], tag=a["tag"], force=force)
 
     elif args.command == TAG_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=True)  # genome cfg will be updated, create object in RW mode mode
