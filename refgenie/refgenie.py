@@ -664,11 +664,14 @@ def main():
         if not perm_check_x(outdir, target):
             return
         if not _single_folder_writeable(outdir):
-            _LOGGER.error("Insufficient permissions to write to {}: {}".format(target, outdir))
+            _LOGGER.error("Insufficient permissions to write to {}: {}".
+                          format(target, outdir))
             return
 
         for a in asset_list:
-            rgc.pull(a["genome"], a["asset"], a["tag"], unpack=not args.no_untar)
+            with rgc as r:
+                r.pull(a["genome"], a["asset"], a["tag"],
+                       unpack=not args.no_untar)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         rgc = RefGenConf(filepath=gencfg, writable=False)
@@ -704,14 +707,15 @@ def main():
             _LOGGER.info("{} assets:\n{}".format(pfx, assets))
 
     elif args.command == GETSEQ_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False)  # genome cfg will not be updated, create object in read-only mode
+        rgc = RefGenConf(filepath=gencfg, writable=False)
         refgenie_getseq(rgc, args.genome, args.locus)
 
     elif args.command == REMOVE_CMD:
         force = args.force
-        rgc = RefGenConf(filepath=gencfg)  # genome cfg will be updated, create object in RW mode
+        rgc = RefGenConf(filepath=gencfg)
         for a in asset_list:
-            a["tag"] = a["tag"] or rgc.get_default_tag(a["genome"], a["asset"], use_existing=False)
+            a["tag"] = a["tag"] or rgc.get_default_tag(a["genome"], a["asset"],
+                                                       use_existing=False)
             _LOGGER.debug("Determined tag for removal: {}".format(a["tag"]))
             if a["seek_key"] is not None:
                 raise NotImplementedError("You can't remove a specific seek_key.")
@@ -720,7 +724,8 @@ def main():
                 if not rgc.is_asset_complete(*bundle):
                     with rgc as r:
                         r.cfg_remove_assets(*bundle)
-                    _LOGGER.info("Removed an incomplete asset '{}/{}:{}'".format(*bundle))
+                    _LOGGER.info("Removed an incomplete asset '{}/{}:{}'".
+                                 format(*bundle))
                     return
                 else:
                     rgc.get_asset(*bundle, enclosing_dir=True)
@@ -728,40 +733,25 @@ def main():
                 _LOGGER.info("Asset '{}/{}:{}' does not exist".format(*bundle))
                 return
         if len(asset_list) > 1:
-            if not query_yes_no("Are you sure you want to remove {} assets?".format(len(asset_list))):
+            if not query_yes_no("Are you sure you want to remove {} assets?".
+                                        format(len(asset_list))):
                 _LOGGER.info("Action aborted by the user")
                 return
             force = True
         for a in asset_list:
-            with rgc as r:
-                r.remove(genome=a["genome"], asset=a["asset"], tag=a["tag"], force=force)
+            rgc.remove(genome=a["genome"], asset=a["asset"], tag=a["tag"],
+                       force=force)
 
     elif args.command == TAG_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=True)  # genome cfg will be updated, create object in RW mode mode
+        rgc = RefGenConf(filepath=gencfg)
         if len(asset_list) > 1:
             raise NotImplementedError("Can only tag 1 asset at a time")
         if args.default:
             # set the default tag and exit
             with rgc as r:
-                r.set_default_pointer(a["genome"], a["asset"], a["tag"], force=True)
+                r.set_default_pointer(a["genome"], a["asset"], a["tag"], True)
             sys.exit(0)
-        ori_path = rgc.get_asset(a["genome"], a["asset"], a["tag"], enclosing_dir=True)
-        new_path = os.path.abspath(os.path.join(ori_path, os.pardir, args.tag))
-        if not rgc.tag(a["genome"], a["asset"], a["tag"], args.tag):  # tagging in the RefGenConf object
-            sys.exit(0)
-        try:
-            if os.path.exists(new_path):
-                _remove(new_path)
-            os.rename(ori_path, new_path)  # tagging in the directory
-        except FileNotFoundError:
-            _LOGGER.warning("Could not rename original asset tag directory '{}' to the new one '{}'".
-                            format(ori_path, new_path))
-        else:
-            rgc.remove_assets(a["genome"], a["asset"], a["tag"], relationships=False)
-            _LOGGER.debug("Asset '{}/{}' tagged with '{}' has been removed from the genome config".
-                          format(a["genome"], a["asset"], a["tag"]))
-            _LOGGER.debug("Original asset has been moved from '{}' to '{}'".format(ori_path, new_path))
-        rgc.write()
+        rgc.tag(a["genome"], a["asset"], a["tag"], args.tag)
 
     elif args.command == ID_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
