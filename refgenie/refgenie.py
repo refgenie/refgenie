@@ -669,9 +669,7 @@ def main():
             return
 
         for a in asset_list:
-            with rgc as r:
-                r.pull(a["genome"], a["asset"], a["tag"],
-                       unpack=not args.no_untar)
+            rgc.pull(a["genome"], a["asset"], a["tag"],unpack=not args.no_untar)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         rgc = RefGenConf(filepath=gencfg, writable=False)
