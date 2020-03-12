@@ -255,7 +255,7 @@ def refgenie_add(rgc, asset_dict, path):
         tag_path = os.path.join(abs_asset_path, tag)
         from shutil import copytree as cp
     else:
-        # if seek_key is not specified we're about to move just a single file to the tag subdir
+        # if seek_key is specified we're about to move just a single file to the tag subdir
         tag_path = os.path.join(os.path.dirname(abs_asset_path), tag)
         if not os.path.exists(tag_path):
             os.makedirs(tag_path)
@@ -508,26 +508,6 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             _raise_missing_recipe_error(recipe_name)
 
 
-def refgenie_getseq(rgc, genome, locus):
-    """
-    Return the sequence found in a selected reange and chromosome.
-    Something like the refget protocol.
-
-    :param refgenconf.RefGenConf rgc: genome configuration object
-    :param str genome: name of the sequence identifier
-    :param str locus: desired sequence range, splittable by colon, e.g. '1:2'
-    """
-    fa = pyfaidx.Fasta(rgc.get_asset(genome, "fasta"))
-    locus_split = locus.split(":")
-
-    if len(locus_split) > 1:
-        start, end = locus_split[1].split("-")
-        _LOGGER.debug("chr: '{}', start: '{}', end: '{}'".format(locus_split[0], start, end))
-        print(fa[locus_split[0]][int(start):int(end)])
-    else:
-        print(fa[locus_split[0]])
-
-
 def _exec_list(rgc, remote, genome):
     if remote:
         pfx = "Remote"
@@ -706,7 +686,7 @@ def main():
 
     elif args.command == GETSEQ_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
-        refgenie_getseq(rgc, args.genome, args.locus)
+        rgc.getseq(rgc, args.genome, args.locus)
 
     elif args.command == REMOVE_CMD:
         force = args.force
