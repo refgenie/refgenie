@@ -2,7 +2,10 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
-## [0.8.3] - unreleased
+## [0.9.0] - unreleased
+
+### Changed
+- fixed a bug in bowtie2_index recipe that pointed to the parent folder. The seek key now points to the folder/{genome}, as expected by bowtie2
 
 ### Added
 - possibility to execute library module as a script: `python -m refgenie ...`
