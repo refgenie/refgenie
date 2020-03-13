@@ -55,25 +55,6 @@ Create the config instance by with a filepath or key-value pairs.
 
 
 ```python
-def assets_dict(self, genome=None, order=None, include_tags=False)
-```
-
-Map each assembly name to a list of available asset names.
-#### Parameters:
-
-- `order` (`function(str) -> object`):  how to key genome IDs for sort
-- `genome` (`list[str] | str`):  genomes that the assets should be found for
-- `include_tags` (`bool`):  whether asset tags should be included in the returned dict
-
-
-#### Returns:
-
-- `Mapping[str, Iterable[str]]`:  mapping from assembly name tocollection of available asset names.
-
-
-
-
-```python
 def assets_str(self, offset_text='  ', asset_sep=', ', genome_assets_delim='/ ', genome=None, order=None)
 ```
 
@@ -90,6 +71,66 @@ Create a block of text representing genome-to-asset mapping.
 #### Returns:
 
 - `str`:  text representing genome-to-asset mapping
+
+
+
+
+```python
+def cfg_remove_assets(self, genome, asset, tag=None, relationships=True)
+```
+
+Remove data associated with a specified genome:asset:tag combination. If no tags are specified, the entire asset is removed from the genome.
+
+If no more tags are defined for the selected genome:asset after tag removal,
+the parent asset will be removed as well
+If no more assets are defined for the selected genome after asset removal,
+the parent genome will be removed as well
+#### Parameters:
+
+- `genome` (`str`):  genome to be removed
+- `asset` (`str`):  asset package to be removed
+- `tag` (`str`):  tag to be removed
+- `relationships` (`bool`):  whether the asset being removed shouldbe removed from its relatives as well
+
+
+#### Returns:
+
+- `RefGenConf`:  updated object
+
+
+#### Raises:
+
+- `TypeError`:  if genome argument type is not a list or str
+
+
+
+
+```python
+def cfg_tag_asset(self, genome, asset, tag, new_tag)
+```
+
+Retags the asset selected by the tag with the new_tag. Prompts if default already exists and overrides upon confirmation.
+
+This method does not override the original asset entry in the RefGenConf object. It creates its copy and tags
+it with the new_tag.
+Additionally, if the retagged asset has any children their parent will be retagged as new_tag that was
+introduced upon this method execution.
+#### Parameters:
+
+- `genome` (`str`):  name of a reference genome assembly of interest
+- `asset` (`str`):  name of particular asset of interest
+- `tag` (`str`):  name of the tag that identifies the asset of interest
+- `new_tag` (`str`):  name of particular the new tag
+
+
+#### Returns:
+
+- `bool`:  a logical indicating whether the tagging was successful
+
+
+#### Raises:
+
+- `ValueError`:  when the original tag is not specified
 
 
 
@@ -139,6 +180,7 @@ Determine path to a particular asset for a particular genome.
 - `asset` (`str`):  asset name
 - `tag` (`str`):  tag name
 - `ext` (`str`):  file extension
+- `dir` (`bool`):  whether to return the enclosing directory instead of the file
 
 
 #### Returns:
@@ -178,10 +220,10 @@ Get as single string this configuration's reference genome assembly IDs.
 
 
 ```python
-def get_asset(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=True, check_exist=<function RefGenConf.<lambda> at 0x10cd0c7b8>, enclosing_dir=False)
+def get_asset(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=True, check_exist=<function RefGenConf.<lambda> at 0x7f3f69ae2d40>, enclosing_dir=False)
 ```
 
-Get an asset for a particular assembly.
+Get a path to the a specified genome-asset-tag. Note: enforces file existence checks by default
 #### Parameters:
 
 - `genome_name` (`str`):  name of a reference genome assembly of interest
@@ -203,25 +245,6 @@ Get an asset for a particular assembly.
 - `TypeError`:  if the existence check is not a one-arg function
 - `refgenconf.MissingGenomeError`:  if the named assembly isn't knownto this configuration instance
 - `refgenconf.MissingAssetError`:  if the names assembly is known tothis configuration instance, but the requested asset is unknown
-
-
-
-
-```python
-def get_asset_digest(self, genome, asset, tag=None)
-```
-
-Returns the digest for the specified asset. The defined default tag will be used if not provided as an argument
-#### Parameters:
-
-- `genome` (`str`):  genome identifier
-- `asset` (`str`):  asset identifier
-- `tag` (`str`):  tag identifier
-
-
-#### Returns:
-
-- `str`:  asset digest for the tag
 
 
 
@@ -258,6 +281,75 @@ Get the dictionary attributes, like checksum, contents, description. Does not re
 #### Returns:
 
 - `Mapping[str, str]`:  available genome attributes
+
+
+
+
+```python
+def get_local_data_str(self, genome=None, order=None)
+```
+
+List locally available reference genome IDs and assets by ID.
+#### Parameters:
+
+- `genome` (`list[str] | str`):  genomes that the assets should be found for
+- `order` (``):  function(str) -> object how to key genome IDs and assetnames for sort
+
+
+#### Returns:
+
+- `str, str`:  text reps of locally available genomes and assets
+
+
+
+
+```python
+def get_remote_data_str(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x7f3f69ae6170>)
+```
+
+List genomes and assets available remotely.
+#### Parameters:
+
+- `get_url` (`function(refgenconf.RefGenConf) -> str`):  how to determineURL request, given RefGenConf instance
+- `genome` (`list[str] | str`):  genomes that the assets should be found for
+- `order` (``):  function(str) -> object how to key genome IDs and assetnames for sort
+
+
+#### Returns:
+
+- `str, str`:  text reps of remotely available genomes and assets
+
+
+
+
+```python
+def getseq(self, genome, locus)
+```
+
+Return the sequence found in a selected range and chromosome. Something like the refget protocol.
+#### Parameters:
+
+- `genome` (`str`):  name of the sequence identifier
+- `locus` (`str`): 1-10'
+
+
+
+
+```python
+def id(self, genome, asset, tag=None)
+```
+
+Returns the digest for the specified asset. The defined default tag will be used if not provided as an argument
+#### Parameters:
+
+- `genome` (`str`):  genome identifier
+- `asset` (`str`):  asset identifier
+- `tag` (`str`):  tag identifier
+
+
+#### Returns:
+
+- `str`:  asset digest for the tag
 
 
 
@@ -305,6 +397,25 @@ Check whether all required tag attributes are defined in the RefGenConf object. 
 
 
 ```python
+def list(self, genome=None, order=None, include_tags=False)
+```
+
+List local assets; map each namespace to a list of available asset names
+#### Parameters:
+
+- `order` (`function(str) -> object`):  how to key genome IDs for sort
+- `genome` (`list[str] | str`):  genomes that the assets should be found for
+- `include_tags` (`bool`):  whether asset tags should be included in the returned dict
+
+
+#### Returns:
+
+- `Mapping[str, Iterable[str]]`:  mapping from assembly name tocollection of available asset names.
+
+
+
+
+```python
 def list_assets_by_genome(self, genome=None, order=None, include_tags=False)
 ```
 
@@ -342,25 +453,7 @@ List assemblies for which a particular asset is available.
 
 
 ```python
-def list_local(self, genome=None, order=None)
-```
-
-List locally available reference genome IDs and assets by ID.
-#### Parameters:
-
-- `genome` (`list[str] | str`):  genomes that the assets should be found for
-- `order` (``):  function(str) -> object how to key genome IDs and assetnames for sort
-
-
-#### Returns:
-
-- `str, str`:  text reps of locally available genomes and assets
-
-
-
-
-```python
-def list_remote(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x10cd0cb70>)
+def listr(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x7f3f69ae6290>)
 ```
 
 List genomes and assets available remotely.
@@ -379,7 +472,7 @@ List genomes and assets available remotely.
 
 
 ```python
-def pull_asset(self, genome, asset, tag, unpack=True, force=None, get_json_url=<function RefGenConf.<lambda> at 0x10cd0cd90>, build_signal_handler=<function _handle_sigint at 0x10cc82488>)
+def pull(self, genome, asset, tag, unpack=True, force=None, get_json_url=<function RefGenConf.<lambda> at 0x7f3f69ae6560>, build_signal_handler=<function _handle_sigint at 0x7f3f69ba07a0>)
 ```
 
 Download and possibly unpack one or more assets for a given ref gen.
@@ -392,7 +485,6 @@ Download and possibly unpack one or more assets for a given ref gen.
 - `force` (`bool | NoneType`):  how to handle case in which asset pathalready exists; null for prompt (on a per-asset basis), False to effectively auto-reply No to the prompt to replace existing file, and True to auto-replay Yes for existing asset replacement.
 - `get_json_url` (`function(str, str) -> str`):  how to build URL fromgenome server URL base, genome, and asset
 - `build_signal_handler` (`function(str) -> function`):  how to createa signal handler to use during the download; the single argument to this function factory is the download filepath
-- `update` (`bool`):  whether the object should be updated with downloaded archive data
 
 
 #### Returns:
@@ -404,6 +496,38 @@ Download and possibly unpack one or more assets for a given ref gen.
 
 - `refgenconf.UnboundEnvironmentVariablesError`:  if genome folderpath contains any env. var. that's unbound
 - `refgenconf.RefGenConfError`:  if the object update is requested ina non-writable state
+
+
+
+
+```python
+def remove(self, genome, asset, tag=None, relationships=True, files=True, force=False)
+```
+
+Remove data associated with a specified genome:asset:tag combination. If no tags are specified, the entire asset is removed from the genome.
+
+If no more tags are defined for the selected genome:asset after tag removal,
+the parent asset will be removed as well
+If no more assets are defined for the selected genome after asset removal,
+the parent genome will be removed as well
+#### Parameters:
+
+- `genome` (`str`):  genome to be removed
+- `asset` (`str`):  asset package to be removed
+- `tag` (`str`):  tag to be removed
+- `relationships` (`bool`):  whether the asset being removed shouldbe removed from its relatives as well
+- `files` (`bool`):  whether the asset files from disk should be removed
+- `force` (`bool`):  whether the removal prompts should be skipped
+
+
+#### Returns:
+
+- `RefGenConf`:  updated object
+
+
+#### Raises:
+
+- `TypeError`:  if genome argument type is not a list or str
 
 
 
@@ -423,31 +547,31 @@ Remove any relationship links associated with the selected asset
 
 
 ```python
-def remove_assets(self, genome, asset, tag=None, relationships=True)
+def seek(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, check_exist=<function RefGenConf.<lambda> at 0x7f3f69ae2c20>)
 ```
 
-Remove data associated with a specified genome:asset:tag combination. If no tags are specified, the entire asset is removed from the genome.
-
-If no more tags are defined for the selected genome:asset after tag removal,
-the parent asset will be removed as well
-If no more assets are defined for the selected genome after asset removal,
-the parent genome will be removed as well
+Seek path to a specified genome-asset-tag
 #### Parameters:
 
-- `genome` (`str`):  genome to be removed
-- `asset` (`str`):  asset package to be removed
-- `tag` (`str`):  tag to be removed
-- `relationships` (`bool`):  whether the asset being removed shouldbe removed from its relatives as well
+- `genome_name` (`str`):  name of a reference genome assembly of interest
+- `asset_name` (`str`):  name of the particular asset to fetch
+- `tag_name` (`str`):  name of the particular asset tag to fetch
+- `seek_key` (`str`):  name of the particular subasset to fetch
+- `strict_exists` (`bool | NoneType`):  how to handle case in whichpath doesn't exist; True to raise IOError, False to raise RuntimeWarning, and None to do nothing at all. Default: None (do not check).
+- `check_exist` (`function(callable) -> bool`):  how to check forasset/path existence
+- `enclosing_dir` (`bool`):  whether a path to the entire enclosing directory should be returned, e.g.for a fasta asset that has 3 seek_keys pointing to 3 files in an asset dir, that asset dir is returned
 
 
 #### Returns:
 
-- `RefGenConf`:  updated object
+- `str`:  path to the asset
 
 
 #### Raises:
 
-- `TypeError`:  if genome argument type is not a list or str
+- `TypeError`:  if the existence check is not a one-arg function
+- `refgenconf.MissingGenomeError`:  if the named assembly isn't knownto this configuration instance
+- `refgenconf.MissingAssetError`:  if the names assembly is known tothis configuration instance, but the requested asset is unknown
 
 
 
@@ -468,21 +592,40 @@ Point to the selected tag by default
 
 
 ```python
-def tag_asset(self, genome, asset, tag, new_tag)
+def subscribe(self, urls, reset=False)
+```
+
+Add URLs the list of genome_servers.
+
+Use reset argument to overwrite the current list.
+Otherwise the current one will be appended to.
+#### Parameters:
+
+- `urls` (`list[str] | str`):  urls to update the genome_servers list with
+- `reset` (`bool`):  whether the current list should be overwritten
+
+
+
+
+```python
+def tag(self, genome, asset, tag, new_tag, files=True)
 ```
 
 Retags the asset selected by the tag with the new_tag. Prompts if default already exists and overrides upon confirmation.
 
-This method does not override the original asset entry in the RefGenConf object. It creates its copy and tags
-it with the new_tag.
-Additionally, if the retagged asset has any children their parent will be retagged as new_tag that was
-introduced upon this method execution.
+This method does not override the original asset entry in the RefGenConf
+object. It creates its copy and tags it with the new_tag.
+Additionally, if the retagged asset has any children their parent will
+be retagged as new_tag that was introduced upon this method execution.
+By default, the files on disk will be also renamed to reflect the
+genome configuration file changes
 #### Parameters:
 
 - `genome` (`str`):  name of a reference genome assembly of interest
 - `asset` (`str`):  name of particular asset of interest
 - `tag` (`str`):  name of the tag that identifies the asset of interest
 - `new_tag` (`str`):  name of particular the new tag
+- `files` (`bool`):  whether the asset files on disk should be renamed
 
 
 #### Returns:
@@ -493,6 +636,18 @@ introduced upon this method execution.
 #### Raises:
 
 - `ValueError`:  when the original tag is not specified
+
+
+
+
+```python
+def unsubscribe(self, urls)
+```
+
+Remove URLs the list of genome_servers.
+#### Parameters:
+
+- `urls` (`list[str] | str`):  urls to update the genome_servers list with
 
 
 
@@ -512,21 +667,6 @@ Updates the genomes in RefGenConf object at any level. If a requested genome-ass
 #### Returns:
 
 - `RefGenConf`:  updated object
-
-
-
-
-```python
-def update_genome_servers(self, url, reset=False)
-```
-
-Update the list of genome_servers.
-
-Use reset argument to overwrite the current list. Otherwise the current one will be appended to.
-#### Parameters:
-
-- `url` (`list[str] | str`):  url(s) to update the genome_servers list with
-- `reset` (`bool`):  whether the current list should be overwritten
 
 
 
@@ -675,4 +815,4 @@ Get path to genome configuration file.
 
 
 
-*Version Information: `refgenconf` v0.6.1, generated by `lucidoc` v0.4.2*
+*Version Information: `refgenconf` v0.7.0-dev, generated by `lucidoc` v0.4.2*
