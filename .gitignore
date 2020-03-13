@@ -69,7 +69,6 @@ open_pipelines/
 *RESERVE*
 
 doc/
-build/
 dist/
 refgenie.egg-info/
 
