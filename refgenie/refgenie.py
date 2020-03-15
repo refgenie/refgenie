@@ -733,6 +733,11 @@ def main():
 
     elif args.command == ID_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
+        if len(asset_list) == 1:
+            g, a = asset_list[0]["genome"], asset_list[0]["asset"]
+            t = asset_list[0]["tag"] or rgc.get_default_tag(g, a)
+            print(rgc.id(g, a, t))
+            return
         for asset in asset_list:
             g, a = asset["genome"], asset["asset"]
             t = asset["tag"] or rgc.get_default_tag(g, a)
