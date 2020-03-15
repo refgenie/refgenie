@@ -9,6 +9,8 @@ You should already have `refgenconf` if you've installed `refgenie`, but if need
 ## Quick start
 Create a `RefGenConf` object, which is the package's main data type. You just need to give it a refgenie genome configuration file (in YAML format). You can create a template using `refgenie init`.
 
+As a general rule, the CLI functions are available from within Python under the same names, e.g. `refgenie list ...` is available as `RefGenConf.list()` method.
+
 ```python
 import refgenconf
 rgc = refgenconf.RefGenConf("genome_config.yaml")
@@ -21,7 +23,7 @@ print(rgc)
 
 Use this to show all available remote assets:
 ```python
-rgc.list_remote()
+rgc.listr()
 ```
 
 In a tool, you're probably most interested in using refgenie to locate reference genome assets, for which you want to use the `get_asset` function. For example:
@@ -31,7 +33,7 @@ In a tool, you're probably most interested in using refgenie to locate reference
 genome = "hg38"
 
 # get the local path to bowtie2 indexes:
-bt2idx = rgc.get_asset(genome, "bowtie2_index")
+bt2idx = rgc.seek(genome, "bowtie2_index")
 
 # run bowtie2...
 ```
