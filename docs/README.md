@@ -16,7 +16,7 @@ Refgenie manages storage, access, and transfer of reference genome resources. It
 
 3. **It simplifies finding local asset locations**. When you need a path to an asset, you can `seek` it, making your pipelines portable across computing environments: `refgenie seek hg38/salmon_index`.
 
-4. **It includes a python API**. For tool developers, you use `cfg = refgenie.RefGenConf("genomes.yaml")` to get a Python object with paths to any genome asset, *e.g.*, `cfg.get_asset("hg38", "kallisto_index")`.
+4. **It includes a python API**. For tool developers, you use `rgc = refgenconf.RefGenConf("genomes.yaml")` to get a Python object with paths to any genome asset, *e.g.*, `rgc.seek("hg38", "kallisto_index")`.
 
 
 ## Quick example

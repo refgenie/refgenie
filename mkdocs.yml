@@ -3,13 +3,14 @@ site_logo: img/refgenie_logo_light.svg
 site_url: http://refgenie.databio.org/
 repo_url: http://github.com/databio/refgenie
 pypi_name: refgenie
-paper_link: https://doi.org/10.1101/698704
+paper_link: https://doi.org/10.1093/gigascience/giz149
 
 nav:
   - Getting Started: 
     - Introduction: README.md
     - Overview: overview.md
     - Install and configure: install.md
+    - Basic tutorial: tutorial.md
   - How-to guides:
     - Refer to assets: asset_registry_paths.md
     - Download pre-built assets: pull.md

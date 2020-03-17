@@ -2,6 +2,17 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
+## [0.9.0] - 2020-03-17
+
+### Changed
+- fixed a bug in bowtie2_index recipe that pointed to the parent folder. The seek key now points to the folder/{genome}, as expected by bowtie2
+- in `refgenie seek` file existence check is not performed by default
+
+### Added
+- possibility to execute library module as a script: `python -m refgenie ...`
+- support for repeated recipe inputs on CLI (arguments: `--files`, `--assets` and `--params`)
+- a possibility to perform file existence check (`-e`/`--check-exists`) in `refgenie seek`
+
 ## [0.8.2] - 2020-01-08
 
 ### Fixed

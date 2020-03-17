@@ -69,8 +69,14 @@ open_pipelines/
 *RESERVE*
 
 doc/
-build/
 dist/
 refgenie.egg-info/
 
 *ipynb_checkpoints*
+
+
+# jupyter tutorial files
+
+docs_jupyter/refgenie.yaml
+docs_jupyter/rCRSd*
+docs_jupyter/hs38d1*

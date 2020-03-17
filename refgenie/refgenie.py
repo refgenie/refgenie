@@ -43,6 +43,7 @@ def build_argparser():
     additional_description = "\nhttps://refgenie.databio.org"
 
     parser = VersionInHelpParser(
+        prog="refgenie",
         version=__version__,
         description=banner,
         epilog=additional_description)
@@ -82,16 +83,16 @@ def build_argparser():
         "-d", "--docker", action="store_true", help="Run all commands in the refgenie docker container.")
 
     sps[BUILD_CMD].add_argument(
-        '--assets', nargs="+", required=False, default=None,
+        '--assets', nargs="+", action='append', required=False, default=None,
         help='Override the default genome, asset and tag of the parents'
              ' (e.g. fasta=hg38/fasta:default gtf=mm10/gencode_gtf:default).')
 
     sps[BUILD_CMD].add_argument(
-        '--files', nargs="+", required=False, default=None,
+        '--files', nargs="+", action='append', required=False, default=None,
         help='Provide paths to the required files (e.g. fasta=/path/to/file.fa.gz).')
 
     sps[BUILD_CMD].add_argument(
-        '--params', nargs="+", required=False, default=None,
+        '--params', nargs="+", action='append', required=False, default=None,
         help='Provide required parameter values (e.g. param1=value1).')
 
     sps[BUILD_CMD].add_argument(
@@ -132,6 +133,10 @@ def build_argparser():
         "-u", "--no-untar", action="store_true",
         help="Do not extract tarballs.")
 
+    sps[REMOVE_CMD].add_argument(
+        "-f", "--force", action="store_true",
+        help="Do not prompt before removal, approve.")
+
     sps[INSERT_CMD].add_argument(
         "-p", "--path", required=True,
         help="Relative local path to asset.")
@@ -139,6 +144,11 @@ def build_argparser():
     sps[GETSEQ_CMD].add_argument(
         "-l", "--locus", required=True,
         help="Coordinates of desired sequence; e.g. 'chr1:50000-50200'.")
+
+    sps[GET_ASSET_CMD].add_argument(
+        "-e", "--check-exists", required=False, action="store_true",
+        help="Whether the returned asset path should be checked for existence "
+             "on disk.")
 
     group = sps[TAG_CMD].add_mutually_exclusive_group(required=True)
 
@@ -245,7 +255,7 @@ def refgenie_add(rgc, asset_dict, path):
         tag_path = os.path.join(abs_asset_path, tag)
         from shutil import copytree as cp
     else:
-        # if seek_key is not specified we're about to move just a single file to the tag subdir
+        # if seek_key is specified we're about to move just a single file to the tag subdir
         tag_path = os.path.join(os.path.dirname(abs_asset_path), tag)
         if not os.path.exists(tag_path):
             os.makedirs(tag_path)
@@ -271,7 +281,7 @@ def refgenie_add(rgc, asset_dict, path):
     rgc.update_seek_keys(*gat_bundle, keys={asset_dict["seek_key"] or asset_dict["asset"]: seek_key_value})
     rgc.set_default_pointer(asset_dict["genome"], asset_dict["asset"], tag)
     # a separate update_tags call since we want to use the get_asset method that requires a complete asset entry in rgc
-    rgc.update_tags(*gat_bundle, data={CFG_ASSET_CHECKSUM_KEY: get_dir_digest(rgc.get_asset(*gat_bundle))})
+    rgc.update_tags(*gat_bundle, data={CFG_ASSET_CHECKSUM_KEY: get_dir_digest(_seek(rgc, *gat_bundle))})
     # Write the updated refgenie genome configuration
     rgc.write()
     rgc.make_readonly()
@@ -312,7 +322,6 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
     :param argparse.Namespace args: parsed command-line options/arguments
     """
     rgc = RefGenConf(filepath=gencfg, writable=False)
-
     specified_args = _parse_user_build_input(args.files)
     specified_params = _parse_user_build_input(args.params)
 
@@ -435,7 +444,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                                  rgc.get_default_tag(genome, default["asset"]), \
                                  req_asset_data["seek_key"]
                 parent_assets.append("{}/{}:{}".format(g, a, t))
-                input_assets[req_asset[KEY]] = rgc.get_asset(g, a, t, s)
+                input_assets[req_asset[KEY]] = _seek(rgc, g, a, t, s)
             _LOGGER.debug("Using parents: {}".format(", ".join(parent_assets)))
             _LOGGER.debug("Provided files: {}".format(specified_args))
             _LOGGER.debug("Provided parameters: {}".format(specified_params))
@@ -471,7 +480,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             if recipe_name == 'fasta':
                 _LOGGER.info("Computing initial genome digest...")
                 collection_checksum, content_checksums = \
-                    fasta_checksum(rgc.get_asset(genome, asset_key, asset_tag, "fasta"))
+                    fasta_checksum(_seek(rgc, genome, asset_key, asset_tag, "fasta"))
                 _LOGGER.info("Initializing genome...")
                 refgenie_initg(rgc, genome, content_checksums)
             _LOGGER.info("Finished building '{}' asset".format(asset_key))
@@ -499,34 +508,14 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             _raise_missing_recipe_error(recipe_name)
 
 
-def refgenie_getseq(rgc, genome, locus):
-    """
-    Return the sequence found in a selected reange and chromosome.
-    Something like the refget protocol.
-
-    :param refgenconf.RefGenConf rgc: genome configuration object
-    :param str genome: name of the sequence identifier
-    :param str locus: desired sequence range, splittable by colon, e.g. '1:2'
-    """
-    fa = pyfaidx.Fasta(rgc.get_asset(genome, "fasta"))
-    locus_split = locus.split(":")
-
-    if len(locus_split) > 1:
-        start, end = locus_split[1].split("-")
-        _LOGGER.debug("chr: '{}', start: '{}', end: '{}'".format(locus_split[0], start, end))
-        print(fa[locus_split[0]][int(start):int(end)])
-    else:
-        print(fa[locus_split[0]])
-
-
 def _exec_list(rgc, remote, genome):
     if remote:
         pfx = "Remote"
-        assemblies, assets = rgc.list_remote(genome=genome)
+        assemblies, assets = rgc.get_remote_data_str(genome=genome)
         recipes = None  # Not implemented
     else:
         pfx = "Local"
-        assemblies, assets = rgc.list_local(genome=genome)
+        assemblies, assets = rgc.get_local_data_str(genome=genome)
         # also get recipes
         recipes = ", ".join(sorted(list(asset_build_packages.keys())))
     return pfx, assemblies, assets, recipes
@@ -633,9 +622,12 @@ def main():
 
     elif args.command == GET_ASSET_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
+        check = args.check_exists if args.check_exists else None
         for a in asset_list:
-            _LOGGER.debug("getting asset: '{}/{}.{}:{}'".format(a["genome"], a["asset"], a["seek_key"], a["tag"]))
-            print(rgc.get_asset(a["genome"], a["asset"], a["tag"], a["seek_key"]))
+            _LOGGER.debug("getting asset: '{}/{}.{}:{}'".
+                          format(a["genome"], a["asset"], a["seek_key"], a["tag"]))
+            print(rgc.seek(a["genome"], a["asset"], a["tag"], a["seek_key"],
+                           strict_exists=check))
         return
 
     elif args.command == INSERT_CMD:
@@ -654,11 +646,12 @@ def main():
         if not perm_check_x(outdir, target):
             return
         if not _single_folder_writeable(outdir):
-            _LOGGER.error("Insufficient permissions to write to {}: {}".format(target, outdir))
+            _LOGGER.error("Insufficient permissions to write to {}: {}".
+                          format(target, outdir))
             return
 
         for a in asset_list:
-            rgc.pull_asset(a["genome"], a["asset"], a["tag"], unpack=not args.no_untar)
+            rgc.pull(a["genome"], a["asset"], a["tag"],unpack=not args.no_untar)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         rgc = RefGenConf(filepath=gencfg, writable=False)
@@ -694,118 +687,72 @@ def main():
             _LOGGER.info("{} assets:\n{}".format(pfx, assets))
 
     elif args.command == GETSEQ_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False)  # genome cfg will not be updated, create object in read-only mode
-        refgenie_getseq(rgc, args.genome, args.locus)
+        rgc = RefGenConf(filepath=gencfg, writable=False)
+        rgc.getseq(rgc, args.genome, args.locus)
 
     elif args.command == REMOVE_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=True)  # genome cfg will be updated, create object in RW mode
+        force = args.force
+        rgc = RefGenConf(filepath=gencfg)
         for a in asset_list:
-            a["tag"] = a["tag"] or rgc.get_default_tag(a["genome"], a["asset"], use_existing=False)
+            a["tag"] = a["tag"] or rgc.get_default_tag(a["genome"], a["asset"],
+                                                       use_existing=False)
             _LOGGER.debug("Determined tag for removal: {}".format(a["tag"]))
             if a["seek_key"] is not None:
                 raise NotImplementedError("You can't remove a specific seek_key.")
             bundle = [a["genome"], a["asset"], a["tag"]]
             try:
                 if not rgc.is_asset_complete(*bundle):
-                    rgc.remove_assets(*bundle).write()
-                    _LOGGER.info("Removed an incomplete asset '{}/{}:{}'".format(*bundle))
+                    with rgc as r:
+                        r.cfg_remove_assets(*bundle)
+                    _LOGGER.info("Removed an incomplete asset '{}/{}:{}'".
+                                 format(*bundle))
                     return
                 else:
-                    rgc.get_asset(*bundle, enclosing_dir=True)
+                    _seek(rgc, *bundle, enclosing_dir=True)
             except (KeyError, MissingAssetError, MissingGenomeError):
                 _LOGGER.info("Asset '{}/{}:{}' does not exist".format(*bundle))
                 return
         if len(asset_list) > 1:
-            if not query_yes_no("Are you sure you want to remove {} assets?".format(len(asset_list))):
+            if not query_yes_no("Are you sure you want to remove {} assets?".
+                                        format(len(asset_list))):
                 _LOGGER.info("Action aborted by the user")
                 return
-        else:
-            a = asset_list[0]
-            bundle = [a["genome"], a["asset"], a["tag"]]
-            if not query_yes_no("Remove '{}/{}:{}'?".format(*bundle)):
-                _LOGGER.info("Action aborted by the user")
-                return
-        removed = []
+            force = True
         for a in asset_list:
-            bundle = [a["genome"], a["asset"], a["tag"]]
-            asset_path = rgc.get_asset(*bundle, enclosing_dir=True)
-            if os.path.exists(asset_path):
-                removed.append(_remove(asset_path))
-                rgc.remove_assets(*bundle).write()
-            try:
-                rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY][a["asset"]]
-            except (KeyError, TypeError):
-                asset_dir = os.path.abspath(os.path.join(asset_path, os.path.pardir))
-                _entity_dir_removal_log(asset_dir, "asset", a, removed)
-                try:
-                    rgc[CFG_GENOMES_KEY][a["genome"]][CFG_ASSETS_KEY]
-                except (KeyError, TypeError):
-                    genome_dir = os.path.abspath(os.path.join(asset_dir, os.path.pardir))
-                    _entity_dir_removal_log(genome_dir, "genome", a, removed)
-                    try:
-                        del rgc[CFG_GENOMES_KEY][a["genome"]]
-                        rgc.write()
-                    except (KeyError, TypeError):
-                        _LOGGER.debug("Could not remove genome '{}' from the config; it does not exist".
-                                      format(a["genome"]))
-            else:
-                rgc.write()
-        _LOGGER.info("Successfully removed entities:\n- {}".format("\n- ".join(removed)))
+            rgc.remove(genome=a["genome"], asset=a["asset"], tag=a["tag"],
+                       force=force)
 
     elif args.command == TAG_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=True)  # genome cfg will be updated, create object in RW mode mode
+        rgc = RefGenConf(filepath=gencfg)
         if len(asset_list) > 1:
             raise NotImplementedError("Can only tag 1 asset at a time")
         if args.default:
             # set the default tag and exit
             with rgc as r:
-                r.set_default_pointer(a["genome"], a["asset"], a["tag"], force=True)
+                r.set_default_pointer(a["genome"], a["asset"], a["tag"], True)
             sys.exit(0)
-        ori_path = rgc.get_asset(a["genome"], a["asset"], a["tag"], enclosing_dir=True)
-        new_path = os.path.abspath(os.path.join(ori_path, os.pardir, args.tag))
-        if not rgc.tag_asset(a["genome"], a["asset"], a["tag"], args.tag):  # tagging in the RefGenConf object
-            sys.exit(0)
-        try:
-            if os.path.exists(new_path):
-                _remove(new_path)
-            os.rename(ori_path, new_path)  # tagging in the directory
-        except FileNotFoundError:
-            _LOGGER.warning("Could not rename original asset tag directory '{}' to the new one '{}'".
-                            format(ori_path, new_path))
-        else:
-            rgc.remove_assets(a["genome"], a["asset"], a["tag"], relationships=False)
-            _LOGGER.debug("Asset '{}/{}' tagged with '{}' has been removed from the genome config".
-                          format(a["genome"], a["asset"], a["tag"]))
-            _LOGGER.debug("Original asset has been moved from '{}' to '{}'".format(ori_path, new_path))
-        rgc.write()
+        rgc.tag(a["genome"], a["asset"], a["tag"], args.tag)
 
     elif args.command == ID_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
+        if len(asset_list) == 1:
+            g, a = asset_list[0]["genome"], asset_list[0]["asset"]
+            t = asset_list[0]["tag"] or rgc.get_default_tag(g, a)
+            print(rgc.id(g, a, t))
+            return
         for asset in asset_list:
             g, a = asset["genome"], asset["asset"]
             t = asset["tag"] or rgc.get_default_tag(g, a)
-            print("{}/{}:{},".format(g, a, t) + rgc.get_asset_digest(g, a, t))
+            print("{}/{}:{},".format(g, a, t) + rgc.id(g, a, t))
         return
     elif args.command == SUBSCRIBE_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
-        with rgc as r:
-            r.update_genome_servers(args.genome_server, reset=args.reset)
-        _LOGGER.info("Subscribed to: {}".format(", ".join(args.genome_server)))
+        rgc.subscribe(urls=args.genome_server, reset=args.reset)
         return
     elif args.command == UNSUBSCRIBE_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
-        unsub_list = []
-        ori_servers = rgc[CFG_SERVERS_KEY]
-        for s in args.genome_server:
-            try:
-                ori_servers.remove(s)
-                unsub_list.append(s)
-            except ValueError:
-                _LOGGER.warning("URL '{}' not in genome_servers list: {}".format(s, ori_servers))
-        with rgc as r:
-            r.update_genome_servers(ori_servers, reset=True)
-        if unsub_list:
-            _LOGGER.info("Unsubscribed from: {}".format(", ".join(unsub_list)))
+        rgc.unsubscribe(urls=args.genome_server)
+        return
 
 
 def _entity_dir_removal_log(directory, entity_class, asset_dict, removed_entities):
@@ -908,7 +855,7 @@ def get_dir_digest(path, pm=None):
         except Exception as e:
             _LOGGER.warning("{}: could not calculate digest for '{}'".format(e.__class__.__name__, path))
             return
-    return sub(r'\W+', '', x)  # strips non-alphanumeric
+    return str(sub(r'\W+', '', x))  # strips non-alphanumeric
 
 
 def _handle_sigint(gat):
@@ -928,10 +875,14 @@ def _parse_user_build_input(input):
     """
     Parse user input specification. Used in build for specific parents and input parsing.
 
-    :param list input: user command line input, formatted as follows: [fasta=txt, test=txt]
-    :return dict: mapping of keys, which are asset names and values
+    :param Iterable[Iterable[str], ...] input: user command line input,
+        formatted as follows: [[fasta=txt, test=txt], ...]
+    :return dict: mapping of keys, which are input names and values
     """
-    return {x.split("=")[0]: x.split("=")[1] for x in input if "=" in x} if input is not None else input
+    lst = []
+    for i in input or []:
+        lst.extend(i)
+    return {x.split("=")[0]: x.split("=")[1] for x in lst if "=" in x} if lst is not None else lst
 
 
 def _raise_missing_recipe_error(recipe):
@@ -961,14 +912,20 @@ def _check_recipe(recipe):
         if k not in unique:
             unique.append(k)
         else:
-            raise ValueError("The recipe contains a duplicated requirement key '{}', "
-                             "which is not permitted.".format(k))
+            raise ValueError("The recipe contains a duplicated requirement"
+                             " key '{}', which is not permitted.".format(k))
     return recipe
 
 
-if __name__ == '__main__':
-    try:
-        sys.exit(main())
-    except KeyboardInterrupt:
-        _LOGGER.info("Program canceled by user!")
-        sys.exit(1)
+def _seek(rgc, genome_name, asset_name, tag_name=None,
+          seek_key=None, enclosing_dir=False):
+    """
+    Strict seek. Most use cases in this package require file existence
+     check in seek. This function makes it easier
+    """
+    return rgc.seek(genome_name=genome_name,
+                    asset_name=asset_name,
+                    tag_name=tag_name,
+                    seek_key=seek_key,
+                    enclosing_dir=enclosing_dir,
+                    strict_exists=True)
