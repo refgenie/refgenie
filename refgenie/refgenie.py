@@ -281,7 +281,7 @@ def refgenie_add(rgc, asset_dict, path):
     rgc.update_seek_keys(*gat_bundle, keys={asset_dict["seek_key"] or asset_dict["asset"]: seek_key_value})
     rgc.set_default_pointer(asset_dict["genome"], asset_dict["asset"], tag)
     # a separate update_tags call since we want to use the get_asset method that requires a complete asset entry in rgc
-    rgc.update_tags(*gat_bundle, data={CFG_ASSET_CHECKSUM_KEY: get_dir_digest(rgc.get_asset(*gat_bundle))})
+    rgc.update_tags(*gat_bundle, data={CFG_ASSET_CHECKSUM_KEY: get_dir_digest(_seek(rgc, *gat_bundle))})
     # Write the updated refgenie genome configuration
     rgc.write()
     rgc.make_readonly()
@@ -444,7 +444,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                                  rgc.get_default_tag(genome, default["asset"]), \
                                  req_asset_data["seek_key"]
                 parent_assets.append("{}/{}:{}".format(g, a, t))
-                input_assets[req_asset[KEY]] = rgc.get_asset(g, a, t, s)
+                input_assets[req_asset[KEY]] = _seek(rgc, g, a, t, s)
             _LOGGER.debug("Using parents: {}".format(", ".join(parent_assets)))
             _LOGGER.debug("Provided files: {}".format(specified_args))
             _LOGGER.debug("Provided parameters: {}".format(specified_params))
@@ -480,7 +480,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             if recipe_name == 'fasta':
                 _LOGGER.info("Computing initial genome digest...")
                 collection_checksum, content_checksums = \
-                    fasta_checksum(rgc.get_asset(genome, asset_key, asset_tag, "fasta"))
+                    fasta_checksum(_seek(rgc, genome, asset_key, asset_tag, "fasta"))
                 _LOGGER.info("Initializing genome...")
                 refgenie_initg(rgc, genome, content_checksums)
             _LOGGER.info("Finished building '{}' asset".format(asset_key))
@@ -624,8 +624,10 @@ def main():
         rgc = RefGenConf(filepath=gencfg, writable=False)
         check = args.check_exists if args.check_exists else None
         for a in asset_list:
-            _LOGGER.debug("getting asset: '{}/{}.{}:{}'".format(a["genome"], a["asset"], a["seek_key"], a["tag"]))
-            print(rgc.seek(a["genome"], a["asset"], a["tag"], a["seek_key"], strict_exists=check))
+            _LOGGER.debug("getting asset: '{}/{}.{}:{}'".
+                          format(a["genome"], a["asset"], a["seek_key"], a["tag"]))
+            print(rgc.seek(a["genome"], a["asset"], a["tag"], a["seek_key"],
+                           strict_exists=check))
         return
 
     elif args.command == INSERT_CMD:
@@ -706,7 +708,7 @@ def main():
                                  format(*bundle))
                     return
                 else:
-                    rgc.get_asset(*bundle, enclosing_dir=True)
+                    _seek(rgc, *bundle, enclosing_dir=True)
             except (KeyError, MissingAssetError, MissingGenomeError):
                 _LOGGER.info("Asset '{}/{}:{}' does not exist".format(*bundle))
                 return
@@ -910,6 +912,20 @@ def _check_recipe(recipe):
         if k not in unique:
             unique.append(k)
         else:
-            raise ValueError("The recipe contains a duplicated requirement key '{}', "
-                             "which is not permitted.".format(k))
+            raise ValueError("The recipe contains a duplicated requirement"
+                             " key '{}', which is not permitted.".format(k))
     return recipe
+
+
+def _seek(rgc, genome_name, asset_name, tag_name=None,
+          seek_key=None, enclosing_dir=False):
+    """
+    Strict seek. Most use cases in this package require file existence
+     check in seek. This function makes it easier
+    """
+    return rgc.seek(genome_name=genome_name,
+                    asset_name=asset_name,
+                    tag_name=tag_name,
+                    seek_key=seek_key,
+                    enclosing_dir=enclosing_dir,
+                    strict_exists=True)
