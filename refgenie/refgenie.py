@@ -129,13 +129,14 @@ def build_argparser():
             help="One or more registry path strings that identify assets  (e.g. hg38/fasta or hg38/fasta:tag"
                  + (" or hg38/fasta.fai:tag)." if cmd == GET_ASSET_CMD else ")."))
 
+    for cmd in [PULL_CMD, REMOVE_CMD]:
+        sps[cmd].add_argument(
+            "-f", "--force", action="store_true",
+            help="Do not prompt before action, approve upfront.")
+
     sps[PULL_CMD].add_argument(
         "-u", "--no-untar", action="store_true",
         help="Do not extract tarballs.")
-
-    sps[REMOVE_CMD].add_argument(
-        "-f", "--force", action="store_true",
-        help="Do not prompt before removal, approve.")
 
     sps[INSERT_CMD].add_argument(
         "-p", "--path", required=True,
@@ -639,6 +640,7 @@ def main():
 
     elif args.command == PULL_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
+        force = None if not args.force else True
         outdir = rgc[CFG_FOLDER_KEY]
         if not os.path.exists(outdir):
             raise MissingFolderError(outdir)
@@ -651,7 +653,8 @@ def main():
             return
 
         for a in asset_list:
-            rgc.pull(a["genome"], a["asset"], a["tag"],unpack=not args.no_untar)
+            rgc.pull(a["genome"], a["asset"], a["tag"],
+                     unpack=not args.no_untar, force=force)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         rgc = RefGenConf(filepath=gencfg, writable=False)
