@@ -151,7 +151,7 @@ asset_build_packages = {
     "bwa_index": {
         DESC: "Genome index for Burrows-Wheeler Alignment Tool, produced with bwa index",
         ASSETS: {
-            "bwa_index": "."
+            "bwa_index": "{genome}.fa"
         },
         REQ_FILES: [],
         REQ_ASSETS: [
@@ -171,7 +171,7 @@ asset_build_packages = {
     "hisat2_index": {
         DESC: "Genome index for HISAT2, produced with hisat2-build",
         ASSETS: {
-            "hisat2_index": "."
+            "hisat2_index": "{genome}"
         },
         REQ_FILES: [],
         REQ_ASSETS: [
