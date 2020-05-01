@@ -151,7 +151,7 @@ asset_build_packages = {
     "bwa_index": {
         DESC: "Genome index for Burrows-Wheeler Alignment Tool, produced with bwa index",
         ASSETS: {
-            "bwa_index": "{genome}"
+            "bwa_index": "{genome}.fa"
         },
         REQ_FILES: [],
         REQ_ASSETS: [
