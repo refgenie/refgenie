@@ -1,5 +1,9 @@
 # FAQ
 
+## Why isn't the refgenie executable available on PATH?
+
+By default, Python command-line programs are installed to ~/.local/bin. You can add that location to your path by appending it (export PATH=$PATH:~/.local/bin). Add this to your `.bashrc` if you want it to persist.
+
 ## Can I use `refgenie` with my own genome resources I've already set up?
 
 Yes, you can. Of course, one of refgenie's strengths is that it makes it easy to start a new genome resource folder from scratch. But if you've already set yours up and want to use *other* parts of the refgenie system (like the Python API, for instance), you can also do that. All you need to do is write your assets into your genome configuration file, which is easy using [refgenie add](custom_assets).
