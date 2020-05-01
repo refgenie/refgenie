@@ -8,7 +8,8 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - added option (`-f`/`--force`) to confirm assets overwriting upfront in `refgenie add` add `refgenie pull`
 
 ### Changed
-- fixed bugs in hisat2_index and bwa_index that pointed to the parent folder. The seek key now points to the folder/{genome}, as expected by the tools
+- fixed bug in hisat2_index that pointed to the parent folder. The seek key now points to the folder/{genome}, as expected by the tool
+- fixed bug in bwa_index that pointed to the parent folder. The seek key now points to the folder/{genome}.fa, as expected by the tool
 
 ## [0.9.0] - 2020-03-17
 
