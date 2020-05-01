@@ -2,10 +2,13 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
-## [0.9.1] - unreleased 
+## [0.9.1] - 2020-05-01 
 
 ### Added
 - added option (`-f`/`--force`) to confirm assets overwriting upfront in `refgenie add` add `refgenie pull`
+
+### Changed
+- fixed bugs in hisat2_index and bwa_index that pointed to the parent folder. The seek key now points to the folder/{genome}, as expected by the tools
 
 ## [0.9.0] - 2020-03-17
 
