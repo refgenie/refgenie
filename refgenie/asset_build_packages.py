@@ -72,6 +72,32 @@ asset_build_packages = {
             "cut -f 1,2 {asset_outfolder}/{genome}.fa.fai > {asset_outfolder}/{genome}.chrom.sizes",
         ]
     },
+    "fasta_txome_extract": {
+        DESC: "cDNA sequences in FASTA format exracted from the genome and annotation files, indexed FASTA (produced with samtools index) and chromosome sizes file",
+        ASSETS: {
+            "fasta_txome": "{genome}.fa",
+        },
+        REQ_FILES: [],
+        REQ_ASSETS: [
+            {
+                KEY: "fasta",
+                DEFAULT: "fasta",
+                DESC: "fasta asset for genome"
+            },
+            {
+                KEY: "gtf",
+                DEFAULT: "gencode_gtf",
+                DESC: "GTF file for exonic features extraction"
+            }
+        ],
+        REQ_PARAMS: [],
+        CONT: "databio/refgenie",
+        CMD_LST: [
+            "gunzip -c {gtf} > {asset_outfolder}/{genome}.gtf",
+            "gffread -g {fasta} -w {asset_outfolder}/{genome}.fa {asset_outfolder}/{genome}.gtf",
+            "samtools faidx {asset_outfolder}/{genome}.fa",
+        ]
+    },
     "dbnsfp": {
         DESC: "A database developed for functional prediction and annotation of all potential non-synonymous single-nucleotide variants (nsSNVs) in the human genome (Gencode release 29/Ensembl 94)",
         ASSETS: {
