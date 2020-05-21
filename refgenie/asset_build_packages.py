@@ -26,6 +26,25 @@ DEFAULT = "default"
 RECIPE_CONSTS = ["DESC", "ASSET_DESC", "ASSETS", "PTH", "REQ_FILES", "REQ_ASSETS", "CONT", "CMD_LST", "KEY", "DEFAULT"]
 
 asset_build_packages = {
+    "split_fasta": {
+        DESC: "A version of the fasta sequences with 1 file per contig",
+        ASSETS: {
+            "split_fasta": "{genome}"
+        },
+        REQ_FILES: [],
+        REQ_ASSETS: [
+            {
+                KEY: "fasta",
+                DEFAULT: "fasta",
+                DESC: "fasta asset for genome"
+            }
+        ],
+        REQ_PARAMS: [],
+        CONT: "databio/refgenie",
+        CMD_LST: [
+            "perl split_fasta.pl {fasta} {asset_outfolder}"
+        ]
+    },
     "fasta": {
         DESC: "DNA sequences in the FASTA format, indexed FASTA (produced with samtools index) and chromosome sizes file",
         ASSETS: {
