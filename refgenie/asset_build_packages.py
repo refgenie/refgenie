@@ -29,7 +29,7 @@ asset_build_packages = {
     "split_fasta": {
         DESC: "A version of the fasta sequences with 1 file per contig",
         ASSETS: {
-            "split_fasta": "{genome}"
+            "split_fasta": "."
         },
         REQ_FILES: [],
         REQ_ASSETS: [
