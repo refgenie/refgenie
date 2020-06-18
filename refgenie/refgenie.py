@@ -24,8 +24,7 @@ import refgenconf
 from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError, MissingRecipeError, DownloadJsonError
 from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, VersionInHelpParser, is_command_callable
 from ubiquerg.system import is_writable
-from refget import RefGetHenge
-import yacman
+from .refget import fasta_checksum
 
 _LOGGER = None
 
@@ -148,13 +147,6 @@ def build_argparser():
         "-e", "--check-exists", required=False, action="store_true",
         help="Whether the returned asset path should be checked for existence "
              "on disk.")
-
-    sps[COMPARE_CMD].add_argument("genome1", metavar="GENOME1", type=str, nargs=1,
-                               help="First genome for compatibility check")
-    sps[COMPARE_CMD].add_argument("genome2", metavar="GENOME2", type=str, nargs=1,
-                               help="Second genome for compatibility check")
-    sps[COMPARE_CMD].add_argument("-e", "--no-explanation", action="store_true",
-                               help="Do not print compatibility code explanation")
 
     group = sps[TAG_CMD].add_mutually_exclusive_group(required=True)
 
@@ -501,9 +493,11 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                 return
             # If the recipe was a fasta, we init the genome
             if recipe_name == 'fasta':
-                d, _ = rgc.initialize_genome([genome, asset_key, asset_tag])
-                with rgc as r:
-                    r.update_genomes(genome, data={CFG_CHECKSUM_KEY: d})
+                _LOGGER.info("Computing initial genome digest...")
+                collection_checksum, content_checksums = \
+                    fasta_checksum(_seek(rgc, genome, asset_key, asset_tag, "fasta"))
+                _LOGGER.info("Initializing genome...")
+                refgenie_initg(rgc, genome, content_checksums)
             _LOGGER.info("Finished building '{}' asset".format(asset_key))
             with rgc as r:
                 # update asset relationships
@@ -520,11 +514,11 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                     _LOGGER.debug("adding tag ({}/{}:{}) description: '{}'".format(genome, asset_key, asset_tag,
                                                                                    args.tag_description))
                     r.update_tags(genome, asset_key, asset_tag, {CFG_TAG_DESC_KEY: args.tag_description})
-                # if recipe_name == "fasta":
-                #     # to save config lock time when building fasta assets
-                #     # (genome initialization takes some time for large genomes) we repeat the
-                #     # conditional here for writing the computed genome digest
-                #     r.update_genomes(genome, data={CFG_CHECKSUM_KEY: collection_checksum})
+                if recipe_name == "fasta":
+                    # to save config lock time when building fasta assets
+                    # (genome initialization takes some time for large genomes) we repeat the
+                    # conditional here for writing the computed genome digest
+                    r.update_genomes(genome, data={CFG_CHECKSUM_KEY: collection_checksum})
         else:
             _raise_missing_recipe_error(recipe_name)
 
@@ -774,12 +768,6 @@ def main():
         rgc = RefGenConf(filepath=gencfg, writable=False)
         rgc.unsubscribe(urls=args.genome_server)
         return
-    elif args.command == COMPARE_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False)
-        res = rgc.compare(args.genome1[0], args.genome2[0],
-                          explain=not args.no_explanation)
-        if args.no_explanation:
-            print(res)
 
 
 def _entity_dir_removal_log(directory, entity_class, asset_dict, removed_entities):
