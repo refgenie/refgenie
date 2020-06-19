@@ -417,10 +417,11 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                 r.update_assets(*gat[0:2], data={CFG_ASSET_DESC_KEY: build_pkg[DESC]})
                 r.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key})
                 r.update_seek_keys(*gat, keys={k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
-                # in order to conveniently get the path to digest we update the tags metadata in two steps
-                digest = get_dir_digest(_seek(r, genome, asset_key, tag, enclosing_dir=True), pm)
+            # in order to conveniently get the path to digest we update the tags metadata in two steps
+            digest = get_dir_digest(_seek(rgc, genome, asset_key, tag, enclosing_dir=True), pm)
+            _LOGGER.info("Asset digest: {}".format(digest))
+            with rgc as r:
                 r.update_tags(*gat, data={CFG_ASSET_CHECKSUM_KEY: digest})
-                _LOGGER.info("Asset digest: {}".format(digest))
                 r.set_default_pointer(*gat)
         pm.stop_pipeline()
         return True
