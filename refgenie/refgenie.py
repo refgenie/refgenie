@@ -412,7 +412,9 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             recipe_file_name = TEMPLATE_RECIPE_JSON.format(asset_key, tag)
             with open(os.path.join(log_outfolder, recipe_file_name), 'w') as outfile:
                 json.dump(build_pkg, outfile)
-            # update and write refgenie genome configuration
+            # in order to prevent locking the config file for writing once while
+            # being able to use the seek method for digest calculation we
+            # create a temporary object to run seek on.
             tmp_rgc = RefGenConf()
             tmp_rgc[CFG_FOLDER_KEY] = rgc[CFG_FOLDER_KEY]
             tmp_rgc.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key})
@@ -421,6 +423,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                 _seek(tmp_rgc, genome, asset_key, tag, enclosing_dir=True), pm)
             _LOGGER.info("Asset digest: {}".format(digest))
             del tmp_rgc
+            # add updates to config file
             with rgc as r:
                 r.update_assets(*gat[0:2], data={CFG_ASSET_DESC_KEY: build_pkg[DESC]})
                 r.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key,
