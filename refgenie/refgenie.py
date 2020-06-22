@@ -414,6 +414,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                 json.dump(build_pkg, outfile)
             # update and write refgenie genome configuration
             tmp_rgc = RefGenConf()
+            tmp_rgc[CFG_FOLDER_KEY] = rgc[CFG_FOLDER_KEY]
             tmp_rgc.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key})
             tmp_rgc.update_seek_keys(*gat, keys={k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
             digest = get_dir_digest(
