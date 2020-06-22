@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [0.9.2] - unreleased 
 
+## Changed 
+- in `refgenie build` reduced the config file locking time to prevent problems in multi-build context 
+
 ## [0.9.1] - 2020-05-01 
 
 ### Added
