@@ -132,6 +132,10 @@ def build_argparser():
             help="Do not prompt before action, approve upfront.")
 
     sps[PULL_CMD].add_argument(
+        "-n", "--no-overwrite", action="store_true",
+        help="Do not overwrite if asset exists.")
+
+    sps[PULL_CMD].add_argument(
         "-u", "--no-untar", action="store_true",
         help="Do not extract tarballs.")
 
@@ -662,7 +666,13 @@ def main():
 
     elif args.command == PULL_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
-        force = None if not args.force else True
+        if args.force:
+            force = True
+        elif args.no_overwrite:
+            force = False
+        else:
+            force = None
+
         outdir = rgc[CFG_FOLDER_KEY]
         if not os.path.exists(outdir):
             raise MissingFolderError(outdir)
