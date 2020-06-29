@@ -62,7 +62,19 @@ def build_argparser():
 
     sps[INIT_CMD].add_argument('-s', '--genome-server', nargs='+', default=DEFAULT_SERVER,
                                help="URL(s) to use for the {} attribute in config file. Default: {}."
-                               .format(DEFAULT_SERVER, CFG_SERVERS_KEY))
+                               .format(CFG_SERVERS_KEY, DEFAULT_SERVER))
+    sps[INIT_CMD].add_argument('-f', '--genome-folder',
+                               help="Absolute path to parent folder refgenie-managed assets.")
+    sps[INIT_CMD].add_argument('-a', '--genome-archive-folder',
+                               help="Absolute path to parent archive folder refgenie-managed assets; used by refgenieserver.")
+    sps[INIT_CMD].add_argument('-b', '--genome-archive-config',
+                               help="Absolute path to desired archive config file; used by refgenieserver.")
+    sps[INIT_CMD].add_argument('-u', '--remote-url-base',
+                               help="URL to use as an alternative, remote archive location; used by refgenieserver.")
+    sps[INIT_CMD].add_argument('-j', '--settings-json',
+                               help="Absolute path to a JSON file with the key "
+                                    "value pairs to inialize the configuration "
+                                    "file with. Overwritten by itemized specifications.")
     sps[BUILD_CMD] = pypiper.add_pypiper_args(
         sps[BUILD_CMD], groups=None, args=["recover", "config", "new-start"])
 
@@ -619,12 +631,30 @@ def main():
 
     if args.command == INIT_CMD:
         _LOGGER.debug("Initializing refgenie genome configuration")
-        rgc = RefGenConf(entries=OrderedDict({
+        entries = OrderedDict({
             CFG_VERSION_KEY: REQ_CFG_VERSION,
             CFG_FOLDER_KEY: os.path.dirname(os.path.abspath(gencfg)),
             CFG_SERVERS_KEY: args.genome_server or [DEFAULT_SERVER],
-            CFG_GENOMES_KEY: None
-        }))
+            CFG_GENOMES_KEY: None})
+        if args.settings_json:
+            if os.path.isfile(args.settings_json):
+                with open(args.settings_json, 'r') as json_file:
+                    data = json.load(json_file)
+                entries.update(data)
+            else:
+                raise FileNotFoundError(
+                    "JSON file with config init settings does not exist: {}".
+                        format(args.settings_json))
+        if args.genome_folder:
+            entries.update({CFG_FOLDER_KEY: args.genome_folder})
+        if args.remote_url_base:
+            entries.update({CFG_REMOTE_URL_BASE_KEY: args.remote_url_base})
+        if args.genome_archive_folder:
+            entries.update({CFG_ARCHIVE_KEY: args.genome_archive_folder})
+        if args.genome_archive_config:
+            entries.update({CFG_ARCHIVE_CONFIG_KEY: args.genome_archive_config})
+        _LOGGER.debug("initializing with entries: {}".format(entries))
+        rgc = RefGenConf(entries=entries)
         rgc.initialize_config_file(os.path.abspath(gencfg))
 
     elif args.command == BUILD_CMD:
