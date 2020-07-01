@@ -261,6 +261,11 @@ asset_build_packages = {
                 KEY: "threads",
                 DEFAULT: "8",
                 DESC: "Number of threads to use for parallel computing"
+            }, 
+            {
+                KEY: "kmer",
+                DEFAULT: "31",
+                DESC: "The length of kmer to use to create the indices"
             }
         ],
         CONT: "combinelab/salmon",
@@ -268,7 +273,7 @@ asset_build_packages = {
             "salmon_index": "."
         },
         CMD_LST: [
-            "salmon index -k 31 -i {asset_outfolder} -t {fasta} -p {threads}"
+            "salmon index -t {fasta} -i {asset_outfolder} -k {kmer} -p {threads}"
             ]
     },
     "salmon_sa_index": {
@@ -291,6 +296,11 @@ asset_build_packages = {
                 KEY: "threads",
                 DEFAULT: "8",
                 DESC: "Number of threads to use for parallel computing"
+            }, 
+            {
+                KEY: "kmer",
+                DEFAULT: "31",
+                DESC: "The length of kmer to use to create the indices"
             }
         ],
         CONT: "combinelab/salmon",
@@ -302,7 +312,7 @@ asset_build_packages = {
             "sed -i.bak -e 's/>//g' {asset_outfolder}/decoys.txt",
             "rm {asset_outfolder}/decoys.txt.bak",
             "cat {fasta_txome} {fasta} > {asset_outfolder}/gentrome.fa",
-            "salmon index -t {asset_outfolder}/gentrome.fa -d {asset_outfolder}/decoys.txt -p {threads} -i {asset_outfolder}",
+            "salmon index -t {asset_outfolder}/gentrome.fa -d {asset_outfolder}/decoys.txt -i {asset_outfolder} -k {kmer} -p {threads}",
             "rm {asset_outfolder}/gentrome.fa {asset_outfolder}/decoys.txt"
         ]
     },
@@ -331,6 +341,11 @@ asset_build_packages = {
                 KEY: "threads",
                 DEFAULT: "8",
                 DESC: "Number of threads to use for parallel computing"
+            }, 
+            {
+                KEY: "kmer",
+                DEFAULT: "31",
+                DESC: "The length of kmer to use to create the indices"
             }
         ],
         CONT: "combinelab/salmon",
@@ -349,7 +364,7 @@ asset_build_packages = {
             "cat {fasta_txome} {asset_outfolder}/decoy.fa > {asset_outfolder}/gentrome.fa",
             "grep '>' {asset_outfolder}/decoy.fa | awk '{{print substr($1,2); }}' > {asset_outfolder}/decoys.txt",
             "rm {asset_outfolder}/exons.bed {asset_outfolder}/reference.masked.genome.fa {asset_outfolder}/mashmap.out {asset_outfolder}/genome_found.sorted.bed {asset_outfolder}/genome_found_merged.bed {asset_outfolder}/genome_found.fa {asset_outfolder}/decoy.fa {asset_outfolder}/reference.masked.genome.fa.fai",
-            "salmon index -t {asset_outfolder}/gentrome.fa -d {asset_outfolder}/decoys.txt -i {asset_outfolder} -p {threads}"
+            "salmon index -t {asset_outfolder}/gentrome.fa -d {asset_outfolder}/decoys.txt -i {asset_outfolder} -k {kmer} -p {threads}"
         ]
     },
     "epilog_index": {

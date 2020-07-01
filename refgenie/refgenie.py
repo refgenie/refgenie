@@ -24,9 +24,6 @@ import refgenconf
 from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError, MissingRecipeError, DownloadJsonError
 from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, VersionInHelpParser, is_command_callable
 from ubiquerg.system import is_writable
-import yacman
-
-# from refget import fasta_checksum
 from .refget import fasta_checksum
 
 _LOGGER = None
@@ -65,7 +62,19 @@ def build_argparser():
 
     sps[INIT_CMD].add_argument('-s', '--genome-server', nargs='+', default=DEFAULT_SERVER,
                                help="URL(s) to use for the {} attribute in config file. Default: {}."
-                               .format(DEFAULT_SERVER, CFG_SERVERS_KEY))
+                               .format(CFG_SERVERS_KEY, DEFAULT_SERVER))
+    sps[INIT_CMD].add_argument('-f', '--genome-folder',
+                               help="Absolute path to parent folder refgenie-managed assets.")
+    sps[INIT_CMD].add_argument('-a', '--genome-archive-folder',
+                               help="Absolute path to parent archive folder refgenie-managed assets; used by refgenieserver.")
+    sps[INIT_CMD].add_argument('-b', '--genome-archive-config',
+                               help="Absolute path to desired archive config file; used by refgenieserver.")
+    sps[INIT_CMD].add_argument('-u', '--remote-url-base',
+                               help="URL to use as an alternative, remote archive location; used by refgenieserver.")
+    sps[INIT_CMD].add_argument('-j', '--settings-json',
+                               help="Absolute path to a JSON file with the key "
+                                    "value pairs to inialize the configuration "
+                                    "file with. Overwritten by itemized specifications.")
     sps[BUILD_CMD] = pypiper.add_pypiper_args(
         sps[BUILD_CMD], groups=None, args=["recover", "config", "new-start"])
 
@@ -133,6 +142,10 @@ def build_argparser():
         sps[cmd].add_argument(
             "-f", "--force", action="store_true",
             help="Do not prompt before action, approve upfront.")
+
+    sps[PULL_CMD].add_argument(
+        "-n", "--no-overwrite", action="store_true",
+        help="Do not overwrite if asset exists.")
 
     sps[PULL_CMD].add_argument(
         "-u", "--no-untar", action="store_true",
@@ -415,15 +428,23 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             recipe_file_name = TEMPLATE_RECIPE_JSON.format(asset_key, tag)
             with open(os.path.join(log_outfolder, recipe_file_name), 'w') as outfile:
                 json.dump(build_pkg, outfile)
-            # update and write refgenie genome configuration
+            # in order to prevent locking the config file for writing once while
+            # being able to use the seek method for digest calculation we
+            # create a temporary object to run seek on.
+            tmp_rgc = RefGenConf()
+            tmp_rgc[CFG_FOLDER_KEY] = rgc[CFG_FOLDER_KEY]
+            tmp_rgc.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key})
+            tmp_rgc.update_seek_keys(*gat, keys={k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
+            digest = get_dir_digest(
+                _seek(tmp_rgc, genome, asset_key, tag, enclosing_dir=True), pm)
+            _LOGGER.info("Asset digest: {}".format(digest))
+            del tmp_rgc
+            # add updates to config file
             with rgc as r:
                 r.update_assets(*gat[0:2], data={CFG_ASSET_DESC_KEY: build_pkg[DESC]})
-                r.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key})
+                r.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key,
+                                          CFG_ASSET_CHECKSUM_KEY: digest})
                 r.update_seek_keys(*gat, keys={k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
-                # in order to conveniently get the path to digest we update the tags metadata in two steps
-                digest = get_dir_digest(r.get_asset(genome, asset_key, tag, enclosing_dir=True), pm)
-                r.update_tags(*gat, data={CFG_ASSET_CHECKSUM_KEY: digest})
-                _LOGGER.info("Asset digest: {}".format(digest))
                 r.set_default_pointer(*gat)
         pm.stop_pipeline()
         return True
@@ -610,12 +631,30 @@ def main():
 
     if args.command == INIT_CMD:
         _LOGGER.debug("Initializing refgenie genome configuration")
-        rgc = RefGenConf(entries=OrderedDict({
+        entries = OrderedDict({
             CFG_VERSION_KEY: REQ_CFG_VERSION,
             CFG_FOLDER_KEY: os.path.dirname(os.path.abspath(gencfg)),
             CFG_SERVERS_KEY: args.genome_server or [DEFAULT_SERVER],
-            CFG_GENOMES_KEY: None
-        }))
+            CFG_GENOMES_KEY: None})
+        if args.settings_json:
+            if os.path.isfile(args.settings_json):
+                with open(args.settings_json, 'r') as json_file:
+                    data = json.load(json_file)
+                entries.update(data)
+            else:
+                raise FileNotFoundError(
+                    "JSON file with config init settings does not exist: {}".
+                        format(args.settings_json))
+        if args.genome_folder:
+            entries.update({CFG_FOLDER_KEY: args.genome_folder})
+        if args.remote_url_base:
+            entries.update({CFG_REMOTE_URL_BASE_KEY: args.remote_url_base})
+        if args.genome_archive_folder:
+            entries.update({CFG_ARCHIVE_KEY: args.genome_archive_folder})
+        if args.genome_archive_config:
+            entries.update({CFG_ARCHIVE_CONFIG_KEY: args.genome_archive_config})
+        _LOGGER.debug("initializing with entries: {}".format(entries))
+        rgc = RefGenConf(entries=entries)
         rgc.initialize_config_file(os.path.abspath(gencfg))
 
     elif args.command == BUILD_CMD:
@@ -657,7 +696,13 @@ def main():
 
     elif args.command == PULL_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
-        force = None if not args.force else True
+        if args.force:
+            force = True
+        elif args.no_overwrite:
+            force = False
+        else:
+            force = None
+
         outdir = rgc[CFG_FOLDER_KEY]
         if not os.path.exists(outdir):
             raise MissingFolderError(outdir)
