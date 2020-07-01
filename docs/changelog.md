@@ -2,13 +2,14 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
 
-## [0.9.2] - 2020-06-25
+## [0.9.2] - 2020-07-01
 
 ## Changed 
 - in `refgenie build` reduced the config file locking time to prevent problems in multi-build context
 - dropped Python 2 support
 ## Added
 - parametrized `kmer` in salmon recipes 
+- support for all genome configuration file parameter values initialization in `refgenie init`
 
 ## [0.9.1] - 2020-05-01 
 
