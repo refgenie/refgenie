@@ -24,6 +24,7 @@ import refgenconf
 from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError, MissingRecipeError, DownloadJsonError
 from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, VersionInHelpParser, is_command_callable
 from ubiquerg.system import is_writable
+from yacman import UndefinedAliasError
 from .refget import fasta_checksum
 
 _LOGGER = None
@@ -120,6 +121,13 @@ def build_argparser():
     sps[BUILD_CMD].add_argument(
         "-r", "--recipe", required=False, default=None, type=str,
         help="Provide a recipe to use.")
+
+    # sps[COMPARE_CMD].add_argument("genome1", metavar="GENOME1", type=str, nargs=1,
+    #                            help="First genome for compatibility check")
+    # sps[COMPARE_CMD].add_argument("genome2", metavar="GENOME2", type=str, nargs=1,
+    #                            help="Second genome for compatibility check")
+    # sps[COMPARE_CMD].add_argument("-e", "--no-explanation", action="store_true",
+    #                            help="Do not print compatibility code explanation")
 
     # add 'genome' argument to many commands
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, GETSEQ_CMD, TAG_CMD, ID_CMD]:
@@ -482,7 +490,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                     g, a, t, s = genome, default["asset"], \
                                  rgc.get_default_tag(genome, default["asset"]), \
                                  req_asset_data["seek_key"]
-                parent_assets.append("{}/{}:{}".format(g, a, t))
+                parent_assets.append("{}/{}:{}".format(rgc.get_genome_alias_digest(g), a, t))
                 input_assets[req_asset[KEY]] = _seek(rgc, g, a, t, s)
             _LOGGER.debug("Using parents: {}".format(", ".join(parent_assets)))
             _LOGGER.debug("Provided files: {}".format(specified_args))
@@ -502,12 +510,23 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                                          .format(x=required_param[KEY], desc=required_param[DESC]))
                     else:
                         specified_params.update({required_param[KEY]: required_param[DEFAULT]})
-            genome_outfolder = os.path.join(args.outfolder, genome)
             _LOGGER.info("Building '{}/{}:{}' using '{}' recipe".format(genome, asset_key, asset_tag, recipe_name))
-            if recipe_name == 'fasta' and genome in rgc.genomes_list() \
-                    and 'fasta' in rgc.list_assets_by_genome(genome):
-                _LOGGER.warning("'{g}' genome is already initialized with other fasta asset ({g}/{a}:{t}). "
-                                "It will be re-initialized.".format(g=genome, a=asset_key, t=asset_tag))
+            if recipe_name == 'fasta':
+                ori_genome = genome
+                if genome in rgc.genomes_list() and 'fasta' in rgc.list_assets_by_genome(genome):
+                    _LOGGER.warning("'{g}' genome is already initialized with other fasta asset ({g}/{a}:{t}). It will be re-initialized.".format(g=genome, a=asset_key, t=asset_tag))
+                # if the recipe is "fasta" we first initialiaze the genome, based on the provided path to the input FASTA file
+                genome, _ = \
+                    rgc.initialize_genome(fasta_path=specified_args["fasta"],
+                                          alias=ori_genome)
+            else:
+                try:
+                    genome = rgc.get_genome_alias_digest(genome)
+                except UndefinedAliasError:
+                    _LOGGER.error("Genome '{}' has not been initialized yet; "
+                                  "no key found for this alias".format(genome))
+                    return
+            genome_outfolder = os.path.join(args.outfolder, genome)
             if not build_asset(genome, asset_key, asset_tag, asset_build_package, genome_outfolder,
                                specified_args, specified_params, **input_assets):
                 log_path = os.path.abspath(os.path.join(genome_outfolder, asset_key, asset_tag,
@@ -515,13 +534,6 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                 _LOGGER.info("'{}/{}:{}' was not added to the config, but directory has been left in place. "
                              "See the log file for details: {}".format(genome, asset_key, asset_tag, log_path))
                 return
-            # If the recipe was a fasta, we init the genome
-            if recipe_name == 'fasta':
-                _LOGGER.info("Computing initial genome digest...")
-                collection_checksum, content_checksums = \
-                    fasta_checksum(_seek(rgc, genome, asset_key, asset_tag, "fasta"))
-                _LOGGER.info("Initializing genome...")
-                refgenie_initg(rgc, genome, content_checksums)
             _LOGGER.info("Finished building '{}' asset".format(asset_key))
             with rgc as r:
                 # update asset relationships
@@ -529,20 +541,15 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                 for i in parent_assets:
                     parsed_parent = parse_registry_path(i)
                     # adds child (currently built asset) to the parent
-                    r.update_relatives_assets(parsed_parent["genome"], parsed_parent["asset"], parsed_parent["tag"],
-                                                   ["{}/{}:{}".format(genome, asset_key, asset_tag)], True)
+                    r.update_relatives_assets(parsed_parent["genome"], parsed_parent["asset"],
+                        parsed_parent["tag"], ["{}/{}:{}".format(genome, asset_key, asset_tag)], True)
                 if args.genome_description is not None:
                     _LOGGER.debug("adding genome ({}) description: '{}'".format(genome, args.genome_description))
                     r.update_genomes(genome, {CFG_GENOME_DESC_KEY: args.genome_description})
                 if args.tag_description is not None:
-                    _LOGGER.debug("adding tag ({}/{}:{}) description: '{}'".format(genome, asset_key, asset_tag,
-                                                                                   args.tag_description))
+                    _LOGGER.debug("adding tag ({}/{}:{}) description: '{}'".
+                                  format(genome, asset_key, asset_tag, args.tag_description))
                     r.update_tags(genome, asset_key, asset_tag, {CFG_TAG_DESC_KEY: args.tag_description})
-                if recipe_name == "fasta":
-                    # to save config lock time when building fasta assets
-                    # (genome initialization takes some time for large genomes) we repeat the
-                    # conditional here for writing the computed genome digest
-                    r.update_genomes(genome, data={CFG_CHECKSUM_KEY: collection_checksum})
         else:
             _raise_missing_recipe_error(recipe_name)
 
@@ -719,7 +726,8 @@ def main():
                      unpack=not args.no_untar, force=force)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
-        rgc = RefGenConf(filepath=gencfg, writable=False)
+        rgc = RefGenConf(filepath=gencfg, writable=False,
+                         genome_exact=args.command == LIST_REMOTE_CMD)
         if args.command == LIST_REMOTE_CMD:
             num_servers = 0
             # Keep all servers so that child updates maintain server list
@@ -816,6 +824,12 @@ def main():
         rgc = RefGenConf(filepath=gencfg, writable=False)
         rgc.unsubscribe(urls=args.genome_server)
         return
+    # elif args.command == COMPARE_CMD:
+    #     rgc = RefGenConf(filepath=gencfg, writable=False)
+    #     res = rgc.compare(args.genome1[0], args.genome2[0],
+    #                       explain=not args.no_explanation)
+    #     if args.no_explanation:
+    #         print(res)
 
 
 def _entity_dir_removal_log(directory, entity_class, asset_dict, removed_entities):
