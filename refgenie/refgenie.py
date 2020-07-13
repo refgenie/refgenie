@@ -122,16 +122,22 @@ def build_argparser():
         "-r", "--recipe", required=False, default=None, type=str,
         help="Provide a recipe to use.")
 
-    sps[ALIAS_CMD].add_argument(
-        "-r", "--remove", required=False, default=None, type=str, nargs="+",
+    alias_group = sps[ALIAS_CMD].add_mutually_exclusive_group(
+        # title='Aliases manipulation arguments',
+        # description='Specify the action you want to perform on the aliases'
+    )
+
+    alias_group.add_argument(
+        "-r", "--remove", metavar="A", required=False, default=None, type=str, nargs="+",
         help="Remove an alias.")
 
-    sps[ALIAS_CMD].add_argument(
-        "-s", "--set", required=False, default=None, type=str, nargs=2,
-        help="Set an alias.")
+    alias_group.add_argument(
+        "-s", "--set", metavar="K-V", required=False, default=None, type=str, nargs="+",
+        help="Key-value pair of alias and genome ID or just an alias when the "
+             "genome ID is to be looked up from a server")
 
-    sps[ALIAS_CMD].add_argument(
-        "-g", "--get", required=False, default=None, type=str, nargs=1,
+    alias_group.add_argument(
+        "-g", "--get", metavar="A", required=False, default=None, type=str, nargs=1,
         help="Get genome identifier for an alias.")
 
 
@@ -840,11 +846,18 @@ def main():
     elif args.command == ALIAS_CMD:
         rgc = RefGenConf(filepath=gencfg)
         if args.get:
-            print(rgc.get_genome_alias_digest(alias=args.get))
+            print(rgc.get_genome_alias_digest(alias=args.get[0]))
             return
         elif args.set:
             with rgc as r:
-                r.set_genome_alias(genome=args.set[0], digest=args.set[1])
+                if len(args.set) == 2:
+                    r.set_genome_alias(genome=args.set[0], digest=args.set[1])
+                elif len(args.set) == 1:
+                    r.set_genome_alias(genome=args.set[0])
+                else:
+                    _LOGGER.error(
+                        "You can specify either an alias-genomeID pair or just "
+                        "an alias to look up the genomeID from a server")
             return
         elif args.remove:
             with rgc as r:
