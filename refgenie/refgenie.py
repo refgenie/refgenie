@@ -122,6 +122,19 @@ def build_argparser():
         "-r", "--recipe", required=False, default=None, type=str,
         help="Provide a recipe to use.")
 
+    sps[ALIAS_CMD].add_argument(
+        "-r", "--remove", required=False, default=None, type=str, nargs="+",
+        help="Remove an alias.")
+
+    sps[ALIAS_CMD].add_argument(
+        "-s", "--set", required=False, default=None, type=str, nargs=2,
+        help="Set an alias.")
+
+    sps[ALIAS_CMD].add_argument(
+        "-g", "--get", required=False, default=None, type=str, nargs=1,
+        help="Get genome identifier for an alias.")
+
+
     # sps[COMPARE_CMD].add_argument("genome1", metavar="GENOME1", type=str, nargs=1,
     #                            help="First genome for compatibility check")
     # sps[COMPARE_CMD].add_argument("genome2", metavar="GENOME2", type=str, nargs=1,
@@ -824,6 +837,25 @@ def main():
         rgc = RefGenConf(filepath=gencfg, writable=False)
         rgc.unsubscribe(urls=args.genome_server)
         return
+    elif args.command == ALIAS_CMD:
+        rgc = RefGenConf(filepath=gencfg)
+        if args.get:
+            print(rgc.get_genome_alias_digest(alias=args.get))
+            return
+        elif args.set:
+            with rgc as r:
+                r.set_genome_alias(genome=args.set[0], digest=args.set[1])
+            return
+        elif args.remove:
+            with rgc as r:
+                [r[CFG_ALIASES_KEY].__delitem__(r.get_genome_alias_digest(a)) for a in args.remove]
+            return
+        else:
+            aliases = rgc.genome_aliases
+            print("genomeID".rjust(32) + "\talias".ljust(20) + "\tinitialized".ljust(20) + "\n")
+            print("\n".join("{}\t{}\t{}".format(k.rjust(32), v.ljust(20), ("*" if k in rgc.genomes else "").ljust(20)) for k, v in aliases.items()))
+            return
+
     # elif args.command == COMPARE_CMD:
     #     rgc = RefGenConf(filepath=gencfg, writable=False)
     #     res = rgc.compare(args.genome1[0], args.genome2[0],

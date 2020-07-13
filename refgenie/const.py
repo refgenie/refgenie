@@ -17,6 +17,7 @@ TAG_CMD = "tag"
 ID_CMD = "id"
 SUBSCRIBE_CMD = "subscribe"
 UNSUBSCRIBE_CMD = "unsubscribe"
+ALIAS_CMD = "alias"
 # COMPARE_CMD = "compare"
 
 GENOME_ONLY_REQUIRED = [REMOVE_CMD, GETSEQ_CMD]
@@ -37,6 +38,7 @@ SUBPARSER_MESSAGES = {
     TAG_CMD: "Tag an asset.",
     ID_CMD: "Return the asset digest.",
     SUBSCRIBE_CMD: "Add a refgenieserver URL to the config.",
-    UNSUBSCRIBE_CMD: "Remove a refgenieserver URL from the config."
+    UNSUBSCRIBE_CMD: "Remove a refgenieserver URL from the config.",
+    ALIAS_CMD: "Interact with aliases."
     # COMPARE_CMD: "compare two genomes."
 }
