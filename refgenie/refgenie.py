@@ -170,6 +170,10 @@ def build_argparser():
             "-f", "--force", action="store_true",
             help="Do not prompt before action, approve upfront.")
 
+    sps[REMOVE_CMD].add_argument(
+        "-a", "--aliases", action="store_true",
+        help="Remove the genome alias if last asset for that genome is removed.")
+
     sps[PULL_CMD].add_argument(
         "-n", "--no-overwrite", action="store_true",
         help="Do not overwrite if asset exists.")
@@ -762,7 +766,7 @@ def main():
                     _LOGGER.info("{} genomes: {}".format(pfx, genomes))
                     if args.command != LIST_REMOTE_CMD:  # Not implemented yet
                         _LOGGER.info("{} recipes: {}".format(pfx, recipes))
-                    _LOGGER.info("{} assets:\n{}\n".format(pfx, assets))
+                    _LOGGER.info("{} assets:\n{}".format(pfx, assets))
                 except (DownloadJsonError, ConnectionError):
                     bad_servers.append(server_url)
                     continue
@@ -791,16 +795,17 @@ def main():
             _LOGGER.debug("Determined tag for removal: {}".format(a["tag"]))
             if a["seek_key"] is not None:
                 raise NotImplementedError("You can't remove a specific seek_key.")
-            bundle = [a["genome"], a["asset"], a["tag"]]
+            gat = {"genome": a["genome"], "asset": a["asset"], "tag": a["tag"]}
             try:
-                if not rgc.is_asset_complete(*bundle):
+                if not rgc.is_asset_complete(**gat):
                     with rgc as r:
-                        r.cfg_remove_assets(*bundle)
-                    _LOGGER.info("Removed an incomplete asset '{}/{}:{}'".
-                                 format(*bundle))
+                        r.cfg_remove_assets(**gat, aliases=args.aliases)
+                    _LOGGER.info("Removed an incomplete asset "
+                                 "'{genome}/{asset}:{tag}'".format(*gat))
                     return
             except (KeyError, MissingAssetError, MissingGenomeError):
-                _LOGGER.info("Asset '{}/{}:{}' does not exist".format(*bundle))
+                _LOGGER.info("Asset '{genome}/{asset}:{tag}' does not exist"
+                             .format(**gat))
                 return
         if len(asset_list) > 1:
             if not query_yes_no("Are you sure you want to remove {} assets?".
@@ -810,7 +815,7 @@ def main():
             force = True
         for a in asset_list:
             rgc.remove(genome=a["genome"], asset=a["asset"], tag=a["tag"],
-                       force=force)
+                       force=force, aliases=args.aliases)
 
     elif args.command == TAG_CMD:
         rgc = RefGenConf(filepath=gencfg)
