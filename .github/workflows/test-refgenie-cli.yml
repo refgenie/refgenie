@@ -69,7 +69,7 @@ jobs:
         ./tests/assert_in_file.sh genomes/g.yaml fde5c225d75637d6b2fd463a37ff875d 0
 
     - name: refgenie build fasta
-      run: refgenie build -c genomes/g.yaml t7/fasta --files fasta=refgenie/tests/data/t7.fa.gz --recipe refgenie/tests/data/recipe_parent.json
+      run: refgenie build -c genomes/g.yaml t7/fasta --files fasta=tests/data/t7.fa.gz --recipe tests/data/recipe_parent.json
 
     - name: refgenie remove fasta, remove digest
       run: |
