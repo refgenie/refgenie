@@ -1,8 +1,8 @@
 {
-    "name": "child",
+    "name": "fasta_child",
     "description": "child of an asset, dummy recipe",
     "assets": {
-        "child_child": "{genome}_child.fa.gz"
+        "fasta_child": "{genome}_child.fa.gz"
     },
     "required_assets": [
         {
@@ -15,6 +15,6 @@
     "required_files": [],
     "container": "databio/refgenie",
     "command_list": [
-        "cp {child} {asset_outfolder}/{genome}_child.fa.gz"
+        "cp {fasta} {asset_outfolder}/{genome}_child.fa.gz"
     ]
 }
