@@ -1,0 +1,20 @@
+{
+    "name": "child",
+    "description": "child of a asset",
+    "assets": {
+        "child_child": "{genome}_child.fa.gz"
+    },
+    "required_assets": [
+        {
+            "key": "fasta",
+            "default": "fasta",
+            "description": "fasta asset for genome"
+        }
+    ],
+    "required_parameters": [],
+    "required_files": [],
+    "container": "databio/refgenie",
+    "command_list": [
+        "cp {child} {asset_outfolder}/{genome}_child.fa.gz"
+    ]
+}
