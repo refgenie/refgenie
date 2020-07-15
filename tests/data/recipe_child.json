@@ -1,6 +1,6 @@
 {
     "name": "child",
-    "description": "child of a asset",
+    "description": "child of an asset, dummy recipe",
     "assets": {
         "child_child": "{genome}_child.fa.gz"
     },
