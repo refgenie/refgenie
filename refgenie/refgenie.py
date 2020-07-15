@@ -387,6 +387,20 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
     specified_args = _parse_user_build_input(args.files)
     specified_params = _parse_user_build_input(args.params)
 
+    def _read_json_file(filepath):
+        """
+        Read a JSON file
+
+        :param str filepath: path to the file to read
+        :return dict: read data
+        """
+        with open(filepath, 'r') as f:
+            data = json.load(f)
+        return data
+
+    if os.path.isfile(recipe_name) and recipe_name.endswith(".json"):
+        recipe_name = _read_json_file(filepath=recipe_name)
+
     if not hasattr(args, "outfolder") or not args.outfolder:
         # Default to genome_folder
         _LOGGER.debug("No outfolder provided, using genome config.")
@@ -485,8 +499,13 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
         asset_tag = a["tag"] or rgc.get_default_tag(genome, a["asset"], use_existing=False)
         recipe_name = recipe_name or asset_key
 
-        if recipe_name in asset_build_packages.keys():
-            asset_build_package = _check_recipe(asset_build_packages[recipe_name])
+        if recipe_name in asset_build_packages.keys() or isinstance(recipe_name, dict):
+            if isinstance(recipe_name, dict):
+                _LOGGER.info("Using custom recipe: \n{}".format(recipe_name))
+                asset_build_package = _check_recipe(recipe_name)
+                recipe_name = asset_build_package["name"]
+            else:
+                asset_build_package = _check_recipe(asset_build_packages[recipe_name])
             # handle user-requested parents for the required assets
             input_assets = {}
             parent_assets = []
@@ -1031,6 +1050,16 @@ def _check_recipe(recipe):
     :param dict recipe: asset_build_package
     :raise ValueError: if any key names are duplicated
     """
+    # experimental feature; recipe jsonschema validation
+    from jsonschema import validate
+    from yacman import load_yaml
+    SCHEMA_SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "schemas", "recipe_schema.yaml")
+    if os.path.exists(SCHEMA_SRC):
+        validate(recipe, load_yaml(filepath=SCHEMA_SRC))
+        _LOGGER.info("Recipe validated successfully against a schema: {}".format(SCHEMA_SRC))
+    else:
+        _LOGGER.warning("Recipe schema not found: {}".format(SCHEMA_SRC))
+    # end of validation
     req_keys = []
     for req in [REQ_PARAMS, REQ_ASSETS, REQ_FILES]:
         req_keys.extend([req_dict[KEY] for req_dict in recipe[req]])
