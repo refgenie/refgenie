@@ -73,8 +73,8 @@ jobs:
 
     - name: refgenie change alias
       run: |
-        refgenie alias --remove t7
-        refgenie alias --set t7_new fde5c225d75637d6b2fd463a37ff875d
+        refgenie alias -c genomes/g.yaml --remove t7
+        refgenie alias -c genomes/g.yaml --set t7_new fde5c225d75637d6b2fd463a37ff875d
         ./tests/assert_in_file.sh genomes/g.yaml t7_new 0
 
     - name: refgenie remove fasta, remove digest
