@@ -138,22 +138,33 @@ def build_argparser():
             help="One or more registry path strings that identify assets  (e.g. hg38/fasta or hg38/fasta:tag"
                  + (" or hg38/fasta.fai:tag)." if cmd == GET_ASSET_CMD else ")."))
 
-    for cmd in [PULL_CMD, REMOVE_CMD, INSERT_CMD]:
+    for cmd in [REMOVE_CMD, INSERT_CMD]:
         sps[cmd].add_argument(
             "-f", "--force", action="store_true",
             help="Do not prompt before action, approve upfront.")
 
-    sps[PULL_CMD].add_argument(
-        "-o", "--no-overwrite", action="store_true",
+    force_group = sps[PULL_CMD].add_argument_group(
+        title="Prompt handling",
+        description="These flags configure the pull prompt responses.")
+
+    overwrite_group = force_group.add_mutually_exclusive_group()
+
+    overwrite_group.add_argument("--no-overwrite", action="store_true",
         help="Do not overwrite if asset exists.")
 
-    sps[PULL_CMD].add_argument(
-        "-l", "--no-large", action="store_true",
+    overwrite_group.add_argument("--force-overwrite", action="store_true",
+        help="Overwrite if asset exists.")
+
+    large_group = force_group.add_mutually_exclusive_group()
+
+    large_group.add_argument("--no-large", action="store_true",
         help="Do not pull archives over 5GB.")
 
-    sps[PULL_CMD].add_argument(
-        "-u", "--no-untar", action="store_true",
-        help="Do not extract tarballs.")
+    large_group.add_argument("--pull-large", action="store_true",
+        help="Pull any archive, regardless of its size.")
+
+    force_group.add_argument("-b", "--batch", action="store_true",
+        help="Use batch mode: pull large archives, do no overwrite")
 
     sps[INSERT_CMD].add_argument(
         "-p", "--path", required=True,
@@ -700,19 +711,24 @@ def main():
 
     elif args.command == PULL_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
-        if args.force:
-            force = True
-        elif args.no_overwrite:
+        # existing assets overwriting
+        if args.no_overwrite:
             force = False
+        elif args.force_overwrite:
+            force = True
         else:
             force = None
-
-        if args.force:
-            force_large = True
-        elif args.no_large:
+        # large archive pulling
+        if args.no_large:
             force_large = False
+        elif args.pull_large:
+            force_large = True
         else:
             force_large = None
+        # batch mode takes precedence over other choices
+        if args.batch:
+            force_large = True
+            force = False
 
         outdir = rgc[CFG_FOLDER_KEY]
         if not os.path.exists(outdir):
