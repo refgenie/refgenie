@@ -163,6 +163,9 @@ def build_argparser():
     large_group.add_argument("--pull-large", action="store_true",
         help="Pull any archive, regardless of its size.")
 
+    force_group.add_argument("--size-cutoff", type=float, default=10,
+        help="Maximum archive file size to download with no confirmation required (in GB, default: 10)")
+
     force_group.add_argument("-b", "--batch", action="store_true",
         help="Use batch mode: pull large archives, do no overwrite")
 
@@ -742,8 +745,8 @@ def main():
             return
 
         for a in asset_list:
-            rgc.pull(a["genome"], a["asset"], a["tag"], unpack=not args.no_untar,
-                     force=force, force_large=force_large)
+            rgc.pull(a["genome"], a["asset"], a["tag"], force=force,
+                     force_large=force_large, size_cutoff=args.size_cutoff)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         rgc = RefGenConf(filepath=gencfg, writable=False)
