@@ -144,8 +144,12 @@ def build_argparser():
             help="Do not prompt before action, approve upfront.")
 
     sps[PULL_CMD].add_argument(
-        "-n", "--no-overwrite", action="store_true",
+        "-o", "--no-overwrite", action="store_true",
         help="Do not overwrite if asset exists.")
+
+    sps[PULL_CMD].add_argument(
+        "-l", "--no-large", action="store_true",
+        help="Do not pull archives over 5GB.")
 
     sps[PULL_CMD].add_argument(
         "-u", "--no-untar", action="store_true",
@@ -703,6 +707,13 @@ def main():
         else:
             force = None
 
+        if args.force:
+            force_large = True
+        elif args.no_large:
+            force_large = False
+        else:
+            force_large = None
+
         outdir = rgc[CFG_FOLDER_KEY]
         if not os.path.exists(outdir):
             raise MissingFolderError(outdir)
@@ -715,8 +726,8 @@ def main():
             return
 
         for a in asset_list:
-            rgc.pull(a["genome"], a["asset"], a["tag"],
-                     unpack=not args.no_untar, force=force)
+            rgc.pull(a["genome"], a["asset"], a["tag"], unpack=not args.no_untar,
+                     force=force, force_large=force_large)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         rgc = RefGenConf(filepath=gencfg, writable=False)

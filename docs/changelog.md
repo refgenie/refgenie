@@ -1,6 +1,14 @@
 # Changelog
 
-This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
+This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
+
+## [0.9.3] - unreleased
+
+## Changed 
+- short option string for `--no-overwrite` from `-n` to `-o`
+
+## Added 
+- option to handle large asset archives pulling from the CLI (`-l`/`--no-large` flag)
 
 ## [0.9.2] - 2020-07-01
 
