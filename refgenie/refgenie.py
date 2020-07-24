@@ -163,7 +163,7 @@ def build_argparser():
     large_group.add_argument("--pull-large", action="store_true",
         help="Pull any archive, regardless of its size.")
 
-    force_group.add_argument("--size-cutoff", type=float, default=10,
+    force_group.add_argument("--size-cutoff", type=float, default=10, metavar="S",
         help="Maximum archive file size to download with no confirmation required (in GB, default: 10)")
 
     force_group.add_argument("-b", "--batch", action="store_true",
