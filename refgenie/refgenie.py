@@ -568,7 +568,11 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
 def _exec_list(rgc, remote, genome):
     if remote:
         pfx = "Remote"
-        assemblies, assets = list(rgc.listr(genome=genome, as_str=True).values())[0]
+        # we use this func looping through the server urls and assigning a
+        # single instance as the server for the object. That's why we can
+        # access the data with [0] below
+        assemblies, assets = \
+            list(rgc.listr(genome=genome, as_str=True).values())[0]
         recipes = None  # Not implemented
     else:
         pfx = "Local"

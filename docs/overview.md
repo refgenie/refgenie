@@ -27,7 +27,7 @@ The component that most users will interact with is the command-line interface. 
 
 ### 2. The `refgenieserver` package
 
-While the `refgenie` CLI is useful by itself by allowing `refgenie build` without any remote component, it becomes even more powerful when it can communicate with a remote server via `refgenie pull`. In order to do this, we provide a remote counterpart called `refgenieserver`, which provides a web interface and an API that can be used by the CLI (or by any other tool), and allows users to list available assets and download them. We host a public instance at [refgenomes.databio.org](https://refgenomes.databio.org), but you can also use the software to run your own instance if you like.
+While the `refgenie` CLI is useful by itself by allowing `refgenie build` without any remote component, it becomes even more powerful when it can communicate with a remote server via `refgenie pull`. In order to do this, we provide a remote counterpart called `refgenieserver`, which provides a web interface and an API that can be used by the CLI (or by any other tool), and allows users to list available assets and download them. We host a public instance at [refgenomes.databio.org](http://refgenomes.databio.org), but you can also use the software to run your own instance if you like.
 
 ### 3. The `refgenconf` Python package
 
