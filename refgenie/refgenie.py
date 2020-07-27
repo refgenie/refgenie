@@ -568,7 +568,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
 def _exec_list(rgc, remote, genome):
     if remote:
         pfx = "Remote"
-        assemblies, assets = rgc.get_remote_data_str(genome=genome)
+        assemblies, assets = list(rgc.listr(genome=genome, as_str=True).values())[0]
         recipes = None  # Not implemented
     else:
         pfx = "Local"
@@ -758,10 +758,11 @@ def main():
             for server_url in rgc[CFG_SERVERS_KEY]:
                 num_servers += 1
                 try:
-                    rgc[CFG_SERVERS_KEY] = server_url
+                    rgc[CFG_SERVERS_KEY] = [server_url]
                     pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
                     if assets is None and genomes is None:
                         continue
+                    _LOGGER.info("Server URL: {}".format(server_url))
                     _LOGGER.info("{} genomes: {}".format(pfx, genomes))
                     if args.command != LIST_REMOTE_CMD:  # Not implemented yet
                         _LOGGER.info("{} recipes: {}".format(pfx, recipes))
