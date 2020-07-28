@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from argparse import SUPPRESS
 from collections import OrderedDict
 from shutil import rmtree
 from re import sub
@@ -11,8 +10,6 @@ import csv
 import signal
 import json
 
-import pyfaidx
-
 from ._version import __version__
 from .exceptions import MissingGenomeConfigError, MissingFolderError
 from .asset_build_packages import *
@@ -21,8 +18,10 @@ from .const import *
 import logmuse
 import pypiper
 import refgenconf
-from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError, MissingRecipeError, DownloadJsonError
-from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, VersionInHelpParser, is_command_callable
+from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError, \
+    MissingRecipeError, DownloadJsonError, get_dir_digest
+from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, \
+    VersionInHelpParser, is_command_callable
 from ubiquerg.system import is_writable
 from .refget import fasta_checksum
 
@@ -56,7 +55,7 @@ def build_argparser():
         sps[cmd] = add_subparser(cmd, desc)
         # It's required for init
         sps[cmd].add_argument(
-            '-c', '--genome-config', required=(cmd == INIT_CMD), dest="genome_config",
+            '-c', '--genome-config', required=(cmd == INIT_CMD), dest="genome_config", metavar="C",
             help="Path to local genome configuration file. Optional if {} environment variable is set."
                 .format(", ".join(refgenconf.CFG_ENV_VARS)))
 
@@ -125,7 +124,7 @@ def build_argparser():
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, GETSEQ_CMD, TAG_CMD, ID_CMD]:
         # genome is not required for listing actions
         sps[cmd].add_argument(
-            "-g", "--genome", required=cmd in GETSEQ_CMD,
+            "-g", "--genome", required=cmd in GETSEQ_CMD,  metavar="G",
             help="Reference assembly ID, e.g. mm10.")
 
     for cmd in LIST_REMOTE_CMD, LIST_LOCAL_CMD:
@@ -170,8 +169,15 @@ def build_argparser():
         help="Use batch mode: pull large archives, do no overwrite")
 
     sps[INSERT_CMD].add_argument(
-        "-p", "--path", required=True,
+        "-p", "--path", required=True, metavar="P",
         help="Relative local path to asset.")
+
+    sps[INSERT_CMD].add_argument(
+        "-s", "--seek-keys", required=False, type=str, metavar="S",
+        help="""
+        String representation of a JSON object with seek_keys, 
+        e.g. '{"seek_key1": "file.txt"}')
+        """)
 
     sps[GETSEQ_CMD].add_argument(
         "-l", "--locus", required=True,
@@ -179,8 +185,7 @@ def build_argparser():
 
     sps[GET_ASSET_CMD].add_argument(
         "-e", "--check-exists", required=False, action="store_true",
-        help="Whether the returned asset path should be checked for existence "
-             "on disk.")
+        help="Whether the returned asset path should be checked for existence on disk.")
 
     group = sps[TAG_CMD].add_mutually_exclusive_group(required=True)
 
@@ -266,75 +271,6 @@ def get_asset_vars(genome, asset_key, tag, outfolder, specific_args=None, specif
         asset_vars.update(specific_params)
     asset_vars.update(**kwargs)
     return asset_vars
-
-
-def refgenie_add(rgc, asset_dict, path, force=False):
-    """
-    Add an external asset to the config.
-    File existence is checked and asset files are transferred to the selected
-    tag subdirectory
-
-    :param refgenconf.RefGenConf rgc: genome configuration object
-    :param dict asset_dict: a single parsed registry path
-    :param str path: the path provided by the user. Must be relative to the
-        specific genome directory
-    :param bool force: whether the replacement of a possibly existing asset
-        should be forced
-    """
-    # remove the first directory from the provided path if it is the genome name
-    path = os.path.join(*path.split(os.sep)[1:]) \
-        if path.split(os.sep)[0] == asset_dict["genome"] else path
-    tag = asset_dict["tag"] \
-          or rgc.get_default_tag(asset_dict["genome"], asset_dict["asset"])
-    outfolder = \
-        os.path.abspath(os.path.join(rgc[CFG_FOLDER_KEY], asset_dict["genome"]))
-    abs_asset_path = os.path.join(outfolder, path)
-    if asset_dict["seek_key"] is None:
-        # if seek_key is not specified we're about to move a directory to
-        # the tag subdir
-        tag_path = os.path.join(abs_asset_path, tag)
-        from shutil import copytree as cp
-    else:
-        # if seek_key is specified we're about to move just a single file to
-        # he tag subdir
-        tag_path = os.path.join(os.path.dirname(abs_asset_path), tag)
-        if not os.path.exists(tag_path):
-            os.makedirs(tag_path)
-        from shutil import copy2 as cp
-    if os.path.exists(abs_asset_path):
-        if not os.path.exists(tag_path):
-            cp(abs_asset_path, tag_path)
-        else:
-            if not force and not \
-                    query_yes_no("Path '{}' exists. Do you want to overwrite?".
-                                         format(tag_path)):
-                return False
-            else:
-                _remove(tag_path)
-                cp(abs_asset_path, tag_path)
-    else:
-        raise OSError("Absolute path '{}' does not exist. "
-                      "The provided path must be relative to: {}".
-                      format(abs_asset_path, rgc[CFG_FOLDER_KEY]))
-    rgc.make_writable()
-    gat_bundle = [asset_dict["genome"], asset_dict["asset"], tag]
-    td = {CFG_ASSET_PATH_KEY:
-              path if os.path.isdir(abs_asset_path) else os.path.dirname(path)}
-    rgc.update_tags(*gat_bundle, data=td)
-    # seek_key points to the entire dir if not specified
-    seek_key_value = os.path.basename(abs_asset_path) \
-        if asset_dict["seek_key"] is not None else "."
-    sk = {asset_dict["seek_key"] or asset_dict["asset"]: seek_key_value}
-    rgc.update_seek_keys(*gat_bundle, keys=sk)
-    rgc.set_default_pointer(asset_dict["genome"], asset_dict["asset"], tag)
-    # a separate update_tags call since we want to use the get_asset method
-    # that requires a complete asset entry in rgc
-    td = {CFG_ASSET_CHECKSUM_KEY: get_dir_digest(_seek(rgc, *gat_bundle))}
-    rgc.update_tags(*gat_bundle, data=td)
-    # Write the updated refgenie genome configuration
-    rgc.write()
-    rgc.make_readonly()
-    return True
 
 
 def refgenie_initg(rgc, genome, content_checksums):
@@ -714,7 +650,9 @@ def main():
         if len(asset_list) > 1:
             raise NotImplementedError("Can only add 1 asset at a time")
         else:
-            refgenie_add(rgc, asset_list[0], args.path, args.force)
+            rgc.add(path=args.path, genome=asset_list[0]["genome"],
+                    asset=asset_list[0]["asset"], tag=asset_list[0]["tag"],
+                    seek_keys=json.loads(args.seek_keys), force=args.force)
 
     elif args.command == PULL_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
