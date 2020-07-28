@@ -729,7 +729,7 @@ def main():
 
     elif args.command == GETSEQ_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
-        rgc.getseq(rgc, args.genome, args.locus)
+        rgc.getseq(args.genome, args.locus)
 
     elif args.command == REMOVE_CMD:
         force = args.force
