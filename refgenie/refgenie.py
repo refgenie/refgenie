@@ -650,9 +650,12 @@ def main():
         if len(asset_list) > 1:
             raise NotImplementedError("Can only add 1 asset at a time")
         else:
+            sk = args.seek_keys
+            if sk:
+                sk = json.loads(args.seek_keys)
             rgc.add(path=args.path, genome=asset_list[0]["genome"],
                     asset=asset_list[0]["asset"], tag=asset_list[0]["tag"],
-                    seek_keys=json.loads(args.seek_keys), force=args.force)
+                    seek_keys=sk, force=args.force)
 
     elif args.command == PULL_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)

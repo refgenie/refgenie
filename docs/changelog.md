@@ -9,6 +9,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Added 
 - option to handle large asset archives pulling from the CLI (`-l`/`--no-large` flag)
+- `-s`/`--seek-keys` argument to `refgenie add` to specify seek keys for added assets
+
+## Fixed
+- `refgenie add` issues -- added assets are no longer imported to the `genome_folder`; [#180](https://github.com/refgenie/refgenie/issues/180)
 
 ## [0.9.2] - 2020-07-01
 
