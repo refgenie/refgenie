@@ -6,13 +6,14 @@ Each iGenome has the following nested directory structure:
     Build/
     Annotation/ Sequence/
 """
-from .refgenie import refgenie_add
+from .refgenie import _seek, _remove
 from .exceptions import MissingGenomeConfigError
 
-from ubiquerg import untar, mkabs
-from yacman import select_config
+from ubiquerg import untar, mkabs, query_yes_no
 
 import refgenconf
+from refgenconf import get_dir_digest
+from refgenconf.const import *
 from glob import glob
 
 import os
@@ -61,6 +62,75 @@ def untar_or_copy(p, dest):
         print("Moved '{}' to '{}'".format(p, dest))
         return True
     return False
+
+
+def refgenie_add(rgc, asset_dict, path, force=False):
+    """
+    Add an external asset to the config.
+    File existence is checked and asset files are transferred to the selected
+    tag subdirectory
+
+    :param refgenconf.RefGenConf rgc: genome configuration object
+    :param dict asset_dict: a single parsed registry path
+    :param str path: the path provided by the user. Must be relative to the
+        specific genome directory
+    :param bool force: whether the replacement of a possibly existing asset
+        should be forced
+    """
+    # remove the first directory from the provided path if it is the genome name
+    path = os.path.join(*path.split(os.sep)[1:]) \
+        if path.split(os.sep)[0] == asset_dict["genome"] else path
+    tag = asset_dict["tag"] \
+          or rgc.get_default_tag(asset_dict["genome"], asset_dict["asset"])
+    outfolder = \
+        os.path.abspath(os.path.join(rgc[CFG_FOLDER_KEY], asset_dict["genome"]))
+    abs_asset_path = os.path.join(outfolder, path)
+    if asset_dict["seek_key"] is None:
+        # if seek_key is not specified we're about to move a directory to
+        # the tag subdir
+        tag_path = os.path.join(abs_asset_path, tag)
+        from shutil import copytree as cp
+    else:
+        # if seek_key is specified we're about to move just a single file to
+        # he tag subdir
+        tag_path = os.path.join(os.path.dirname(abs_asset_path), tag)
+        if not os.path.exists(tag_path):
+            os.makedirs(tag_path)
+        from shutil import copy2 as cp
+    if os.path.exists(abs_asset_path):
+        if not os.path.exists(tag_path):
+            cp(abs_asset_path, tag_path)
+        else:
+            if not force and not \
+                    query_yes_no("Path '{}' exists. Do you want to overwrite?".
+                                         format(tag_path)):
+                return False
+            else:
+                _remove(tag_path)
+                cp(abs_asset_path, tag_path)
+    else:
+        raise OSError("Absolute path '{}' does not exist. "
+                      "The provided path must be relative to: {}".
+                      format(abs_asset_path, rgc[CFG_FOLDER_KEY]))
+    rgc.make_writable()
+    gat_bundle = [asset_dict["genome"], asset_dict["asset"], tag]
+    td = {CFG_ASSET_PATH_KEY:
+              path if os.path.isdir(abs_asset_path) else os.path.dirname(path)}
+    rgc.update_tags(*gat_bundle, data=td)
+    # seek_key points to the entire dir if not specified
+    seek_key_value = os.path.basename(abs_asset_path) \
+        if asset_dict["seek_key"] is not None else "."
+    sk = {asset_dict["seek_key"] or asset_dict["asset"]: seek_key_value}
+    rgc.update_seek_keys(*gat_bundle, keys=sk)
+    rgc.set_default_pointer(asset_dict["genome"], asset_dict["asset"], tag)
+    # a separate update_tags call since we want to use the get_asset method
+    # that requires a complete asset entry in rgc
+    td = {CFG_ASSET_CHECKSUM_KEY: get_dir_digest(_seek(rgc, *gat_bundle))}
+    rgc.update_tags(*gat_bundle, data=td)
+    # Write the updated refgenie genome configuration
+    rgc.write()
+    rgc.make_readonly()
+    return True
 
 
 def main():

@@ -1,6 +1,19 @@
 # Changelog
 
-This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format. 
+This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
+
+## [0.9.3] - 2020-07-29
+
+## Changed 
+- short option string for `--no-overwrite` from `-n` to `-o`
+
+## Added 
+- option to handle large asset archives pulling from the CLI (`-l`/`--no-large` flag)
+- option to set the maximum archive size to `pull` with no confirmation required (`--size-cutoff` argument)
+- `-s`/`--seek-keys` argument to `refgenie add` to specify seek keys for added assets
+
+## Fixed
+- `refgenie add` issues -- added assets are no longer imported to the `genome_folder`; [#180](https://github.com/refgenie/refgenie/issues/180)
 
 ## [0.9.2] - 2020-07-01
 
