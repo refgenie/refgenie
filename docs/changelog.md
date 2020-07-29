@@ -9,6 +9,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## Added 
 - option to handle large asset archives pulling from the CLI (`-l`/`--no-large` flag)
+- option to set the maximum archive size to `pull` with no confirmation required (`--size-cutoff` argument)
 - `-s`/`--seek-keys` argument to `refgenie add` to specify seek keys for added assets
 
 ## Fixed
