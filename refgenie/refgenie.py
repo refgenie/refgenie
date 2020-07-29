@@ -121,10 +121,7 @@ def build_argparser():
         "-r", "--recipe", required=False, default=None, type=str,
         help="Provide a recipe to use.")
 
-    alias_group = sps[ALIAS_CMD].add_mutually_exclusive_group(
-        # title='Aliases manipulation arguments',
-        # description='Specify the action you want to perform on the aliases'
-    )
+    alias_group = sps[ALIAS_CMD].add_mutually_exclusive_group()
 
     alias_group.add_argument(
         "-r", "--remove", metavar="A", required=False, default=None, type=str, nargs="+",
@@ -133,19 +130,20 @@ def build_argparser():
     alias_group.add_argument(
         "-s", "--set", metavar="K-V", required=False, default=None, type=str, nargs="+",
         help="Key-value pair of alias and genome ID or just an alias when the "
-             "genome ID is to be looked up from a server")
+             "genome ID is to be looked up from a server, "
+             "e.g. 'hg38 fc66db1b06b8e99bb177ae03c139713d' or 'hg38'")
 
     alias_group.add_argument(
         "-g", "--get", metavar="A", required=False, default=None, type=str, nargs=1,
         help="Get genome identifier for an alias.")
 
 
-    # sps[COMPARE_CMD].add_argument("genome1", metavar="GENOME1", type=str, nargs=1,
-    #                            help="First genome for compatibility check")
-    # sps[COMPARE_CMD].add_argument("genome2", metavar="GENOME2", type=str, nargs=1,
-    #                            help="Second genome for compatibility check")
-    # sps[COMPARE_CMD].add_argument("-e", "--no-explanation", action="store_true",
-    #                            help="Do not print compatibility code explanation")
+    sps[COMPARE_CMD].add_argument("genome1", metavar="GENOME1", type=str, nargs=1,
+                               help="First genome for compatibility check")
+    sps[COMPARE_CMD].add_argument("genome2", metavar="GENOME2", type=str, nargs=1,
+                               help="Second genome for compatibility check")
+    sps[COMPARE_CMD].add_argument("-e", "--no-explanation", action="store_true",
+                               help="Do not print compatibility code explanation")
 
     # add 'genome' argument to many commands
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, GETSEQ_CMD, TAG_CMD, ID_CMD]:
@@ -869,12 +867,12 @@ def main():
             print("\n".join("{}\t{}\t{}".format(k.rjust(32), v.ljust(20), ("*" if k in rgc.genomes else "").ljust(20)) for k, v in aliases.items()))
             return
 
-    # elif args.command == COMPARE_CMD:
-    #     rgc = RefGenConf(filepath=gencfg, writable=False)
-    #     res = rgc.compare(args.genome1[0], args.genome2[0],
-    #                       explain=not args.no_explanation)
-    #     if args.no_explanation:
-    #         print(res)
+    elif args.command == COMPARE_CMD:
+        rgc = RefGenConf(filepath=gencfg, writable=False)
+        res = rgc.compare(args.genome1[0], args.genome2[0],
+                          explain=not args.no_explanation)
+        if args.no_explanation:
+            print(res)
 
 
 def _entity_dir_removal_log(directory, entity_class, asset_dict, removed_entities):
