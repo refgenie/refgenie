@@ -1,3 +1,4 @@
 -e git+git://github.com/databio/henge@master#egg=henge
 -e git+git://github.com/refgenie/seqcol@master#egg=seqcol
+-e git+git://github.com/databio/yacman@dev#egg=yacman
 -e git+git://github.com/refgenie/refgenconf@dev#egg=refgenconf
