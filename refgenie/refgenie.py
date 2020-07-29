@@ -850,13 +850,14 @@ def main():
         elif args.set:
             with rgc as r:
                 if len(args.set) == 2:
-                    r.set_genome_alias(genome=args.set[0], digest=args.set[1])
+                    r.set_genome_alias(genome=args.set[0], digest=args.set[1],
+                                       force=True)
                 elif len(args.set) == 1:
-                    r.set_genome_alias(genome=args.set[0])
+                    r.set_genome_alias(genome=args.set[0], force=True)
                 else:
                     _LOGGER.error(
-                        "You can specify either an alias-genomeID pair or just "
-                        "an alias to look up the genomeID from a server")
+                        "You have to specify either an alias-genomeID pair or "
+                        "just an alias to look up the genomeID from a server")
             return
         elif args.remove:
             with rgc as r:
