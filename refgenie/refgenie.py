@@ -351,7 +351,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             data = json.load(f)
         return data
 
-    if os.path.isfile(recipe_name) and recipe_name.endswith(".json"):
+    if recipe_name and os.path.isfile(recipe_name) and recipe_name.endswith(".json"):
         recipe_name = _read_json_file(filepath=recipe_name)
 
     if not hasattr(args, "outfolder") or not args.outfolder:

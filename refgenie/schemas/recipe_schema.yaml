@@ -35,4 +35,4 @@ properties:
     items: 
       type: string
     description: "List of commands that create the asset"
-required: [name, description, assets, required_files, required_assets, required_parameters, command_list]
+required: [description, assets, required_files, required_assets, required_parameters, command_list]
