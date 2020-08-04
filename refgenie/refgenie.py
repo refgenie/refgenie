@@ -315,7 +315,7 @@ def refgenie_initg(rgc, genome, content_checksums):
     :param str genome: name of the genome
     :param dict content_checksums: checksums of individual content_checksums, e.g. chromosomes
     """
-    genome_dir = os.path.join(rgc[CFG_FOLDER_KEY], genome)
+    genome_dir = os.path.join(rgc.data_dir, genome)
     if is_writable(genome_dir):
         output_file = os.path.join(genome_dir, "{}_sequence_digests.tsv".format(genome))
         with open(output_file, "w") as contents_file:
@@ -355,7 +355,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
     if not hasattr(args, "outfolder") or not args.outfolder:
         # Default to genome_folder
         _LOGGER.debug("No outfolder provided, using genome config.")
-        args.outfolder = rgc[CFG_FOLDER_KEY]
+        args.outfolder = rgc.data_dir
 
     _LOGGER.debug("Default config file: {}".format(default_config_file()))
 
@@ -429,6 +429,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             # create a temporary object to run seek on.
             tmp_rgc = RefGenConf()
             tmp_rgc[CFG_FOLDER_KEY] = rgc[CFG_FOLDER_KEY]
+            tmp_rgc[CFG_ALIASES_KEY] = rgc[CFG_ALIASES_KEY]
             tmp_rgc.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key})
             tmp_rgc.update_seek_keys(*gat, keys={k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
             digest = get_dir_digest(
@@ -543,6 +544,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                     _LOGGER.debug("adding tag ({}/{}:{}) description: '{}'".
                                   format(genome, asset_key, asset_tag, args.tag_description))
                     r.update_tags(genome, asset_key, asset_tag, {CFG_TAG_DESC_KEY: args.tag_description})
+                rgc._symlink_alias(genome, asset_key, asset_tag)
         else:
             _raise_missing_recipe_error(recipe_name)
 
@@ -564,7 +566,7 @@ def _exec_list(rgc, remote, genome):
     return pfx, assemblies, assets, recipes
 
 
-def perm_check_x(file_to_check, message_tag):
+def perm_check_x(file_to_check, message_tag="genome directory"):
     """
     Check X_OK permission on a path, providing according messaging and bool val.
 
@@ -578,8 +580,7 @@ def perm_check_x(file_to_check, message_tag):
         _LOGGER.error(msg)
         raise ValueError(msg)
     if not os.access(file_to_check, os.X_OK):
-        _LOGGER.error("Insufficient permissions to write to {}: "
-                      "{}".format(message_tag, file_to_check))
+        _LOGGER.error("Insufficient permissions to write to {}: ".format(file_to_check))
         return False
     return True
 
@@ -724,15 +725,13 @@ def main():
             force_large = True
             force = False
 
-        outdir = rgc[CFG_FOLDER_KEY]
+        outdir = rgc.data_dir
         if not os.path.exists(outdir):
             raise MissingFolderError(outdir)
-        target = _key_to_name(CFG_FOLDER_KEY)
-        if not perm_check_x(outdir, target):
+        if not perm_check_x(outdir):
             return
         if not _single_folder_writeable(outdir):
-            _LOGGER.error("Insufficient permissions to write to {}: {}".
-                          format(target, outdir))
+            _LOGGER.error("Insufficient permissions to write to: {}".format(outdir))
             return
 
         for a in asset_list:
@@ -1053,7 +1052,7 @@ def _seek(rgc, genome_name, asset_name, tag_name=None,
     Strict seek. Most use cases in this package require file existence
      check in seek. This function makes it easier
     """
-    return rgc.seek(genome_name=genome_name,
+    return rgc.seek_src(genome_name=genome_name,
                     asset_name=asset_name,
                     tag_name=tag_name,
                     seek_key=seek_key,
