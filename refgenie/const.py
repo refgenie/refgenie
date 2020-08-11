@@ -42,3 +42,13 @@ SUBPARSER_MESSAGES = {
     ALIAS_CMD: "Interact with aliases.",
     COMPARE_CMD: "compare two genomes."
 }
+
+ALIAS_GET_CMD = "get"
+ALIAS_SET_CMD = "set"
+ALIAS_REMOVE_CMD = "remove"
+
+ALIAS_SUBPARSER_MESSAGES = {
+    ALIAS_REMOVE_CMD: "remove aliases.",
+    ALIAS_SET_CMD: "set aliases.",
+    ALIAS_GET_CMD: "get aliases."
+}

@@ -24,6 +24,7 @@ from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, \
     VersionInHelpParser, is_command_callable
 from ubiquerg.system import is_writable
 from yacman import UndefinedAliasError
+from argparse import HelpFormatter
 from .refget import fasta_checksum
 
 _LOGGER = None
@@ -47,13 +48,17 @@ def build_argparser():
 
     subparsers = parser.add_subparsers(dest="command")
 
-    def add_subparser(cmd, description):
+    def add_subparser(cmd, msg, subparsers):
         return subparsers.add_parser(
-            cmd, description=description, help=description)
+            cmd, description=msg, help=msg,
+            formatter_class=lambda prog: HelpFormatter(
+                prog, max_help_position=37, width=90
+            )
+        )
 
     sps = {}
     for cmd, desc in SUBPARSER_MESSAGES.items():
-        sps[cmd] = add_subparser(cmd, desc)
+        sps[cmd] = add_subparser(cmd, desc, subparsers)
         # It's required for init
         sps[cmd].add_argument(
             '-c', '--genome-config', required=(cmd == INIT_CMD), dest="genome_config", metavar="C",
@@ -121,22 +126,30 @@ def build_argparser():
         "-r", "--recipe", required=False, default=None, type=str,
         help="Provide a recipe to use.")
 
-    alias_group = sps[ALIAS_CMD].add_mutually_exclusive_group()
+    alias_subparser = sps[ALIAS_CMD]
+    alias_subsubparsers = alias_subparser.add_subparsers(dest="subcommand")
 
-    alias_group.add_argument(
-        "-r", "--remove", metavar="A", required=False, default=None, type=str, nargs="+",
-        help="Remove an alias.")
+    alias_sps = {}
+    for cmd, desc in ALIAS_SUBPARSER_MESSAGES.items():
+        alias_sps[cmd] = add_subparser(cmd, desc, alias_subsubparsers)
 
-    alias_group.add_argument(
-        "-s", "--set", metavar="K-V", required=False, default=None, type=str, nargs="+",
-        help="Key-value pair of alias and genome ID or just an alias when the "
-             "genome ID is to be looked up from a server, "
-             "e.g. 'hg38 fc66db1b06b8e99bb177ae03c139713d' or 'hg38'")
+    alias_sps[ALIAS_SET_CMD].add_argument(
+        "-a", "--aliases", metavar="A", required=False, default=None, type=str,
+        nargs="+", help="Aliases to set.")
+    alias_sps[ALIAS_SET_CMD].add_argument(
+        "-d", "--digest", metavar="D", required=True, type=str,
+        help="Digest to set.")
 
-    alias_group.add_argument(
-        "-g", "--get", metavar="A", required=False, default=None, type=str, nargs=1,
-        help="Get genome identifier for an alias.")
+    alias_sps[ALIAS_REMOVE_CMD].add_argument(
+        "-a", "--aliases", metavar="A", required=False, default=None, type=str,
+        nargs="+", help="Aliases to remove.")
+    alias_sps[ALIAS_REMOVE_CMD].add_argument(
+        "-d", "--digest", metavar="D", required=True, type=str,
+        help="Digest to remove.")
 
+    alias_sps[ALIAS_GET_CMD].add_argument(
+        "-a", "--aliases", metavar="A", required=True, type=str, nargs="+",
+        help="Aliases to get the digests for.")
 
     sps[COMPARE_CMD].add_argument("genome1", metavar="GENOME1", type=str, nargs=1,
                                help="First genome for compatibility check")
@@ -841,30 +854,19 @@ def main():
         return
     elif args.command == ALIAS_CMD:
         rgc = RefGenConf(filepath=gencfg)
-        if args.get:
-            print(rgc.get_genome_alias_digest(alias=args.get[0]))
+        if args.subcommand == ALIAS_GET_CMD:
+            for a in args.aliases:
+                print(rgc.get_genome_alias_digest(alias=a))
             return
-        elif args.set:
-            with rgc as r:
-                if len(args.set) == 2:
-                    r.set_genome_alias(genome=args.set[0], digest=args.set[1],
-                                       force=True)
-                elif len(args.set) == 1:
-                    r.set_genome_alias(genome=args.set[0], force=True)
-                else:
-                    _LOGGER.error(
-                        "You have to specify either an alias-genomeID pair or "
-                        "just an alias to look up the genomeID from a server")
+        if args.subcommand == ALIAS_SET_CMD:
+            rgc.set_genome_alias(digest=args.digest, genome=args.aliases)
             return
-        elif args.remove:
-            with rgc as r:
-                [r[CFG_ALIASES_KEY].__delitem__(r.get_genome_alias_digest(a)) for a in args.remove]
+        elif args.subcommand == ALIAS_REMOVE_CMD:
+            rgc.remove_genome_aliases(digest=args.digest, aliases=args.aliases)
             return
         else:
-            aliases = rgc.genome_aliases
-            print("genomeID".rjust(32) + "\talias".ljust(20) + "\tinitialized".ljust(20) + "\n")
-            print("\n".join("{}\t{}\t{}".format(k.rjust(32), v.ljust(20), ("*" if k in rgc.genomes else "").ljust(20)) for k, v in aliases.items()))
-            return
+            # TODO: display entire alias table here
+            raise NotImplementedError("Alias table inspection is not implemented yet")
 
     elif args.command == COMPARE_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
