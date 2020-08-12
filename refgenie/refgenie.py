@@ -135,10 +135,10 @@ def build_argparser():
 
     alias_sps[ALIAS_SET_CMD].add_argument(
         "-a", "--aliases", metavar="A", required=False, default=None, type=str,
-        nargs="+", help="Aliases to set.")
+        nargs="+", help="Aliases to set; single if the digest is to be retrieved from the server.")
     alias_sps[ALIAS_SET_CMD].add_argument(
-        "-d", "--digest", metavar="D", required=True, type=str,
-        help="Digest to set.")
+        "-d", "--digest", metavar="D", required=False, type=str,
+        help="Digest to set; leave out if the digest is to be retrieved from the server.")
 
     alias_sps[ALIAS_REMOVE_CMD].add_argument(
         "-a", "--aliases", metavar="A", required=False, default=None, type=str,
@@ -152,11 +152,11 @@ def build_argparser():
         help="Aliases to get the digests for.")
 
     sps[COMPARE_CMD].add_argument("genome1", metavar="GENOME1", type=str, nargs=1,
-                               help="First genome for compatibility check")
+                               help="First genome for compatibility check.")
     sps[COMPARE_CMD].add_argument("genome2", metavar="GENOME2", type=str, nargs=1,
-                               help="Second genome for compatibility check")
+                               help="Second genome for compatibility check.")
     sps[COMPARE_CMD].add_argument("-e", "--no-explanation", action="store_true",
-                               help="Do not print compatibility code explanation")
+                               help="Do not print compatibility code explanation.")
 
     # add 'genome' argument to many commands
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, GETSEQ_CMD, TAG_CMD, ID_CMD]:
