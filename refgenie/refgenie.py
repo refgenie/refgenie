@@ -139,6 +139,9 @@ def build_argparser():
     alias_sps[ALIAS_SET_CMD].add_argument(
         "-d", "--digest", metavar="D", required=False, type=str,
         help="Digest to set; leave out if the digest is to be retrieved from the server.")
+    alias_sps[ALIAS_SET_CMD].add_argument(
+        "-r", "--reset", action="store_true",
+        help="Whether all the aliases should be removed prior to setting new ones.")
 
     alias_sps[ALIAS_REMOVE_CMD].add_argument(
         "-a", "--aliases", metavar="A", required=False, default=None, type=str,
@@ -859,7 +862,8 @@ def main():
                 print(rgc.get_genome_alias_digest(alias=a))
             return
         if args.subcommand == ALIAS_SET_CMD:
-            rgc.set_genome_alias(digest=args.digest, genome=args.aliases)
+            rgc.set_genome_alias(digest=args.digest, genome=args.aliases,
+                                 reset_digest=args.reset)
             return
         elif args.subcommand == ALIAS_REMOVE_CMD:
             rgc.remove_genome_aliases(digest=args.digest, aliases=args.aliases)
