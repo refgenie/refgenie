@@ -4,6 +4,8 @@ from collections import OrderedDict
 from shutil import rmtree
 from re import sub
 from requests import ConnectionError
+from rich.console import Console
+
 import os
 import sys
 import csv
@@ -788,12 +790,8 @@ def main():
             # Restore original server list, even when we couldn't find assets on a server
             rgc[CFG_SERVERS_KEY] = server_list
         else:  # Only check local assets once
-            _LOGGER.info("Server subscriptions: {}".format(", ".join(rgc[CFG_SERVERS_KEY])))
-            pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
-            _LOGGER.info("{} genomes: {}".format(pfx, genomes))
-            if args.command != LIST_REMOTE_CMD:  # Not implemented yet
-                _LOGGER.info("{} recipes: {}".format(pfx, recipes))
-            _LOGGER.info("{} assets:\n{}".format(pfx, assets))
+            console = Console()
+            console.print(rgc.get_local_asset_table(genomes=args.genome))
 
     elif args.command == GETSEQ_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
@@ -864,9 +862,13 @@ def main():
     elif args.command == ALIAS_CMD:
         rgc = RefGenConf(filepath=gencfg)
         if args.subcommand == ALIAS_GET_CMD:
-            for a in args.aliases:
-                print(rgc.get_genome_alias_digest(alias=a))
-            return
+            if args.aliases is not None:
+                for a in args.aliases:
+                    print(rgc.get_genome_alias_digest(alias=a))
+                return
+            console = Console()
+            console.print(rgc.genome_aliases_table)
+
         if args.subcommand == ALIAS_SET_CMD:
             rgc.set_genome_alias(digest=args.digest, genome=args.aliases,
                                  reset_digest=args.reset)
@@ -874,9 +876,6 @@ def main():
         elif args.subcommand == ALIAS_REMOVE_CMD:
             rgc.remove_genome_aliases(digest=args.digest, aliases=args.aliases)
             return
-        else:
-            # TODO: display entire alias table here
-            raise NotImplementedError("Alias table inspection is not implemented yet")
 
     elif args.command == COMPARE_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
