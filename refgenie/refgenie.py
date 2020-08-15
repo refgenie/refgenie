@@ -25,7 +25,6 @@ from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, \
 from ubiquerg.system import is_writable
 from yacman import UndefinedAliasError
 from argparse import HelpFormatter
-from .refget import fasta_checksum
 
 _LOGGER = None
 
@@ -59,6 +58,9 @@ def build_argparser():
     sps = {}
     for cmd, desc in SUBPARSER_MESSAGES.items():
         sps[cmd] = add_subparser(cmd, desc, subparsers)
+        # alias is nested and alias subcommands require config path
+        if cmd == ALIAS_CMD:
+            continue
         # It's required for init
         sps[cmd].add_argument(
             '-c', '--genome-config', required=(cmd == INIT_CMD), dest="genome_config", metavar="C",
@@ -132,6 +134,10 @@ def build_argparser():
     alias_sps = {}
     for cmd, desc in ALIAS_SUBPARSER_MESSAGES.items():
         alias_sps[cmd] = add_subparser(cmd, desc, alias_subsubparsers)
+        alias_sps[cmd].add_argument(
+            '-c', '--genome-config', required=(cmd == INIT_CMD), dest="genome_config", metavar="C",
+            help="Path to local genome configuration file. Optional if {} environment variable is set."
+                .format(", ".join(refgenconf.CFG_ENV_VARS)))
 
     alias_sps[ALIAS_SET_CMD].add_argument(
         "-a", "--aliases", metavar="A", required=False, default=None, type=str,
@@ -151,7 +157,7 @@ def build_argparser():
         help="Digest to remove.")
 
     alias_sps[ALIAS_GET_CMD].add_argument(
-        "-a", "--aliases", metavar="A", required=True, type=str, nargs="+",
+        "-a", "--aliases", metavar="A", required=False, type=str, nargs="+",
         help="Aliases to get the digests for.")
 
     sps[COMPARE_CMD].add_argument("genome1", metavar="GENOME1", type=str, nargs=1,
