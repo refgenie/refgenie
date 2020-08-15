@@ -471,7 +471,8 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
         asset_tag = a["tag"] or rgc.get_default_tag(genome, a["asset"], use_existing=False)
         recipe_name = recipe_name or asset_key
 
-        if recipe_name in asset_build_packages.keys() or isinstance(recipe_name, dict):
+        if isinstance(recipe_name, dict) or \
+                (isinstance(recipe_name, str) and recipe_name in asset_build_packages.keys()):
             if isinstance(recipe_name, dict):
                 _LOGGER.info("Using custom recipe: \n{}".format(recipe_name))
                 asset_build_package = _check_recipe(recipe_name)
