@@ -448,18 +448,14 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             recipe_file_name = TEMPLATE_RECIPE_JSON.format(asset_key, tag)
             with open(os.path.join(log_outfolder, recipe_file_name), 'w') as outfile:
                 json.dump(build_pkg, outfile)
-            # in order to prevent locking the config file for writing once while
-            # being able to use the seek method for digest calculation we
-            # create a temporary object to run seek on.
-            tmp_rgc = RefGenConf()
-            tmp_rgc[CFG_FOLDER_KEY] = rgc[CFG_FOLDER_KEY]
-            tmp_rgc[CFG_ALIASES_KEY] = rgc[CFG_ALIASES_KEY]
-            tmp_rgc.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key})
-            tmp_rgc.update_seek_keys(*gat, keys={k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
-            digest = get_dir_digest(
-                _seek(tmp_rgc, genome, asset_key, tag, enclosing_dir=True), pm)
+            # since the assets are always built to a standard dir structure, we
+            # can just stitch a path together for asset digest calculation
+            asset_dir = os.path.join(rgc.data_dir, *gat)
+            if not os.path.exists(asset_dir):
+                raise OSError("Could not compute asset digest. Path does not "
+                              "exist: {}".format(asset_dir))
+            digest = get_dir_digest(asset_dir)
             _LOGGER.info("Asset digest: {}".format(digest))
-            del tmp_rgc
             # add updates to config file
             with rgc as r:
                 r.update_assets(*gat[0:2], data={CFG_ASSET_DESC_KEY: build_pkg[DESC]})
