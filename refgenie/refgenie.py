@@ -760,8 +760,7 @@ def main():
                      force_large=force_large, size_cutoff=args.size_cutoff)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
-        rgc = RefGenConf(filepath=gencfg, writable=False,
-                         genome_exact=args.command == LIST_REMOTE_CMD)
+        rgc = RefGenConf(filepath=gencfg, writable=False)
         if args.command == LIST_REMOTE_CMD:
             num_servers = 0
             # Keep all servers so that child updates maintain server list
@@ -822,8 +821,7 @@ def main():
                 return
             force = True
         for a in asset_list:
-            rgc.remove(genome=a["genome"], asset=a["asset"], tag=a["tag"],
-                       force=force, aliases=args.aliases)
+            rgc.remove(genome=a["genome"], asset=a["asset"], tag=a["tag"], force=force)
 
     elif args.command == TAG_CMD:
         rgc = RefGenConf(filepath=gencfg)
