@@ -101,7 +101,6 @@ jobs:
         refgenie alias remove -c genomes/g.yaml --aliases t7_new t7_new1 t7 --digest 162a8922a1529a5ec1ce0e69e65d7476936258586a79ba0b
         ./tests/assert_in_file.sh genomes/g.yaml t7_new 1
         ./tests/assert_in_file.sh genomes/g.yaml t7_new1 1
-        ./tests/assert_in_file.sh genomes/g.yaml t7 1
         ./tests/assert_in_file.sh genomes/g.yaml t7_another 0
         if [ -L `refgenie seek -c genomes/g.yaml t7_new/fasta` ]; then
             echo "`refgenie seek -c genomes/g.yaml t7_new/fasta` exists."
