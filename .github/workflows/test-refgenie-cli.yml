@@ -102,11 +102,11 @@ jobs:
         ./tests/assert_in_file.sh genomes/g.yaml t7_new 1
         ./tests/assert_in_file.sh genomes/g.yaml t7_new1 1
         ./tests/assert_in_file.sh genomes/g.yaml t7_another 0
-        if [ -L `refgenie seek -c genomes/g.yaml t7_new/fasta` ]; then
-            echo "`refgenie seek -c genomes/g.yaml t7_new/fasta` exists."
-          exit 1
+        if [ -L genomes/alias/t7_new/fasta/default/162a8922a1529a5ec1ce0e69e65d7476936258586a79ba0b.fa.gz ]; then
+            echo "'genomes/alias/t7_new/fasta/default/162a8922a1529a5ec1ce0e69e65d7476936258586a79ba0b.fa.gz' exists."
+            exit 1
         else
-            echo "Error: `refgenie seek -c genomes/g.yaml t7_new/fasta` does not exist."
+            echo "Error: 'genomes/alias/t7_new/fasta/default/162a8922a1529a5ec1ce0e69e65d7476936258586a79ba0b.fa.gz' does not exist."
         fi
 
     - name: refgenie get aliases
