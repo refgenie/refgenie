@@ -761,33 +761,27 @@ def main():
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         rgc = RefGenConf(filepath=gencfg, writable=False)
+        console = Console()
         if args.command == LIST_REMOTE_CMD:
             num_servers = 0
-            # Keep all servers so that child updates maintain server list
-            server_list = rgc[CFG_SERVERS_KEY]
             bad_servers = []
             for server_url in rgc[CFG_SERVERS_KEY]:
                 num_servers += 1
                 try:
-                    rgc[CFG_SERVERS_KEY] = [server_url]
-                    pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
-                    if assets is None and genomes is None:
-                        continue
-                    _LOGGER.info("Server URL: {}".format(server_url))
-                    _LOGGER.info("{} genomes: {}".format(pfx, genomes))
-                    if args.command != LIST_REMOTE_CMD:  # Not implemented yet
-                        _LOGGER.info("{} recipes: {}".format(pfx, recipes))
-                    _LOGGER.info("{} assets:\n{}".format(pfx, assets))
+                    table = rgc.get_asset_table(
+                        genomes=args.genome, server_url=server_url)
                 except (DownloadJsonError, ConnectionError):
                     bad_servers.append(server_url)
                     continue
-            if num_servers >= len(server_list) and bad_servers:
-                _LOGGER.error("Could not list assets from the following server(s): {}".format(bad_servers))
-            # Restore original server list, even when we couldn't find assets on a server
-            rgc[CFG_SERVERS_KEY] = server_list
+                else:
+                    console.print(table)
+            if num_servers >= len(rgc[CFG_SERVERS_KEY]) and bad_servers:
+                _LOGGER.error(
+                    "Could not list assets from the following servers: {}".
+                        format(bad_servers)
+                )
         else:  # Only check local assets once
-            console = Console()
-            console.print(rgc.get_local_asset_table(genomes=args.genome))
+            console.print(rgc.get_asset_table(genomes=args.genome))
 
     elif args.command == GETSEQ_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
