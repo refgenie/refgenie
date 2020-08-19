@@ -505,7 +505,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                     g, a, t, s = genome, default["asset"], \
                                  rgc.get_default_tag(genome, default["asset"]), \
                                  req_asset_data["seek_key"]
-                parent_assets.append("{}/{}:{}".format(rgc.get_genome_alias_digest(g), a, t))
+                parent_assets.append("{}/{}:{}".format(rgc.get_genome_alias_digest(g, fallback=True), a, t))
                 input_assets[req_asset[KEY]] = _seek(rgc, g, a, t, s)
             _LOGGER.debug("Using parents: {}".format(", ".join(parent_assets)))
             _LOGGER.debug("Provided files: {}".format(specified_args))
@@ -536,7 +536,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                                           alias=ori_genome)
             else:
                 try:
-                    genome = rgc.get_genome_alias_digest(genome)
+                    genome = rgc.get_genome_alias_digest(genome, fallback=True)
                 except UndefinedAliasError:
                     _LOGGER.error("Genome '{}' has not been initialized yet; "
                                   "no key found for this alias".format(genome))
