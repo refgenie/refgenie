@@ -374,6 +374,9 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
         return data
 
     if recipe_name and os.path.isfile(recipe_name) and recipe_name.endswith(".json"):
+        if len(asset_list) != 1:
+            raise NotImplementedError(
+                "Custom recipes are not allowed when build more than asset at a time.")
         recipe_name = _read_json_file(filepath=recipe_name)
 
     if not hasattr(args, "outfolder") or not args.outfolder:
@@ -541,6 +544,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                     _LOGGER.error("Genome '{}' has not been initialized yet; "
                                   "no key found for this alias".format(genome))
                     return
+            recipe_name = None
             genome_outfolder = os.path.join(args.outfolder, genome)
             if not build_asset(genome, asset_key, asset_tag, asset_build_package, genome_outfolder,
                                specified_args, specified_params, **input_assets):
