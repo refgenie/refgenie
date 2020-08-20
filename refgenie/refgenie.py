@@ -228,7 +228,7 @@ def build_argparser():
         "-s", "--seek-keys", required=False, type=str, metavar="S",
         help="""
         String representation of a JSON object with seek_keys, 
-        e.g. '{"seek_key1": "file.txt"}')
+        e.g. '{"seek_key1": "file.txt"}'
         """)
 
     sps[GETSEQ_CMD].add_argument(
