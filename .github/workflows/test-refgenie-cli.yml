@@ -115,11 +115,11 @@ jobs:
 
     - name: refgneie add asset
       run: |
-        refgenie add t7/test_asset -c genomes/g.yaml  --path ../tests/data --seek-keys '{"genomes": "genomes.yaml"}'
+        refgenie add t7_another/test_asset -c genomes/g.yaml  --path ../tests/data --seek-keys '{"genomes": "genomes.yaml"}'
         ./tests/assert_in_file.sh genomes/g.yaml test_asset 0
-        if [ -L `refgenie seek t7/test_asset.genomes:default -c genomes/g.yaml`]; then
-            echo "`refgenie seek t7/test_asset.genomes:default -c genomes/g.yaml` exists."
+        if [ -L `refgenie seek t7_another/test_asset.genomes:default -c genomes/g.yaml`]; then
+            echo "`refgenie seek t7_another/test_asset.genomes:default -c genomes/g.yaml` exists."
         else
-            echo "Error: `refgenie seek t7/test_asset.genomes:default -c genomes/g.yaml` does not exist."
+            echo "Error: `refgenie seek t7_another/test_asset.genomes:default -c genomes/g.yaml` does not exist."
             exit 1
         fi
