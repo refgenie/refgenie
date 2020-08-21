@@ -123,3 +123,18 @@ jobs:
             echo "Error: `refgenie seek t7_another/test_asset.recipe:default -c genomes/g.yaml` does not exist."
             exit 1
         fi
+
+    - name: refgenie tag asset
+      run: |
+        refgenie tag -c genomes/g.yaml t7_another/fasta:default -t new_tag
+        ./tests/assert_in_file.sh genomes/g.yaml new_tag 0
+        if [ -f `refgenie seek t7_another/fasta:new_tag -c genomes/g.yaml` ]; then
+            echo "`refgenie seek t7_another/fasta:new_tag -c genomes/g.yaml` exists."
+        else
+            echo "Error: `refgenie seek t7_another/fasta:new_tag -c genomes/g.yaml` does not exist."
+            exit 1
+        fi
+
+    - name: refgenie id
+      run: |
+        ./tests/assert_in_file.sh genomes/g.yaml `refgenie id -c genomes/g.yaml t7_another/fasta:new_tag` 0
