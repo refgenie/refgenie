@@ -364,11 +364,8 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
     :param str gencfg: path to the genome configuration file
     :param argparse.Namespace args: parsed command-line options/arguments
     """
-    # if config read lock skip was not forced, check if dir is writable and set
-    # the default to the result
-    skip_read_lock = is_writable(os.path.dirname(gencfg)) \
-        if not args.skip_read_lock else True
-    rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+    rgc = RefGenConf(filepath=gencfg, writable=False,
+                     skip_read_lock=_skip_lock(args.skip_read_lock, gencfg))
     specified_args = _parse_user_build_input(args.files)
     specified_params = _parse_user_build_input(args.params)
 
@@ -637,10 +634,7 @@ def main():
         raise MissingGenomeConfigError(args.genome_config)
     _LOGGER.debug("Determined genome config: {}".format(gencfg))
 
-    # if config read lock skip was not forced, check if dir is writable and set
-    # the default to the result
-    skip_read_lock = is_writable(os.path.dirname(gencfg)) \
-        if not args.skip_read_lock else True
+    skip_read_lock = _skip_lock(args.skip_read_lock, gencfg)
 
     # From user input we want to construct a list of asset dicts, where each
     # asset has a genome name, asset name, and tag
@@ -1073,3 +1067,15 @@ def _seek(rgc, genome_name, asset_name, tag_name=None,
                     seek_key=seek_key,
                     enclosing_dir=enclosing_dir,
                     strict_exists=True)
+
+
+def _skip_lock(skip_arg, cfg):
+    """
+    If config read lock skip was not forced, check if dir is writable and set
+    the default to the result
+
+    :param bool skip_arg: argument selected on the CLI
+    :param str cfg: path to the confjg
+    :return bool: decision -- whether to skip the file lock for read
+    """
+    return is_writable(os.path.dirname(cfg)) if not skip_arg else True
