@@ -364,6 +364,10 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
     :param str gencfg: path to the genome configuration file
     :param argparse.Namespace args: parsed command-line options/arguments
     """
+    # if config read lock skip was not forced, check if dir is writable and set
+    # the default to the result
+    skip_read_lock = is_writable(os.path.dirname(gencfg)) \
+        if not args.skip_read_lock else True
     rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
     specified_args = _parse_user_build_input(args.files)
     specified_params = _parse_user_build_input(args.params)
