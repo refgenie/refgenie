@@ -53,7 +53,7 @@ def build_argparser():
         return subparsers.add_parser(
             cmd, description=msg, help=msg,
             formatter_class=lambda prog: HelpFormatter(
-                prog, max_help_position=37, width=90
+                prog, max_help_position=40, width=90
             )
         )
 
@@ -68,6 +68,9 @@ def build_argparser():
             '-c', '--genome-config', required=(cmd == INIT_CMD), dest="genome_config", metavar="C",
             help="Path to local genome configuration file. Optional if {} environment variable is set."
                 .format(", ".join(refgenconf.CFG_ENV_VARS)))
+        sps[cmd].add_argument(
+            '--skip-read-lock', required=False, action="store_true",
+            help="Whether the config file should not be locked for reading")
 
     sps[INIT_CMD].add_argument('-s', '--genome-server', nargs='+', default=DEFAULT_SERVER,
                                help="URL(s) to use for the {} attribute in config file. Default: {}."
@@ -137,9 +140,12 @@ def build_argparser():
     for cmd, desc in ALIAS_SUBPARSER_MESSAGES.items():
         alias_sps[cmd] = add_subparser(cmd, desc, alias_subsubparsers)
         alias_sps[cmd].add_argument(
-            '-c', '--genome-config', required=(cmd == INIT_CMD), dest="genome_config", metavar="C",
+            '-c', '--genome-config', required=False, dest="genome_config", metavar="C",
             help="Path to local genome configuration file. Optional if {} environment variable is set."
                 .format(", ".join(refgenconf.CFG_ENV_VARS)))
+        alias_sps[cmd].add_argument(
+            '--skip-read-lock', required=False, action="store_true",
+            help="Whether the config file should not be locked for reading")
 
     alias_sps[ALIAS_SET_CMD].add_argument(
         "-a", "--aliases", metavar="A", required=False, default=None, type=str,
@@ -177,7 +183,7 @@ def build_argparser():
             help="Reference assembly ID, e.g. mm10.")
 
     for cmd in LIST_REMOTE_CMD, LIST_LOCAL_CMD:
-        sps[cmd].add_argument("-g", "--genome", required=False, type=str,
+        sps[cmd].add_argument("-g", "--genome", required=False, type=str, metavar="G",
                               nargs="*", help="Reference assembly ID, e.g. mm10.")
 
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, TAG_CMD, ID_CMD]:
@@ -358,7 +364,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
     :param str gencfg: path to the genome configuration file
     :param argparse.Namespace args: parsed command-line options/arguments
     """
-    rgc = RefGenConf(filepath=gencfg, writable=False)
+    rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
     specified_args = _parse_user_build_input(args.files)
     specified_params = _parse_user_build_input(args.params)
 
@@ -627,9 +633,13 @@ def main():
         raise MissingGenomeConfigError(args.genome_config)
     _LOGGER.debug("Determined genome config: {}".format(gencfg))
 
+    # if config read lock skip was not forced, check if dir is writable and set
+    # the default to the result
+    skip_read_lock = is_writable(os.path.dirname(gencfg)) \
+        if not args.skip_read_lock else True
+
     # From user input we want to construct a list of asset dicts, where each
     # asset has a genome name, asset name, and tag
-
     if "asset_registry_paths" in args and args.asset_registry_paths:
         _LOGGER.debug("Found registry_path: {}".format(args.asset_registry_paths))
         asset_list = [parse_registry_path(x) for x in args.asset_registry_paths]
@@ -681,7 +691,7 @@ def main():
         if args.genome_archive_config:
             entries.update({CFG_ARCHIVE_CONFIG_KEY: args.genome_archive_config})
         _LOGGER.debug("initializing with entries: {}".format(entries))
-        rgc = RefGenConf(entries=entries)
+        rgc = RefGenConf(entries=entries, skip_read_lock=skip_read_lock)
         rgc.initialize_config_file(os.path.abspath(gencfg))
 
     elif args.command == BUILD_CMD:
@@ -705,7 +715,7 @@ def main():
         refgenie_build(gencfg, asset_list[0]["genome"], asset_list, recipe_name, args)
 
     elif args.command == GET_ASSET_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False)
+        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
         check = args.check_exists if args.check_exists else None
         for a in asset_list:
             _LOGGER.debug("getting asset: '{}/{}.{}:{}'".
@@ -715,7 +725,7 @@ def main():
         return
 
     elif args.command == INSERT_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False)
+        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
         if len(asset_list) > 1:
             raise NotImplementedError("Can only add 1 asset at a time")
         else:
@@ -727,7 +737,7 @@ def main():
                     seek_keys=sk, force=args.force)
 
     elif args.command == PULL_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False)
+        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
         # existing assets overwriting
         if args.no_overwrite:
             force = False
@@ -761,7 +771,7 @@ def main():
                      force_large=force_large, size_cutoff=args.size_cutoff)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
-        rgc = RefGenConf(filepath=gencfg, writable=False)
+        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
         console = Console()
         if args.command == LIST_REMOTE_CMD:
             num_servers = 0
@@ -785,12 +795,12 @@ def main():
             console.print(rgc.get_asset_table(genomes=args.genome))
 
     elif args.command == GETSEQ_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False)
+        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
         print(rgc.getseq(args.genome, args.locus))
 
     elif args.command == REMOVE_CMD:
         force = args.force
-        rgc = RefGenConf(filepath=gencfg)
+        rgc = RefGenConf(filepath=gencfg, skip_read_lock=skip_read_lock)
         for a in asset_list:
             a["tag"] = a["tag"] or rgc.get_default_tag(a["genome"], a["asset"],
                                                        use_existing=False)
@@ -819,7 +829,7 @@ def main():
             rgc.remove(genome=a["genome"], asset=a["asset"], tag=a["tag"], force=force)
 
     elif args.command == TAG_CMD:
-        rgc = RefGenConf(filepath=gencfg)
+        rgc = RefGenConf(filepath=gencfg, skip_read_lock=skip_read_lock)
         if len(asset_list) > 1:
             raise NotImplementedError("Can only tag 1 asset at a time")
         if args.default:
@@ -830,7 +840,7 @@ def main():
         rgc.tag(a["genome"], a["asset"], a["tag"], args.tag)
 
     elif args.command == ID_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False)
+        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
         if len(asset_list) == 1:
             g, a = asset_list[0]["genome"], asset_list[0]["asset"]
             t = asset_list[0]["tag"] or rgc.get_default_tag(g, a)
@@ -842,15 +852,15 @@ def main():
             print("{}/{}:{},".format(g, a, t) + rgc.id(g, a, t))
         return
     elif args.command == SUBSCRIBE_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False)
+        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
         rgc.subscribe(urls=args.genome_server, reset=args.reset)
         return
     elif args.command == UNSUBSCRIBE_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False)
+        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
         rgc.unsubscribe(urls=args.genome_server)
         return
     elif args.command == ALIAS_CMD:
-        rgc = RefGenConf(filepath=gencfg)
+        rgc = RefGenConf(filepath=gencfg, skip_read_lock=skip_read_lock)
         if args.subcommand == ALIAS_GET_CMD:
             if args.aliases is not None:
                 for a in args.aliases:
@@ -868,7 +878,7 @@ def main():
             return
 
     elif args.command == COMPARE_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False)
+        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
         res = rgc.compare(args.genome1[0], args.genome2[0],
                           explain=not args.no_explanation)
         if args.no_explanation:
