@@ -869,7 +869,7 @@ def main():
 
         if args.subcommand == ALIAS_SET_CMD:
             rgc.set_genome_alias(digest=args.digest, genome=args.aliases,
-                                 reset_digest=args.reset)
+                                 reset_digest=args.reset, create_genome=True)
             return
         elif args.subcommand == ALIAS_REMOVE_CMD:
             rgc.remove_genome_aliases(digest=args.digest, aliases=args.aliases)
