@@ -395,7 +395,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                       format(args.config_file))
         args.config_file = default_config_file()
 
-    def build_asset(genome, asset_key, tag, build_pkg, genome_outfolder, specific_args, specific_params, **kwargs):
+    def _build_asset(genome, asset_key, tag, build_pkg, genome_outfolder, specific_args, specific_params, alias, **kwargs):
         """
         Builds assets with pypiper and updates a genome config file.
 
@@ -465,11 +465,11 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             _LOGGER.info("Asset digest: {}".format(digest))
             # add updates to config file
             with rgc as r:
-                r.update_assets(*gat[0:2], data={CFG_ASSET_DESC_KEY: build_pkg[DESC]})
-                r.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key,
-                                          CFG_ASSET_CHECKSUM_KEY: digest})
-                r.update_seek_keys(*gat, keys={k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
-                r.set_default_pointer(*gat)
+                r.update_genomes(genome, data={CFG_ALIASES_KEY: [alias]}, force_digest=genome)
+                r.update_assets(*gat[0:2], data={CFG_ASSET_DESC_KEY: build_pkg[DESC]}, force_digest=genome)
+                r.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key, CFG_ASSET_CHECKSUM_KEY: digest}, force_digest=genome)
+                r.update_seek_keys(*gat, keys={k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()}, force_digest=genome)
+                r.set_default_pointer(*gat, force_digest=genome)
         pm.stop_pipeline()
         return True
 
@@ -540,7 +540,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                 # if the recipe is "fasta" we first initialiaze the genome, based on the provided path to the input FASTA file
                 genome, _ = \
                     rgc.initialize_genome(fasta_path=specified_args["fasta"],
-                                          alias=ori_genome)
+                                          alias=ori_genome, skip_alias_write=True)
             else:
                 try:
                     genome = rgc.get_genome_alias_digest(genome, fallback=True)
@@ -550,8 +550,8 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                     return
             recipe_name = None
             genome_outfolder = os.path.join(args.outfolder, genome)
-            if not build_asset(genome, asset_key, asset_tag, asset_build_package, genome_outfolder,
-                               specified_args, specified_params, **input_assets):
+            if not _build_asset(genome, asset_key, asset_tag, asset_build_package, genome_outfolder,
+                               specified_args, specified_params, ori_genome, **input_assets):
                 log_path = os.path.abspath(os.path.join(genome_outfolder, asset_key, asset_tag,
                                                         BUILD_STATS_DIR, ORI_LOG_NAME))
                 _LOGGER.info("'{}/{}:{}' was not added to the config, but directory has been left in place. "
@@ -573,7 +573,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                     _LOGGER.debug("adding tag ({}/{}:{}) description: '{}'".
                                   format(genome, asset_key, asset_tag, args.tag_description))
                     r.update_tags(genome, asset_key, asset_tag, {CFG_TAG_DESC_KEY: args.tag_description})
-                rgc._symlink_alias(genome, asset_key, asset_tag)
+            rgc._symlink_alias(genome, asset_key, asset_tag)
         else:
             _raise_missing_recipe_error(recipe_name)
 
