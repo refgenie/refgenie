@@ -465,7 +465,8 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             _LOGGER.info("Asset digest: {}".format(digest))
             # add updates to config file
             with rgc as r:
-                r.update_genomes(genome, data={CFG_ALIASES_KEY: [alias]}, force_digest=genome)
+                if asset_key == "fasta":
+                    r.update_genomes(genome, data={CFG_ALIASES_KEY: [alias]}, force_digest=genome)
                 r.update_assets(*gat[0:2], data={CFG_ASSET_DESC_KEY: build_pkg[DESC]}, force_digest=genome)
                 r.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key, CFG_ASSET_CHECKSUM_KEY: digest}, force_digest=genome)
                 r.update_seek_keys(*gat, keys={k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()}, force_digest=genome)
@@ -533,8 +534,8 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                     else:
                         specified_params.update({required_param[KEY]: required_param[DEFAULT]})
             _LOGGER.info("Building '{}/{}:{}' using '{}' recipe".format(genome, asset_key, asset_tag, recipe_name))
+            ori_genome = genome
             if recipe_name == 'fasta':
-                ori_genome = genome
                 if genome in rgc.genomes_list() and 'fasta' in rgc.list_assets_by_genome(genome):
                     _LOGGER.warning("'{g}' genome is already initialized with other fasta asset ({g}/{a}:{t}). It will be re-initialized.".format(g=genome, a=asset_key, t=asset_tag))
                 # if the recipe is "fasta" we first initialiaze the genome, based on the provided path to the input FASTA file
