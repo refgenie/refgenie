@@ -36,5 +36,5 @@ SUBPARSER_MESSAGES = {
     TAG_CMD: "Tag an asset.",
     ID_CMD: "Return the asset digest.",
     SUBSCRIBE_CMD: "Add a refgenieserver URL to the config.",
-    UNSUBSCRIBE_CMD: "Remove a refgenieserver URL from the config."
+    UNSUBSCRIBE_CMD: "Remove a refgenieserver URL from the config.",
 }

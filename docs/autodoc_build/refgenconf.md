@@ -65,7 +65,7 @@ Create a block of text representing genome-to-asset mapping.
 - `asset_sep` (`str`):  the delimiter between names of types of assets,within each genome line
 - `genome_assets_delim` (`str`):  the delimiter to place betweenreference genome assembly name and its list of asset names
 - `genome` (`list[str] | str`):  genomes that the assets should be found for
-- `order` (``):  function(str) -> object how to key genome IDs and assetnames for sort
+- `order` (`function(str) -> object`):  how to key genome IDs and assetnames for sort
 
 
 #### Returns:
@@ -209,42 +209,12 @@ def genomes_str(self, order=None)
 Get as single string this configuration's reference genome assembly IDs.
 #### Parameters:
 
-- `order` (``):  function(str) -> object how to key genome IDs for sort
+- `order` (`function(str) -> object`):  how to key genome IDs for sort
 
 
 #### Returns:
 
 - `str`:  single string that lists this configuration's knownreference genome assembly IDs
-
-
-
-
-```python
-def get_asset(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=True, check_exist=<function RefGenConf.<lambda> at 0x7f3f69ae2d40>, enclosing_dir=False)
-```
-
-Get a path to the a specified genome-asset-tag. Note: enforces file existence checks by default
-#### Parameters:
-
-- `genome_name` (`str`):  name of a reference genome assembly of interest
-- `asset_name` (`str`):  name of the particular asset to fetch
-- `tag_name` (`str`):  name of the particular asset tag to fetch
-- `seek_key` (`str`):  name of the particular subasset to fetch
-- `strict_exists` (`bool | NoneType`):  how to handle case in whichpath doesn't exist; True to raise IOError, False to raise RuntimeWarning, and None to do nothing at all
-- `check_exist` (`function(callable) -> bool`):  how to check forasset/path existence
-- `enclosing_dir` (`bool`):  whether a path to the entire enclosing directory should be returned, e.g.for a fasta asset that has 3 seek_keys pointing to 3 files in an asset dir, that asset dir is returned
-
-
-#### Returns:
-
-- `str`:  path to the asset
-
-
-#### Raises:
-
-- `TypeError`:  if the existence check is not a one-arg function
-- `refgenconf.MissingGenomeError`:  if the named assembly isn't knownto this configuration instance
-- `refgenconf.MissingAssetError`:  if the names assembly is known tothis configuration instance, but the requested asset is unknown
 
 
 
@@ -293,7 +263,7 @@ List locally available reference genome IDs and assets by ID.
 #### Parameters:
 
 - `genome` (`list[str] | str`):  genomes that the assets should be found for
-- `order` (``):  function(str) -> object how to key genome IDs and assetnames for sort
+- `order` (`function(str) -> object`):  how to key genome IDs and assetnames for sort
 
 
 #### Returns:
@@ -304,7 +274,7 @@ List locally available reference genome IDs and assets by ID.
 
 
 ```python
-def get_remote_data_str(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x7f3f69ae6170>)
+def get_remote_data_str(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x1051476a8>)
 ```
 
 List genomes and assets available remotely.
@@ -312,7 +282,7 @@ List genomes and assets available remotely.
 
 - `get_url` (`function(refgenconf.RefGenConf) -> str`):  how to determineURL request, given RefGenConf instance
 - `genome` (`list[str] | str`):  genomes that the assets should be found for
-- `order` (``):  function(str) -> object how to key genome IDs and assetnames for sort
+- `order` (`function(str) -> object`):  how to key genome IDs and assetnames for sort
 
 
 #### Returns:
@@ -403,7 +373,7 @@ def list(self, genome=None, order=None, include_tags=False)
 List local assets; map each namespace to a list of available asset names
 #### Parameters:
 
-- `order` (`function(str) -> object`):  how to key genome IDs for sort
+- `order` (`callable(str) -> object`):  how to key genome IDs for sort
 - `genome` (`list[str] | str`):  genomes that the assets should be found for
 - `include_tags` (`bool`):  whether asset tags should be included in the returned dict
 
@@ -423,7 +393,7 @@ List types/names of assets that are available for one--or all--genomes.
 #### Parameters:
 
 - `genome` (`str | NoneType`):  reference genome assembly ID, optional;if omitted, the full mapping from genome to asset names
-- `order` (``):  function(str) -> object how to key genome IDs and assetnames for sort
+- `order` (`function(str) -> object`):  how to key genome IDs and assetnames for sort
 - `include_tags` (`bool`):  whether asset tags should be included in the returned dict
 
 
@@ -442,7 +412,7 @@ List assemblies for which a particular asset is available.
 #### Parameters:
 
 - `asset` (`str | NoneType`):  name of type of asset of interest, optional
-- `order` (``):  function(str) -> object how to key genome IDs and assetnames for sort
+- `order` (`function(str) -> object`):  how to key genome IDs and assetnames for sort
 
 
 #### Returns:
@@ -453,7 +423,7 @@ List assemblies for which a particular asset is available.
 
 
 ```python
-def listr(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x7f3f69ae6290>)
+def listr(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x1051477b8>)
 ```
 
 List genomes and assets available remotely.
@@ -461,7 +431,7 @@ List genomes and assets available remotely.
 
 - `get_url` (`function(refgenconf.RefGenConf) -> str`):  how to determineURL request, given RefGenConf instance
 - `genome` (`list[str] | str`):  genomes that the assets should be found for
-- `order` (``):  function(str) -> object how to key genome IDs and assetnames for sort
+- `order` (`function(str) -> object`):  how to key genome IDs and assetnames for sort
 
 
 #### Returns:
@@ -472,7 +442,19 @@ List genomes and assets available remotely.
 
 
 ```python
-def pull(self, genome, asset, tag, unpack=True, force=None, get_json_url=<function RefGenConf.<lambda> at 0x7f3f69ae6560>, build_signal_handler=<function _handle_sigint at 0x7f3f69ba07a0>)
+def plugins(self)
+```
+
+Plugins registered by entry points in the current Python env
+#### Returns:
+
+- `dict[dict[function(refgenconf.RefGenConf)]]`:  dict which keysare names of all possible hooks and values are dicts mapping registered functions names to their values
+
+
+
+
+```python
+def pull(self, genome, asset, tag, unpack=True, force=None, get_json_url=<function RefGenConf.<lambda> at 0x105147a60>, build_signal_handler=<function _handle_sigint at 0x1050a8ea0>)
 ```
 
 Download and possibly unpack one or more assets for a given ref gen.
@@ -547,7 +529,19 @@ Remove any relationship links associated with the selected asset
 
 
 ```python
-def seek(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, check_exist=<function RefGenConf.<lambda> at 0x7f3f69ae2c20>)
+def run_plugins(self, hook)
+```
+
+Runs all installed plugins for the specified hook.
+#### Parameters:
+
+- `hook` (`str`):  hook identifier
+
+
+
+
+```python
+def seek(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, check_exist=<function RefGenConf.<lambda> at 0x1051472f0>)
 ```
 
 Seek path to a specified genome-asset-tag
@@ -714,7 +708,7 @@ A convenience method which wraps the update assets and uses it to update the ass
 def update_seek_keys(self, genome, asset, tag=None, keys=None)
 ```
 
-A convenience method which wraps the update assets and uses it to update the seek keys for a tagged asset.
+A convenience method which wraps the updated assets and uses it to update the seek keys for a tagged asset.
 #### Parameters:
 
 - `genome` (`str`):  genome to be added/updated
@@ -758,6 +752,30 @@ Return writability flag or None if not set
 #### Returns:
 
 - `bool | None`:  whether the object is writable now
+
+
+
+
+```python
+def write(self, filepath=None)
+```
+
+Write the contents to a file. If pre- and post-update plugins are defined, they will be executed automatically
+#### Parameters:
+
+- `filepath` (`str`):  a file path to write to
+
+
+#### Returns:
+
+- `str`:  the path to the created files
+
+
+#### Raises:
+
+- `OSError`:  when the object has been created in a read only mode or other process has locked the file
+- `TypeError`:  when the filepath cannot be determined.This takes place only if YacAttMap initialized with a Mapping as an input, not read from file.
+- `OSError`:  when the write is called on an object with no write capabilitiesor when writing to a file that is locked by a different object
 
 
 
@@ -815,4 +833,4 @@ Get path to genome configuration file.
 
 
 
-*Version Information: `refgenconf` v0.7.0-dev, generated by `lucidoc` v0.4.2*
+*Version Information: `refgenconf` v0.7.1-dev, generated by `lucidoc` v0.4.3*

@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from argparse import SUPPRESS
 from collections import OrderedDict
 from shutil import rmtree
 from re import sub
@@ -11,8 +10,6 @@ import csv
 import signal
 import json
 
-import pyfaidx
-
 from ._version import __version__
 from .exceptions import MissingGenomeConfigError, MissingFolderError
 from .asset_build_packages import *
@@ -21,12 +18,11 @@ from .const import *
 import logmuse
 import pypiper
 import refgenconf
-from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError, MissingRecipeError, DownloadJsonError
-from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, VersionInHelpParser, is_command_callable
+from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError, \
+    MissingRecipeError, DownloadJsonError, get_dir_digest
+from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, \
+    VersionInHelpParser, is_command_callable
 from ubiquerg.system import is_writable
-import yacman
-
-# from refget import fasta_checksum
 from .refget import fasta_checksum
 
 _LOGGER = None
@@ -59,13 +55,25 @@ def build_argparser():
         sps[cmd] = add_subparser(cmd, desc)
         # It's required for init
         sps[cmd].add_argument(
-            '-c', '--genome-config', required=(cmd == INIT_CMD), dest="genome_config",
+            '-c', '--genome-config', required=(cmd == INIT_CMD), dest="genome_config", metavar="C",
             help="Path to local genome configuration file. Optional if {} environment variable is set."
                 .format(", ".join(refgenconf.CFG_ENV_VARS)))
 
     sps[INIT_CMD].add_argument('-s', '--genome-server', nargs='+', default=DEFAULT_SERVER,
                                help="URL(s) to use for the {} attribute in config file. Default: {}."
-                               .format(DEFAULT_SERVER, CFG_SERVERS_KEY))
+                               .format(CFG_SERVERS_KEY, DEFAULT_SERVER))
+    sps[INIT_CMD].add_argument('-f', '--genome-folder',
+                               help="Absolute path to parent folder refgenie-managed assets.")
+    sps[INIT_CMD].add_argument('-a', '--genome-archive-folder',
+                               help="Absolute path to parent archive folder refgenie-managed assets; used by refgenieserver.")
+    sps[INIT_CMD].add_argument('-b', '--genome-archive-config',
+                               help="Absolute path to desired archive config file; used by refgenieserver.")
+    sps[INIT_CMD].add_argument('-u', '--remote-url-base',
+                               help="URL to use as an alternative, remote archive location; used by refgenieserver.")
+    sps[INIT_CMD].add_argument('-j', '--settings-json',
+                               help="Absolute path to a JSON file with the key "
+                                    "value pairs to inialize the configuration "
+                                    "file with. Overwritten by itemized specifications.")
     sps[BUILD_CMD] = pypiper.add_pypiper_args(
         sps[BUILD_CMD], groups=None, args=["recover", "config", "new-start"])
 
@@ -116,7 +124,7 @@ def build_argparser():
     for cmd in [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, REMOVE_CMD, GETSEQ_CMD, TAG_CMD, ID_CMD]:
         # genome is not required for listing actions
         sps[cmd].add_argument(
-            "-g", "--genome", required=cmd in GETSEQ_CMD,
+            "-g", "--genome", required=cmd in GETSEQ_CMD,  metavar="G",
             help="Reference assembly ID, e.g. mm10.")
 
     for cmd in LIST_REMOTE_CMD, LIST_LOCAL_CMD:
@@ -129,18 +137,47 @@ def build_argparser():
             help="One or more registry path strings that identify assets  (e.g. hg38/fasta or hg38/fasta:tag"
                  + (" or hg38/fasta.fai:tag)." if cmd == GET_ASSET_CMD else ")."))
 
-    for cmd in [PULL_CMD, REMOVE_CMD, INSERT_CMD]:
+    for cmd in [REMOVE_CMD, INSERT_CMD]:
         sps[cmd].add_argument(
             "-f", "--force", action="store_true",
             help="Do not prompt before action, approve upfront.")
 
-    sps[PULL_CMD].add_argument(
-        "-u", "--no-untar", action="store_true",
-        help="Do not extract tarballs.")
+    force_group = sps[PULL_CMD].add_argument_group(
+        title="Prompt handling",
+        description="These flags configure the pull prompt responses.")
+
+    overwrite_group = force_group.add_mutually_exclusive_group()
+
+    overwrite_group.add_argument("--no-overwrite", action="store_true",
+        help="Do not overwrite if asset exists.")
+
+    overwrite_group.add_argument("--force-overwrite", action="store_true",
+        help="Overwrite if asset exists.")
+
+    large_group = force_group.add_mutually_exclusive_group()
+
+    large_group.add_argument("--no-large", action="store_true",
+        help="Do not pull archives over 5GB.")
+
+    large_group.add_argument("--pull-large", action="store_true",
+        help="Pull any archive, regardless of its size.")
+
+    force_group.add_argument("--size-cutoff", type=float, default=10, metavar="S",
+        help="Maximum archive file size to download with no confirmation required (in GB, default: 10)")
+
+    force_group.add_argument("-b", "--batch", action="store_true",
+        help="Use batch mode: pull large archives, do no overwrite")
 
     sps[INSERT_CMD].add_argument(
-        "-p", "--path", required=True,
+        "-p", "--path", required=True, metavar="P",
         help="Relative local path to asset.")
+
+    sps[INSERT_CMD].add_argument(
+        "-s", "--seek-keys", required=False, type=str, metavar="S",
+        help="""
+        String representation of a JSON object with seek_keys, 
+        e.g. '{"seek_key1": "file.txt"}')
+        """)
 
     sps[GETSEQ_CMD].add_argument(
         "-l", "--locus", required=True,
@@ -148,8 +185,7 @@ def build_argparser():
 
     sps[GET_ASSET_CMD].add_argument(
         "-e", "--check-exists", required=False, action="store_true",
-        help="Whether the returned asset path should be checked for existence "
-             "on disk.")
+        help="Whether the returned asset path should be checked for existence on disk.")
 
     group = sps[TAG_CMD].add_mutually_exclusive_group(required=True)
 
@@ -235,75 +271,6 @@ def get_asset_vars(genome, asset_key, tag, outfolder, specific_args=None, specif
         asset_vars.update(specific_params)
     asset_vars.update(**kwargs)
     return asset_vars
-
-
-def refgenie_add(rgc, asset_dict, path, force=False):
-    """
-    Add an external asset to the config.
-    File existence is checked and asset files are transferred to the selected
-    tag subdirectory
-
-    :param refgenconf.RefGenConf rgc: genome configuration object
-    :param dict asset_dict: a single parsed registry path
-    :param str path: the path provided by the user. Must be relative to the
-        specific genome directory
-    :param bool force: whether the replacement of a possibly existing asset
-        should be forced
-    """
-    # remove the first directory from the provided path if it is the genome name
-    path = os.path.join(*path.split(os.sep)[1:]) \
-        if path.split(os.sep)[0] == asset_dict["genome"] else path
-    tag = asset_dict["tag"] \
-          or rgc.get_default_tag(asset_dict["genome"], asset_dict["asset"])
-    outfolder = \
-        os.path.abspath(os.path.join(rgc[CFG_FOLDER_KEY], asset_dict["genome"]))
-    abs_asset_path = os.path.join(outfolder, path)
-    if asset_dict["seek_key"] is None:
-        # if seek_key is not specified we're about to move a directory to
-        # the tag subdir
-        tag_path = os.path.join(abs_asset_path, tag)
-        from shutil import copytree as cp
-    else:
-        # if seek_key is specified we're about to move just a single file to
-        # he tag subdir
-        tag_path = os.path.join(os.path.dirname(abs_asset_path), tag)
-        if not os.path.exists(tag_path):
-            os.makedirs(tag_path)
-        from shutil import copy2 as cp
-    if os.path.exists(abs_asset_path):
-        if not os.path.exists(tag_path):
-            cp(abs_asset_path, tag_path)
-        else:
-            if not force and not \
-                    query_yes_no("Path '{}' exists. Do you want to overwrite?".
-                                         format(tag_path)):
-                return False
-            else:
-                _remove(tag_path)
-                cp(abs_asset_path, tag_path)
-    else:
-        raise OSError("Absolute path '{}' does not exist. "
-                      "The provided path must be relative to: {}".
-                      format(abs_asset_path, rgc[CFG_FOLDER_KEY]))
-    rgc.make_writable()
-    gat_bundle = [asset_dict["genome"], asset_dict["asset"], tag]
-    td = {CFG_ASSET_PATH_KEY:
-              path if os.path.isdir(abs_asset_path) else os.path.dirname(path)}
-    rgc.update_tags(*gat_bundle, data=td)
-    # seek_key points to the entire dir if not specified
-    seek_key_value = os.path.basename(abs_asset_path) \
-        if asset_dict["seek_key"] is not None else "."
-    sk = {asset_dict["seek_key"] or asset_dict["asset"]: seek_key_value}
-    rgc.update_seek_keys(*gat_bundle, keys=sk)
-    rgc.set_default_pointer(asset_dict["genome"], asset_dict["asset"], tag)
-    # a separate update_tags call since we want to use the get_asset method
-    # that requires a complete asset entry in rgc
-    td = {CFG_ASSET_CHECKSUM_KEY: get_dir_digest(_seek(rgc, *gat_bundle))}
-    rgc.update_tags(*gat_bundle, data=td)
-    # Write the updated refgenie genome configuration
-    rgc.write()
-    rgc.make_readonly()
-    return True
 
 
 def refgenie_initg(rgc, genome, content_checksums):
@@ -415,15 +382,23 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             recipe_file_name = TEMPLATE_RECIPE_JSON.format(asset_key, tag)
             with open(os.path.join(log_outfolder, recipe_file_name), 'w') as outfile:
                 json.dump(build_pkg, outfile)
-            # update and write refgenie genome configuration
+            # in order to prevent locking the config file for writing once while
+            # being able to use the seek method for digest calculation we
+            # create a temporary object to run seek on.
+            tmp_rgc = RefGenConf()
+            tmp_rgc[CFG_FOLDER_KEY] = rgc[CFG_FOLDER_KEY]
+            tmp_rgc.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key})
+            tmp_rgc.update_seek_keys(*gat, keys={k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
+            digest = get_dir_digest(
+                _seek(tmp_rgc, genome, asset_key, tag, enclosing_dir=True), pm)
+            _LOGGER.info("Asset digest: {}".format(digest))
+            del tmp_rgc
+            # add updates to config file
             with rgc as r:
                 r.update_assets(*gat[0:2], data={CFG_ASSET_DESC_KEY: build_pkg[DESC]})
-                r.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key})
+                r.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key,
+                                          CFG_ASSET_CHECKSUM_KEY: digest})
                 r.update_seek_keys(*gat, keys={k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
-                # in order to conveniently get the path to digest we update the tags metadata in two steps
-                digest = get_dir_digest(r.get_asset(genome, asset_key, tag, enclosing_dir=True), pm)
-                r.update_tags(*gat, data={CFG_ASSET_CHECKSUM_KEY: digest})
-                _LOGGER.info("Asset digest: {}".format(digest))
                 r.set_default_pointer(*gat)
         pm.stop_pipeline()
         return True
@@ -529,7 +504,11 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
 def _exec_list(rgc, remote, genome):
     if remote:
         pfx = "Remote"
-        assemblies, assets = rgc.get_remote_data_str(genome=genome)
+        # we use this func looping through the server urls and assigning a
+        # single instance as the server for the object. That's why we can
+        # access the data with [0] below
+        assemblies, assets = \
+            list(rgc.listr(genome=genome, as_str=True).values())[0]
         recipes = None  # Not implemented
     else:
         pfx = "Local"
@@ -610,12 +589,30 @@ def main():
 
     if args.command == INIT_CMD:
         _LOGGER.debug("Initializing refgenie genome configuration")
-        rgc = RefGenConf(entries=OrderedDict({
+        entries = OrderedDict({
             CFG_VERSION_KEY: REQ_CFG_VERSION,
             CFG_FOLDER_KEY: os.path.dirname(os.path.abspath(gencfg)),
             CFG_SERVERS_KEY: args.genome_server or [DEFAULT_SERVER],
-            CFG_GENOMES_KEY: None
-        }))
+            CFG_GENOMES_KEY: None})
+        if args.settings_json:
+            if os.path.isfile(args.settings_json):
+                with open(args.settings_json, 'r') as json_file:
+                    data = json.load(json_file)
+                entries.update(data)
+            else:
+                raise FileNotFoundError(
+                    "JSON file with config init settings does not exist: {}".
+                        format(args.settings_json))
+        if args.genome_folder:
+            entries.update({CFG_FOLDER_KEY: args.genome_folder})
+        if args.remote_url_base:
+            entries.update({CFG_REMOTE_URL_BASE_KEY: args.remote_url_base})
+        if args.genome_archive_folder:
+            entries.update({CFG_ARCHIVE_KEY: args.genome_archive_folder})
+        if args.genome_archive_config:
+            entries.update({CFG_ARCHIVE_CONFIG_KEY: args.genome_archive_config})
+        _LOGGER.debug("initializing with entries: {}".format(entries))
+        rgc = RefGenConf(entries=entries)
         rgc.initialize_config_file(os.path.abspath(gencfg))
 
     elif args.command == BUILD_CMD:
@@ -653,11 +650,34 @@ def main():
         if len(asset_list) > 1:
             raise NotImplementedError("Can only add 1 asset at a time")
         else:
-            refgenie_add(rgc, asset_list[0], args.path, args.force)
+            sk = args.seek_keys
+            if sk:
+                sk = json.loads(args.seek_keys)
+            rgc.add(path=args.path, genome=asset_list[0]["genome"],
+                    asset=asset_list[0]["asset"], tag=asset_list[0]["tag"],
+                    seek_keys=sk, force=args.force)
 
     elif args.command == PULL_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
-        force = None if not args.force else True
+        # existing assets overwriting
+        if args.no_overwrite:
+            force = False
+        elif args.force_overwrite:
+            force = True
+        else:
+            force = None
+        # large archive pulling
+        if args.no_large:
+            force_large = False
+        elif args.pull_large:
+            force_large = True
+        else:
+            force_large = None
+        # batch mode takes precedence over other choices
+        if args.batch:
+            force_large = True
+            force = False
+
         outdir = rgc[CFG_FOLDER_KEY]
         if not os.path.exists(outdir):
             raise MissingFolderError(outdir)
@@ -670,8 +690,8 @@ def main():
             return
 
         for a in asset_list:
-            rgc.pull(a["genome"], a["asset"], a["tag"],
-                     unpack=not args.no_untar, force=force)
+            rgc.pull(a["genome"], a["asset"], a["tag"], force=force,
+                     force_large=force_large, size_cutoff=args.size_cutoff)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         rgc = RefGenConf(filepath=gencfg, writable=False)
@@ -683,10 +703,11 @@ def main():
             for server_url in rgc[CFG_SERVERS_KEY]:
                 num_servers += 1
                 try:
-                    rgc[CFG_SERVERS_KEY] = server_url
+                    rgc[CFG_SERVERS_KEY] = [server_url]
                     pfx, genomes, assets, recipes = _exec_list(rgc, args.command == LIST_REMOTE_CMD, args.genome)
                     if assets is None and genomes is None:
                         continue
+                    _LOGGER.info("Server URL: {}".format(server_url))
                     _LOGGER.info("{} genomes: {}".format(pfx, genomes))
                     if args.command != LIST_REMOTE_CMD:  # Not implemented yet
                         _LOGGER.info("{} recipes: {}".format(pfx, recipes))
@@ -708,7 +729,7 @@ def main():
 
     elif args.command == GETSEQ_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False)
-        rgc.getseq(rgc, args.genome, args.locus)
+        print(rgc.getseq(args.genome, args.locus))
 
     elif args.command == REMOVE_CMD:
         force = args.force

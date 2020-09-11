@@ -2,7 +2,7 @@
 
 ## `refgenie --help`
 ```console
-version: 0.8.1
+version: 0.9.3
 usage: refgenie [-h] [--version] [--silent] [--verbosity V] [--logdev]
                 {init,list,listr,pull,build,seek,add,remove,getseq,tag,id,subscribe,unsubscribe}
                 ...
@@ -37,30 +37,48 @@ https://refgenie.databio.org
 
 ## `refgenie init --help`
 ```console
-usage: refgenie init [-h] -c GENOME_CONFIG
-                     [-s GENOME_SERVER [GENOME_SERVER ...]]
+usage: refgenie init [-h] -c C [-s GENOME_SERVER [GENOME_SERVER ...]]
+                     [-f GENOME_FOLDER] [-a GENOME_ARCHIVE_FOLDER]
+                     [-b GENOME_ARCHIVE_CONFIG] [-u REMOTE_URL_BASE]
+                     [-j SETTINGS_JSON]
 
 Initialize a genome configuration.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -c GENOME_CONFIG, --genome-config GENOME_CONFIG
+  -c C, --genome-config C
                         Path to local genome configuration file. Optional if
                         REFGENIE environment variable is set.
   -s GENOME_SERVER [GENOME_SERVER ...], --genome-server GENOME_SERVER [GENOME_SERVER ...]
-                        URL(s) to use for the http://refgenomes.databio.org
-                        attribute in config file. Default: genome_servers.
+                        URL(s) to use for the genome_servers attribute in
+                        config file. Default: http://refgenomes.databio.org.
+  -f GENOME_FOLDER, --genome-folder GENOME_FOLDER
+                        Absolute path to parent folder refgenie-managed
+                        assets.
+  -a GENOME_ARCHIVE_FOLDER, --genome-archive-folder GENOME_ARCHIVE_FOLDER
+                        Absolute path to parent archive folder refgenie-
+                        managed assets; used by refgenieserver.
+  -b GENOME_ARCHIVE_CONFIG, --genome-archive-config GENOME_ARCHIVE_CONFIG
+                        Absolute path to desired archive config file; used by
+                        refgenieserver.
+  -u REMOTE_URL_BASE, --remote-url-base REMOTE_URL_BASE
+                        URL to use as an alternative, remote archive location;
+                        used by refgenieserver.
+  -j SETTINGS_JSON, --settings-json SETTINGS_JSON
+                        Absolute path to a JSON file with the key value pairs
+                        to inialize the configuration file with. Overwritten
+                        by itemized specifications.
 ```
 
 ## `refgenie list --help`
 ```console
-usage: refgenie list [-h] [-c GENOME_CONFIG] [-g [GENOME [GENOME ...]]]
+usage: refgenie list [-h] [-c C] [-g [GENOME [GENOME ...]]]
 
 List available local assets.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -c GENOME_CONFIG, --genome-config GENOME_CONFIG
+  -c C, --genome-config C
                         Path to local genome configuration file. Optional if
                         REFGENIE environment variable is set.
   -g [GENOME [GENOME ...]], --genome [GENOME [GENOME ...]]
@@ -69,13 +87,13 @@ optional arguments:
 
 ## `refgenie listr --help`
 ```console
-usage: refgenie listr [-h] [-c GENOME_CONFIG] [-g [GENOME [GENOME ...]]]
+usage: refgenie listr [-h] [-c C] [-g [GENOME [GENOME ...]]]
 
 List available remote assets.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -c GENOME_CONFIG, --genome-config GENOME_CONFIG
+  -c C, --genome-config C
                         Path to local genome configuration file. Optional if
                         REFGENIE environment variable is set.
   -g [GENOME [GENOME ...]], --genome [GENOME [GENOME ...]]
@@ -84,7 +102,8 @@ optional arguments:
 
 ## `refgenie pull --help`
 ```console
-usage: refgenie pull [-h] [-c GENOME_CONFIG] [-g GENOME] [-u]
+usage: refgenie pull [-h] [-c C] [-g G] [--no-overwrite | --force-overwrite]
+                     [--no-large | --pull-large] [--size-cutoff S] [-b]
                      asset-registry-paths [asset-registry-paths ...]
 
 Download assets.
@@ -95,24 +114,33 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -c GENOME_CONFIG, --genome-config GENOME_CONFIG
+  -c C, --genome-config C
                         Path to local genome configuration file. Optional if
                         REFGENIE environment variable is set.
-  -g GENOME, --genome GENOME
-                        Reference assembly ID, e.g. mm10.
-  -u, --no-untar        Do not extract tarballs.
+  -g G, --genome G      Reference assembly ID, e.g. mm10.
+
+Prompt handling:
+  These flags configure the pull prompt responses.
+
+  --no-overwrite        Do not overwrite if asset exists.
+  --force-overwrite     Overwrite if asset exists.
+  --no-large            Do not pull archives over 5GB.
+  --pull-large          Pull any archive, regardless of its size.
+  --size-cutoff S       Maximum archive file size to download with no
+                        confirmation required (in GB, default: 10)
+  -b, --batch           Use batch mode: pull large archives, do no overwrite
 ```
 
 ## `refgenie build --help`
 ```console
-usage: refgenie build [-h] [-c GENOME_CONFIG] [-R] [-C CONFIG_FILE] [-N]
+usage: refgenie build [-h] [-c C] [-R] [-C CONFIG_FILE] [-N]
                       [--tag-description TAG_DESCRIPTION]
                       [--genome-description GENOME_DESCRIPTION] [-d]
                       [--assets ASSETS [ASSETS ...]]
                       [--files FILES [FILES ...]]
                       [--params PARAMS [PARAMS ...]]
                       [-v VOLUMES [VOLUMES ...]] [-o OUTFOLDER] [-q]
-                      [-r RECIPE] [-g GENOME]
+                      [-r RECIPE] [-g G]
                       asset-registry-paths [asset-registry-paths ...]
 
 Build genome assets.
@@ -123,7 +151,7 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -c GENOME_CONFIG, --genome-config GENOME_CONFIG
+  -c C, --genome-config C
                         Path to local genome configuration file. Optional if
                         REFGENIE environment variable is set.
   -R, --recover         Overwrite locks to recover from previous failed run
@@ -158,13 +186,12 @@ optional arguments:
                         and exit.
   -r RECIPE, --recipe RECIPE
                         Provide a recipe to use.
-  -g GENOME, --genome GENOME
-                        Reference assembly ID, e.g. mm10.
+  -g G, --genome G      Reference assembly ID, e.g. mm10.
 ```
 
 ## `refgenie seek --help`
 ```console
-usage: refgenie seek [-h] [-c GENOME_CONFIG] [-g GENOME]
+usage: refgenie seek [-h] [-c C] [-g G] [-e]
                      asset-registry-paths [asset-registry-paths ...]
 
 Get the path to a local asset.
@@ -176,16 +203,17 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -c GENOME_CONFIG, --genome-config GENOME_CONFIG
+  -c C, --genome-config C
                         Path to local genome configuration file. Optional if
                         REFGENIE environment variable is set.
-  -g GENOME, --genome GENOME
-                        Reference assembly ID, e.g. mm10.
+  -g G, --genome G      Reference assembly ID, e.g. mm10.
+  -e, --check-exists    Whether the returned asset path should be checked for
+                        existence on disk.
 ```
 
 ## `refgenie add --help`
 ```console
-usage: refgenie add [-h] [-c GENOME_CONFIG] [-g GENOME] -p PATH
+usage: refgenie add [-h] [-c C] [-g G] [-f] -p P [-s S]
                     asset-registry-paths [asset-registry-paths ...]
 
 Add local asset to the config file.
@@ -196,17 +224,19 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -c GENOME_CONFIG, --genome-config GENOME_CONFIG
+  -c C, --genome-config C
                         Path to local genome configuration file. Optional if
                         REFGENIE environment variable is set.
-  -g GENOME, --genome GENOME
-                        Reference assembly ID, e.g. mm10.
-  -p PATH, --path PATH  Relative local path to asset.
+  -g G, --genome G      Reference assembly ID, e.g. mm10.
+  -f, --force           Do not prompt before action, approve upfront.
+  -p P, --path P        Relative local path to asset.
+  -s S, --seek-keys S   String representation of a JSON object with seek_keys,
+                        e.g. '{"seek_key1": "file.txt"}')
 ```
 
 ## `refgenie remove --help`
 ```console
-usage: refgenie remove [-h] [-c GENOME_CONFIG] [-g GENOME]
+usage: refgenie remove [-h] [-c C] [-g G] [-f]
                        asset-registry-paths [asset-registry-paths ...]
 
 Remove a local asset.
@@ -217,26 +247,25 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -c GENOME_CONFIG, --genome-config GENOME_CONFIG
+  -c C, --genome-config C
                         Path to local genome configuration file. Optional if
                         REFGENIE environment variable is set.
-  -g GENOME, --genome GENOME
-                        Reference assembly ID, e.g. mm10.
+  -g G, --genome G      Reference assembly ID, e.g. mm10.
+  -f, --force           Do not prompt before action, approve upfront.
 ```
 
 ## `refgenie getseq --help`
 ```console
-usage: refgenie getseq [-h] [-c GENOME_CONFIG] -g GENOME -l LOCUS
+usage: refgenie getseq [-h] [-c C] -g G -l LOCUS
 
 Get sequences from a genome.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -c GENOME_CONFIG, --genome-config GENOME_CONFIG
+  -c C, --genome-config C
                         Path to local genome configuration file. Optional if
                         REFGENIE environment variable is set.
-  -g GENOME, --genome GENOME
-                        Reference assembly ID, e.g. mm10.
+  -g G, --genome G      Reference assembly ID, e.g. mm10.
   -l LOCUS, --locus LOCUS
                         Coordinates of desired sequence; e.g.
                         'chr1:50000-50200'.
@@ -244,7 +273,7 @@ optional arguments:
 
 ## `refgenie tag --help`
 ```console
-usage: refgenie tag [-h] [-c GENOME_CONFIG] [-g GENOME] (-t TAG | -d)
+usage: refgenie tag [-h] [-c C] [-g G] (-t TAG | -d)
                     asset-registry-paths [asset-registry-paths ...]
 
 Tag an asset.
@@ -255,18 +284,17 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -c GENOME_CONFIG, --genome-config GENOME_CONFIG
+  -c C, --genome-config C
                         Path to local genome configuration file. Optional if
                         REFGENIE environment variable is set.
-  -g GENOME, --genome GENOME
-                        Reference assembly ID, e.g. mm10.
+  -g G, --genome G      Reference assembly ID, e.g. mm10.
   -t TAG, --tag TAG     Tag to assign to an asset.
   -d, --default         Set the selected asset tag as the default one.
 ```
 
 ## `refgenie id --help`
 ```console
-usage: refgenie id [-h] [-c GENOME_CONFIG] [-g GENOME]
+usage: refgenie id [-h] [-c C] [-g G]
                    asset-registry-paths [asset-registry-paths ...]
 
 Return the asset digest.
@@ -277,23 +305,22 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  -c GENOME_CONFIG, --genome-config GENOME_CONFIG
+  -c C, --genome-config C
                         Path to local genome configuration file. Optional if
                         REFGENIE environment variable is set.
-  -g GENOME, --genome GENOME
-                        Reference assembly ID, e.g. mm10.
+  -g G, --genome G      Reference assembly ID, e.g. mm10.
 ```
 
 ## `refgenie subscribe --help`
 ```console
-usage: refgenie subscribe [-h] [-c GENOME_CONFIG] [-r] -s GENOME_SERVER
+usage: refgenie subscribe [-h] [-c C] [-r] -s GENOME_SERVER
                           [GENOME_SERVER ...]
 
 Add a refgenieserver URL to the config.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -c GENOME_CONFIG, --genome-config GENOME_CONFIG
+  -c C, --genome-config C
                         Path to local genome configuration file. Optional if
                         REFGENIE environment variable is set.
   -r, --reset           Overwrite the current list of server URLs.
@@ -304,14 +331,13 @@ optional arguments:
 
 ## `refgenie unsubscribe --help`
 ```console
-usage: refgenie unsubscribe [-h] [-c GENOME_CONFIG] -s GENOME_SERVER
-                            [GENOME_SERVER ...]
+usage: refgenie unsubscribe [-h] [-c C] -s GENOME_SERVER [GENOME_SERVER ...]
 
 Remove a refgenieserver URL from the config.
 
 optional arguments:
   -h, --help            show this help message and exit
-  -c GENOME_CONFIG, --genome-config GENOME_CONFIG
+  -c C, --genome-config C
                         Path to local genome configuration file. Optional if
                         REFGENIE environment variable is set.
   -s GENOME_SERVER [GENOME_SERVER ...], --genome-server GENOME_SERVER [GENOME_SERVER ...]

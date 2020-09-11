@@ -4,6 +4,8 @@
 [![PEP compatible](https://pepkit.github.io/img/PEP-compatible-green.svg)](https://pepkit.github.io)
 [![PyPi](https://img.shields.io/pypi/v/refgenie.svg)](https://pypi.org/project/refgenie/)
 
+<iframe src="https://ghbtns.com/github-btn.html?user=refgenie&repo=refgenie&type=star&count=true" frameborder="0" scrolling="0" width="150" height="20" title="GitHub"></iframe>
+
 ## What is refgenie?
 
 Refgenie manages storage, access, and transfer of reference genome resources. It provides command-line and Python interfaces to *download* pre-built reference genome "assets", like indexes used by bioinformatics tools. It can also *build* assets for custom genome assemblies. Refgenie provides programmatic access to a standard genome folder structure, so software can swap from one genome to another.
