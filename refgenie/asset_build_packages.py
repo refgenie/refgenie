@@ -6,7 +6,8 @@
 # These building recipes should make use of arguments that are auto-populated,
 # or user-provided. The auto-populated arguments are:
 # - {genome}
-# - {asset_outfolder} In addition to these, the recipe should refer in the
+# - {asset_outfolder} 
+#   In addition to these, the recipe should refer in the
 #   same way, {var}, to any variables required to be provided, which will be
 #   provided via the CLI. These should be listed as 'required_inputs' and
 #   will be checked for existence before the commands are executed.
