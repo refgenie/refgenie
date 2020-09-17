@@ -22,6 +22,7 @@ import pypiper
 import refgenconf
 from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError, \
     MissingRecipeError, DownloadJsonError, get_dir_digest
+from refgenconf import __version__ as __refgenconf_version__
 from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, \
     VersionInHelpParser, is_command_callable
 from ubiquerg.system import is_writable
@@ -43,7 +44,7 @@ def build_argparser():
 
     parser = VersionInHelpParser(
         prog="refgenie",
-        version=__version__,
+        version=__version__ + " | refgenconf " + __refgenconf_version__,
         description=banner,
         epilog=additional_description)
 
