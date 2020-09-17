@@ -19,11 +19,13 @@ SUBSCRIBE_CMD = "subscribe"
 UNSUBSCRIBE_CMD = "unsubscribe"
 ALIAS_CMD = "alias"
 COMPARE_CMD = "compare"
+UPGRADE_CMD = "upgrade"
 
 GENOME_ONLY_REQUIRED = [REMOVE_CMD, GETSEQ_CMD]
 
 # For each asset we assume a genome is also required
-ASSET_REQUIRED = [PULL_CMD, GET_ASSET_CMD, BUILD_CMD, INSERT_CMD, TAG_CMD, ID_CMD]
+ASSET_REQUIRED = [PULL_CMD, GET_ASSET_CMD,
+                  BUILD_CMD, INSERT_CMD, TAG_CMD, ID_CMD]
 
 SUBPARSER_MESSAGES = {
     INIT_CMD: "Initialize a genome configuration.",
@@ -40,7 +42,8 @@ SUBPARSER_MESSAGES = {
     SUBSCRIBE_CMD: "Add a refgenieserver URL to the config.",
     UNSUBSCRIBE_CMD: "Remove a refgenieserver URL from the config.",
     ALIAS_CMD: "Interact with aliases.",
-    COMPARE_CMD: "compare two genomes."
+    COMPARE_CMD: "compare two genomes.",
+    UPGRADE_CMD: "Upgrade config. This will alter the files on disk."
 }
 
 ALIAS_GET_CMD = "get"
