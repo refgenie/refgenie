@@ -389,7 +389,9 @@ asset_build_packages = {
             "epilog_index": "."
         },
         CMD_LST: [
-            "epilog index -i {fasta} -o {asset_outfolder}/{genome}_{context}.tsv --context {context} -t"
+            "epilog index -- --infile {fasta} --outfile {asset_outfolder}/{genome}_{context}.tsv --contexts {context}",
+            "bgzip {asset_outfolder}/{genome}_{context}.tsv",
+            "tabix -s 1 -b 2 -e 2 {asset_outfolder}/{genome}_{context}.tsv.gz",
             ] 
     },
     "star_index": {
