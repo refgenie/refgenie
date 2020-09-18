@@ -386,7 +386,7 @@ asset_build_packages = {
         ],
         CONT: "databio/refgenie",
         ASSETS: {
-            "epilog_index": "."
+            "epilog_index": "{genome}_{context}.tsv.gz"
         },
         CMD_LST: [
             "epilog index -- --infile {fasta} --outfile {asset_outfolder}/{genome}_{context}.tsv --contexts {context}",
