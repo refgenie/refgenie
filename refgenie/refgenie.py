@@ -20,13 +20,13 @@ from .const import *
 import logmuse
 import pypiper
 import refgenconf
-from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError, \
+from refgenconf import RefGenConf, RefGenConf_old, MissingAssetError, MissingGenomeError, \
     MissingRecipeError, DownloadJsonError, get_dir_digest
 from refgenconf import __version__ as __refgenconf_version__
 from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, \
     VersionInHelpParser, is_command_callable
 from ubiquerg.system import is_writable
-from yacman import UndefinedAliasError
+from yacman import UndefinedAliasError, YacAttMap
 from argparse import HelpFormatter
 
 _LOGGER = None
@@ -755,8 +755,13 @@ def main():
             gencfg, asset_list[0]["genome"], asset_list, recipe_name, args)
 
     elif args.command == GET_ASSET_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False,
-                         skip_read_lock=skip_read_lock)
+        config_version = YacAttMap(filepath=gencfg)[CFG_VERSION_KEY]
+        if config_version < REQ_CFG_VERSION:
+            rgc = RefGenConf_old(filepath=gencfg, writable=False,
+                                 skip_read_lock=skip_read_lock)
+        else:
+            rgc = RefGenConf(filepath=gencfg, writable=False,
+                             skip_read_lock=skip_read_lock)
         check = args.check_exists if args.check_exists else None
         for a in asset_list:
             _LOGGER.debug("getting asset: '{}/{}.{}:{}'".
@@ -766,8 +771,14 @@ def main():
         return
 
     elif args.command == INSERT_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False,
-                         skip_read_lock=skip_read_lock)
+        config_version = YacAttMap(filepath=gencfg)[CFG_VERSION_KEY]
+        if config_version < REQ_CFG_VERSION:
+            rgc = RefGenConf_old(filepath=gencfg, writable=False,
+                                 skip_read_lock=skip_read_lock)
+        else:
+            rgc = RefGenConf(filepath=gencfg, writable=False,
+                             skip_read_lock=skip_read_lock)
+
         if len(asset_list) > 1:
             raise NotImplementedError("Can only add 1 asset at a time")
         else:
@@ -781,6 +792,7 @@ def main():
     elif args.command == PULL_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False,
                          skip_read_lock=skip_read_lock)
+
         # existing assets overwriting
         if args.no_overwrite:
             force = False
@@ -840,13 +852,24 @@ def main():
             console.print(rgc.get_asset_table(genomes=args.genome))
 
     elif args.command == GETSEQ_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False,
-                         skip_read_lock=skip_read_lock)
+        config_version = YacAttMap(filepath=gencfg)[CFG_VERSION_KEY]
+        if config_version < REQ_CFG_VERSION:
+            rgc = RefGenConf_old(filepath=gencfg, writable=False,
+                                 skip_read_lock=skip_read_lock)
+        else:
+            rgc = RefGenConf(filepath=gencfg, writable=False,
+                             skip_read_lock=skip_read_lock)
         print(rgc.getseq(args.genome, args.locus))
 
     elif args.command == REMOVE_CMD:
         force = args.force
-        rgc = RefGenConf(filepath=gencfg, skip_read_lock=skip_read_lock)
+        config_version = YacAttMap(filepath=gencfg)[CFG_VERSION_KEY]
+        if config_version < REQ_CFG_VERSION:
+            rgc = RefGenConf_old(filepath=gencfg,
+                                 skip_read_lock=skip_read_lock)
+        else:
+            rgc = RefGenConf(filepath=gencfg,
+                             skip_read_lock=skip_read_lock)
         for a in asset_list:
             a["tag"] = a["tag"] or rgc.get_default_tag(a["genome"], a["asset"],
                                                        use_existing=False)
@@ -877,7 +900,13 @@ def main():
                        tag=a["tag"], force=force)
 
     elif args.command == TAG_CMD:
-        rgc = RefGenConf(filepath=gencfg, skip_read_lock=skip_read_lock)
+        config_version = YacAttMap(filepath=gencfg)[CFG_VERSION_KEY]
+        if config_version < REQ_CFG_VERSION:
+            rgc = RefGenConf_old(filepath=gencfg,
+                                 skip_read_lock=skip_read_lock)
+        else:
+            rgc = RefGenConf(filepath=gencfg,
+                             skip_read_lock=skip_read_lock)
         if len(asset_list) > 1:
             raise NotImplementedError("Can only tag 1 asset at a time")
         if args.default:
@@ -888,8 +917,13 @@ def main():
         rgc.tag(a["genome"], a["asset"], a["tag"], args.tag)
 
     elif args.command == ID_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False,
-                         skip_read_lock=skip_read_lock)
+        config_version = YacAttMap(filepath=gencfg)[CFG_VERSION_KEY]
+        if config_version < REQ_CFG_VERSION:
+            rgc = RefGenConf_old(filepath=gencfg, writable=False,
+                                 skip_read_lock=skip_read_lock)
+        else:
+            rgc = RefGenConf(filepath=gencfg, writable=False,
+                             skip_read_lock=skip_read_lock)
         if len(asset_list) == 1:
             g, a = asset_list[0]["genome"], asset_list[0]["asset"]
             t = asset_list[0]["tag"] or rgc.get_default_tag(g, a)
@@ -901,13 +935,23 @@ def main():
             print("{}/{}:{},".format(g, a, t) + rgc.id(g, a, t))
         return
     elif args.command == SUBSCRIBE_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False,
-                         skip_read_lock=skip_read_lock)
+        config_version = YacAttMap(filepath=gencfg)[CFG_VERSION_KEY]
+        if config_version < REQ_CFG_VERSION:
+            rgc = RefGenConf_old(filepath=gencfg, writable=False,
+                                 skip_read_lock=skip_read_lock)
+        else:
+            rgc = RefGenConf(filepath=gencfg, writable=False,
+                             skip_read_lock=skip_read_lock)
         rgc.subscribe(urls=args.genome_server, reset=args.reset)
         return
     elif args.command == UNSUBSCRIBE_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False,
-                         skip_read_lock=skip_read_lock)
+        config_version = YacAttMap(filepath=gencfg)[CFG_VERSION_KEY]
+        if config_version < REQ_CFG_VERSION:
+            rgc = RefGenConf_old(filepath=gencfg, writable=False,
+                                 skip_read_lock=skip_read_lock)
+        else:
+            rgc = RefGenConf(filepath=gencfg, writable=False,
+                             skip_read_lock=skip_read_lock)
         rgc.unsubscribe(urls=args.genome_server)
         return
     elif args.command == ALIAS_CMD:
@@ -937,8 +981,10 @@ def main():
             print(res)
 
     elif args.command == UPGRADE_CMD:
-        RefGenConf.config_upgrade(target_version=args.target_version,
-                                  filepath=gencfg, force=args.force)
+        rgc = RefGenConf_old(filepath=gencfg,
+                             skip_read_lock=skip_read_lock)
+        RefGenConf_old.config_upgrade(target_version=args.target_version,
+                                      filepath=gencfg, force=args.force)
 
 
 def _entity_dir_removal_log(directory, entity_class, asset_dict, removed_entities):
