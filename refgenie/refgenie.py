@@ -981,10 +981,10 @@ def main():
             print(res)
 
     elif args.command == UPGRADE_CMD:
-        rgc = RefGenConf_old(filepath=gencfg,
+        rgc = RefGenConf_old(filepath=gencfg, writable=True,
                              skip_read_lock=skip_read_lock)
-        RefGenConf_old.config_upgrade(target_version=args.target_version,
-                                      filepath=gencfg, force=args.force)
+        rgc.config_upgrade(
+            target_version=args.target_version, force=args.force)
 
 
 def _entity_dir_removal_log(directory, entity_class, asset_dict, removed_entities):
