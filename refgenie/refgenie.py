@@ -21,7 +21,7 @@ import logmuse
 import pypiper
 import refgenconf
 from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError, \
-    MissingRecipeError, DownloadJsonError, get_dir_digest, config_upgrade
+    MissingRecipeError, DownloadJsonError, get_dir_digest, upgrade_config
 from refgenconf import __version__ as __refgenconf_version__
 from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, \
     VersionInHelpParser, is_command_callable
@@ -941,7 +941,7 @@ def main():
             print(res)
 
     elif args.command == UPGRADE_CMD:
-        config_upgrade(target_version=args.target_version,
+        upgrade_config(target_version=args.target_version,
                        filepath=gencfg, force=args.force)
 
 
