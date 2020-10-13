@@ -566,12 +566,13 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             ori_genome = genome
             if recipe_name == 'fasta':
                 if genome in rgc.genomes_list() and 'fasta' in rgc.list_assets_by_genome(genome):
-                    _LOGGER.warning("'{g}' genome is already initialized with other fasta asset ({g}/{a}:{t}). It will be re-initialized.".format(
-                        g=genome, a=asset_key, t=asset_tag))
-                # if the recipe is "fasta" we first initialiaze the genome, based on the provided path to the input FASTA file
-                genome, _ = \
-                    rgc.initialize_genome(fasta_path=specified_args["fasta"],
-                                          alias=ori_genome, skip_alias_write=True)
+                    pretag = rgc.get_default_tag(genome, "fasta")
+                    _LOGGER.warning("'{g}' genome is already initialized with other fasta asset ({g}/{a}:{t})".
+                                    format(g=genome, a=asset_key, t=pretag))
+                else:
+                    # if the recipe is "fasta" we first initialiaze the genome, based on the provided path to the input FASTA file
+                    genome, _ = rgc.initialize_genome(
+                        fasta_path=specified_args["fasta"], alias=ori_genome, skip_alias_write=True)
             else:
                 try:
                     genome = rgc.get_genome_alias_digest(genome, fallback=True)
