@@ -4,7 +4,7 @@ Refgenie will read and write a genome configuration file in yaml format. In gene
 
 ## Upgrading the configuration file
 
-Refgenie is under active development and new features are added regularly. This sometimes necessitates changes in the refgenie configuration file format or asset directory structure. Starting with `refgenie v0.10.0` we introduced the `refgenie upgrade` command, which will automatically detect the current configuration file version and will: 1. reformat the configuration file to the new version; and 2) make any necessary changes to the asset directory structure. To reformat the config, run from the command line:
+Refgenie is under active development and new features are added regularly. This sometimes necessitates changes in the refgenie configuration file format or asset directory structure. Starting with `refgenie v0.10.0` we introduced the `refgenie upgrade` command, which will automatically detect the current configuration file version and will: 1) reformat the configuration file to the new version; and 2) make any necessary changes to the asset directory structure. To reformat the config, run from the command line:
 
 ```
 refgenie upgrade --target-version 0.4 -c /path/to/old/cfg.yml
