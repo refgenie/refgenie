@@ -2,7 +2,26 @@
 
 Refgenie will read and write a genome configuration file in yaml format. In general, you shouldn't need to mess with the config file. You create one with `refgenie init -c genome_config.yaml`, then you add assets using either `refgenie pull` or `refgenie build`. You can also add your own custom assets with `refgenie add`, which is explained in [using custom assets](custom_assets.md).  Refgenie will use the config file to remember what assets are available and where they are.
 
-But here's how the config file works, in case for some reason you do need to edit some things by hand. Here's an example file to get you started: 
+## Upgrading the configuration file
+
+Refgenie is under active development and new features are added regularly. This sometimes necessitates changes in the refgenie configuration file format or asset directory structure. Starting with `refgenie v0.10.0` we introduced the `refgenie upgrade` command, which will automatically detect the current configuration file version and will: 1. reformat the configuration file to the new version; and 2) make any necessary changes to the asset directory structure. To reformat the config, run from the command line:
+
+```
+refgenie upgrade --target-version 0.4 -c /path/to/old/cfg.yml
+```
+
+Or from within Python:
+
+```python
+from refgenconf import upgrade_config
+upgrade_config(target_version="0.4", filepath="/path/to/old/cfg.yml")
+```
+
+Below is a CHANGELOG describing all changes introduced in configuration file versions. 
+
+## Genome configuration file example
+
+Here's how the config file works, in case you do need to edit some things by hand. Here's an example file: 
 
 ```yaml
 genome_folder: /path/to/active/genomes
@@ -65,12 +84,39 @@ Note that for a fully operational config just `genome_folder`, `genome_server`, 
 
 For genomes that are managed by `refgenie` (that is, they were built or pulled with `refgenie`), these asset attributes will be automatically populated. You can edit them and refgenie will respect your edits (unless you re-build or re-pull the asset, which will overwrite those fields). You can also add your own assets and `refgenie` won't touch them. For more info, see [using custom assets](custom_assets.md).
 
-## Genome config versions
 
-### v0.2
-Up to version `0.4.4`, refgenie used a config file version that lacked the `assets` level in the hierarchy (so, assets were listed directly under the genome). Starting with version `0.5.0`, we moved the assets down a layer to accommodate other genome-level attributes we intend to use in the future (like a description, checksums, other provenance information). Earlier refgenie config files will need to be updated. 
+# Config file changelog
 
-### v0.3
-Upt to version `0.6.0`, refgenie used the config v0.2. Currently, it uses v0.3, where we introduced: seek keys, tags, asset digests, default tag pointer, asset description
-  
+## [0.4] - Unreleased; refgenie v0.10.0
+
+### Config format changes
+
+- use sequence-derived unique genome identifiers instead of genome names everywhere
+- add `aliases` key under each genome section to store the aliases that can be used to refer to the genomes easily
+
+### File tree structure changes
+
+- use sequence-derived unique genome identifiers instead of genome names in every file name and directory name
+- move all the contents from the refgenie directory to a new `data` directory
+- add an `alias` directory with contents corresponding to the aliases defined in the configuration file. The contents of the child directories are symbolic links to the asset files in the `data` directory  
+
+## [0.3] - 2019-10-21; refgenie v0.7.0
+
+### Config format changes
+
+- Added seek keys, tags, asset digests, default tag pointer, asset description.
+
+
+## [0.2] - 2019-07-11; refgenie v0.5.0
+
+### Config format changes
+
+- Added `config_version` entry
+- Added the `assets` level in the config hierarchy.
+- We moved the assets down a layer to accommodate other genome-level attributes we intend to use in the future (like a description, checksums, other provenance information). Earlier refgenie config files will need to be updated. 
+
+## [0.1] - 2019-05-10; refgenie v0.3.0
+
+- Initial version of the config file with the initial refgenie release.
+
  

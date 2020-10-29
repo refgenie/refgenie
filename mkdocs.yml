@@ -21,7 +21,7 @@ nav:
     - Run my own asset server: refgenieserver.md
     - Use refgenie from Python: refgenconf.md
     - Use refgenie with iGenomes: igenomes.md
-    - Upgrade config: upgrade-config.md
+    - Upgrade from config 0.3 to 0.4: config_upgrade_03_to_04.md
   - Reference:
     - Genome configuration file: genome_config.md
     - Glossary: glossary.md
