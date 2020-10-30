@@ -24,23 +24,29 @@ Below is a CHANGELOG describing all changes introduced in configuration file ver
 Here's how the config file works, in case you do need to edit some things by hand. Here's an example file: 
 
 ```yaml
-genome_folder: /path/to/active/genomes
-genome_servers: http://refgenomes.databio.org
-genome_archive: /path/to/archived/genomes
+config_version: 0.4
+genome_folder: /path/to/genomes
+genome_archive_folder: /path/to/genome_archives
+genome_archive_config: /path/to/genome_archive/config.yaml
+remote_url_base: http://awspds.refgenie.databio.org/
+genome_servers: ['http://refgenomes.databio.org']
 genomes:
-    rCRSd:
+    511fb1178275e7d529560d53b949dba40815f195623bce8e:
+        aliases:
+          - hg38
+          - human
         assets:
           fasta:
             tags:
               default:
                 seek_keys:
-                  fasta: rCRSd.fa
-                  fai: rCRSd.fa.fai
-                  chrom_sizes: rCRSd.chrom.sizes
+                  fasta: 511fb1178275e7d529560d53b949dba40815f195623bce8e.fa
+                  fai: 511fb1178275e7d529560d53b949dba40815f195623bce8e.fa.fai
+                  chrom_sizes: 511fb1178275e7d529560d53b949dba40815f195623bce8e.chrom.sizes
                 asset_parents: []
                 asset_path: fasta
                 asset_digest: a3c46f201a3ce7831d85cf4a125aa334
-                asset_children: ['bowtie2_index:default']
+                asset_children: ['511fb1178275e7d529560d53b949dba40815f195623bce8e/bowtie2_index:default']
             default_tag: default
           bowtie2_index:
             asset_description: Genome index for bowtie, produced with bowtie-build
@@ -50,28 +56,17 @@ genomes:
                 seek_keys:
                   bowtie2_index: .
                 asset_digest: 0f9217d44264ae2188fcf8e469d2bb38
-                asset_parents: ['fasta:default']
-            default_tag: default
-    hg38:
-        assets:
-          gencode_gtf:
-            asset_description: GTF annotation asset which provides access to all annotated transcripts which make up an Ensembl gene set.
-            tags:
-              default:
-                asset_path: gencode_gtf
-                seek_keys:
-                  gencode_gtf: hg38.gtf.gz
-                asset_digest: 4cd4eac99cdfdeb8ff72d8f8a4a16f9f
-                asset_parents: []
+                asset_parents: ['511fb1178275e7d529560d53b949dba40815f195623bce8e/fasta:default']
             default_tag: default
 ```
 
 ## Details of config attributes
 
+### Required
 - **genome_folder**: Path to parent folder refgenie-managed assets.
-- **genome_servers**: URL to a refgenieserver instances.
-- **genome_archive**: (optional; used by refgenieserver) Path to folder where asset archives will be stored.
+- **genome_servers**: URLs to a refgenieserver instances.
 - **genomes**: A list of genomes, each genome has a list of assets. Any relative paths in the asset `path` attributes are considered relative to the genome folder in the config file (or the file itself if not folder path is specified), with the genome name as an intervening path component, e.g. `folder/mm10/indexed_bowtie2`.
+- **aliases**: A list of arbitrary strings that can be used to refer to the namespace
 - **tags**: A collection of tags defined for the asset
 - **default_tag**: A pointer to the tag that is currently defined as the default one
 - **asset_parents**: A list of assets that were used to build the asset in question
@@ -79,6 +74,10 @@ genomes:
 - **seek_keys**: A mapping of names and paths of the specific files within an asset
 - **asset_path**: A path to the asset folder, relative to the genome config file
 - **asset_digest**: A digest of the asset directory (more precisely, of the file contents within one) used to address the asset provenance issues when the assets are pulled or built.
+### Optional (used by refgenieserver)
+- **genome_archive_folder**: Path to folder where asset archives will be stored.
+- **genome_archive_folder**: Path to folder file asset archives config will be stored.
+- **remote_url_base**: Path/URL to prepend to served asset archives, if non-local ones are to be served 
 
 Note that for a fully operational config just `genome_folder`, `genome_server`, `genomes`, `assets`, `tags` and `seek_keys` keys are required.
 

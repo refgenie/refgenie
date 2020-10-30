@@ -18,14 +18,28 @@ If you want to, you could also just edit the config file by hand by adding this 
 
 ```yaml
 genomes:
-  hg38:
+  511fb1178275e7d529560d53b949dba40815f195623bce8e:
+    aliases:
+      - hg38
+      - human
     assets:
       manual_anno:
-        asset_path: manual_anno
-        asset_description: Manual annotations from project X
-        seek_keys:
-          anno1: anno1.txt
-          anno2: anno2.txt
+        tags:
+          default:
+            asset_path: manual_anno
+            asset_description: Manual annotations from project X
+            seek_keys:
+              anno1: anno1.txt
+              anno2: anno2.txt
+        default_tag: default
 ```
 
-Now, you can access this asset with `refgenie` the same way you do all other assets... `refgenie list` will include it, `refgenie seek -g gh38 -a manual_anno` will retrieve the path, and from within python, `RefGenConf.get_asset('hg38', 'manual_anno')` will also work. The advantage of doing this is that it lets you include *all* your genome-associated resources, including manual ones, within the same framework.
+The refgenie-compatible genome digest can be determined this way:
+
+```python
+from refgenconf.seqcol import SeqColClient
+digest, _ = SeqColClient({}).load_fasta("path/hg38.fa")
+# digest -> 511fb1178275e7d529560d53b949dba40815f195623bce8e
+```
+
+Now, you can access this asset with `refgenie` the same way you do all other assets... `refgenie list` will include it, `refgenie seek -g gh38 -a manual_anno` will retrieve the path, and from within python, `RefGenConf.seek('hg38', 'manual_anno')` will also work. The advantage of doing this is that it lets you include *all* your genome-associated resources, including manual ones, within the same framework.
