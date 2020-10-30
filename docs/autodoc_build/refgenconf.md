@@ -374,7 +374,7 @@ Get path to the Annotated Sequence Digests JSON file for a given genome. Note th
 
 
 ```python
-def get_asset_table(self, genomes=None, server_url=None, get_json_url=<function RefGenConf.<lambda> at 0x7f80b6aa2a60>)
+def get_asset_table(self, genomes=None, server_url=None, get_json_url=<function RefGenConf.<lambda> at 0x7fe3c32a29d8>)
 ```
 
 Get a rich.Table object representing assets available locally
@@ -495,7 +495,7 @@ List locally available reference genome IDs and assets by ID.
 
 
 ```python
-def get_remote_data_str(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x7f80b6aa5598>)
+def get_remote_data_str(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x7fe3c32a3510>)
 ```
 
 List genomes and assets available remotely.
@@ -692,7 +692,7 @@ List assemblies for which a particular asset is available.
 
 
 ```python
-def listr(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x7f80b6aa56a8>, as_str=False)
+def listr(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x7fe3c32a3620>, as_str=False)
 ```
 
 List genomes and assets available remotely on all servers the object subscribes to
@@ -723,7 +723,7 @@ Plugins registered by entry points in the current Python env
 
 
 ```python
-def pull(self, genome, asset, tag, unpack=True, force=None, force_large=None, size_cutoff=10, get_json_url=<function RefGenConf.<lambda> at 0x7f80b6aa5950>, build_signal_handler=<function _handle_sigint at 0x7f80b62d0b70>)
+def pull(self, genome, asset, tag, unpack=True, force=None, force_large=None, size_cutoff=10, get_json_url=<function RefGenConf.<lambda> at 0x7fe3c32a38c8>, build_signal_handler=<function _handle_sigint at 0x7fe3c2ae4b70>)
 ```
 
 Download and possibly unpack one or more assets for a given ref gen.
@@ -830,7 +830,7 @@ Runs all installed plugins for the specified hook.
 
 
 ```python
-def seek(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, all_aliases=False, check_exist=<function RefGenConf.<lambda> at 0x7f80b6aa50d0>)
+def seek(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, all_aliases=False, check_exist=<function RefGenConf.<lambda> at 0x7fe3c32a3048>)
 ```
 
 Seek path to a specified genome-asset-tag alias
@@ -861,7 +861,7 @@ Seek path to a specified genome-asset-tag alias
 
 
 ```python
-def seek_src(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, check_exist=<function RefGenConf.<lambda> at 0x7f80b6aa51e0>)
+def seek_src(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, check_exist=<function RefGenConf.<lambda> at 0x7fe3c32a3158>)
 ```
 
 Seek path to a specified genome-asset-tag
@@ -907,7 +907,7 @@ Point to the selected tag by default
 
 
 ```python
-def set_genome_alias(self, genome, digest=None, servers=None, overwrite=False, reset_digest=False, create_genome=False, no_write=False, get_json_url=<function RefGenConf.<lambda> at 0x7f80b6aa5bf8>)
+def set_genome_alias(self, genome, digest=None, servers=None, overwrite=False, reset_digest=False, create_genome=False, no_write=False, get_json_url=<function RefGenConf.<lambda> at 0x7fe3c32a3b70>)
 ```
 
 Assign a human-readable alias to a genome identifier.
@@ -1187,7 +1187,7 @@ Get path to genome configuration file.
 
 
 ```python
-def upgrade_config(target_version, filepath, force=False, get_json_url=<function <lambda> at 0x7f80b6aa2510>, link_fun=<function <lambda> at 0x7f80b6aa6e18>)
+def upgrade_config(target_version, filepath, force=False, get_json_url=<function <lambda> at 0x7fe3c32a2488>, link_fun=<function <lambda> at 0x7fe3c32a4d90>)
 ```
 
 Upgrade the config to a selected target version.
