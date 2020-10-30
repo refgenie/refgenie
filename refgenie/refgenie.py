@@ -21,12 +21,12 @@ import logmuse
 import pypiper
 import refgenconf
 from refgenconf import RefGenConf, MissingAssetError, MissingGenomeError, \
-    MissingRecipeError, DownloadJsonError, get_dir_digest, upgrade_config
-from refgenconf import __version__ as __refgenconf_version__
+    MissingRecipeError, DownloadJsonError, get_dir_digest, upgrade_config, \
+    __version__ as rgc_version, select_genome_config
 from ubiquerg import is_url, query_yes_no, parse_registry_path as prp, \
     VersionInHelpParser, is_command_callable
 from ubiquerg.system import is_writable
-from yacman import UndefinedAliasError, YacAttMap
+from yacman import UndefinedAliasError
 from argparse import HelpFormatter
 
 _LOGGER = None
@@ -44,7 +44,7 @@ def build_argparser():
 
     parser = VersionInHelpParser(
         prog="refgenie",
-        version=__version__ + " | refgenconf " + __refgenconf_version__,
+        version=f"{__version__} | refgenconf {rgc_version}",
         description=banner,
         epilog=additional_description)
 
@@ -68,7 +68,7 @@ def build_argparser():
         sps[cmd].add_argument(
             '-c', '--genome-config', required=(cmd == INIT_CMD), dest="genome_config", metavar="C",
             help="Path to local genome configuration file. Optional if {} environment variable is set."
-                .format(", ".join(refgenconf.CFG_ENV_VARS)))
+                .format(", ".join(CFG_ENV_VARS)))
         sps[cmd].add_argument(
             '--skip-read-lock', required=False, action="store_true",
             help="Whether the config file should not be locked for reading")
@@ -149,7 +149,7 @@ def build_argparser():
         alias_sps[cmd].add_argument(
             '-c', '--genome-config', required=False, dest="genome_config", metavar="C",
             help="Path to local genome configuration file. Optional if {} environment variable is set."
-            .format(", ".join(refgenconf.CFG_ENV_VARS)))
+            .format(", ".join(CFG_ENV_VARS)))
         alias_sps[cmd].add_argument(
             '--skip-read-lock', required=False, action="store_true",
             help="Whether the config file should not be locked for reading")
@@ -482,44 +482,46 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             # add updates to config file
             with rgc as r:
                 if asset_key == "fasta":
-                    r.update_genomes(genome, data={CFG_ALIASES_KEY: [
-                                     alias]}, force_digest=genome)
+                    r.update_genomes(genome, data={CFG_ALIASES_KEY: [alias]},
+                                     force_digest=genome)
                 r.update_assets(
-                    *gat[0:2], data={CFG_ASSET_DESC_KEY: build_pkg[DESC]}, force_digest=genome)
-                r.update_tags(*gat, data={CFG_ASSET_PATH_KEY: asset_key,
-                                          CFG_ASSET_CHECKSUM_KEY: digest}, force_digest=genome)
-                r.update_seek_keys(*gat, keys={k: v.format(**asset_vars)
-                                               for k, v in build_pkg[ASSETS].items()}, force_digest=genome)
+                    *gat[0:2], data={CFG_ASSET_DESC_KEY: build_pkg[DESC]},
+                    force_digest=genome)
+                r.update_tags(
+                    *gat, force_digest=genome,
+                    data={CFG_ASSET_PATH_KEY: asset_key, CFG_ASSET_CHECKSUM_KEY: digest})
+                r.update_seek_keys(
+                    *gat, force_digest=genome,
+                    keys={k: v.format(**asset_vars) for k, v in build_pkg[ASSETS].items()})
                 r.set_default_pointer(*gat, force_digest=genome)
         pm.stop_pipeline()
         return True
 
     for a in asset_list:
         asset_key = a["asset"]
-        asset_tag = a["tag"] or rgc.get_default_tag(
-            genome, a["asset"], use_existing=False)
+        asset_tag = a["tag"] or \
+                    rgc.get_default_tag(genome, a["asset"], use_existing=False)
         recipe_name = recipe_name or asset_key
 
         if isinstance(recipe_name, dict) or \
-                (isinstance(recipe_name, str) and recipe_name in asset_build_packages.keys()):
+                (isinstance(recipe_name, str)
+                 and recipe_name in asset_build_packages.keys()):
             if isinstance(recipe_name, dict):
                 _LOGGER.info("Using custom recipe: \n{}".format(recipe_name))
                 asset_build_package = _check_recipe(recipe_name)
                 recipe_name = asset_build_package["name"]
             else:
-                asset_build_package = _check_recipe(
-                    asset_build_packages[recipe_name])
+                asset_build_package = \
+                    _check_recipe(asset_build_packages[recipe_name])
             # handle user-requested parents for the required assets
             input_assets = {}
             parent_assets = []
             specified_asset_keys, specified_assets = None, None
             if args.assets is not None:
                 parsed_parents_input = _parse_user_build_input(args.assets)
-                specified_asset_keys, specified_assets = \
-                    list(parsed_parents_input.keys()), list(
-                        parsed_parents_input.values())
-                _LOGGER.debug(
-                    "Custom assets requested: {}".format(args.assets))
+                specified_asset_keys = list(parsed_parents_input.keys())
+                specified_assets = list(parsed_parents_input.values())
+                _LOGGER.debug(f"Custom assets requested: {args.assets}")
             if not specified_asset_keys and isinstance(args.assets, list):
                 _LOGGER.warning(
                     "Specified parent assets format is invalid. Using defaults.")
@@ -527,9 +529,8 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                 req_asset_data = parse_registry_path(req_asset[KEY])
                 # for each req asset see if non-default parents were requested
                 if specified_asset_keys is not None and req_asset_data["asset"] in specified_asset_keys:
-                    parent_data = \
-                        parse_registry_path(
-                            specified_assets[specified_asset_keys.index(req_asset_data["asset"])])
+                    parent_data = parse_registry_path(
+                        specified_assets[specified_asset_keys.index(req_asset_data["asset"])])
                     g, a, t, s = parent_data["genome"], \
                         parent_data["asset"], \
                         parent_data["tag"] or rgc.get_default_tag(genome, parent_data["asset"]), \
@@ -559,10 +560,9 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                                          "Specify it with: --params {x}=value"
                                          .format(x=required_param[KEY], desc=required_param[DESC]))
                     else:
-                        specified_params.update(
-                            {required_param[KEY]: required_param[DEFAULT]})
-            _LOGGER.info("Building '{}/{}:{}' using '{}' recipe".format(genome,
-                                                                        asset_key, asset_tag, recipe_name))
+                        specified_params.update({required_param[KEY]: required_param[DEFAULT]})
+            _LOGGER.info("Building '{}/{}:{}' using '{}' recipe".format(
+                genome, asset_key, asset_tag, recipe_name))
             ori_genome = genome
             if recipe_name == 'fasta':
                 if genome in rgc.genomes_list() and 'fasta' in rgc.list_assets_by_genome(genome):
@@ -666,8 +666,9 @@ def main():
         _LOGGER.error("No command given")
         sys.exit(1)
 
-    gencfg = refgenconf.select_genome_config(filename=args.genome_config, check_exist=not args.command == INIT_CMD,
-                                             on_missing=lambda fp: fp, strict_env=True)
+    gencfg = select_genome_config(
+        filename=args.genome_config, check_exist=not args.command == INIT_CMD,
+        on_missing=lambda fp: fp, strict_env=True)
     if gencfg is None:
         raise MissingGenomeConfigError(args.genome_config)
     _LOGGER.debug("Determined genome config: {}".format(gencfg))
@@ -943,8 +944,8 @@ def main():
             print(res)
 
     elif args.command == UPGRADE_CMD:
-        upgrade_config(target_version=args.target_version,
-                       filepath=gencfg, force=args.force)
+        upgrade_config(target_version=args.target_version, filepath=gencfg,
+                       force=args.force)
 
 
 def _entity_dir_removal_log(directory, entity_class, asset_dict, removed_entities):
