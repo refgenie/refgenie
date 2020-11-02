@@ -21,7 +21,7 @@ Below is a CHANGELOG describing all changes introduced in configuration file ver
 
 ## Genome configuration file example
 
-Here's how the config file works, in case you do need to edit some things by hand. Here's an example file: 
+Here's how the config file works, in case you do need to edit some things by hand. Here's an example file which manages fasta and bowtie2_index assets for hg38 genome. Keep in mind that some of the keys in this config are optional:
 
 ```yaml
 config_version: 0.4
@@ -79,7 +79,6 @@ genomes:
 - **genome_archive_folder**: Path to folder file asset archives config will be stored.
 - **remote_url_base**: Path/URL to prepend to served asset archives, if non-local ones are to be served 
 
-Note that for a fully operational config just `genome_folder`, `genome_server`, `genomes`, `assets`, `tags` and `seek_keys` keys are required.
 
 For genomes that are managed by `refgenie` (that is, they were built or pulled with `refgenie`), these asset attributes will be automatically populated. You can edit them and refgenie will respect your edits (unless you re-build or re-pull the asset, which will overwrite those fields). You can also add your own assets and `refgenie` won't touch them. For more info, see [using custom assets](custom_assets.md).
 
