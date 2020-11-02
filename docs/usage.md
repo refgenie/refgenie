@@ -76,7 +76,7 @@ optional arguments:
 
 ## `refgenie list --help`
 ```console
-usage: refgenie list [-h] [-c C] [--skip-read-lock] [-g [G [G ...]]]
+usage: refgenie list [-h] [-c C] [--skip-read-lock] [-g [G [G ...]]] [-r]
 
 List available local assets.
 
@@ -87,6 +87,7 @@ optional arguments:
   --skip-read-lock                      Whether the config file should not be locked for
                                         reading
   -g [G [G ...]], --genome [G [G ...]]  Reference assembly ID, e.g. mm10.
+  -r, --recipes                         List available recipes.
 ```
 
 ## `refgenie listr --help`
