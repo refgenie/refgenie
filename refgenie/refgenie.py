@@ -199,6 +199,9 @@ def build_argparser():
             help="One or more registry path strings that identify assets  (e.g. hg38/fasta or hg38/fasta:tag"
                  + (" or hg38/fasta.fai:tag)." if cmd == GET_ASSET_CMD else ")."))
 
+    sps[LIST_LOCAL_CMD].add_argument("-r", "--recipes", action="store_true",
+                                     help="List available recipes.")
+
     for cmd in [REMOVE_CMD, INSERT_CMD]:
         sps[cmd].add_argument(
             "-f", "--force", action="store_true",
@@ -841,8 +844,11 @@ def main():
                     "Could not list assets from the following servers: {}".
                     format(bad_servers)
                 )
-        else:  # Only check local assets once
-            console.print(rgc.get_asset_table(genomes=args.genome))
+        else:
+            if args.recipes:
+                print(", ".join(sorted(list(asset_build_packages.keys()))))
+            else:
+                console.print(rgc.get_asset_table(genomes=args.genome))
 
     elif args.command == GETSEQ_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False,
