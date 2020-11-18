@@ -45,6 +45,27 @@ refgenie build rCRS/fasta --files fasta=rCRS.fa.gz
 refgenie seek rCRS/fasta
 ```
 
+### blacklist
+
+<i class="fas fa-file-import"></i> required files: `--files blacklist=/path/to/blacklist_file` (*e.g.* [hg38-blacklist.v2.bed.gz](https://github.com/Boyle-Lab/Blacklist/tree/master/lists))  
+<i class="fas fa-sliders-h"></i> required parameters: *none*  
+<i class="fas fa-exclamation-triangle"></i> required asset: *none*  
+<i class="fas fa-tools"></i> required software: *none*
+
+The `blacklist` asset represents regions that should be excluded from sequencing experiments. The ENCODE blacklist represents a comprehensive listing of these regions for several model organisms [^Amemiya2019].
+
+Example blacklist files:
+
+- [hg19 blacklist](https://github.com/Boyle-Lab/Blacklist/blob/master/lists/hg19-blacklist.v2.bed.gz)
+- [hg38 blacklist](https://github.com/Boyle-Lab/Blacklist/blob/master/lists/hg38-blacklist.v2.bed.gz)
+- [mm10 blacklist](https://github.com/Boyle-Lab/Blacklist/blob/master/lists/mm10-blacklist.v2.bed.gz)
+- [dm6 blacklist](https://github.com/Boyle-Lab/Blacklist/blob/master/lists/dm6-blacklist.v2.bed.gz)
+
+```
+wget https://github.com/Boyle-Lab/Blacklist/blob/master/lists/hg38-blacklist.v2.bed.gz
+refgenie build hg38/blacklist --files blacklist=hg38-blacklist.v2.bed.gz
+```
+
 ### refgene_anno
 
 <i class="fas fa-file-import"></i> required files: `--files refgene=/path/to/refGene_file` (*e.g.* [refGene.txt.gz](http://varianttools.sourceforge.net/Annotation/RefGene))  
@@ -267,3 +288,6 @@ The `feat_annotation` asset includes the following genomic feature annotations: 
 ```
 refgenie build test/feat_annotation
 ```
+
+
+[^Amemiya2019]: Amemiya HM, Kundaje A, Boyle AP. The ENCODE Blacklist: Identification of Problematic Regions of the Genome. *Sci Rep* 2019;9, 9354. doi:10.1038/s41598-019-45839-z
