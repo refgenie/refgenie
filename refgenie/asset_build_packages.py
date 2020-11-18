@@ -43,7 +43,7 @@ asset_build_packages = {
         REQ_PARAMS: [],
         CONT: "databio/refgenie",
         CMD_LST: [
-            "perl split_fasta.pl {fasta} {asset_outfolder}"
+            "for CHROM in $(awk '{print $1}' {fasta.chrom_sizes} | tr '\n' ' '); do samtools faidx {fasta} ${CHROM} > {asset_outfolder/${CHROM}.fa; done"
         ]
     },
     "fasta": {
