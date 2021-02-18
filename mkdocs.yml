@@ -1,6 +1,6 @@
 site_name: Refgenie
 site_logo: img/refgenie_logo_light.svg
-site_url: http://refgenie.databio.org/
+site_url: http://refgenie.databio.org/en/latest/
 repo_url: http://github.com/databio/refgenie
 pypi_name: refgenie
 paper_link: https://doi.org/10.1093/gigascience/giz149
