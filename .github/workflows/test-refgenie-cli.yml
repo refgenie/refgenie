@@ -120,7 +120,7 @@ jobs:
 
     - name: refgenie tag asset
       run: |
-        refgenie tag -c genomes/g.yaml t7_another/fasta_child:default -t new_tag --force
+        refgenie tag -c genomes/g.yaml t7_another/fasta_child:default -t new_tag -f
         ./tests/assert_in_file.sh genomes/g.yaml new_tag 0
         if [ -f `refgenie seek t7_another/fasta_child:new_tag -c genomes/g.yaml` ]; then
             echo "`refgenie seek t7_another/fasta_child:new_tag -c genomes/g.yaml` exists."

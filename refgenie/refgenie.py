@@ -907,7 +907,7 @@ def main():
             with rgc as r:
                 r.set_default_pointer(a["genome"], a["asset"], a["tag"], True)
             sys.exit(0)
-        rgc.tag(a["genome"], a["asset"], a["tag"], args.tag, args.force)
+        rgc.tag(a["genome"], a["asset"], a["tag"], args.tag, force=args.force)
 
     elif args.command == ID_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False,
