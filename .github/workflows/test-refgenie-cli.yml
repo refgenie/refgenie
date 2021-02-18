@@ -68,12 +68,6 @@ jobs:
       working-directory: ./genomes
       run: refgenie list -c g.yaml
 
-    - name: refgenie remove fasta_child
-      run: |
-        refgenie remove -c genomes/g.yaml t7/fasta_child -f
-        ./tests/assert_in_file.sh genomes/g.yaml fasta_child 1
-        ./tests/assert_in_file.sh genomes/g.yaml 162a8922a1529a5ec1ce0e69e65d7476936258586a79ba0b/fasta_child:default 1 # test if the entry was removed from the fasta children list
-
     - name: refgenie build fasta
       run: refgenie build -c genomes/g.yaml t7/fasta --files fasta=tests/data/t7.fa.gz --recipe tests/data/recipe_parent.json
 
@@ -126,15 +120,21 @@ jobs:
 
     - name: refgenie tag asset
       run: |
-        refgenie tag -c genomes/g.yaml t7_another/fasta:default -t new_tag
+        refgenie tag -c genomes/g.yaml t7_another/fasta_child:default -t new_tag
         ./tests/assert_in_file.sh genomes/g.yaml new_tag 0
-        if [ -f `refgenie seek t7_another/fasta:new_tag -c genomes/g.yaml` ]; then
-            echo "`refgenie seek t7_another/fasta:new_tag -c genomes/g.yaml` exists."
+        if [ -f `refgenie seek t7_another/fasta_child:new_tag -c genomes/g.yaml` ]; then
+            echo "`refgenie seek t7_another/fasta_child:new_tag -c genomes/g.yaml` exists."
         else
-            echo "Error: `refgenie seek t7_another/fasta:new_tag -c genomes/g.yaml` does not exist."
+            echo "Error: `refgenie seek t7_another/fasta_child:new_tag -c genomes/g.yaml` does not exist."
             exit 1
         fi
 
+    - name: refgenie remove fasta_child
+      run: |
+        refgenie remove -c genomes/g.yaml t7/fasta_child -f
+        ./tests/assert_in_file.sh genomes/g.yaml fasta_child 1
+        ./tests/assert_in_file.sh genomes/g.yaml 162a8922a1529a5ec1ce0e69e65d7476936258586a79ba0b/fasta_child:new_tag 1 # test if the entry was removed from the fasta children list
+
     - name: refgenie id
       run: |
-        ./tests/assert_in_file.sh genomes/g.yaml `refgenie id -c genomes/g.yaml t7_another/fasta:new_tag` 0
+        ./tests/assert_in_file.sh genomes/g.yaml `refgenie id -c genomes/g.yaml t7_another/fasta_child:new_tag` 0
