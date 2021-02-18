@@ -669,6 +669,11 @@ def main():
         _LOGGER.error("No command given")
         sys.exit(1)
 
+    if args.command == ALIAS_CMD and not args.subcommand:
+        parser.print_help()
+        _LOGGER.error("No alias subcommand command given")
+        sys.exit(1)
+
     gencfg = select_genome_config(
         filename=args.genome_config, check_exist=not args.command == INIT_CMD,
         on_missing=lambda fp: fp, strict_env=True)
