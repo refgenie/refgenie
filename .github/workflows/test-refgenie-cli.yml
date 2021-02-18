@@ -129,12 +129,12 @@ jobs:
             exit 1
         fi
 
+    - name: refgenie id
+      run: |
+        ./tests/assert_in_file.sh genomes/g.yaml `refgenie id -c genomes/g.yaml t7_another/fasta_child:new_tag` 0
+
     - name: refgenie remove fasta_child
       run: |
         refgenie remove -c genomes/g.yaml t7_another/fasta_child -f
         ./tests/assert_in_file.sh genomes/g.yaml fasta_child 1
         ./tests/assert_in_file.sh genomes/g.yaml 162a8922a1529a5ec1ce0e69e65d7476936258586a79ba0b/fasta_child:new_tag 1 # test if the entry was removed from the fasta children list
-
-    - name: refgenie id
-      run: |
-        ./tests/assert_in_file.sh genomes/g.yaml `refgenie id -c genomes/g.yaml t7_another/fasta_child:new_tag` 0
