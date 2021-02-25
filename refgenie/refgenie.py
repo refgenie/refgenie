@@ -4,6 +4,7 @@ from collections import OrderedDict
 from shutil import rmtree
 from re import sub
 from requests import ConnectionError
+from requests.exceptions import MissingSchema
 from rich.console import Console
 
 import os
@@ -1247,7 +1248,7 @@ def main():
                     table = rgc.get_asset_table(
                         genomes=args.genome, server_url=server_url
                     )
-                except (DownloadJsonError, ConnectionError):
+                except (DownloadJsonError, ConnectionError, MissingSchema):
                     bad_servers.append(server_url)
                     continue
                 else:
