@@ -118,7 +118,7 @@ def build_argparser():
         "-s",
         "--genome-server",
         nargs="+",
-        default=DEFAULT_SERVER,
+        default=[DEFAULT_SERVER],
         help="URL(s) to use for the {} attribute in config file. Default: {}.".format(
             CFG_SERVERS_KEY, DEFAULT_SERVER
         ),
