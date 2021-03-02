@@ -45,7 +45,7 @@ jobs:
       run: |
         refgenie build -c genomes/g.yaml t7/fasta --files fasta=tests/data/t7.fa.gz --recipe  tests/data/recipe_parent.json
         ./tests/assert_in_file.sh genomes/g.yaml t7 0
-        ./tests/assert_in_file.sh genomes/g.yaml 162a8922a1529a5ec1ce0e69e65d7476936258586a79ba0b 0 # this is a digest that should be produced from this FASTA file
+        ./tests/assert_in_file.sh genomes/g.yaml 6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905 0 # this is a digest that should be produced from this FASTA file
 
     - name: refgenie build fasta_child (child asset)
       run: |
@@ -57,10 +57,10 @@ jobs:
             echo "Error: `refgenie seek -c genomes/g.yaml t7/fasta_child` does not exist."
             exit 1
         fi
-        if [ -d genomes/data/162a8922a1529a5ec1ce0e69e65d7476936258586a79ba0b/fasta_child/default ]; then
-            echo "'genomes/data/162a8922a1529a5ec1ce0e69e65d7476936258586a79ba0b/fasta_child/default' exists."
+        if [ -d genomes/data/6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905/fasta_child/default ]; then
+            echo "'genomes/data/6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905/fasta_child/default' exists."
         else
-            echo "Error: 'genomes/data/162a8922a1529a5ec1ce0e69e65d7476936258586a79ba0b/fasta_child/default' does not exist."
+            echo "Error: 'genomes/data/6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905/fasta_child/default' does not exist."
             exit 1
         fi
 
@@ -73,7 +73,7 @@ jobs:
 
     - name: refgenie set aliases
       run: |
-        refgenie alias set -c genomes/g.yaml --aliases t7_new t7_new1 --digest 162a8922a1529a5ec1ce0e69e65d7476936258586a79ba0b
+        refgenie alias set -c genomes/g.yaml --aliases t7_new t7_new1 --digest 6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905
         ./tests/assert_in_file.sh genomes/g.yaml t7_new 0
         ./tests/assert_in_file.sh genomes/g.yaml t7_new1 0
         if [ -L `refgenie seek -c genomes/g.yaml t7_new/fasta` ]; then
@@ -91,16 +91,16 @@ jobs:
 
     - name: refgenie remove aliases
       run: |
-        refgenie alias set -c genomes/g.yaml --aliases t7_another --digest 162a8922a1529a5ec1ce0e69e65d7476936258586a79ba0b
-        refgenie alias remove -c genomes/g.yaml --aliases t7_new t7_new1 t7 --digest 162a8922a1529a5ec1ce0e69e65d7476936258586a79ba0b
+        refgenie alias set -c genomes/g.yaml --aliases t7_another --digest 6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905
+        refgenie alias remove -c genomes/g.yaml --aliases t7_new t7_new1 t7 --digest 6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905
         ./tests/assert_in_file.sh genomes/g.yaml t7_new 1
         ./tests/assert_in_file.sh genomes/g.yaml t7_new1 1
         ./tests/assert_in_file.sh genomes/g.yaml t7_another 0
-        if [ -L genomes/alias/t7_new/fasta/default/162a8922a1529a5ec1ce0e69e65d7476936258586a79ba0b.fa.gz ]; then
-            echo "'genomes/alias/t7_new/fasta/default/162a8922a1529a5ec1ce0e69e65d7476936258586a79ba0b.fa.gz' exists."
+        if [ -L genomes/alias/t7_new/fasta/default/6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905.fa.gz ]; then
+            echo "'genomes/alias/t7_new/fasta/default/6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905.fa.gz' exists."
             exit 1
         else
-            echo "Error: 'genomes/alias/t7_new/fasta/default/162a8922a1529a5ec1ce0e69e65d7476936258586a79ba0b.fa.gz' does not exist."
+            echo "Error: 'genomes/alias/t7_new/fasta/default/6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905.fa.gz' does not exist."
         fi
 
     - name: refgenie get aliases
@@ -137,4 +137,4 @@ jobs:
       run: |
         refgenie remove -c genomes/g.yaml t7_another/fasta_child -f
         ./tests/assert_in_file.sh genomes/g.yaml fasta_child 1
-        ./tests/assert_in_file.sh genomes/g.yaml 162a8922a1529a5ec1ce0e69e65d7476936258586a79ba0b/fasta_child:new_tag 1 # test if the entry was removed from the fasta children list
+        ./tests/assert_in_file.sh genomes/g.yaml 6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905/fasta_child:new_tag 1 # test if the entry was removed from the fasta children list
