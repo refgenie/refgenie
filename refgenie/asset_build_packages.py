@@ -287,6 +287,16 @@ asset_build_packages = {
             "salmon index -t {asset_outfolder}/gentrome.fa -d {asset_outfolder}/decoys.txt -i {asset_outfolder} -k {kmer} -p {threads}",
         ],
     },
+    "tgMap": {
+        DESC: "Transcript to gene map file, containing two columns mapping of each transcript present in the reference to the corresponding gene.",
+        REQ_FILES: [],
+        REQ_ASSETS: [{KEY: "salmon_partial_sa_index", DEFAULT: "salmon_partial_sa_index", DESC: "partial salmon index asset"}],
+        REQ_PARAMS: [],
+        ASSETS: {"tgMap": "{genome}_txp2gene.tsv"},
+        CMD_LST: [
+            "grep '^>' {salmon_partial_sa_index}/gentrome.fa | cut -d ' ' -f 1,7 | tr -s ' ' '\\t' | sed 's/[>'gene_symbol:']//g' > {asset_outfolder}/{genome}_txp2gene.tsv",
+        ],
+    },
     "epilog_index": {
         DESC: "Genome index for CpG sites, produced by the epilog DNA methylation caller",
         REQ_FILES: [],
