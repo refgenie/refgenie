@@ -290,7 +290,13 @@ asset_build_packages = {
     "tgMap": {
         DESC: "Transcript to gene map file, containing two columns mapping of each transcript present in the reference to the corresponding gene.",
         REQ_FILES: [],
-        REQ_ASSETS: [{KEY: "salmon_partial_sa_index", DEFAULT: "salmon_partial_sa_index", DESC: "partial salmon index asset"}],
+        REQ_ASSETS: [
+            {
+                KEY: "salmon_partial_sa_index",
+                DEFAULT: "salmon_partial_sa_index",
+                DESC: "partial salmon index asset",
+            }
+        ],
         REQ_PARAMS: [],
         ASSETS: {"tgMap": "{genome}_txp2gene.tsv"},
         CMD_LST: [
