@@ -6,7 +6,7 @@ Each iGenome has the following nested directory structure:
     Build/
     Annotation/ Sequence/
 """
-from .refgenie import _seek, _remove
+from .refgenie import _seek
 from .exceptions import MissingGenomeConfigError
 
 from ubiquerg import untar, mkabs, query_yes_no
@@ -198,6 +198,24 @@ def main():
         if refgenie_add(rgc, asset_dict, asset_path):
             processed.append("{}/{}".format(asset_dict["genome"], asset_dict["asset"]))
     print("Added assets: \n- {}".format("\n- ".join(processed)))
+
+
+def _remove(path):
+    """
+    remove asset if it is a dir or a file
+
+    :param str path: path to the entity to remove, either a file or a dir
+    :return str: removed path
+    """
+    from shutil import rmtree
+
+    if os.path.isfile(path):
+        os.remove(path)
+    elif os.path.isdir(path):
+        rmtree(path)
+    else:
+        raise ValueError("path '{}' is neither a file nor a dir.".format(path))
+    return path
 
 
 if __name__ == "__main__":

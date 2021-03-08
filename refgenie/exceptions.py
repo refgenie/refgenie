@@ -1,6 +1,6 @@
 from refgenconf import CFG_ENV_VARS
 
-__all__ = ["RefgenieError", "MissingGenomeConfigError"]
+__all__ = ["RefgenieError", "MissingGenomeConfigError", "MissingFolderError"]
 
 
 class RefgenieError(Exception):

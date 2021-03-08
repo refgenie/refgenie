@@ -1,4 +1,4 @@
-from .refgenie import main
+from .cli import main
 import sys
 
 if __name__ == "__main__":
