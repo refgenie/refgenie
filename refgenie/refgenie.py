@@ -22,8 +22,9 @@ from refgenconf import (
 from ubiquerg import parse_registry_path as prp
 from ubiquerg.system import is_writable
 from yacman import UndefinedAliasError
+from logging import getLogger
 
-_LOGGER = None
+_LOGGER = getLogger(PKG_NAME)
 
 
 def parse_registry_path(path):

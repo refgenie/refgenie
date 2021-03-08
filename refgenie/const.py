@@ -4,6 +4,8 @@ and/or refgenieserver should be defined in refgenconf.const
 """
 from refgenconf.const import *
 
+PKG_NAME = "refgenie"
+
 BUILD_CMD = "build"
 INIT_CMD = "init"
 PULL_CMD = "pull"
