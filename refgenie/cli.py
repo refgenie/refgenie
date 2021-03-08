@@ -1,6 +1,7 @@
 import logmuse
 import sys
 import json
+import os
 
 from .argparser import build_argparser
 from .refgenie import parse_registry_path, _skip_lock
