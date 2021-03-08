@@ -51,4 +51,4 @@ navbar:
   left:
   - text: Refgenomes server
     icon: fa-server
-    href: http://refgenomes.databio.org
+    href: servers
