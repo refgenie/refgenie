@@ -273,7 +273,7 @@ def main():
             try:
                 if not rgc.is_asset_complete(**gat):
                     with rgc as r:
-                        r.cfg_remove_assets(**gat, aliases=args.aliases)
+                        r.cfg_remove_assets(**gat)
                     _LOGGER.info(
                         "Removed an incomplete asset "
                         "'{genome}/{asset}:{tag}'".format(*gat)

@@ -46,7 +46,7 @@ refgenie listr
 Response:
 ```console
                         Remote refgenie assets                        
-                 Server URL: http://rg.databio.org:82                 
+                 Server URL: http://refgenomes.databio.org                 
 ┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ genome              ┃ assets                                       ┃
 ┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
@@ -65,14 +65,13 @@ refgenie pull rCRSd/bowtie2_index
 
 Response:
 ```console
-No local digest for genome alias: rCRSd
-Setting 'rCRSd' identity with server: http://rg.databio.org:82/v3/alias/genome_digest/rCRSd
-Determined server digest for local genome alias (rCRSd): 511fb1178275e7d529560d53b949dba40815f195623bce8e
-Set genome alias (511fb1178275e7d529560d53b949dba40815f195623bce8e: rCRSd)
+Downloading URL: http://rg.databio.org/v3/assets/archive/94e0d21feb576e6af61cd2a798ad30682ef2428bb7eabbb4/bowtie2_index
+94e0d21feb576e6af61cd2a798ad30682ef2428bb7eabbb4/bowtie2_index:default ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% • 128.0/117.0 KB • 1.8 MB/s • 0:00:00
+Download complete: /Users/mstolarczyk/Desktop/testing/refgenie/data/94e0d21feb576e6af61cd2a798ad30682ef2428bb7eabbb4/bowtie2_index/bowtie2_index__default.tgz
+Extracting asset tarball: /Users/mstolarczyk/Desktop/testing/refgenie/data/94e0d21feb576e6af61cd2a798ad30682ef2428bb7eabbb4/bowtie2_index/bowtie2_index__default.tgz
+Default tag for '94e0d21feb576e6af61cd2a798ad30682ef2428bb7eabbb4/bowtie2_index' set to: default
 Created alias directories: 
- - /Users/mstolarczyk/demo/alias/rCRSd
-Downloading URL: http://rg.databio.org:82/v3/asset/511fb1178275e7d529560d53b949dba40815f195623bce8e/fasta/archive
-...
+ - /Users/mstolarczyk/Desktop/testing/refgenie/alias/rCRSd/bowtie2_index/default
 ```
 
 See [further reading on downloading assets](pull.md).
@@ -83,7 +82,7 @@ Refgenie assets are scripted, so if what you need is not available remotely, you
 
 
 ```console
-refgenie build mygenome/bwa_index --files fasta=mygenome.fa.gz
+refgenie build mygenome/bwa_index
 ```
 
 See [further reading on building assets](build.md).

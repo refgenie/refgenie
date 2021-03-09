@@ -2,7 +2,7 @@
 
 ## `refgenie --help`
 ```console
-version: 0.10.0-dev | refgenconf 0.10.0-dev
+version: 0.10.0 | refgenconf 0.10.0
 usage: refgenie [-h] [--version] [--silent] [--verbosity V] [--logdev]
                 {init,list,listr,pull,build,seek,add,remove,getseq,tag,id,subscribe,unsubscribe,alias,compare,upgrade}
                 ...
@@ -272,7 +272,7 @@ optional arguments:
 
 ## `refgenie tag --help`
 ```console
-usage: refgenie tag [-h] [-c C] [--skip-read-lock] [-g G] (-t TAG | -d)
+usage: refgenie tag [-h] [-c C] [--skip-read-lock] [-g G] [-f] (-t TAG | -d)
                     asset-registry-paths [asset-registry-paths ...]
 
 Tag an asset.
@@ -287,6 +287,7 @@ optional arguments:
                            environment variable is set.
   --skip-read-lock         Whether the config file should not be locked for reading
   -g G, --genome G         Reference assembly ID, e.g. mm10.
+  -f, --force              Do not prompt before action, approve upfront.
   -t TAG, --tag TAG        Tag to assign to an asset.
   -d, --default            Set the selected asset tag as the default one.
 ```
