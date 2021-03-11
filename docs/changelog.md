@@ -1,6 +1,24 @@
 # Changelog
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
+## [0.10.0] - 2021-03-11
+
+**After updating to this version your configuration file and genome assets will not be compatible with the software. Please refer to the [upgrade tutorial](config_upgrade_03_to_04.md) for instructions on how to migrate the config between versions.**
+
+## Changed
+
+- instead of using human-readable names as genome identifiers refgenie uses sequence-derived digests in the config
+- asset data moved to `data` directory
+- asset files are now named after genome digests
+- refgenieserver API v3 is now used for remote assets retrieval
+- improved visual interface in `list`, `listr` and `pull` subcommands
+
+## Added
+
+- `data` and `alias` directories in genome directory that are used to store asset and aliases data, respectively
+- `refgenie alias` command for genome aliases management
+- `refgenie upgrade` command for config format upgrades
+- `refgenie compare` command for genome compatibility determination
 
 ## [0.9.3] - 2020-07-29
 

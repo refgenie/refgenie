@@ -18,3 +18,17 @@ docker run --rm -d -p 80:80 \
 ```
 
 Mount your archived genomes folder to `/genomes` in the container, and you're essentially good to go.
+
+### References
+
+We have scripted the process of building and archiving the assets to serve with `refgenieserver`. The process usually includes the following steps:
+
+1. Download raw input files for assets (FASTA files, GTF files etc.)
+2. Build assets with refgenie build in a local refgenie instance
+3. Archive assets with refgenieserver archive
+4. Deploy the server (run `refgenieserver serve` on a cluster or locally)
+
+Check out these GitHub repositories for more details and all the required metadata:
+
+- [`refgenie/refgenomes.databio.org`](https://github.com/refgenie/refgenomes.databio.org) (primary refgenie assets server instance)
+- [`refgenie/rg.databio.org`](https://github.com/refgenie/rg.databio.org) (development refgenie assets server instace)

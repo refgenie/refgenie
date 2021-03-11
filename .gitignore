@@ -80,3 +80,6 @@ refgenie.egg-info/
 docs_jupyter/refgenie.yaml
 docs_jupyter/rCRSd*
 docs_jupyter/hs38d1*
+
+# build dir
+build/

@@ -1,0 +1,140 @@
+name: Test refgenie CLI
+
+on:
+  push:
+    branches: [master, dev]
+
+jobs:
+  test_CLI:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: [3.6, 3.8]
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install dev dependancies
+      run: if [ -f requirements/requirements-dev.txt ]; then pip install -r requirements/requirements-dev.txt; fi
+
+    - name: Install package
+      run: python -m pip install .
+
+    - name: install macOS-specific dependancies
+      if: startsWith(matrix.os, 'macOS')
+      run: brew install md5sha1sum
+
+    - name: create genomes dir
+      run: mkdir genomes
+
+    - name: refgenie init
+      working-directory: ./genomes
+      run: refgenie init -c g.yaml; cat g.yaml
+
+    - name: refgenie list
+      working-directory: ./genomes
+      run: refgenie list -c g.yaml
+
+    - name: refgenie build fasta (parent asset)
+      run: |
+        refgenie build -c genomes/g.yaml t7/fasta --files fasta=tests/data/t7.fa.gz --recipe  tests/data/recipe_parent.json
+        ./tests/assert_in_file.sh genomes/g.yaml t7 0
+        ./tests/assert_in_file.sh genomes/g.yaml 6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905 0 # this is a digest that should be produced from this FASTA file
+
+    - name: refgenie build fasta_child (child asset)
+      run: |
+        refgenie build -c genomes/g.yaml t7/fasta_child --recipe tests/data/recipe_child.json
+        ./tests/assert_in_file.sh genomes/g.yaml fasta_child 0
+        if [ -L `refgenie seek -c genomes/g.yaml t7/fasta_child` ]; then
+            echo "`refgenie seek -c genomes/g.yaml t7/fasta_child` exists."
+        else
+            echo "Error: `refgenie seek -c genomes/g.yaml t7/fasta_child` does not exist."
+            exit 1
+        fi
+        if [ -d genomes/data/6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905/fasta_child/default ]; then
+            echo "'genomes/data/6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905/fasta_child/default' exists."
+        else
+            echo "Error: 'genomes/data/6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905/fasta_child/default' does not exist."
+            exit 1
+        fi
+
+    - name: refgenie list
+      working-directory: ./genomes
+      run: refgenie list -c g.yaml
+
+    - name: refgenie build fasta
+      run: refgenie build -c genomes/g.yaml t7/fasta --files fasta=tests/data/t7.fa.gz --recipe tests/data/recipe_parent.json
+
+    - name: refgenie set aliases
+      run: |
+        refgenie alias set -c genomes/g.yaml --aliases t7_new t7_new1 --digest 6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905
+        ./tests/assert_in_file.sh genomes/g.yaml t7_new 0
+        ./tests/assert_in_file.sh genomes/g.yaml t7_new1 0
+        if [ -L `refgenie seek -c genomes/g.yaml t7_new/fasta` ]; then
+            echo "`refgenie seek -c genomes/g.yaml t7_new/fasta` exists."
+        else
+            echo "Error: `refgenie seek -c genomes/g.yaml t7_new/fasta` does not exist."
+            exit 1
+        fi
+        if [ -L `refgenie seek -c genomes/g.yaml t7_new1/fasta` ]; then
+            echo "`refgenie seek -c genomes/g.yaml t7_new1/fasta` exists."
+        else
+            echo "Error: `refgenie seek -c genomes/g.yaml t7_new1/fasta` does not exist."
+            exit 1
+        fi
+
+    - name: refgenie remove aliases
+      run: |
+        refgenie alias set -c genomes/g.yaml --aliases t7_another --digest 6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905
+        refgenie alias remove -c genomes/g.yaml --aliases t7_new t7_new1 t7 --digest 6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905
+        ./tests/assert_in_file.sh genomes/g.yaml t7_new 1
+        ./tests/assert_in_file.sh genomes/g.yaml t7_new1 1
+        ./tests/assert_in_file.sh genomes/g.yaml t7_another 0
+        if [ -L genomes/alias/t7_new/fasta/default/6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905.fa.gz ]; then
+            echo "'genomes/alias/t7_new/fasta/default/6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905.fa.gz' exists."
+            exit 1
+        else
+            echo "Error: 'genomes/alias/t7_new/fasta/default/6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905.fa.gz' does not exist."
+        fi
+
+    - name: refgenie get aliases
+      run: |
+        refgenie alias get -c genomes/g.yaml
+
+    - name: refgneie add asset
+      run: |
+        refgenie add t7_another/test_asset -c genomes/g.yaml  --path ../tests/data --seek-keys '{"recipe": "recipe_parent.json"}'
+        ./tests/assert_in_file.sh genomes/g.yaml test_asset 0
+        if [ -L `refgenie seek t7_another/test_asset.recipe:default -c genomes/g.yaml` ]; then
+            echo "`refgenie seek t7_another/test_asset.recipe:default -c genomes/g.yaml` exists."
+        else
+            echo "Error: `refgenie seek t7_another/test_asset.recipe:default -c genomes/g.yaml` does not exist."
+            exit 1
+        fi
+
+    - name: refgenie tag asset
+      run: |
+        refgenie tag -c genomes/g.yaml t7_another/fasta_child:default -t new_tag -f
+        ./tests/assert_in_file.sh genomes/g.yaml new_tag 0
+        if [ -f `refgenie seek t7_another/fasta_child:new_tag -c genomes/g.yaml` ]; then
+            echo "`refgenie seek t7_another/fasta_child:new_tag -c genomes/g.yaml` exists."
+        else
+            echo "Error: `refgenie seek t7_another/fasta_child:new_tag -c genomes/g.yaml` does not exist."
+            exit 1
+        fi
+
+    - name: refgenie id
+      run: |
+        ./tests/assert_in_file.sh genomes/g.yaml `refgenie id -c genomes/g.yaml t7_another/fasta_child:new_tag` 0
+
+    - name: refgenie remove fasta_child
+      run: |
+        refgenie remove -c genomes/g.yaml t7_another/fasta_child -f
+        ./tests/assert_in_file.sh genomes/g.yaml fasta_child 1
+        ./tests/assert_in_file.sh genomes/g.yaml 6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905/fasta_child:new_tag 1 # test if the entry was removed from the fasta children list

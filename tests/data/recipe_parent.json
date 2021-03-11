@@ -1,0 +1,20 @@
+{
+    "name": "fasta",
+    "description": "DNA sequences in the FASTA format, dummy recipe",
+    "assets": {
+        "fasta": "{genome}.fa"
+    },
+    "required_files": [
+        {
+            "key": "fasta",
+            "description": "gzipped fasta file"
+        }
+    ],
+    "required_assets": [],
+    "required_parameters": [],
+    "container": "databio/refgenie",
+    "command_list": [
+        "cp {fasta} {asset_outfolder}/{genome}.fa.gz",
+        "gzip -df {asset_outfolder}/{genome}.fa.gz"
+    ]
+}

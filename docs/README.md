@@ -20,6 +20,8 @@ Refgenie manages storage, access, and transfer of reference genome resources. It
 
 4. **It includes a python API**. For tool developers, you use `rgc = refgenconf.RefGenConf("genomes.yaml")` to get a Python object with paths to any genome asset, *e.g.*, `rgc.seek("hg38", "kallisto_index")`.
 
+5. **It strictly determines genomes compatibility**. Users refer to genomes with arbitrary aliases, like "hg38", but refgenie uses sequence-derived identifiers to verify genome identity with asset servers.
+
 
 ## Quick example
 
@@ -43,11 +45,16 @@ refgenie listr
 
 Response:
 ```console
-Querying available assets from server: http://refgenomes.databio.org/v2/assets
-Remote genomes: mouse_chrM2x, rCRSd
-Remote assets:
-        mouse_chrM2x/   bowtie2_index:default, fasta.chrom_sizes:default, fasta.fai:default, fasta:default
-               rCRSd/   bowtie2_index:default, fasta.chrom_sizes:default, fasta.chrom_sizes:test, fasta.fai:default, fasta.fai:test, fasta:default, fasta:test
+                        Remote refgenie assets                        
+                 Server URL: http://refgenomes.databio.org                 
+┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ genome              ┃ assets                                       ┃
+┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ mouse_chrM2x        │ fasta, bwa_index, bowtie2_index              │
+│ hg38                │ fasta, bowtie2_index                         │
+│ rCRSd               │ fasta, bowtie2_index                         │
+│ human_repeats       │ fasta, hisat2_index, bwa_index               │
+└─────────────────────┴──────────────────────────────────────────────┘
 ```
 
 Next, pull one:
@@ -58,8 +65,13 @@ refgenie pull rCRSd/bowtie2_index
 
 Response:
 ```console
-'rCRSd/bowtie2_index:default' archive size: 116.8KB
-Downloading URL: http://staging.refgenomes.databio.org/v2/asset/rCRSd/bowtie2_index/archive ... 
+Downloading URL: http://rg.databio.org/v3/assets/archive/94e0d21feb576e6af61cd2a798ad30682ef2428bb7eabbb4/bowtie2_index
+94e0d21feb576e6af61cd2a798ad30682ef2428bb7eabbb4/bowtie2_index:default ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100.0% • 128.0/117.0 KB • 1.8 MB/s • 0:00:00
+Download complete: /Users/mstolarczyk/Desktop/testing/refgenie/data/94e0d21feb576e6af61cd2a798ad30682ef2428bb7eabbb4/bowtie2_index/bowtie2_index__default.tgz
+Extracting asset tarball: /Users/mstolarczyk/Desktop/testing/refgenie/data/94e0d21feb576e6af61cd2a798ad30682ef2428bb7eabbb4/bowtie2_index/bowtie2_index__default.tgz
+Default tag for '94e0d21feb576e6af61cd2a798ad30682ef2428bb7eabbb4/bowtie2_index' set to: default
+Created alias directories: 
+ - /Users/mstolarczyk/Desktop/testing/refgenie/alias/rCRSd/bowtie2_index/default
 ```
 
 See [further reading on downloading assets](pull.md).
@@ -70,7 +82,7 @@ Refgenie assets are scripted, so if what you need is not available remotely, you
 
 
 ```console
-refgenie build mygenome/bwa_index --fasta mygenome.fa.gz
+refgenie build mygenome/bwa_index
 ```
 
 See [further reading on building assets](build.md).

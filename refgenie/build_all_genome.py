@@ -8,23 +8,71 @@ import os
 import argparse
 import divvy
 
-parser = argparse.ArgumentParser(description='Builds submission scripts for all assets for a genome')
-parser.add_argument('-g', '--genome', dest="genome", type=str, 
-    help='genome to build the submission scripts for')
-parser.add_argument('-p', '--path', dest="path", type=str, 
-    help='path to the desired submission directory location')
-parser.add_argument('-pt', '--partition', dest="PARTITION", type=str, 
-    help='partition in SLURM submission script', default="standard")
-parser.add_argument('-m', '--mem', dest="MEM", type=str, 
-    help='mem in SLURM submission script', default="200000")
-parser.add_argument('-t', '--time', dest="TIME", type=str, 
-    help='time in SLURM submission script', default="10:00:00")
-parser.add_argument('-c', '--cores', dest="CORES", type=str, 
-    help='cpus-per-task in SLURM submission script', default="4")
-parser.add_argument('-o', '--output', dest="LOGFILE", type=str, 
-    help='output in SLURM submission script', default=None)
-parser.add_argument('-j', '--job-name', dest="JOBNAME", type=str, 
-    help='job-name in SLURM submission script', default=None)
+parser = argparse.ArgumentParser(
+    description="Builds submission scripts for all assets for a genome"
+)
+parser.add_argument(
+    "-g",
+    "--genome",
+    dest="genome",
+    type=str,
+    help="genome to build the submission scripts for",
+)
+parser.add_argument(
+    "-p",
+    "--path",
+    dest="path",
+    type=str,
+    help="path to the desired submission directory location",
+)
+parser.add_argument(
+    "-pt",
+    "--partition",
+    dest="PARTITION",
+    type=str,
+    help="partition in SLURM submission script",
+    default="standard",
+)
+parser.add_argument(
+    "-m",
+    "--mem",
+    dest="MEM",
+    type=str,
+    help="mem in SLURM submission script",
+    default="200000",
+)
+parser.add_argument(
+    "-t",
+    "--time",
+    dest="TIME",
+    type=str,
+    help="time in SLURM submission script",
+    default="10:00:00",
+)
+parser.add_argument(
+    "-c",
+    "--cores",
+    dest="CORES",
+    type=str,
+    help="cpus-per-task in SLURM submission script",
+    default="4",
+)
+parser.add_argument(
+    "-o",
+    "--output",
+    dest="LOGFILE",
+    type=str,
+    help="output in SLURM submission script",
+    default=None,
+)
+parser.add_argument(
+    "-j",
+    "--job-name",
+    dest="JOBNAME",
+    type=str,
+    help="job-name in SLURM submission script",
+    default=None,
+)
 
 args = parser.parse_args()
 
@@ -69,8 +117,10 @@ for asset in asset_build_packages:
     sub_script = os.path.join(subdir_path, asset + ".sub")
     req_input = asset_build_packages[asset]["required_inputs"]
     if req_input:
-        print("{} asset requires additional input in the command ({}), so '{}'"
-            " requires manual edit".format(asset, req_input, sub_script))
+        print(
+            "{} asset requires additional input in the command ({}), so '{}'"
+            " requires manual edit".format(asset, req_input, sub_script)
+        )
         req_str = " ".join(_req_input_to_args(req_input))
     else:
         req_str = ""
