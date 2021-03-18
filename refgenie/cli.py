@@ -17,7 +17,6 @@ from refgenconf import (
     MissingAssetError,
     MissingGenomeError,
     DownloadJsonError,
-    populate_refgenie_refs,
     upgrade_config,
     __version__ as rgc_version,
     select_genome_config,
@@ -372,12 +371,12 @@ def main():
         if args.file:
             with open(args.file) as fp:
                 for line in fp:
-                    sys.stdout.write(populate_refgenie_refs(rgc, line))
+                    sys.stdout.write(rgc.populate_refgenie_refs(line))
         else: 
             for line in sys.stdin: 
                 if 'q' == line.rstrip(): 
                     break
-                sys.stdout.write(populate_refgenie_refs(rgc, line)) 
+                sys.stdout.write(rgc.populate_refgenie_refs(line)) 
 
 
 def perm_check_x(file_to_check, message_tag="genome directory"):
