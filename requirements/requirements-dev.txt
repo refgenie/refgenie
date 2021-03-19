@@ -1,1 +1,1 @@
-https://github.com/refgenie/refgencionf/archive/dev.zip
+-e git+git://github.com/databio/refgenconf@dev#egg=refgenconf
