@@ -53,12 +53,11 @@ def main():
         on_missing=lambda fp: fp,
         strict_env=True,
     )
-    if gencfg is None:
+    if gencfg is None and args.command not in [GET_REMOTE_ASSET_CMD, LIST_REMOTE_CMD]:
         raise MissingGenomeConfigError(args.genome_config)
     _LOGGER.debug("Determined genome config: {}".format(gencfg))
 
-    skip_read_lock = _skip_lock(args.skip_read_lock, gencfg)
-
+    skip_read_lock = True if gencfg is None else _skip_lock(args.skip_read_lock, gencfg)
     # From user input we want to construct a list of asset dicts, where each
     # asset has a genome name, asset name, and tag
     if "asset_registry_paths" in args and args.asset_registry_paths:
