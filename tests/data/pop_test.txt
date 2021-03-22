@@ -1,0 +1,6 @@
+refgenie://t7/fasta
+refgenie://mm10/fasta
+blah
+lorem ipsum --- ...
+
+refgenie://hg38/fasta

@@ -378,6 +378,24 @@ def main():
             target_version=args.target_version, filepath=gencfg, force=args.force
         )
 
+    elif args.command == POPULATE_CMD:
+        _LOGGER.debug("Populating file: {}".format(args.file))
+        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        # demo = {"genome": 'refgenie://hg19/fasta',
+        # "other_attr": "something",
+        # "bt2": 'refgenie://t7/bwa_index'}
+        # res = populate_refgenie_refs(rgc, demo)
+        # print(res)
+        if args.file:
+            with open(args.file) as fp:
+                for line in fp:
+                    sys.stdout.write(rgc.populate_refgenie_refs(line))
+        else:
+            for line in sys.stdin:
+                if "q" == line.rstrip():
+                    break
+                sys.stdout.write(rgc.populate_refgenie_refs(line))
+
 
 def perm_check_x(file_to_check, message_tag="genome directory"):
     """
