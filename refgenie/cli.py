@@ -169,7 +169,9 @@ def main():
     elif args.command == GET_REMOTE_ASSET_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
         if args.genome_server is not None:
-            rgc.subscribe(urls=args.genome_server, reset=not args.append_server)
+            rgc.subscribe(
+                urls=args.genome_server, reset=not args.append_server, no_write=True
+            )
         for a in asset_list:
             _LOGGER.debug(
                 "getting remote asset path: '{}/{}.{}:{}'".format(
@@ -249,7 +251,9 @@ def main():
         console = Console()
         if args.command == LIST_REMOTE_CMD:
             if args.genome_server is not None:
-                rgc.subscribe(urls=args.genome_server, reset=not args.append_server)
+                rgc.subscribe(
+                    urls=args.genome_server, reset=not args.append_server, no_write=True
+                )
             num_servers = 0
             bad_servers = []
             for server_url in rgc[CFG_SERVERS_KEY]:
