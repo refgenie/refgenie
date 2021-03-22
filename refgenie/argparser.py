@@ -482,11 +482,7 @@ def build_argparser():
         )
 
     sps[POPULATE_CMD].add_argument(
-        "-f",
-        "--file",
-        metavar="F",
-        help="File with registry paths to populate")
-
-
+        "-f", "--file", metavar="F", help="File with registry paths to populate"
+    )
 
     return parser

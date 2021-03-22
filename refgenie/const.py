@@ -46,7 +46,7 @@ SUBPARSER_MESSAGES = {
     ALIAS_CMD: "Interact with aliases.",
     COMPARE_CMD: "Compare two genomes.",
     UPGRADE_CMD: "Upgrade config. This will alter the files on disk.",
-    POPULATE_CMD: "Populate registry paths with real paths."
+    POPULATE_CMD: "Populate registry paths with real paths.",
 }
 
 ALIAS_GET_CMD = "get"
