@@ -481,10 +481,28 @@ def build_argparser():
             "--genome-server",
             nargs="+",
             required=True,
+            metavar="S",
             help="One or more URLs to {action} the {key} attribute in config file.".format(
                 action="add to" if cmd == SUBSCRIBE_CMD else "remove from",
                 key=CFG_SERVERS_KEY,
             ),
+        )
+
+    for cmd in [LIST_REMOTE_CMD, GET_REMOTE_ASSET_CMD]:
+        sps[cmd].add_argument(
+            "-s",
+            "--genome-server",
+            nargs="+",
+            required=False,
+            metavar="S",
+            help="One or more URLs to use. "
+                 "This information will not persist in the genome config file."
+        )
+        sps[cmd].add_argument(
+            "-p",
+            "--append-server",
+            action="store_true",
+            help="Whether the provided servers should be appended to the list."
         )
 
     sps[POPULATE_CMD].add_argument(
