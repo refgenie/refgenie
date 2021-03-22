@@ -496,13 +496,13 @@ def build_argparser():
             required=False,
             metavar="S",
             help="One or more URLs to use. "
-                 "This information will not persist in the genome config file."
+            "This information will not persist in the genome config file.",
         )
         sps[cmd].add_argument(
             "-p",
             "--append-server",
             action="store_true",
-            help="Whether the provided servers should be appended to the list."
+            help="Whether the provided servers should be appended to the list.",
         )
 
     sps[POPULATE_CMD].add_argument(
