@@ -308,6 +308,7 @@ def build_argparser():
     for cmd in [
         PULL_CMD,
         GET_ASSET_CMD,
+        GET_REMOTE_ASSET_CMD,
         BUILD_CMD,
         INSERT_CMD,
         REMOVE_CMD,
@@ -338,6 +339,7 @@ def build_argparser():
     for cmd in [
         PULL_CMD,
         GET_ASSET_CMD,
+        GET_REMOTE_ASSET_CMD,
         BUILD_CMD,
         INSERT_CMD,
         REMOVE_CMD,
@@ -350,7 +352,11 @@ def build_argparser():
             type=str,
             nargs="+",
             help="One or more registry path strings that identify assets  (e.g. hg38/fasta or hg38/fasta:tag"
-            + (" or hg38/fasta.fai:tag)." if cmd == GET_ASSET_CMD else ")."),
+            + (
+                " or hg38/fasta.fai:tag)."
+                if cmd in [GET_ASSET_CMD, GET_REMOTE_ASSET_CMD]
+                else ")."
+            ),
         )
 
     sps[LIST_LOCAL_CMD].add_argument(

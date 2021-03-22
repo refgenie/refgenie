@@ -167,6 +167,24 @@ def main():
             )
         return
 
+    elif args.command == GET_REMOTE_ASSET_CMD:
+        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        for a in asset_list:
+            _LOGGER.debug(
+                "getting remote asset path: '{}/{}.{}:{}'".format(
+                    a["genome"], a["asset"], a["seek_key"], a["tag"]
+                )
+            )
+            print(
+                rgc.seekr(
+                    a["genome"],
+                    a["asset"],
+                    a["seek_key"],
+                    a["tag"],
+                )
+            )
+        return
+
     elif args.command == INSERT_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
 
