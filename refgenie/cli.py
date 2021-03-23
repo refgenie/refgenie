@@ -116,8 +116,6 @@ def main():
                 )
         if args.genome_folder:
             entries.update({CFG_FOLDER_KEY: args.genome_folder})
-        if args.remote_url_base:
-            entries.update({CFG_REMOTE_URL_BASE_KEY: args.remote_url_base})
         if args.genome_archive_folder:
             entries.update({CFG_ARCHIVE_KEY: args.genome_archive_folder})
         if args.genome_archive_config:
@@ -184,6 +182,7 @@ def main():
                     a["asset"],
                     a["seek_key"],
                     a["tag"],
+                    args.remote_class,
                 )
             )
         return

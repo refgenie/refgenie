@@ -107,7 +107,7 @@ jobs:
       run: |
         refgenie alias get -c genomes/g.yaml
 
-    - name: refgneie add asset
+    - name: refgenie add asset
       run: |
         refgenie add t7_another/test_asset -c genomes/g.yaml  --path ../tests/data --seek-keys '{"recipe": "recipe_parent.json"}'
         ./tests/assert_in_file.sh genomes/g.yaml test_asset 0
