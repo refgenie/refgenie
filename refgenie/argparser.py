@@ -510,7 +510,7 @@ def build_argparser():
             metavar="RC",
             type=str,
             default="http",
-            help="Remote data provider class, e.g. 'html' or 's3'",
+            help="Remote data provider class, e.g. 'http' or 's3'",
         )
 
     for cmd in [POPULATE_REMOTE_CMD, POPULATE_CMD]:

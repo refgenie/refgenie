@@ -387,7 +387,7 @@ def main():
 
     elif args.command == POPULATE_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
-        process_populate(args, rgc.populate)
+        process_populate(pop_fun=rgc.populate, file_path=args.file)
 
     elif args.command == POPULATE_REMOTE_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
@@ -396,13 +396,21 @@ def main():
                 urls=args.genome_server, reset=not args.append_server, no_write=True
             )
         pop_fun = partial(rgc.populater, remote_class=args.remote_class)
-        process_populate(args, pop_fun)
+        process_populate(pop_fun=pop_fun, file_path=args.file)
 
 
-def process_populate(args, pop_fun):
-    if args.file:
-        _LOGGER.debug(f"Populating file: {args.file}")
-        with open(args.file) as fp:
+def process_populate(pop_fun, file_path=None):
+    """
+    Process a populate request (file or stdin) with a custom populator function
+
+    :param callable(dict | str | list) -> dict | str | list: a function that populates
+        refgenie registry paths in objects
+    :param str file_path: path to the file to populate refgenie registry paths in,
+        skip for stdin processing
+    """
+    if file_path is not None:
+        _LOGGER.debug(f"Populating file: {file_path}")
+        with open(file_path) as fp:
             for line in fp:
                 sys.stdout.write(pop_fun(glob=line))
     else:
