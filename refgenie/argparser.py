@@ -504,16 +504,23 @@ def build_argparser():
             action="store_true",
             help="Whether the provided servers should be appended to the list.",
         )
-    sps[GET_REMOTE_ASSET_CMD].add_argument(
-        "-r",
-        "--remote-class",
-        metavar="RC",
-        type=str,
-        help="Remote data provider class, e.g. 'html' or 's3'",
-    )
+    for cmd in [POPULATE_CMD, GET_REMOTE_ASSET_CMD]:
+        sps[cmd].add_argument(
+            "--remote-class",
+            metavar="RC",
+            type=str,
+            help="Remote data provider class, e.g. 'html' or 's3'",
+        )
 
     sps[POPULATE_CMD].add_argument(
         "-f", "--file", metavar="F", help="File with registry paths to populate"
+    )
+
+    sps[POPULATE_CMD].add_argument(
+        "-r",
+        "--remote",
+        action="store_true",
+        help="Whether to populate using remote data paths",
     )
 
     return parser

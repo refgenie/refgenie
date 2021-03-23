@@ -26,6 +26,7 @@ from requests.exceptions import MissingSchema
 
 from collections import OrderedDict
 from rich.console import Console
+from functools import partial
 
 
 def main():
@@ -180,8 +181,8 @@ def main():
                 rgc.seekr(
                     a["genome"],
                     a["asset"],
-                    a["seek_key"],
                     a["tag"],
+                    a["seek_key"],
                     args.remote_class,
                 )
             )
@@ -385,16 +386,19 @@ def main():
 
     elif args.command == POPULATE_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        pop_func = partial(
+            rgc.populate, remote=args.remote, remote_class=args.remote_class
+        )
         if args.file:
             _LOGGER.debug(f"Populating file: {args.file}")
             with open(args.file) as fp:
                 for line in fp:
-                    sys.stdout.write(rgc.populate(line))
+                    sys.stdout.write(pop_func(glob=line))
         else:
             for line in sys.stdin:
                 if line.rstrip() in ["q", "quit", "exit"]:
                     break
-                sys.stdout.write(rgc.populate(line))
+                sys.stdout.write(pop_func(glob=line))
 
 
 def perm_check_x(file_to_check, message_tag="genome directory"):
