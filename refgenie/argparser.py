@@ -1,12 +1,11 @@
-import pypiper
+from argparse import HelpFormatter
 
+import pypiper
+from refgenconf import __version__ as rgc_version
 from ubiquerg import VersionInHelpParser
 
 from ._version import __version__
 from .const import *
-from refgenconf import __version__ as rgc_version
-
-from argparse import HelpFormatter
 
 
 def build_argparser():
@@ -488,7 +487,7 @@ def build_argparser():
             ),
         )
 
-    for cmd in [LIST_REMOTE_CMD, GET_REMOTE_ASSET_CMD]:
+    for cmd in [LIST_REMOTE_CMD, GET_REMOTE_ASSET_CMD, POPULATE_REMOTE_CMD]:
         sps[cmd].add_argument(
             "-s",
             "--genome-server",
@@ -504,23 +503,19 @@ def build_argparser():
             action="store_true",
             help="Whether the provided servers should be appended to the list.",
         )
-    for cmd in [POPULATE_CMD, GET_REMOTE_ASSET_CMD]:
+
+    for cmd in [POPULATE_REMOTE_CMD, GET_REMOTE_ASSET_CMD]:
         sps[cmd].add_argument(
             "--remote-class",
             metavar="RC",
             type=str,
+            default="http",
             help="Remote data provider class, e.g. 'html' or 's3'",
         )
 
-    sps[POPULATE_CMD].add_argument(
-        "-f", "--file", metavar="F", help="File with registry paths to populate"
-    )
-
-    sps[POPULATE_CMD].add_argument(
-        "-r",
-        "--remote",
-        action="store_true",
-        help="Whether to populate using remote data paths",
-    )
+    for cmd in [POPULATE_REMOTE_CMD, POPULATE_CMD]:
+        sps[cmd].add_argument(
+            "-f", "--file", metavar="F", help="File with registry paths to populate"
+        )
 
     return parser

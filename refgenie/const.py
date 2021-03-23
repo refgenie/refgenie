@@ -10,6 +10,7 @@ BUILD_CMD = "build"
 INIT_CMD = "init"
 PULL_CMD = "pull"
 POPULATE_CMD = "populate"
+POPULATE_REMOTE_CMD = "populater"
 LIST_LOCAL_CMD = "list"
 LIST_REMOTE_CMD = "listr"
 GET_ASSET_CMD = "seek"
@@ -56,8 +57,10 @@ SUBPARSER_MESSAGES = {
     ALIAS_CMD: "Interact with aliases.",
     COMPARE_CMD: "Compare two genomes.",
     UPGRADE_CMD: "Upgrade config. This will alter the files on disk.",
-    POPULATE_CMD: "Populate registry paths with real paths.",
+    POPULATE_CMD: "Populate registry paths with local paths.",
+    POPULATE_REMOTE_CMD: "Populate registry paths with remote paths.",
 }
+
 
 ALIAS_GET_CMD = "get"
 ALIAS_SET_CMD = "set"

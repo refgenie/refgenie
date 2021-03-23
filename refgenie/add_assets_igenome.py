@@ -6,21 +6,20 @@ Each iGenome has the following nested directory structure:
     Build/
     Annotation/ Sequence/
 """
-from .refgenie import _seek
-from .exceptions import MissingGenomeConfigError
-
-from ubiquerg import untar, mkabs, query_yes_no
+import argparse
+import os
+import sys
+import tarfile
+from glob import glob
+from shutil import move
 
 import refgenconf
 from refgenconf import get_dir_digest
 from refgenconf.const import *
-from glob import glob
+from ubiquerg import mkabs, query_yes_no, untar
 
-import os
-import argparse
-import sys
-import tarfile
-from shutil import move
+from .exceptions import MissingGenomeConfigError
+from .refgenie import _seek
 
 
 def build_argparser():

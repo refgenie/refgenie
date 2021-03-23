@@ -1,32 +1,29 @@
-import logmuse
-import sys
 import json
 import os
+import sys
+from collections import OrderedDict
+from functools import partial
 
-from .argparser import build_argparser
-from .refgenie import parse_registry_path, _skip_lock
-from ._version import __version__
-from .const import *
-from .exceptions import *
-from .asset_build_packages import *
-from .refgenie import refgenie_build
-from .helpers import _raise_missing_recipe_error, _single_folder_writeable
-
+import logmuse
 from refgenconf import (
-    RefGenConf,
+    DownloadJsonError,
     MissingAssetError,
     MissingGenomeError,
-    DownloadJsonError,
-    upgrade_config,
-    __version__ as rgc_version,
-    select_genome_config,
+    RefGenConf,
 )
-from ubiquerg import query_yes_no
+from refgenconf import __version__ as rgc_version
+from refgenconf import select_genome_config, upgrade_config
 from requests.exceptions import MissingSchema
-
-from collections import OrderedDict
 from rich.console import Console
-from functools import partial
+from ubiquerg import query_yes_no
+
+from ._version import __version__
+from .argparser import build_argparser
+from .asset_build_packages import *
+from .const import *
+from .exceptions import *
+from .helpers import _raise_missing_recipe_error, _single_folder_writeable
+from .refgenie import _skip_lock, parse_registry_path, refgenie_build
 
 
 def main():
@@ -54,7 +51,11 @@ def main():
         on_missing=lambda fp: fp,
         strict_env=True,
     )
-    if gencfg is None and args.command not in [GET_REMOTE_ASSET_CMD, LIST_REMOTE_CMD]:
+    if gencfg is None and args.command not in [
+        GET_REMOTE_ASSET_CMD,
+        LIST_REMOTE_CMD,
+        POPULATE_REMOTE_CMD,
+    ]:
         raise MissingGenomeConfigError(args.genome_config)
     _LOGGER.debug("Determined genome config: {}".format(gencfg))
 
@@ -386,19 +387,29 @@ def main():
 
     elif args.command == POPULATE_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
-        pop_func = partial(
-            rgc.populate, remote=args.remote, remote_class=args.remote_class
-        )
-        if args.file:
-            _LOGGER.debug(f"Populating file: {args.file}")
-            with open(args.file) as fp:
-                for line in fp:
-                    sys.stdout.write(pop_func(glob=line))
-        else:
-            for line in sys.stdin:
-                if line.rstrip() in ["q", "quit", "exit"]:
-                    break
-                sys.stdout.write(pop_func(glob=line))
+        process_populate(args, rgc.populate)
+
+    elif args.command == POPULATE_REMOTE_CMD:
+        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        if args.genome_server is not None:
+            rgc.subscribe(
+                urls=args.genome_server, reset=not args.append_server, no_write=True
+            )
+        pop_fun = partial(rgc.populater, remote_class=args.remote_class)
+        process_populate(args, pop_fun)
+
+
+def process_populate(args, pop_fun):
+    if args.file:
+        _LOGGER.debug(f"Populating file: {args.file}")
+        with open(args.file) as fp:
+            for line in fp:
+                sys.stdout.write(pop_fun(glob=line))
+    else:
+        for line in sys.stdin:
+            if line.rstrip() in ["q", "quit", "exit"]:
+                break
+            sys.stdout.write(pop_fun(glob=line))
 
 
 def perm_check_x(file_to_check, message_tag="genome directory"):

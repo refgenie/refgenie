@@ -2,11 +2,13 @@
 A helper script to create SLURM submission scripts for all the assets
 defined in asset_build_packages for a given genome
 """
-from .asset_build_packages import asset_build_packages
-from ubiquerg import expandpath
-import os
 import argparse
+import os
+
 import divvy
+from ubiquerg import expandpath
+
+from .asset_build_packages import asset_build_packages
 
 parser = argparse.ArgumentParser(
     description="Builds submission scripts for all assets for a genome"
