@@ -403,8 +403,8 @@ def process_populate(pop_fun, file_path=None):
     """
     Process a populate request (file or stdin) with a custom populator function
 
-    :param callable(dict | str | list) -> dict | str | list: a function that populates
-        refgenie registry paths in objects
+    :param callable(dict | str | list) -> dict | str | list pop_fun: a function
+        that populates refgenie registry paths in objects
     :param str file_path: path to the file to populate refgenie registry paths in,
         skip for stdin processing
     """

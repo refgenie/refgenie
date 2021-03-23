@@ -29,58 +29,6 @@ h4 .content {
 
 # Package `refgenconf` Documentation
 
-## <a name="ConfigNotCompliantError"></a> Class `ConfigNotCompliantError`
-The format of the config file does not match required version/standards
-
-
-## <a name="DownloadJsonError"></a> Class `DownloadJsonError`
-Non-OK response from a JSON download attempt
-
-
-```python
-def __init__(self, resp)
-```
-
-Initialize self.  See help(type(self)) for accurate signature.
-
-
-
-## <a name="GenomeConfigFormatError"></a> Class `GenomeConfigFormatError`
-Exception for invalid genome config file format.
-
-
-```python
-def __init__(self, msg)
-```
-
-Initialize self.  See help(type(self)) for accurate signature.
-
-
-
-## <a name="MissingAssetError"></a> Class `MissingAssetError`
-Error type for request of an unavailable genome asset.
-
-
-## <a name="MissingConfigDataError"></a> Class `MissingConfigDataError`
-Missing required configuration instance items
-
-
-## <a name="MissingGenomeError"></a> Class `MissingGenomeError`
-Error type for request of unknown genome/assembly.
-
-
-## <a name="MissingRecipeError"></a> Class `MissingRecipeError`
-Error type for request of an unavailable recipe.
-
-
-## <a name="MissingSeekKeyError"></a> Class `MissingSeekKeyError`
-Error type for request of an unavailable asset seek key.
-
-
-## <a name="MissingTagError"></a> Class `MissingTagError`
-Error type for request of an unavailable asset tag.
-
-
 ## <a name="RefGenConf"></a> Class `RefGenConf`
 A sort of oracle of available reference genome assembly assets
 
@@ -376,7 +324,7 @@ Get path to the Annotated Sequence Digests JSON file for a given genome. Note th
 
 
 ```python
-def get_asset_table(self, genomes=None, server_url=None, get_json_url=<function RefGenConf.<lambda> at 0x7fa582ccad08>)
+def get_asset_table(self, genomes=None, server_url=None, get_json_url=<function RefGenConf.<lambda> at 0x7fac824c4e18>)
 ```
 
 Get a rich.Table object representing assets available locally
@@ -497,13 +445,13 @@ List locally available reference genome IDs and assets by ID.
 
 
 ```python
-def get_remote_data_str(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x7fa582cd4840>)
+def get_remote_data_str(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x7fac824cca60>)
 ```
 
 List genomes and assets available remotely.
 #### Parameters:
 
-- `get_url` (`function(refgenconf.RefGenConf) -> str`):  how to determineURL request, given RefGenConf instance
+- `get_url` (`function(serverUrl, operationId) -> str`):  how to determineURL request, given server URL and endpoint operationID
 - `genome` (`list[str] | str`):  genomes that the assets should be found for
 - `order` (`function(str) -> object`):  how to key genome IDs and assetnames for sort
 
@@ -694,13 +642,13 @@ List assemblies for which a particular asset is available.
 
 
 ```python
-def listr(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x7fa582cd4950>, as_str=False)
+def listr(self, genome=None, get_url=<function RefGenConf.<lambda> at 0x7fac824ccb70>, as_digests=False)
 ```
 
 List genomes and assets available remotely on all servers the object subscribes to
 #### Parameters:
 
-- `get_url` (`function(refgenconf.RefGenConf) -> str`):  how to determineURL request, given RefGenConf instance
+- `get_url` (`function(serverUrl, operationId) -> str`):  how to determineURL request, given server URL and endpoint operationID
 - `genome` (`list[str] | str`):  genomes that the assets should be found for
 - `order` (`function(str) -> object`):  how to key genome IDs and assetnames for sort
 
@@ -725,7 +673,42 @@ Plugins registered by entry points in the current Python env
 
 
 ```python
-def pull(self, genome, asset, tag, unpack=True, force=None, force_large=None, size_cutoff=10, get_json_url=<function RefGenConf.<lambda> at 0x7fa582cd4bf8>, build_signal_handler=<function _handle_sigint at 0x7fa582234e18>)
+def populate(self, glob)
+```
+
+Populates *local* refgenie references from refgenie://genome/asset.seek_key:tag registry paths
+#### Parameters:
+
+- `glob` (`dict | str | list`):  String which may contain refgenie registry paths asvalues; or a dict, for which values may contain refgenie registry paths. Dict include nested dicts.
+
+
+#### Returns:
+
+- `dict | str | list`:  modified input dict with refgenie paths populated
+
+
+
+
+```python
+def populater(self, glob, remote_class=None)
+```
+
+Populates *remote* refgenie references from refgenie://genome/asset:tag registry paths
+#### Parameters:
+
+- `glob` (`dict | str | list`):  String which may contain refgenie registry paths asvalues; or a dict, for which values may contain refgenie registry paths. Dict include nested dicts.
+- `remote_class` (`str`):  remote data provider class, e.g. 'http' or 's3'
+
+
+#### Returns:
+
+- `dict | str | list`:  modified input dict with refgenie paths populated
+
+
+
+
+```python
+def pull(self, genome, asset, tag, unpack=True, force=None, force_large=None, size_cutoff=10, get_json_url=<function RefGenConf.<lambda> at 0x7fac824cce18>, build_signal_handler=<function _handle_sigint at 0x7fac7fd2d400>)
 ```
 
 Download and possibly unpack one or more assets for a given ref gen.
@@ -832,7 +815,7 @@ Runs all installed plugins for the specified hook.
 
 
 ```python
-def seek(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, all_aliases=False, check_exist=<function RefGenConf.<lambda> at 0x7fa582cd4378>)
+def seek(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, all_aliases=False, check_exist=<function RefGenConf.<lambda> at 0x7fac824cc488>)
 ```
 
 Seek path to a specified genome-asset-tag alias
@@ -863,7 +846,7 @@ Seek path to a specified genome-asset-tag alias
 
 
 ```python
-def seek_src(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, check_exist=<function RefGenConf.<lambda> at 0x7fa582cd4488>)
+def seek_src(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, check_exist=<function RefGenConf.<lambda> at 0x7fac824cc6a8>)
 ```
 
 Seek path to a specified genome-asset-tag
@@ -893,6 +876,28 @@ Seek path to a specified genome-asset-tag
 
 
 ```python
+def seekr(self, genome_name, asset_name, tag_name=None, seek_key=None, remote_class='html', get_url=<function RefGenConf.<lambda> at 0x7fac824cc598>)
+```
+
+Seek a remote path to a specified genome/asset.seek_key:tag
+#### Parameters:
+
+- `genome_name` (`str`):  name of a reference genome assembly of interest
+- `asset_name` (`str`):  name of the particular asset to fetch
+- `tag_name` (`str`):  name of the particular asset tag to fetch
+- `seek_key` (`str`):  name of the particular subasset to fetch
+- `remote_class` (`str`):  remote data provider class, e.g. 'html' or 's3'
+- `get_url` (`function(serverUrl, operationId) -> str`):  how to determineURL request, given server URL and endpoint operationID
+
+
+#### Returns:
+
+- `str`:  path to the asset
+
+
+
+
+```python
 def set_default_pointer(self, genome, asset, tag, force=False, force_digest=None)
 ```
 
@@ -909,7 +914,7 @@ Point to the selected tag by default
 
 
 ```python
-def set_genome_alias(self, genome, digest=None, servers=None, overwrite=False, reset_digest=False, create_genome=False, no_write=False, get_json_url=<function RefGenConf.<lambda> at 0x7fa582cd4ea0>)
+def set_genome_alias(self, genome, digest=None, servers=None, overwrite=False, reset_digest=False, create_genome=False, no_write=False, get_json_url=<function RefGenConf.<lambda> at 0x7fac824cd158>)
 ```
 
 Assign a human-readable alias to a genome identifier.
@@ -934,7 +939,7 @@ human-readable identifier to make referring to the genomes easier.
 
 
 ```python
-def subscribe(self, urls, reset=False)
+def subscribe(self, urls, reset=False, no_write=False)
 ```
 
 Add URLs the list of genome_servers.
@@ -983,7 +988,7 @@ genome configuration file changes
 
 
 ```python
-def unsubscribe(self, urls)
+def unsubscribe(self, urls, no_write=False)
 ```
 
 Remove URLs the list of genome_servers.
@@ -1132,42 +1137,36 @@ Write the contents to a file. If pre- and post-update plugins are defined, they 
 
 
 
-## <a name="RefgenconfError"></a> Class `RefgenconfError`
-Base exception type for this package
-
-
-## <a name="RemoteDigestMismatchError"></a> Class `RemoteDigestMismatchError`
-Remote digest of the parent asset does not match its local counterpart
+## <a name="GenomeConfigFormatError"></a> Class `GenomeConfigFormatError`
+Exception for invalid genome config file format.
 
 
 ```python
-def __init__(self, asset, local_digest, remote_digest)
+def __init__(self, msg)
 ```
 
 Initialize self.  See help(type(self)) for accurate signature.
 
 
 
+## <a name="MissingAssetError"></a> Class `MissingAssetError`
+Error type for request of an unavailable genome asset.
+
+
+## <a name="MissingConfigDataError"></a> Class `MissingConfigDataError`
+Missing required configuration instance items
+
+
+## <a name="MissingGenomeError"></a> Class `MissingGenomeError`
+Error type for request of unknown genome/assembly.
+
+
+## <a name="RefgenconfError"></a> Class `RefgenconfError`
+Base exception type for this package
+
+
 ## <a name="UnboundEnvironmentVariablesError"></a> Class `UnboundEnvironmentVariablesError`
 Use of environment variable that isn't bound to a value.
-
-
-```python
-def get_dir_digest(path, pm=None)
-```
-
-Generate a MD5 digest that reflects just the contents of the files in the selected directory.
-#### Parameters:
-
-- `path` (`str`):  path to the directory to digest
-- `pm` (`pypiper.PipelineManager`):  a pipeline object, optional.The subprocess module will be used if not provided
-
-
-#### Returns:
-
-- `str`:  a digest, e.g. a3c46f201a3ce7831d85cf4a125aa334
-
-
 
 
 ```python
@@ -1189,21 +1188,36 @@ Get path to genome configuration file.
 
 
 ```python
-def upgrade_config(target_version, filepath, force=False, get_json_url=<function <lambda> at 0x7fa582cca730>, link_fun=<function <lambda> at 0x7fa582cd8158>)
+def get_dir_digest(path, pm=None)
 ```
 
-Upgrade the config to a selected target version.
-
-Convert the config file to target_version format, update file structure
-inside genome_folder. Drop genomes for which genome_digest is not available
-on any of the servers and do not have a fasta asset locally.
+Generate a MD5 digest that reflects just the contents of the files in the selected directory.
 #### Parameters:
 
-- `target_version` (`str`):  the version updated to
-- `filepath` (`str`):  path to config file
-- `force` (`bool`):  whether the upgrade should be confirmed upfront
-- `get_json_url` (`function(str, str) -> str`):  how to build URL fromgenome server URL base, genome, and asset
-- `link_fun` (`callable`):  function to use to link files, e.g os.symlink or os.link
+- `path` (`str`):  path to the directory to digest
+- `pm` (`pypiper.PipelineManager`):  a pipeline object, optional.The subprocess module will be used if not provided
+
+
+#### Returns:
+
+- `str`:  a digest, e.g. a3c46f201a3ce7831d85cf4a125aa334
+
+
+
+
+```python
+def looper_refgenie_plugin(namespaces)
+```
+
+A looper plugin that populates refgenie references in a PEP from refgenie://genome/asset:tag registry paths. This can be used to convert all refgenie references into their local paths at the looper stage, so the final paths are passed to the workflow. This way the workflow does not need to depend on refgenie to resolve the paths. This is useful for example for CWL pipelines, which are built to have paths resolved outside the workflow.
+#### Parameters:
+
+- `namespaces` (`dict`):  variable namespaces dict
+
+
+#### Returns:
+
+- `dict`:  sample namespace dict
 
 
 
@@ -1211,4 +1225,4 @@ on any of the servers and do not have a fasta asset locally.
 
 
 
-*Version Information: `refgenconf` v0.10.0-dev, generated by `lucidoc` v0.4.3*
+*Version Information: `refgenconf` v0.11.0-dev, generated by `lucidoc` v0.4.3*

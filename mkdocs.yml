@@ -3,11 +3,11 @@ site_logo: img/refgenie_logo_light.svg
 site_url: http://refgenie.databio.org/en/latest/
 repo_url: http://github.com/databio/refgenie
 pypi_name: refgenie
-paper_link: https://doi.org/10.1093/gigascience/giz149
 
 nav:
   - Getting Started: 
     - Introduction: README.md
+    - Demo videos: demo_videos.md
     - Overview: overview.md
     - Install and configure: install.md
     - Basic tutorial: tutorial.md
@@ -22,6 +22,7 @@ nav:
     - Compare genomes: compare.md
     - Run my own asset server: refgenieserver.md
     - Use refgenie from Python: refgenconf.md
+    - Use refgenie on the cloud: remote.md
     - Use refgenie with iGenomes: igenomes.md
     - Upgrade from config 0.3 to 0.4: config_upgrade_03_to_04.md
   - Reference:
@@ -52,3 +53,7 @@ navbar:
   - text: Refgenomes server
     icon: fa-server
     href: servers
+  right:
+  - text: Manuscripts
+    icon: fa-file-alt
+    href: manuscripts

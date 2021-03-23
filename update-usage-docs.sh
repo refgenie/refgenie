@@ -1,7 +1,7 @@
 #!/bin/bash
 cp docs/usage.template usage.template
 #looper --help > USAGE.temp 2>&1
-for cmd in "--help" "init --help" "list --help" "listr --help" "pull --help" "build --help" "seek --help" "add --help" "remove --help" "getseq --help" "tag --help" "id --help" "subscribe --help" "unsubscribe --help" "alias --help" "upgrade --help"; do
+for cmd in "--help" "init --help" "list --help" "listr --help" "pull --help" "build --help" "seek --help" "seekr --help" "populate --help" "populater --help" "add --help" "remove --help" "getseq --help" "tag --help" "id --help" "subscribe --help" "unsubscribe --help" "alias --help" "upgrade --help"; do
 	echo $cmd
 	echo -e "## \`refgenie $cmd\`" > USAGE_header.temp
 	refgenie $cmd --help > USAGE.temp 2>&1

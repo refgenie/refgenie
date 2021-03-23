@@ -1,6 +1,7 @@
 import os
-from setuptools import setup
 import sys
+
+from setuptools import setup
 
 # Ordinary dependencies
 DEPENDENCIES = []
