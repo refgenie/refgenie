@@ -6,7 +6,7 @@ Starting with version 0.11.0, refgenie can be used in *remote mode*, which means
 
 *Hint: all of these commands end with "r"*
 
-There are a few commands that do not require genome configuration file to run. `-s/--genome-servers` argument specifies the list of servers you want refgenie to query. Default server (http://refgenomes.databio.org) is used if not provided.
+There are a few commands that do not require genome configuration file to run. `-s/--genome-servers` argument specifies the list of servers you want refgenie to query. Default server ([http://refgenomes.databio.org](http://refgenomes.databio.org)) is used if not provided.
 
 ### List remote assets with `refgenie listr`
 
@@ -46,7 +46,7 @@ Set genome alias (2230c535660fb4774114bfa966a62f823fdb6d21acf138d4: hg38)
 s3://awspds.refgenie.databio.org/rg.databio.org/2230c535660fb4774114bfa966a62f823fdb6d21acf138d4/fasta__default/2230c535660fb4774114bfa966a62f823fdb6d21acf138d4.fa
 ```
 
-`-r`/`--remote-class` command specifies the data provider link to be used in the output. Please refer to the refgenieserver instance API endpoint that lists available options, for example: http://rg.databio.org/remotes/dict.
+`-r`/`--remote-class` command specifies the data provider link to be used in the output. Please refer to the refgenieserver instance API endpoint that lists available options, for example: [http://rg.databio.org/remotes/dict](http://rg.databio.org/remotes/dict).
 
 ### Replace asset registry paths with remote asset paths with `refgenie populater`
 
@@ -71,19 +71,19 @@ Set genome alias (2230c535660fb4774114bfa966a62f823fdb6d21acf138d4: hg38)
 test remote populating s3://awspds.refgenie.databio.org/rg.databio.org/2230c535660fb4774114bfa966a62f823fdb6d21acf138d4/fasta__default/2230c535660fb4774114bfa966a62f823fdb6d21acf138d4.fa:default
 ```
 
-`-r`/`--remote-class` command specifies the data provider link to be used in the output. Please refer to the refgenieserver instance API endpoint that lists available options, for example: http://rg.databio.org/remotes/dict.
+`-r`/`--remote-class` command specifies the data provider link to be used in the output. Please refer to the refgenieserver instance API endpoint that lists available options, for example: [http://rg.databio.org/remotes/dict](http://rg.databio.org/remotes/dict).
 
 #### populate text from file
 
-1. check input file contents
+- Check input file contents
 ```console
 ~ cat remote_populate_test.txt 
 
-human genome FASTA file: refgenie://hg38/fasta.fasta:default
-yeast doubled genome FASTA file: refgenie://rCRSd/fasta.fasta:default
+human genome FASTA file: refgenie://hg38/fasta.fasta
+yeast doubled genome FASTA file: refgenie://rCRSd/fasta.fasta
 ```
 
-2. run `refgenie populater`
+- Run `refgenie populater`
 ```console
 ~ refgenie populater -f remote_populate_test.txt -s http://rg.databio.org > remote_populate_test_output.txt
 
@@ -99,12 +99,12 @@ Determined server digest for local genome alias (rCRSd): 94e0d21feb576e6af61cd2a
 Set genome alias (94e0d21feb576e6af61cd2a798ad30682ef2428bb7eabbb4: rCRSd)
 ```
 
-3. check output file contents
+- Check output file contents
 ```console
 ~ cat remote_populate_test_output.txt 
 
-human genome FASTA file: http://awspds.refgenie.databio.org/rg.databio.org/2230c535660fb4774114bfa966a62f823fdb6d21acf138d4/fasta__default/2230c535660fb4774114bfa966a62f823fdb6d21acf138d4.fa:default
-yeast doubled genome FASTA file: http://awspds.refgenie.databio.org/rg.databio.org/94e0d21feb576e6af61cd2a798ad30682ef2428bb7eabbb4/fasta__default/94e0d21feb576e6af61cd2a798ad30682ef2428bb7eabbb4.fa:default
+human genome FASTA file: http://awspds.refgenie.databio.org/rg.databio.org/2230c535660fb4774114bfa966a62f823fdb6d21acf138d4/fasta__default/2230c535660fb4774114bfa966a62f823fdb6d21acf138d4.fa
+yeast doubled genome FASTA file: http://awspds.refgenie.databio.org/rg.databio.org/94e0d21feb576e6af61cd2a798ad30682ef2428bb7eabbb4/fasta__default/94e0d21feb576e6af61cd2a798ad30682ef2428bb7eabbb4.fa
 ```
 
 ## Motivation
