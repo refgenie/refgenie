@@ -19,6 +19,7 @@ nav:
     - Retrieve paths to assets: seek.md
     - Use asset tags: tag.md
     - Use aliases: aliases.md
+    - Populate refgenie paths: populate.md
     - Compare genomes: compare.md
     - Run my own asset server: refgenieserver.md
     - Use refgenie from Python: refgenconf.md

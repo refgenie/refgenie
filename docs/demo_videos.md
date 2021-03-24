@@ -8,7 +8,7 @@ After refgenie Python package is installed with `pip install refgenie`, refgenie
 
 If used *without* genome configuration file, the data does not persist from session to session. It's really useful in cloud applications.
 
-**hint**: remote commands end with `r`:
+*Hint: all of these commands end with "r"*:
 
 - `refgenie listr`
 - `refgenie seekr`
@@ -20,7 +20,7 @@ If used *without* genome configuration file, the data does not persist from sess
 
 ## With config - local mode
 
-If used *with* genome configuration file, the data persists from session to session. That's the most common scenario, you can `build`, `pull` and `seek` for assets managed locally.
+If used *with* genome configuration file, the data persists from session to session. That's the most common scenario, you can `build`, `pull` and `seek` assets managed locally.
 
 **!!! Record a new asciicast and insert here** 
 

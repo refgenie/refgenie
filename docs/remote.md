@@ -109,4 +109,6 @@ yeast doubled genome FASTA file: http://awspds.refgenie.databio.org/rg.databio.o
 
 ## Motivation
 
-...
+The motivation behind the remote mode in refgenie is *cloud computing*. It is becoming a common practice to farm out jobs that require refgenie assets to computing clusters, where refgenie environment is not configured. 
+
+Up until now, the user was expected to `init` the refgenie config, `pull` desired assets and then `seek` the path in order to pass it to the data processing workflow. With the new `seekr` the configuration and data acquisition steps can be skipped. What is more, refgenieserver software provides full flexibility regarding place where the asset files and archives are stored. Therefore, in some cases the data may be readily avilable within the cloud services provider's servers. For example, [http://refgenomes.databio.org](http://refgenomes.databio.org) refgenieserver instance stores the data in AWS S3, so any jobs running on AWS servers would benefit from the increased performance.    

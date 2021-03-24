@@ -81,9 +81,7 @@ def build_argparser():
         "--genome-server",
         nargs="+",
         default=[DEFAULT_SERVER],
-        help="URL(s) to use for the {} attribute in config file. Default: {}.".format(
-            CFG_SERVERS_KEY, DEFAULT_SERVER
-        ),
+        help=f"URL(s) to use for the {CFG_SERVERS_KEY} attribute in config file. Default: {DEFAULT_SERVER}.",
     )
     sps[INIT_CMD].add_argument(
         "-f",
