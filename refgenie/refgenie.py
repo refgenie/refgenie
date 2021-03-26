@@ -156,9 +156,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             os.path.join(genome_outfolder, asset_key, tag, BUILD_STATS_DIR)
         )
         _LOGGER.info(
-            "Saving outputs to:\n- content: {}\n- logs: {}".format(
-                genome_outfolder, log_outfolder
-            )
+            f"Saving outputs to:\n- content: {genome_outfolder}\n- logs: {log_outfolder}"
         )
         if args.docker:
             # Set up some docker stuff
@@ -169,11 +167,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                 volumes = genome_outfolder
 
         if not _writeable(genome_outfolder):
-            _LOGGER.error(
-                "Insufficient permissions to write to output folder: {}".format(
-                    genome_outfolder
-                )
-            )
+            _LOGGER.error(f"Insufficient permissions to write to output folder: {genome_outfolder}")
             return
 
         pm = pypiper.PipelineManager(
@@ -233,7 +227,9 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                     "exist: {}".format(asset_dir)
                 )
             digest = get_dir_digest(asset_dir)
-            _LOGGER.info("Asset digest: {}".format(digest))
+            _LOGGER.info(f"Asset digest: {digest}")
+            # add a 'dir' seek_key that points to the asset directory
+            build_pkg[ASSETS].update({"dir": "."})
             # add updates to config file
             with rgc as r:
                 if asset_key == "fasta":
