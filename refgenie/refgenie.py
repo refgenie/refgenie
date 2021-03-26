@@ -167,7 +167,9 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                 volumes = genome_outfolder
 
         if not _writeable(genome_outfolder):
-            _LOGGER.error(f"Insufficient permissions to write to output folder: {genome_outfolder}")
+            _LOGGER.error(
+                f"Insufficient permissions to write to output folder: {genome_outfolder}"
+            )
             return
 
         pm = pypiper.PipelineManager(
