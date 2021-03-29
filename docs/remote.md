@@ -35,7 +35,7 @@ Subscribed to: http://rg.databio.org
 You can seek for remote asset paths with `refgenie seekr`:
 
 ```console
-~ refgenie seekr hg38/fasta -s http://rg.databio.org --remote-class s3
+~ refgenie seekr hg38/fasta -s http://rg.databio.org -r s3
 
 Using default config. No config found in env var: ['REFGENIE']
 Subscribed to: http://rg.databio.org
@@ -60,7 +60,7 @@ refgenie://genome_alias/asset.seek_key:tag
 #### populate text from standard input
 
 ```console
-~ echo 'test remote populating refgenie://hg38/fasta.fasta:default' | refgenie populater -s http://rg.databio.org --r s3
+~ echo 'test remote populating refgenie://hg38/fasta.fasta:default' | refgenie populater -s http://rg.databio.org -r s3
 
 Using default config. No config found in env var: ['REFGENIE']
 Subscribed to: http://rg.databio.org
