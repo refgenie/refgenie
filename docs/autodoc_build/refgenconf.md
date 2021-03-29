@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 </script>
 
 <style>
-h3 .content { 
+h3 .content {
     padding-left: 22px;
     text-indent: -15px;
  }
@@ -18,7 +18,7 @@ h3 .hljs .content {
     martin-bottom: 0px;
 }
 h4 .content, table .content, p .content, li .content { margin-left: 30px; }
-h4 .content { 
+h4 .content {
     font-style: italic;
     font-size: 1em;
     margin-bottom: 0px;
@@ -324,7 +324,7 @@ Get path to the Annotated Sequence Digests JSON file for a given genome. Note th
 
 
 ```python
-def get_asset_table(self, genomes=None, server_url=None, get_json_url=<function RefGenConf.<lambda> at 0x7fac824c4e18>)
+def get_asset_table(self, genomes=None, server_url=None, get_json_url=<function RefGenConf.<lambda> at 0x7fba364d9268>)
 ```
 
 Get a rich.Table object representing assets available locally
@@ -445,7 +445,7 @@ List locally available reference genome IDs and assets by ID.
 
 
 ```python
-def get_remote_data_str(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x7fac824cca60>)
+def get_remote_data_str(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x7fba364d9e18>)
 ```
 
 List genomes and assets available remotely.
@@ -478,7 +478,7 @@ Get path to the alias directory for the selected genome-asset-tag
 
 #### Returns:
 
-- `dict`: 
+- `dict`:
 
 
 
@@ -642,7 +642,7 @@ List assemblies for which a particular asset is available.
 
 
 ```python
-def listr(self, genome=None, get_url=<function RefGenConf.<lambda> at 0x7fac824ccb70>, as_digests=False)
+def listr(self, genome=None, get_url=<function RefGenConf.<lambda> at 0x7fba364d9f28>, as_digests=False)
 ```
 
 List genomes and assets available remotely on all servers the object subscribes to
@@ -708,7 +708,7 @@ Populates *remote* refgenie references from refgenie://genome/asset:tag registry
 
 
 ```python
-def pull(self, genome, asset, tag, unpack=True, force=None, force_large=None, size_cutoff=10, get_json_url=<function RefGenConf.<lambda> at 0x7fac824cce18>, build_signal_handler=<function _handle_sigint at 0x7fac7fd2d400>)
+def pull(self, genome, asset, tag, unpack=True, force=None, force_large=None, size_cutoff=10, get_json_url=<function RefGenConf.<lambda> at 0x7fba364dc268>, build_signal_handler=<function _handle_sigint at 0x7fba36245620>)
 ```
 
 Download and possibly unpack one or more assets for a given ref gen.
@@ -815,7 +815,7 @@ Runs all installed plugins for the specified hook.
 
 
 ```python
-def seek(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, all_aliases=False, check_exist=<function RefGenConf.<lambda> at 0x7fac824cc488>)
+def seek(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, all_aliases=False, check_exist=<function RefGenConf.<lambda> at 0x7fba364d9840>)
 ```
 
 Seek path to a specified genome-asset-tag alias
@@ -846,7 +846,7 @@ Seek path to a specified genome-asset-tag alias
 
 
 ```python
-def seek_src(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, check_exist=<function RefGenConf.<lambda> at 0x7fac824cc6a8>)
+def seek_src(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, check_exist=<function RefGenConf.<lambda> at 0x7fba364d9a60>)
 ```
 
 Seek path to a specified genome-asset-tag
@@ -876,7 +876,7 @@ Seek path to a specified genome-asset-tag
 
 
 ```python
-def seekr(self, genome_name, asset_name, tag_name=None, seek_key=None, remote_class='html', get_url=<function RefGenConf.<lambda> at 0x7fac824cc598>)
+def seekr(self, genome_name, asset_name, tag_name=None, seek_key=None, remote_class='html', get_url=<function RefGenConf.<lambda> at 0x7fba364d9950>)
 ```
 
 Seek a remote path to a specified genome/asset.seek_key:tag
@@ -914,7 +914,7 @@ Point to the selected tag by default
 
 
 ```python
-def set_genome_alias(self, genome, digest=None, servers=None, overwrite=False, reset_digest=False, create_genome=False, no_write=False, get_json_url=<function RefGenConf.<lambda> at 0x7fac824cd158>)
+def set_genome_alias(self, genome, digest=None, servers=None, overwrite=False, reset_digest=False, create_genome=False, no_write=False, get_json_url=<function RefGenConf.<lambda> at 0x7fba364dc510>)
 ```
 
 Assign a human-readable alias to a genome identifier.
