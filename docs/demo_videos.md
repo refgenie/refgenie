@@ -20,4 +20,4 @@ If used *without* genome configuration file, the data does not persist from sess
 
 If used *with* genome configuration file, the data persists from session to session. That's the most common scenario, you can `build`, `pull` and `seek` assets managed locally.
 
-<script id="asciicast-370411" src="https://asciinema.org/a/370411.js" async></script>
+<script id="asciicast-zxp1hO1DZeWaT7PNoHhjtS4Jk" src="https://asciinema.org/a/zxp1hO1DZeWaT7PNoHhjtS4Jk.js" async></script>
