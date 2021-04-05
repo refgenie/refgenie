@@ -68,9 +68,6 @@ jobs:
       working-directory: ./genomes
       run: refgenie list -c g.yaml
 
-    - name: refgenie build fasta
-      run: refgenie build -c genomes/g.yaml t7/fasta --files fasta=tests/data/t7.fa.gz --recipe tests/data/recipe_parent.json
-
     - name: refgenie set aliases
       run: |
         refgenie alias set -c genomes/g.yaml --aliases t7_new t7_new1 --digest 6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905
@@ -96,11 +93,11 @@ jobs:
         ./tests/assert_in_file.sh genomes/g.yaml t7_new 1
         ./tests/assert_in_file.sh genomes/g.yaml t7_new1 1
         ./tests/assert_in_file.sh genomes/g.yaml t7_another 0
-        if [ -L genomes/alias/t7_new/fasta/default/6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905.fa.gz ]; then
-            echo "'genomes/alias/t7_new/fasta/default/6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905.fa.gz' exists."
+        if [ -L genomes/alias/t7_new/fasta/default/t7_new.fa.gz ]; then
+            echo "'genomes/alias/t7_new/fasta/default/t7_new.fa.gz' exists."
             exit 1
         else
-            echo "Error: 'genomes/alias/t7_new/fasta/default/6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905.fa.gz' does not exist."
+            echo "Error: 'genomes/alias/t7_new/fasta/default/t7_new.fa.gz' does not exist."
         fi
 
     - name: refgenie get aliases
@@ -142,8 +139,8 @@ jobs:
 
     - name: refgenie populate
       run: |
-        populate_path=`echo 'refgenie://t7/fasta:default' | refgenie populate -c genomes/g.yaml`
-        seek_path=`refgenie seek -c genomes/g.yaml t7/fasta:default`
+        populate_path=`echo 'refgenie://t7_another/fasta:default' | refgenie populate -c genomes/g.yaml`
+        seek_path=`refgenie seek -c genomes/g.yaml t7_another/fasta:default`
         if [[ "$populate_path" == "$seek_path" ]; then
           echo "seek and populate returned identical paths"
         else
