@@ -141,7 +141,7 @@ jobs:
       run: |
         populate_path=`echo 'refgenie://t7_another/fasta:default' | refgenie populate -c genomes/g.yaml`
         seek_path=`refgenie seek -c genomes/g.yaml t7_another/fasta:default`
-        if [[ "$populate_path" == "$seek_path" ]; then
+        if [[ "$populate_path" == "$seek_path" ]]; then
           echo "seek and populate returned identical paths"
         else
           echo "Error: seek and populate returned different paths -- seek: ${seek_path}; populate: ${populate_path}"
