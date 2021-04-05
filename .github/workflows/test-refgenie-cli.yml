@@ -138,3 +138,15 @@ jobs:
         refgenie remove -c genomes/g.yaml t7_another/fasta_child -f
         ./tests/assert_in_file.sh genomes/g.yaml fasta_child 1
         ./tests/assert_in_file.sh genomes/g.yaml 6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905/fasta_child:new_tag 1 # test if the entry was removed from the fasta children list
+
+
+    - name: refgenie populate
+      run: |
+        populate_path=`echo 'refgenie://t7/fasta:default' | refgenie populate -c genomes/g.yaml`
+        seek_path=`refgenie seek -c genomes/g.yaml t7/fasta:default`
+        if [[ "$populate_path" == "$seek_path" ]; then
+          echo "seek and populate returned identical paths"
+        else
+          echo "Error: seek and populate returned different paths -- seek: ${seek_path}; populate: ${populate_path}"
+          exit 1
+        fi
