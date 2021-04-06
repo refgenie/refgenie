@@ -1,6 +1,16 @@
 # Changelog
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
+
+## [0.11.0] - unreleased
+
+## Added
+- remote commands, which work without genome config file:
+  - `refgenie seekr`
+  - `refgenie populater`
+  - `refgenie listr`
+- `refgenie populate` command for refgenie registry paths populating with local paths
+
 ## [0.10.0] - 2021-03-11
 
 **After updating to this version your configuration file and genome assets will not be compatible with the software. Please refer to the [upgrade tutorial](config_upgrade_03_to_04.md) for instructions on how to migrate the config between versions.**
@@ -22,10 +32,10 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [0.9.3] - 2020-07-29
 
-## Changed 
+## Changed
 - short option string for `--no-overwrite` from `-n` to `-o`
 
-## Added 
+## Added
 - option to handle large asset archives pulling from the CLI (`-l`/`--no-large` flag)
 - option to set the maximum archive size to `pull` with no confirmation required (`--size-cutoff` argument)
 - `-s`/`--seek-keys` argument to `refgenie add` to specify seek keys for added assets
@@ -35,14 +45,14 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [0.9.2] - 2020-07-01
 
-## Changed 
+## Changed
 - in `refgenie build` reduced the config file locking time to prevent problems in multi-build context
 - dropped Python 2 support
 ## Added
-- parametrized `kmer` in salmon recipes 
+- parametrized `kmer` in salmon recipes
 - support for all genome configuration file parameter values initialization in `refgenie init`
 
-## [0.9.1] - 2020-05-01 
+## [0.9.1] - 2020-05-01
 
 ### Added
 - added option (`-f`/`--force`) to confirm assets overwriting upfront in `refgenie add` add `refgenie pull`
@@ -93,7 +103,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 - `refgenie id` command for asset digest retrieval
-- cross-namespace asset relationships support 
+- cross-namespace asset relationships support
 - `--assets` argument in `refgenie build` command to provide parent assets, if required
 - `-r`/`--recipe` in `refgenie build` command argument to provide the recipe for the build
 - `subscribe` and `unsubscribe` subcommands to enable server list manipulation in the config file (`genome_servers` entry in the refgenie configuration file)
@@ -135,7 +145,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `refgenie tag` command that assigns a tag to an assets (re-tags it)
 - `refgenie getseq` command that retrieves sequence ranges from a genome
 - `seek_keys`, which provide control over files within an asset
-- `asset_digests`, which are calculated after asset building and used to assure asset provenance 
+- `asset_digests`, which are calculated after asset building and used to assure asset provenance
 - asset relationships recording (`asset_children`, `asset_parents` fields)
 
 ### Changed
@@ -161,7 +171,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Major genome configuration file format changes
     - Added `config_version` entry
     - Added `assets` section in `genomes` section
-    
+
 - recipes can now include container images
 
 ### Added

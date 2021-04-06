@@ -79,23 +79,22 @@ optional arguments:
 
 ## `refgenie list --help`
 ```console
-usage: refgenie list [-h] [-c C] [--skip-read-lock] [-g [G [G ...]]] [-r]
+usage: refgenie list [-h] [-c C] [--skip-read-lock] [-g [G ...]] [-r]
 
 List available local assets.
 
 optional arguments:
-  -h, --help                            show this help message and exit
-  -c C, --genome-config C               Path to local genome configuration file. Optional
-                                        if REFGENIE environment variable is set.
-  --skip-read-lock                      Whether the config file should not be locked for
-                                        reading
-  -g [G [G ...]], --genome [G [G ...]]  Reference assembly ID, e.g. mm10.
-  -r, --recipes                         List available recipes.
+  -h, --help                    show this help message and exit
+  -c C, --genome-config C       Path to local genome configuration file. Optional if
+                                REFGENIE environment variable is set.
+  --skip-read-lock              Whether the config file should not be locked for reading
+  -g [G ...], --genome [G ...]  Reference assembly ID, e.g. mm10.
+  -r, --recipes                 List available recipes.
 ```
 
 ## `refgenie listr --help`
 ```console
-usage: refgenie listr [-h] [-c C] [--skip-read-lock] [-g [G [G ...]]] [-s S [S ...]] [-p]
+usage: refgenie listr [-h] [-c C] [--skip-read-lock] [-g [G ...]] [-s S [S ...]] [-p]
 
 List available remote assets.
 
@@ -105,7 +104,7 @@ optional arguments:
                                         if REFGENIE environment variable is set.
   --skip-read-lock                      Whether the config file should not be locked for
                                         reading
-  -g [G [G ...]], --genome [G [G ...]]  Reference assembly ID, e.g. mm10.
+  -g [G ...], --genome [G ...]          Reference assembly ID, e.g. mm10.
   -s S [S ...], --genome-server S [S ...]
                                         One or more URLs to use. This information will not
                                         persist in the genome config file.
@@ -448,4 +447,3 @@ optional arguments:
   -v V, --target-version V  Target config version for the upgrade.
   -f, --force               Do not prompt before action, approve upfront.
 ```
-
