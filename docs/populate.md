@@ -1,6 +1,6 @@
-# Replace refgenie registry paths with asset file paths 
+# Make configuration files portable with refgenie populate commands
 
-`refgenie populate` and `refgenie populater` commands can be used to replace refgenie registry paths with asset file paths. For example, go from `refgenie://hg38/fasta` to `/home/johndoe/genomes/hg38/fasta/default/hg38.fa`.
+Use `refgenie populate` to replace registry paths (*e.g.* `refgenie://hg38/fasta`) in text files with asset file paths (*e.g.* `/home/johndoe/genomes/hg38/fasta/default/hg38.fa`). The remote version, `refgenie populatr`, will replace your registry path with a URI, like `s3://path/to/asset.xyz` or `http://path/to/asset.xyz` for use in an ephemeral compute environment. This powerful features allows you to write configuration files and scripts with maximum portability for anything you might need to configure with reference genome paths.
 
 # Motivation
 
@@ -8,11 +8,11 @@ In some cases it is desirable to run a refgenie-unaware workflow and benefit fro
 
 # Usage examples
 
-Both `populate` commands can populate refgenie registry paths both in **file** and **string**.
+Both `populate` commands can populate refgenie registry paths either in a **file** or a **string**.
 
-## Text intput
+## String intput
 
-To populate an argument to `bowtie2` command with a local path to `bowtie2_index` asset managed by refgenie and run the aligner call:
+Use a pipe (`|`) to populate an in-line command argument with a local path managed by refgenie:
 
 ```console
 echo 'bowtie2 -x refgenie://hg38/bowtie2_index -U reads_1.fq -S eg1.sam' | refgenie populate | sh
@@ -24,8 +24,8 @@ Example input in `test/config_template.yaml`:
 ```yaml
 config:
   param1: value1
-  fasta: refgenie://hg38/fasta
-  bowtie2_index: refgenie://hg38/bowtie2_index
+  fasta: "refgenie://hg38/fasta"
+  bowtie2_index: "refgenie://hg38/bowtie2_index"
 ```
 
 To populate a bowtie2 index and FASTA file paths in a YAML configuration file of an arbitrary pipeline call:
