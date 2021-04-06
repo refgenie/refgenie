@@ -52,7 +52,7 @@ s3://awspds.refgenie.databio.org/rg.databio.org/2230c535660fb4774114bfa966a62f82
 
 You can replace refgenie asset registry paths in **text** or **files** with `refgenie populater`. Any string that matches the following format will be replaced with a remote path:
 
-```
+```console
 refgenie://genome_alias/asset.seek_key:tag
 ```
 
