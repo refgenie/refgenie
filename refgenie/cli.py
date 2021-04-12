@@ -379,7 +379,7 @@ def main():
         )
         if args.no_explanation:
             print(res)
-        if args.flag_map:
+        if args.flag_meanings:
             from refgenconf.seqcol import FLAGS
             from rich.table import Table
 

@@ -10,7 +10,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   - `refgenie populater`
   - `refgenie listr`
 - `refgenie populate` command for refgenie registry paths populating with local paths
-- `--flag-map` argument to `refgenie compare` command
+- `--flag-meanings` argument to `refgenie compare` command
 
 ## [0.10.0] - 2021-03-11
 

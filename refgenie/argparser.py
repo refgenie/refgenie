@@ -302,9 +302,9 @@ def build_argparser():
     )
     sps[COMPARE_CMD].add_argument(
         "-f",
-        "--flag-map",
+        "--flag-meanings",
         action="store_true",
-        help="Display flag map and exit.",
+        help="Display compatibility flag meanings.",
     )
 
     # add 'genome' argument to many commands
