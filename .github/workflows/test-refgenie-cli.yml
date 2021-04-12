@@ -26,6 +26,11 @@ jobs:
     - name: Install package
       run: python -m pip install .
 
+    - name: Set up Homebrew
+      if: startsWith(matrix.os, 'macOS')
+      id: set-up-homebrew
+      uses: Homebrew/actions/setup-homebrew@master
+
     - name: install macOS-specific dependancies
       if: startsWith(matrix.os, 'macOS')
       run: brew install md5sha1sum
