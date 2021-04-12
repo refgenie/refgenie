@@ -379,6 +379,19 @@ def main():
         )
         if args.no_explanation:
             print(res)
+        if args.flag_map:
+            from refgenconf.seqcol import FLAGS
+            from rich.table import Table
+
+            _LOGGER.info("\n")
+            codes = sorted(FLAGS.keys())
+            table = Table(title="Compatibility flags")
+            table.add_column("Code")
+            table.add_column("Indication")
+            for code in codes:
+                table.add_row(str(code), FLAGS[code])
+            console = Console()
+            console.print(table)
 
     elif args.command == UPGRADE_CMD:
         upgrade_config(

@@ -300,6 +300,12 @@ def build_argparser():
         action="store_true",
         help="Do not print compatibility code explanation.",
     )
+    sps[COMPARE_CMD].add_argument(
+        "-f",
+        "--flag-map",
+        action="store_true",
+        help="Display flag map and exit.",
+    )
 
     # add 'genome' argument to many commands
     for cmd in [
@@ -427,7 +433,7 @@ def build_argparser():
         type=str,
         metavar="S",
         help="""
-        String representation of a JSON object with seek_keys, 
+        String representation of a JSON object with seek_keys,
         e.g. '{"seek_key1": "file.txt"}'
         """,
     )
