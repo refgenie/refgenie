@@ -41,3 +41,19 @@ config:
   fasta: /home/johndoe/genomes/hg38/fasta/default/hg38.fa
   bowtie2_index: /home/johndoe/genomes/hg38/bowtie2_index/default/hg38
 ```
+
+
+# Using the refgenie_looper_populate plugin
+
+If you're interested in using refgenie in conjunction with [looper](https://looper.databio.org/), we have a convenient looper plugin to provide refgenie populate capability. Enable the plugin by adding this to your looper pipeline interface file:
+
+```
+var_templates:
+  refgenie_config: "$REFGENIE"
+pre_submit:
+  python_functions:
+  - refgenconf.looper_refgenie_populate
+```
+
+Now, just add sample attributes in your sample take with refgenie registry paths, like `refgenie://hg38/fasta`. You can add these either as sample attributes directly in the sample table, or using a [derived attribute](http://pep.databio.org/en/latest/specification/#sample-modifier-derive). Looper will automatically use refgenie to pre-populate the registry paths into correct local paths before submitting the jobs.
+
