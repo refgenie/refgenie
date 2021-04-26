@@ -14,7 +14,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [0.10.0] - 2021-03-11
 
-**After updating to this version your configuration file and genome assets will not be compatible with the software. Please refer to the [upgrade tutorial](config_upgrade_03_to_04.md) for instructions on how to migrate the config between versions.**
+**Version `0.10.0` requires an upgrade to the configuration file and asset structure. Please refer to the [upgrade tutorial](config_upgrade_03_to_04.md) for instructions on how to migrate your config upon upgrade to `0.10.0`.**
 
 ## Changed
 
