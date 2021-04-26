@@ -4,13 +4,13 @@ __all__ = ["RefgenieError", "MissingGenomeConfigError", "MissingFolderError"]
 
 
 class RefgenieError(Exception):
-    """ Base refgenie exception type """
+    """Base refgenie exception type"""
 
     pass
 
 
 class MissingGenomeConfigError(RefgenieError):
-    """ Exception for when a genome config filepath doesn't point to a file. """
+    """Exception for when a genome config filepath doesn't point to a file."""
 
     def __init__(self, conf_file=None):
         """

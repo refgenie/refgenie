@@ -27,7 +27,7 @@ from .refgenie import _skip_lock, parse_registry_path, refgenie_build
 
 
 def main():
-    """ Primary workflow """
+    """Primary workflow"""
     parser = logmuse.add_logging_options(build_argparser())
     args, remaining_args = parser.parse_known_args()
     global _LOGGER

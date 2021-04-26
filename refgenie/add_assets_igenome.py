@@ -164,7 +164,7 @@ def refgenie_add(rgc, asset_dict, path, force=False):
 
 
 def main():
-    """ main workflow """
+    """main workflow"""
     parser = build_argparser()
     args, remaining_args = parser.parse_known_args()
     cfg = refgenconf.select_genome_config(
