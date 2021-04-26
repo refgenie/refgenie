@@ -1,21 +1,21 @@
-# Make configuration files portable with refgenie populate commands
+# Make configuration files portable with refgenie populate
 
-Use `refgenie populate` to replace registry paths (*e.g.* `refgenie://hg38/fasta`) in text files with asset file paths (*e.g.* `/home/johndoe/genomes/hg38/fasta/default/hg38.fa`). The remote version, `refgenie populatr`, will replace your registry path with a URI, like `s3://path/to/asset.xyz` or `http://path/to/asset.xyz` for use in an ephemeral compute environment. This powerful features allows you to write configuration files and scripts with maximum portability for anything you might need to configure with reference genome paths.
+Use `refgenie populate` to replace registry paths (*e.g.* `refgenie://hg38/fasta`) in text files with asset file paths (*e.g.* `/home/johndoe/genomes/hg38/fasta/default/hg38.fa`). For use in an ephemeral compute environment, the remote version, `refgenie populatr`, will replace your registry path with a URI, like `s3://path/to/asset.xyz` or `http://path/to/asset.xyz`. This powerful feature allows you to write configuration files and scripts with maximum portability for anything you might need to configure with reference genome paths.
 
 # Motivation
 
-In some cases it is desirable to run a refgenie-unaware workflow and benefit from the refgenie framework. In such cases we need to populate an input for a workflow run as a pre-processing step, outside of the workflow. For instance, this is the way [Common Workflow Language](https://www.commonwl.org/) (CWL) works; CWL workflows in best practices require knowledge of all input files before the workflow run begins. So, it doesn't make sense to pass a registry path, which is then resolved by refgenie inside the workflow.
+Sometimes it is desirable to run a refgenie-unaware workflow and benefit from the refgenie framework. In such cases, we need a pre-processing step to populate some kind of input configuration file for a workflow run. This way, all refgenie awareness is kept outside the workflow, but you can still benefit from managing your reference resources using refgenie. For instance, this is the way [Common Workflow Language](https://www.commonwl.org/) (CWL) works; CWL workflows in best practices require knowledge of all input files before the workflow run begins. So, rather than passing a registry path, which is then resolved by refgenie inside the workflow, it makes more sense to use refgenie to pre-populate the CWL input file with the correct paths.
 
 # Usage examples
 
-Both `populate` commands can populate refgenie registry paths either in a **file** or a **string**.
+Both `populate` and `populater` can populate refgenie registry paths either in a **file** or a **string**.
 
 ## String intput
 
 Use a pipe (`|`) to populate an in-line command argument with a local path managed by refgenie:
 
 ```console
-echo 'bowtie2 -x refgenie://hg38/bowtie2_index -U reads_1.fq -S eg1.sam' | refgenie populate | sh
+echo 'bowtie2 -x refgenie://hg38/bowtie2_index -U r1.fq -S eg1.sam' | refgenie populate | sh
 ```
 
 ## File input
