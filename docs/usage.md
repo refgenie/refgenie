@@ -2,7 +2,7 @@
 
 ## `refgenie --help`
 ```console
-version: 0.10.0 | refgenconf 0.11.0-dev
+version: 0.11.0-dev | refgenconf 0.11.0
 usage: refgenie [-h] [--version] [--silent] [--verbosity V] [--logdev]
                 {init,list,listr,pull,build,seek,seekr,add,remove,getseq,tag,id,subscribe,unsubscribe,alias,compare,upgrade,populate,populater}
                 ...
