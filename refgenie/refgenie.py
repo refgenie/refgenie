@@ -1,28 +1,25 @@
-import os
-import sys
 import csv
-import signal
 import json
+import os
+import signal
+import sys
+from logging import getLogger
+
+import pypiper
+import refgenconf
+from refgenconf import RefGenConf, get_dir_digest
+from ubiquerg import parse_registry_path as prp
+from ubiquerg.system import is_writable
+from yacman import UndefinedAliasError
 
 from .asset_build_packages import *
 from .const import *
 from .helpers import (
+    _parse_user_build_input,
     _raise_missing_recipe_error,
     _skip_lock,
-    _parse_user_build_input,
     _writeable,
 )
-
-import pypiper
-import refgenconf
-from refgenconf import (
-    RefGenConf,
-    get_dir_digest,
-)
-from ubiquerg import parse_registry_path as prp
-from ubiquerg.system import is_writable
-from yacman import UndefinedAliasError
-from logging import getLogger
 
 _LOGGER = getLogger(PKG_NAME)
 
@@ -159,9 +156,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             os.path.join(genome_outfolder, asset_key, tag, BUILD_STATS_DIR)
         )
         _LOGGER.info(
-            "Saving outputs to:\n- content: {}\n- logs: {}".format(
-                genome_outfolder, log_outfolder
-            )
+            f"Saving outputs to:\n- content: {genome_outfolder}\n- logs: {log_outfolder}"
         )
         if args.docker:
             # Set up some docker stuff
@@ -173,9 +168,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
 
         if not _writeable(genome_outfolder):
             _LOGGER.error(
-                "Insufficient permissions to write to output folder: {}".format(
-                    genome_outfolder
-                )
+                f"Insufficient permissions to write to output folder: {genome_outfolder}"
             )
             return
 
@@ -236,7 +229,9 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                     "exist: {}".format(asset_dir)
                 )
             digest = get_dir_digest(asset_dir)
-            _LOGGER.info("Asset digest: {}".format(digest))
+            _LOGGER.info(f"Asset digest: {digest}")
+            # add a 'dir' seek_key that points to the asset directory
+            build_pkg[ASSETS].update({"dir": "."})
             # add updates to config file
             with rgc as r:
                 if asset_key == "fasta":

@@ -1,10 +1,11 @@
 # TO be imported from refget package when it is finished
 # from refget import fasta_checksum
 
-import hashlib
 import binascii
-import pyfaidx
+import hashlib
 import os
+
+import pyfaidx
 
 
 def trunc512_digest(seq, offset=24):

@@ -10,6 +10,8 @@
 
 Refgenie manages storage, access, and transfer of reference genome resources. It provides command-line and Python interfaces to *download* pre-built reference genome "assets", like indexes used by bioinformatics tools. It can also *build* assets for custom genome assemblies. Refgenie provides programmatic access to a standard genome folder structure, so software can swap from one genome to another.
 
+**In a hurry?** Check out the [demo videos](demo_videos.md) that present the most relevant refgenie features in 3 minutes!
+
 ## What makes refgenie better?
 
 1. **It provides a command-line interface to download individual resources**. Think of it as `GitHub` for reference genomes. You just type `refgenie pull hg38/bwa_index`.
@@ -18,22 +20,45 @@ Refgenie manages storage, access, and transfer of reference genome resources. It
 
 3. **It simplifies finding local asset locations**. When you need a path to an asset, you can `seek` it, making your pipelines portable across computing environments: `refgenie seek hg38/salmon_index`.
 
-4. **It includes a python API**. For tool developers, you use `rgc = refgenconf.RefGenConf("genomes.yaml")` to get a Python object with paths to any genome asset, *e.g.*, `rgc.seek("hg38", "kallisto_index")`.
+4. **It provides remote operation mode**, useful for cloud applications. Get a path to an asset file hosted on AWS S3: `refgenie seekr hg38/fasta --remote-class s3`.
 
-5. **It strictly determines genomes compatibility**. Users refer to genomes with arbitrary aliases, like "hg38", but refgenie uses sequence-derived identifiers to verify genome identity with asset servers.
+5. **It includes a Python API**. For tool developers, you use `rgc = refgenconf.RefGenConf("genomes.yaml")` to get a Python object with paths to any genome asset, *e.g.*, `rgc.seek("hg38", "kallisto_index")`.
 
+6. **It strictly determines genomes compatibility**. Users refer to genomes with arbitrary aliases, like "hg38", but refgenie uses sequence-derived identifiers to verify genome identity with asset servers.
 
 ## Quick example
 
-### Install and initialize
+### Install
+
+Refgenie is a Python package package, install from [PyPi](https://pypi.org/project/refgenie/):
+
+```console
+pip install --user refgenie
+```
+
+Or [conda](https://anaconda.org/bioconda/refgenie):
+
+```console
+conda install refgenie
+```
+
+And that's it! If you wish to use refgenie in *remote mode*  See [further reading on remote mode in refgenie](remote.md).
+
+If you're connected to the Internet, call a test command, e.g.:
+
+```console
+refgenie seekr hg38/fasta
+```
+
+### Initialize to use refgenie locally
 
 Refgenie keeps track of what's available using a configuration file initialized by `refgenie init`:
 
 ```console
-pip install --user refgenie
 export REFGENIE='genome_config.yaml'
 refgenie init -c $REFGENIE
 ```
+
 
 ### Download indexes and assets for a remote reference genome
 
@@ -45,8 +70,8 @@ refgenie listr
 
 Response:
 ```console
-                        Remote refgenie assets                        
-                 Server URL: http://refgenomes.databio.org                 
+                        Remote refgenie assets
+                 Server URL: http://refgenomes.databio.org
 ┏━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ genome              ┃ assets                                       ┃
 ┡━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
@@ -70,7 +95,7 @@ Downloading URL: http://rg.databio.org/v3/assets/archive/94e0d21feb576e6af61cd2a
 Download complete: /Users/mstolarczyk/Desktop/testing/refgenie/data/94e0d21feb576e6af61cd2a798ad30682ef2428bb7eabbb4/bowtie2_index/bowtie2_index__default.tgz
 Extracting asset tarball: /Users/mstolarczyk/Desktop/testing/refgenie/data/94e0d21feb576e6af61cd2a798ad30682ef2428bb7eabbb4/bowtie2_index/bowtie2_index__default.tgz
 Default tag for '94e0d21feb576e6af61cd2a798ad30682ef2428bb7eabbb4/bowtie2_index' set to: default
-Created alias directories: 
+Created alias directories:
  - /Users/mstolarczyk/Desktop/testing/refgenie/alias/rCRSd/bowtie2_index/default
 ```
 
@@ -87,7 +112,7 @@ refgenie build mygenome/bwa_index
 
 See [further reading on building assets](build.md).
 
-### Retrieve paths to refgenie-managed assets
+### Retrieve paths to *local* refgenie-managed assets
 
 Once you've populated your refgenie with a few assets, use `seek` to retrieve their local file paths:
 
@@ -97,4 +122,17 @@ refgenie seek mm10/bowtie2_index
 
 This will return the path to the particular asset of interest, regardless of your computing environment. This gives you an ultra-portable asset manager! See [further reading on retrieving asset paths](seek.md).
 
+### Retrieve paths to *remote* refgenie-managed assets
+
+Use `seekr` (short for "seek remote") to retrieve remote `seek_key` targets:
+
+```console
+refgenie seekr mm10/fasta.fai
+```
+
+This will return the path to the particular remote file of interest, here: FASTA index file, which is a part of `mm10/fasta` asset.
+
+See [further reading on using refgenie in remote mode](remote.md).
+
+---
 If you want to read more about the motivation behind refgenie and the software engineering that makes refgenie work, proceed next to the [overview](overview.md).

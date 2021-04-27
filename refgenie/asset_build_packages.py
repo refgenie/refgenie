@@ -80,7 +80,7 @@ asset_build_packages = {
             "dbnsfp": "{genome}_dbNSFP.txt.gz",
             "tabix": "{genome}_dbNSFP.txt.gz.tbi",
         },
-        REQ_FILES: [{KEY: "dbnsfp", DESC: "zipped dbSNFP database file"}],
+        REQ_FILES: [{KEY: "dbnsfp", DESC: "zipped dbNSFP database file"}],
         REQ_ASSETS: [],
         REQ_PARAMS: [
             {
@@ -99,7 +99,7 @@ asset_build_packages = {
             "rm {asset_outfolder}/dbNSFP*_variant.chr*",
             "bgzip -@ {threads} {asset_outfolder}/{genome}_dbNSFP.txt",
             "tabix -s 1 -b 2 -e 2 {asset_outfolder}/{genome}_dbNSFP.txt.gz",
-            "rm `find {asset_outfolder} -type f -not -path '{asset_outfolder}/_refgenie_build*' -not -path '{asset_outfolder}/hg38_dbNSFP.txt.*'`",
+            "rm `find {asset_outfolder} -type f -not -path '{asset_outfolder}/_refgenie_build*' -not -path '{asset_outfolder}/{genome}_dbNSFP.txt.*'`",
         ],
     },
     "dbsnp": {

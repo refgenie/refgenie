@@ -1,9 +1,9 @@
-# Retrieve paths to assets
+# Retrieve paths to *local* assets
 
 Once you've assembled a few assets, either by downloading or by building them, you'll be able to use `refgenie seek` to retrieve the paths. It's quite simple, really -- say you've built the `bowtie2_index` and `fasta` assets for `hg38`. If you type:
 
 ```console
-refgenie seek -c CONFIG.yaml hg38/bowtie2_index
+refgenie seek hg38/bowtie2_index
 ```
 
 You'll get back the absolute path on your system to the `bowtie2_index` asset, something like:

@@ -1,35 +1,33 @@
-import logmuse
-import sys
 import json
 import os
+import sys
+from collections import OrderedDict
+from functools import partial
 
-from .argparser import build_argparser
-from .refgenie import parse_registry_path, _skip_lock
-from ._version import __version__
-from .const import *
-from .exceptions import *
-from .asset_build_packages import *
-from .refgenie import refgenie_build
-from .helpers import _raise_missing_recipe_error, _single_folder_writeable
-
+import logmuse
 from refgenconf import (
-    RefGenConf,
+    DownloadJsonError,
     MissingAssetError,
     MissingGenomeError,
-    DownloadJsonError,
-    upgrade_config,
-    __version__ as rgc_version,
-    select_genome_config,
+    RefGenConf,
 )
-from ubiquerg import query_yes_no
+from refgenconf import __version__ as rgc_version
+from refgenconf import select_genome_config, upgrade_config
 from requests.exceptions import MissingSchema
-
-from collections import OrderedDict
 from rich.console import Console
+from ubiquerg import query_yes_no
+
+from ._version import __version__
+from .argparser import build_argparser
+from .asset_build_packages import *
+from .const import *
+from .exceptions import *
+from .helpers import _raise_missing_recipe_error, _single_folder_writeable
+from .refgenie import _skip_lock, parse_registry_path, refgenie_build
 
 
 def main():
-    """ Primary workflow """
+    """Primary workflow"""
     parser = logmuse.add_logging_options(build_argparser())
     args, remaining_args = parser.parse_known_args()
     global _LOGGER
@@ -53,12 +51,15 @@ def main():
         on_missing=lambda fp: fp,
         strict_env=True,
     )
-    if gencfg is None:
+    if gencfg is None and args.command not in [
+        GET_REMOTE_ASSET_CMD,
+        LIST_REMOTE_CMD,
+        POPULATE_REMOTE_CMD,
+    ]:
         raise MissingGenomeConfigError(args.genome_config)
     _LOGGER.debug("Determined genome config: {}".format(gencfg))
 
-    skip_read_lock = _skip_lock(args.skip_read_lock, gencfg)
-
+    skip_read_lock = True if gencfg is None else _skip_lock(args.skip_read_lock, gencfg)
     # From user input we want to construct a list of asset dicts, where each
     # asset has a genome name, asset name, and tag
     if "asset_registry_paths" in args and args.asset_registry_paths:
@@ -117,8 +118,6 @@ def main():
                 )
         if args.genome_folder:
             entries.update({CFG_FOLDER_KEY: args.genome_folder})
-        if args.remote_url_base:
-            entries.update({CFG_REMOTE_URL_BASE_KEY: args.remote_url_base})
         if args.genome_archive_folder:
             entries.update({CFG_ARCHIVE_KEY: args.genome_archive_folder})
         if args.genome_archive_config:
@@ -167,9 +166,31 @@ def main():
             )
         return
 
+    elif args.command == GET_REMOTE_ASSET_CMD:
+        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        if args.genome_server is not None:
+            rgc.subscribe(
+                urls=args.genome_server, reset=not args.append_server, no_write=True
+            )
+        for a in asset_list:
+            _LOGGER.debug(
+                "getting remote asset path: '{}/{}.{}:{}'".format(
+                    a["genome"], a["asset"], a["seek_key"], a["tag"]
+                )
+            )
+            print(
+                rgc.seekr(
+                    a["genome"],
+                    a["asset"],
+                    a["tag"],
+                    a["seek_key"],
+                    args.remote_class,
+                )
+            )
+        return
+
     elif args.command == INSERT_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
-
         if len(asset_list) > 1:
             raise NotImplementedError("Can only add 1 asset at a time")
         else:
@@ -230,6 +251,10 @@ def main():
         rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
         console = Console()
         if args.command == LIST_REMOTE_CMD:
+            if args.genome_server is not None:
+                rgc.subscribe(
+                    urls=args.genome_server, reset=not args.append_server, no_write=True
+                )
             num_servers = 0
             bad_servers = []
             for server_url in rgc[CFG_SERVERS_KEY]:
@@ -354,11 +379,58 @@ def main():
         )
         if args.no_explanation:
             print(res)
+        if args.flag_meanings:
+            from refgenconf.seqcol import FLAGS
+            from rich.table import Table
+
+            _LOGGER.info("\n")
+            codes = sorted(FLAGS.keys())
+            table = Table(title="Compatibility flags")
+            table.add_column("Code")
+            table.add_column("Indication")
+            for code in codes:
+                table.add_row(str(code), FLAGS[code])
+            console = Console()
+            console.print(table)
 
     elif args.command == UPGRADE_CMD:
         upgrade_config(
             target_version=args.target_version, filepath=gencfg, force=args.force
         )
+
+    elif args.command == POPULATE_CMD:
+        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        process_populate(pop_fun=rgc.populate, file_path=args.file)
+
+    elif args.command == POPULATE_REMOTE_CMD:
+        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        if args.genome_server is not None:
+            rgc.subscribe(
+                urls=args.genome_server, reset=not args.append_server, no_write=True
+            )
+        pop_fun = partial(rgc.populater, remote_class=args.remote_class)
+        process_populate(pop_fun=pop_fun, file_path=args.file)
+
+
+def process_populate(pop_fun, file_path=None):
+    """
+    Process a populate request (file or stdin) with a custom populator function
+
+    :param callable(dict | str | list) -> dict | str | list pop_fun: a function
+        that populates refgenie registry paths in objects
+    :param str file_path: path to the file to populate refgenie registry paths in,
+        skip for stdin processing
+    """
+    if file_path is not None:
+        _LOGGER.debug(f"Populating file: {file_path}")
+        with open(file_path) as fp:
+            for line in fp:
+                sys.stdout.write(pop_fun(glob=line))
+    else:
+        for line in sys.stdin:
+            if line.rstrip() in ["q", "quit", "exit"]:
+                break
+            sys.stdout.write(pop_fun(glob=line))
 
 
 def perm_check_x(file_to_check, message_tag="genome directory"):

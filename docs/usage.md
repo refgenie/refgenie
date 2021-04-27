@@ -2,21 +2,22 @@
 
 ## `refgenie --help`
 ```console
-version: 0.10.0 | refgenconf 0.10.0
+version: 0.11.0-dev | refgenconf 0.11.0
 usage: refgenie [-h] [--version] [--silent] [--verbosity V] [--logdev]
-                {init,list,listr,pull,build,seek,add,remove,getseq,tag,id,subscribe,unsubscribe,alias,compare,upgrade}
+                {init,list,listr,pull,build,seek,seekr,add,remove,getseq,tag,id,subscribe,unsubscribe,alias,compare,upgrade,populate,populater}
                 ...
 
 refgenie - reference genome asset manager
 
 positional arguments:
-  {init,list,listr,pull,build,seek,add,remove,getseq,tag,id,subscribe,unsubscribe,alias,compare,upgrade}
+  {init,list,listr,pull,build,seek,seekr,add,remove,getseq,tag,id,subscribe,unsubscribe,alias,compare,upgrade,populate,populater}
     init                Initialize a genome configuration.
     list                List available local assets.
     listr               List available remote assets.
     pull                Download assets.
     build               Build genome assets.
     seek                Get the path to a local asset.
+    seekr               Get the path to a remote asset.
     add                 Add local asset to the config file.
     remove              Remove a local asset.
     getseq              Get sequences from a genome.
@@ -27,6 +28,8 @@ positional arguments:
     alias               Interact with aliases.
     compare             Compare two genomes.
     upgrade             Upgrade config. This will alter the files on disk.
+    populate            Populate registry paths with local paths.
+    populater           Populate registry paths with remote paths.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -76,23 +79,22 @@ optional arguments:
 
 ## `refgenie list --help`
 ```console
-usage: refgenie list [-h] [-c C] [--skip-read-lock] [-g [G [G ...]]] [-r]
+usage: refgenie list [-h] [-c C] [--skip-read-lock] [-g [G ...]] [-r]
 
 List available local assets.
 
 optional arguments:
-  -h, --help                            show this help message and exit
-  -c C, --genome-config C               Path to local genome configuration file. Optional
-                                        if REFGENIE environment variable is set.
-  --skip-read-lock                      Whether the config file should not be locked for
-                                        reading
-  -g [G [G ...]], --genome [G [G ...]]  Reference assembly ID, e.g. mm10.
-  -r, --recipes                         List available recipes.
+  -h, --help                    show this help message and exit
+  -c C, --genome-config C       Path to local genome configuration file. Optional if
+                                REFGENIE environment variable is set.
+  --skip-read-lock              Whether the config file should not be locked for reading
+  -g [G ...], --genome [G ...]  Reference assembly ID, e.g. mm10.
+  -r, --recipes                 List available recipes.
 ```
 
 ## `refgenie listr --help`
 ```console
-usage: refgenie listr [-h] [-c C] [--skip-read-lock] [-g [G [G ...]]]
+usage: refgenie listr [-h] [-c C] [--skip-read-lock] [-g [G ...]] [-s S [S ...]] [-p]
 
 List available remote assets.
 
@@ -102,7 +104,12 @@ optional arguments:
                                         if REFGENIE environment variable is set.
   --skip-read-lock                      Whether the config file should not be locked for
                                         reading
-  -g [G [G ...]], --genome [G [G ...]]  Reference assembly ID, e.g. mm10.
+  -g [G ...], --genome [G ...]          Reference assembly ID, e.g. mm10.
+  -s S [S ...], --genome-server S [S ...]
+                                        One or more URLs to use. This information will not
+                                        persist in the genome config file.
+  -p, --append-server                   Whether the provided servers should be appended to
+                                        the list.
 ```
 
 ## `refgenie pull --help`
@@ -210,6 +217,70 @@ optional arguments:
                            on disk.
 ```
 
+## `refgenie seekr --help`
+```console
+usage: refgenie seekr [-h] [-c C] [--skip-read-lock] [-g G] [-s S [S ...]] [-p]
+                      [--remote-class RC]
+                      asset-registry-paths [asset-registry-paths ...]
+
+Get the path to a remote asset.
+
+positional arguments:
+  asset-registry-paths                  One or more registry path strings that identify
+                                        assets (e.g. hg38/fasta or hg38/fasta:tag or
+                                        hg38/fasta.fai:tag).
+
+optional arguments:
+  -h, --help                            show this help message and exit
+  -c C, --genome-config C               Path to local genome configuration file. Optional
+                                        if REFGENIE environment variable is set.
+  --skip-read-lock                      Whether the config file should not be locked for
+                                        reading
+  -g G, --genome G                      Reference assembly ID, e.g. mm10.
+  -s S [S ...], --genome-server S [S ...]
+                                        One or more URLs to use. This information will not
+                                        persist in the genome config file.
+  -p, --append-server                   Whether the provided servers should be appended to
+                                        the list.
+  --remote-class RC                     Remote data provider class, e.g. 'http' or 's3'
+```
+
+## `refgenie populate --help`
+```console
+usage: refgenie populate [-h] [-c C] [--skip-read-lock] [-f F]
+
+Populate registry paths with local paths.
+
+optional arguments:
+  -h, --help               show this help message and exit
+  -c C, --genome-config C  Path to local genome configuration file. Optional if REFGENIE
+                           environment variable is set.
+  --skip-read-lock         Whether the config file should not be locked for reading
+  -f F, --file F           File with registry paths to populate
+```
+
+## `refgenie populater --help`
+```console
+usage: refgenie populater [-h] [-c C] [--skip-read-lock] [-s S [S ...]] [-p]
+                          [--remote-class RC] [-f F]
+
+Populate registry paths with remote paths.
+
+optional arguments:
+  -h, --help                            show this help message and exit
+  -c C, --genome-config C               Path to local genome configuration file. Optional
+                                        if REFGENIE environment variable is set.
+  --skip-read-lock                      Whether the config file should not be locked for
+                                        reading
+  -s S [S ...], --genome-server S [S ...]
+                                        One or more URLs to use. This information will not
+                                        persist in the genome config file.
+  -p, --append-server                   Whether the provided servers should be appended to
+                                        the list.
+  --remote-class RC                     Remote data provider class, e.g. 'http' or 's3'
+  -f F, --file F                        File with registry paths to populate
+```
+
 ## `refgenie add --help`
 ```console
 usage: refgenie add [-h] [-c C] [--skip-read-lock] [-g G] [-f] -p P [-s S]
@@ -313,8 +384,7 @@ optional arguments:
 
 ## `refgenie subscribe --help`
 ```console
-usage: refgenie subscribe [-h] [-c C] [--skip-read-lock] [-r] -s GENOME_SERVER
-                          [GENOME_SERVER ...]
+usage: refgenie subscribe [-h] [-c C] [--skip-read-lock] [-r] -s S [S ...]
 
 Add a refgenieserver URL to the config.
 
@@ -325,15 +395,14 @@ optional arguments:
   --skip-read-lock                      Whether the config file should not be locked for
                                         reading
   -r, --reset                           Overwrite the current list of server URLs.
-  -s GENOME_SERVER [GENOME_SERVER ...], --genome-server GENOME_SERVER [GENOME_SERVER ...]
+  -s S [S ...], --genome-server S [S ...]
                                         One or more URLs to add to the genome_servers
                                         attribute in config file.
 ```
 
 ## `refgenie unsubscribe --help`
 ```console
-usage: refgenie unsubscribe [-h] [-c C] [--skip-read-lock] -s GENOME_SERVER
-                            [GENOME_SERVER ...]
+usage: refgenie unsubscribe [-h] [-c C] [--skip-read-lock] -s S [S ...]
 
 Remove a refgenieserver URL from the config.
 
@@ -343,7 +412,7 @@ optional arguments:
                                         if REFGENIE environment variable is set.
   --skip-read-lock                      Whether the config file should not be locked for
                                         reading
-  -s GENOME_SERVER [GENOME_SERVER ...], --genome-server GENOME_SERVER [GENOME_SERVER ...]
+  -s S [S ...], --genome-server S [S ...]
                                         One or more URLs to remove from the genome_servers
                                         attribute in config file.
 ```
@@ -378,4 +447,3 @@ optional arguments:
   -v V, --target-version V  Target config version for the upgrade.
   -f, --force               Do not prompt before action, approve upfront.
 ```
-

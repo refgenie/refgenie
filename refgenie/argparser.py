@@ -1,12 +1,11 @@
-import pypiper
+from argparse import HelpFormatter
 
+import pypiper
+from refgenconf import __version__ as rgc_version
 from ubiquerg import VersionInHelpParser
 
 from ._version import __version__
 from .const import *
-from refgenconf import __version__ as rgc_version
-
-from argparse import HelpFormatter
 
 
 def build_argparser():
@@ -82,9 +81,7 @@ def build_argparser():
         "--genome-server",
         nargs="+",
         default=[DEFAULT_SERVER],
-        help="URL(s) to use for the {} attribute in config file. Default: {}.".format(
-            CFG_SERVERS_KEY, DEFAULT_SERVER
-        ),
+        help=f"URL(s) to use for the {CFG_SERVERS_KEY} attribute in config file. Default: {DEFAULT_SERVER}.",
     )
     sps[INIT_CMD].add_argument(
         "-f",
@@ -303,11 +300,18 @@ def build_argparser():
         action="store_true",
         help="Do not print compatibility code explanation.",
     )
+    sps[COMPARE_CMD].add_argument(
+        "-f",
+        "--flag-meanings",
+        action="store_true",
+        help="Display compatibility flag meanings.",
+    )
 
     # add 'genome' argument to many commands
     for cmd in [
         PULL_CMD,
         GET_ASSET_CMD,
+        GET_REMOTE_ASSET_CMD,
         BUILD_CMD,
         INSERT_CMD,
         REMOVE_CMD,
@@ -338,6 +342,7 @@ def build_argparser():
     for cmd in [
         PULL_CMD,
         GET_ASSET_CMD,
+        GET_REMOTE_ASSET_CMD,
         BUILD_CMD,
         INSERT_CMD,
         REMOVE_CMD,
@@ -350,7 +355,11 @@ def build_argparser():
             type=str,
             nargs="+",
             help="One or more registry path strings that identify assets  (e.g. hg38/fasta or hg38/fasta:tag"
-            + (" or hg38/fasta.fai:tag)." if cmd == GET_ASSET_CMD else ")."),
+            + (
+                " or hg38/fasta.fai:tag)."
+                if cmd in [GET_ASSET_CMD, GET_REMOTE_ASSET_CMD]
+                else ")."
+            ),
         )
 
     sps[LIST_LOCAL_CMD].add_argument(
@@ -424,7 +433,7 @@ def build_argparser():
         type=str,
         metavar="S",
         help="""
-        String representation of a JSON object with seek_keys, 
+        String representation of a JSON object with seek_keys,
         e.g. '{"seek_key1": "file.txt"}'
         """,
     )
@@ -475,10 +484,42 @@ def build_argparser():
             "--genome-server",
             nargs="+",
             required=True,
+            metavar="S",
             help="One or more URLs to {action} the {key} attribute in config file.".format(
                 action="add to" if cmd == SUBSCRIBE_CMD else "remove from",
                 key=CFG_SERVERS_KEY,
             ),
+        )
+
+    for cmd in [LIST_REMOTE_CMD, GET_REMOTE_ASSET_CMD, POPULATE_REMOTE_CMD]:
+        sps[cmd].add_argument(
+            "-s",
+            "--genome-server",
+            nargs="+",
+            required=False,
+            metavar="S",
+            help="One or more URLs to use. "
+            "This information will not persist in the genome config file.",
+        )
+        sps[cmd].add_argument(
+            "-p",
+            "--append-server",
+            action="store_true",
+            help="Whether the provided servers should be appended to the list.",
+        )
+
+    for cmd in [POPULATE_REMOTE_CMD, GET_REMOTE_ASSET_CMD]:
+        sps[cmd].add_argument(
+            "--remote-class",
+            metavar="RC",
+            type=str,
+            default="http",
+            help="Remote data provider class, e.g. 'http' or 's3'",
+        )
+
+    for cmd in [POPULATE_REMOTE_CMD, POPULATE_CMD]:
+        sps[cmd].add_argument(
+            "-f", "--file", metavar="F", help="File with registry paths to populate"
         )
 
     return parser
