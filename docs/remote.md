@@ -109,6 +109,17 @@ yeast doubled genome FASTA file: http://awspds.refgenie.databio.org/rg.databio.o
 
 ## Motivation
 
-The motivation behind the remote mode in refgenie is *cloud computing*. It is becoming a common practice to farm out jobs that require refgenie assets to computing clusters, where refgenie environment is not configured.
+The motivation behind the remote mode in refgenie is *cloud computing*. It is becoming a common practice to farm out jobs that require refgenie assets to computing clusters, where refgenie environment is not configured. Remote mode offers two key features to enable cloud computing:
 
-Up until now, the user was expected to `init` the refgenie config, `pull` desired assets and then `seek` the path in order to pass it to the data processing workflow. With the new `seekr` command the configuration and data acquisition steps can be skipped. What is more, refgenieserver software provides full flexibility regarding place where the asset files and archives are stored. Therefore, in some cases the data may be readily available within the cloud services provider's servers. For example, [http://refgenomes.databio.org](http://refgenomes.databio.org) refgenieserver instance stores the data in AWS S3, so any jobs running on AWS servers would benefit from the increased performance.
+1. No configuration required.
+
+  Up until now, the user was expected to `init` the refgenie config, `pull` desired assets and then `seek` the path in order to pass it to the data processing workflow. With the new `seekr` command the configuration and data acquisition steps can be skipped. Instead, you can now refer to the *unarchived* data directly on the cloud server.
+
+2. Unarchived assets are now available on the server 
+
+ Previously, refgenie required users to `pull` assets because they were only stored as compressed archives on the server. Now, we are hosting both compressed and uncompressed files on the server, so if you're using a cloud server, you can refer to the files directly without requiring the downloading/decompression step. For example, [http://refgenomes.databio.org](http://refgenomes.databio.org) refgenieserver instance stores the data in AWS S3, so any jobs running on AWS servers can simply use the unarchived files available direclty on S3, pulling only the individual files that are needed rather than the complete archives. Refgenieserver hosts can specify multiple cloud locations so a single server can span clouds as well.
+  
+3. Flexibilty to choose either HTTP or S3 links.
+
+  Remote mode now lets hosts specify multiple protocols, which can be requested by the user. For example, our default server provides either an `http://` URI or an `s3://` URI. This way, if your tooling requires an s3-compatible interface, you can also use refgenie easily. Developers who run their own refgenieserver instances have complete control over the number and type of URIs that can be queried by users.
+ 
