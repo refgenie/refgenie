@@ -11,6 +11,7 @@ nav:
     - Overview: overview.md
     - Install and configure: install.md
     - Basic tutorial: tutorial.md
+    - Citing refgenie: manuscripts.md   
   - How-to guides:
     - Refer to assets: asset_registry_paths.md
     - Download pre-built assets: pull.md
