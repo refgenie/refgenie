@@ -102,7 +102,7 @@ human genome FASTA file: refgenie://hg38/fasta.fasta
 doubled mtDNA FASTA file: refgenie://rCRSd/fasta.fasta
 ```
 
-Run `refgenie populater` to convert those paths into http paths (here, we're not passing `-r s3` so it will return the default links, which is `http`.
+Run `refgenie populater` to convert those paths into http paths (here, we're not passing `-r s3` so it will return the default links, which is `http`).
 
 ```console
 ~ refgenie populater -f remote_populate_test.txt -s http://rg.databio.org > remote_populate_test_output.txt
