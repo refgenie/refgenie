@@ -1,10 +1,26 @@
-# Remote mode in refgenie
+# Remote mode in refgenie for cloud computing use
 
 Starting with version 0.11.0, refgenie offers a series of new functions that work directly with remote assets, which we refer to as *remote mode*. Remote mode simply means that we omit the local configuration file and storage of assets, instead relying only on the server for both metadata and asset files. **With remote mode, you can skip `refgenie init` and start workling with refgenie right after installation!**
 
+## Rationale
+
+The motivation behind the remote mode in refgenie is cloud computing. It is becoming a common practice to farm out jobs that require refgenie assets to cloud instances. Remote mode offers 3 key features to facilitate this:
+
+### 1. No initialization required.
+
+Up until now, the user was expected to `init` the refgenie config, `pull` desired assets and then `seek` the path in order to pass it to the data processing workflow. The local config would keep track of which assets had been pulled. This is still the best way to use refgenie when dealing with local computing environments, like a desktop or on-premesis HPC compute cluster. But for cloud computing, with the new `seekr` command, the `init` step may be skipped, and you can simply rely on the cloud server's configuration without any local configuration file needed.
+
+### 2. Unarchived assets are now available on the server 
+
+For local computing, users will `pull` assets, which downloads and unarchives them for local computing. For cloud computing, the `pull` step can be skipped; instead, you can now refer to the *unarchived* data directly on the cloud server. For example, [http://refgenomes.databio.org](http://refgenomes.databio.org) refgenieserver instance stores the data in AWS S3, so any jobs running on AWS servers can simply use the unarchived files available direclty on S3, referring to individual files rather than complete archives.   
+
+### 3. Flexibilty to choose either HTTP or S3 links.
+
+Refgenieserver instances may now specify multiple protocols, which can be requested by the user. For example, our default server provides either an `http://` URI or an `s3://` URI. This way, if your tooling requires an s3-compatible interface, you can also use refgenie easily by specifying that you want `s3`-compatible URIs. Developers who run their own refgenieserver instances have complete control over the number and type of URIs that can be queried by users.
+ 
 ## Commands available in remote mode
 
-*Hint: all remote commands end with "r"*
+*Hint: all remote mode commands end with "r"*
 
 The new remote commands do not require genome configuration file to run. Instead, the `-s/--genome-servers` argument specifies the list of servers you want refgenie to query. The default server ([http://refgenomes.databio.org](http://refgenomes.databio.org)) is used if `-s` is not provided. The remote mode commands are: `listr`; `seekr`; and `populater`.
 
@@ -111,20 +127,3 @@ Here are the resulting file contents:
 human genome FASTA file: http://awspds.refgenie.databio.org/rg.databio.org/2230c535660fb4774114bfa966a62f823fdb6d21acf138d4/fasta__default/2230c535660fb4774114bfa966a62f823fdb6d21acf138d4.fa
 doubled mtDNA FASTA file: http://awspds.refgenie.databio.org/rg.databio.org/94e0d21feb576e6af61cd2a798ad30682ef2428bb7eabbb4/fasta__default/94e0d21feb576e6af61cd2a798ad30682ef2428bb7eabbb4.fa
 ```
-
-## Motivation
-
-The motivation behind the remote mode in refgenie is *cloud computing*. It is becoming a common practice to farm out jobs that require refgenie assets to computing clusters. Remote mode offers 3 key features to facilitate this:
-
-### 1. No initialization required.
-
-Up until now, the user was expected to `init` the refgenie config, `pull` desired assets and then `seek` the path in order to pass it to the data processing workflow. The local config would keep track of which assets had been pulled. With the new `seekr` command, the `init` step may be skipped, and you can simply rely on the cloud server's configuration without any local configuration file needed.
-
-### 2. Unarchived assets are now available on the server 
-
-Previously, required users to `pull` assets because they were only stored as compressed archives on the server.  The new remote functions also allows `pull` steps can be skipped. Instead, you can now refer to the *unarchived* data directly on the cloud server. The server now hosts both compressed and uncompressed, so if you're using a cloud server, you can refer to the files directly without requiring the downloading/decompression step. For example, [http://refgenomes.databio.org](http://refgenomes.databio.org) refgenieserver instance stores the data in AWS S3, so any jobs running on AWS servers can simply use the unarchived files available direclty on S3, referring to individual files rather than complete archives. Refgenieserver hosts can specify multiple cloud locations so a single server can span clouds as well.
-  
-### 3. Flexibilty to choose either HTTP or S3 links.
-
-Remote mode now lets hosts specify multiple protocols, which can be requested by the user. For example, our default server provides either an `http://` URI or an `s3://` URI. This way, if your tooling requires an s3-compatible interface, you can also use refgenie easily by specifying that you want `s3`-compatible URIs. Developers who run their own refgenieserver instances have complete control over the number and type of URIs that can be queried by users.
- 
