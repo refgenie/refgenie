@@ -1,0 +1,19 @@
+recipe_name: fasta
+description: "DNA sequences in the FASTA format, indexed FASTA (produced with samtools index) and chromosome sizes file"
+inputs:
+  files:
+    fasta:
+      description: gzipped fasta file
+  params: null
+  assets: null
+output_class: fasta
+container: docker.io/databio/refgenie
+custom_properties:
+  version: "samtools --version | head -n 1"
+default_tag: "{version}"
+command_template: >
+  cp {fasta} {asset_outfolder}/{genome}.fa.gz
+  gzip -df {asset_outfolder}/{genome}.fa.gz
+  samtools faidx {asset_outfolder}/{genome}.fa
+  cut -f 1,2 {asset_outfolder}/{genome}.fa.fai \
+  > {asset_outfolder}/{genome}.chrom.sizes

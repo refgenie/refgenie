@@ -1,0 +1,6 @@
+class_name: fasta
+description: FASTA file with index and chrom sizes
+seek_keys:
+  - "fasta": "{genome}.fa"
+  - "fai": "{genome}.fa.fai"
+  - "chrom_sizes": "{genome}.chrom.sizes"

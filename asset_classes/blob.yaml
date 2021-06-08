@@ -1,0 +1,6 @@
+class_name: blob
+description: Some other random asset type.
+seek_keys:
+  - "blob": "{genome}.blob"
+  - "fai": "{genome}.fa.fai"
+  - "chrom_sizes": "{genome}.chrom.sizes"

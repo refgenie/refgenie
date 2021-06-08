@@ -202,6 +202,38 @@ def build_argparser():
         help="Provide a recipe to use.",
     )
 
+
+    sps[BUILDFLEX_CMD].add_argument(
+        "--assets",
+        nargs="+",
+        action="append",
+        required=False,
+        default=None,
+        help="Override the default genome, asset and tag of the parents"
+        " (e.g. fasta=hg38/fasta:default gtf=mm10/gencode_gtf:default).",
+    )
+
+    sps[BUILDFLEX_CMD].add_argument(
+        "--files",
+        nargs="+",
+        action="append",
+        required=False,
+        default=None,
+        help="Provide paths to the required files (e.g. fasta=/path/to/file.fa.gz).",
+    )
+
+    sps[BUILDFLEX_CMD].add_argument(
+        "--params",
+        nargs="+",
+        action="append",
+        required=False,
+        default=None,
+        help="Provide required parameter values (e.g. param1=value1).",
+    )
+
+
+
+
     alias_subparser = sps[ALIAS_CMD]
     alias_subsubparsers = alias_subparser.add_subparsers(dest="subcommand")
 
@@ -313,6 +345,7 @@ def build_argparser():
         GET_ASSET_CMD,
         GET_REMOTE_ASSET_CMD,
         BUILD_CMD,
+        BUILDFLEX_CMD,
         INSERT_CMD,
         REMOVE_CMD,
         GETSEQ_CMD,
@@ -344,6 +377,7 @@ def build_argparser():
         GET_ASSET_CMD,
         GET_REMOTE_ASSET_CMD,
         BUILD_CMD,
+        BUILDFLEX_CMD,
         INSERT_CMD,
         REMOVE_CMD,
         TAG_CMD,

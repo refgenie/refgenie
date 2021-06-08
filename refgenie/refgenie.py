@@ -192,7 +192,8 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             **kwargs,
         )
         # populate command templates
-        # prior to populating, remove any seek_key parts from the keys, since these are not supported by format method
+        # prior to populating, remove any seek_key parts from the keys, since
+        # these are not supported by format method
         command_list_populated = [
             x.format(**{k.split(".")[0]: v for k, v in asset_vars.items()})
             for x in build_pkg[CMD_LST]

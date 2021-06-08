@@ -24,7 +24,7 @@ from .const import *
 from .exceptions import *
 from .helpers import _raise_missing_recipe_error, _single_folder_writeable
 from .refgenie import _skip_lock, parse_registry_path, refgenie_build
-
+from .flexible_recipes import refgenie_build_flex
 
 def main():
     """Primary workflow"""
@@ -145,6 +145,9 @@ def main():
                 _make_asset_build_reqs(recipe)
             sys.exit(0)
         refgenie_build(gencfg, asset_list[0]["genome"], asset_list, recipe_name, args)
+
+    elif args.command == BUILDFLEX_CMD:
+        refgenie_build_flex(gencfg, asset_list[0]["genome"], asset_list, None, args)
 
     elif args.command == GET_ASSET_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)

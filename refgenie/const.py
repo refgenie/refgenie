@@ -7,6 +7,7 @@ from refgenconf.const import *
 PKG_NAME = "refgenie"
 
 BUILD_CMD = "build"
+BUILDFLEX_CMD = "buildflex"
 INIT_CMD = "init"
 PULL_CMD = "pull"
 POPULATE_CMD = "populate"
@@ -45,6 +46,7 @@ SUBPARSER_MESSAGES = {
     LIST_REMOTE_CMD: "List available remote assets.",
     PULL_CMD: "Download assets.",
     BUILD_CMD: "Build genome assets.",
+    BUILDFLEX_CMD: "Build flexible recipes.",
     GET_ASSET_CMD: "Get the path to a local asset.",
     GET_REMOTE_ASSET_CMD: "Get the path to a remote asset.",
     INSERT_CMD: "Add local asset to the config file.",
