@@ -2,7 +2,7 @@
 import glob
 import os
 import yacman
-
+from logging import getLogger
 from refgenconf import (
     DownloadJsonError,
     MissingAssetError,
@@ -17,11 +17,16 @@ from .helpers import (
     _writeable,
 )
 
+from .const import *
+from .refgenie import get_asset_vars
+
+
+_LOGGER = getLogger(PKG_NAME)
 
 
 def get_flexible_recipes():
     asset_class_files = []
-    for file in glob.glob("../asset_classes/*.yaml"):
+    for file in glob.glob("asset_classes/*.yaml"):
         asset_class_files.append(file)
 
     asset_classes = {}
@@ -30,7 +35,7 @@ def get_flexible_recipes():
         asset_classes[aclass["class_name"]] = aclass
 
     recipe_files = []
-    for file in glob.glob("../recipes/*.yaml"):
+    for file in glob.glob("recipes/*.yaml"):
         recipe_files.append(file)
 
     recipes = {}
@@ -38,11 +43,6 @@ def get_flexible_recipes():
         recipe = yacman.YacAttMap(filepath=r_path)
         recipe["output"] = asset_classes[recipe["output_class"]]
         recipes[recipe["recipe_name"]] = recipe
-
-
-    asset_classes
-    recipes
-    recipes["fasta"]["output"]["seek_keys"]
 
     return {"recipes" : recipes, "asset_classes": asset_classes}
 
@@ -54,6 +54,13 @@ def refgenie_build_flex(gencfg, genome, asset_list, recipe_name, args):
         writable=False,
         skip_read_lock=_skip_lock(args.skip_read_lock, gencfg),
     )
+
+    if not hasattr(args, "outfolder") or not args.outfolder:
+        # Default to genome_folder
+        _LOGGER.debug("No outfolder provided, using genome config.")
+        args.outfolder = rgc.data_dir
+
+
     specified_args = _parse_user_build_input(args.files)
     specified_params = _parse_user_build_input(args.params)
 
@@ -70,10 +77,13 @@ def refgenie_build_flex(gencfg, genome, asset_list, recipe_name, args):
         asset_key,
         asset_tag,
         genome_outfolder,
-        specific_args,
-        specific_params
+        specified_args,
+        specified_params
     )
 
+    flex_recipes = get_flexible_recipes()
+
+    print(flex_recipes)
     print(asset_vars)
 
     return None

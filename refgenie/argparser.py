@@ -231,6 +231,15 @@ def build_argparser():
         help="Provide required parameter values (e.g. param1=value1).",
     )
 
+    sps[BUILDFLEX_CMD].add_argument(
+        "-o",
+        "--outfolder",
+        dest="outfolder",
+        required=False,
+        default=None,
+        help="Override the default path to genomes folder, which is the "
+        "genome_folder attribute in the genome configuration file.",
+    )
 
 
 
