@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 </script>
 
 <style>
-h3 .content { 
+h3 .content {
     padding-left: 22px;
     text-indent: -15px;
  }
@@ -18,7 +18,7 @@ h3 .hljs .content {
     martin-bottom: 0px;
 }
 h4 .content, table .content, p .content, li .content { margin-left: 30px; }
-h4 .content { 
+h4 .content {
     font-style: italic;
     font-size: 1em;
     margin-bottom: 0px;
@@ -34,7 +34,7 @@ A sort of oracle of available reference genome assembly assets
 
 
 ```python
-def __init__(self, filepath=None, entries=None, writable=False, wait_max=60, skip_read_lock=False)
+def __init__(self, filepath=None, entries=None, writable=False, wait_max=60, skip_read_lock=False, genome_exact=False, schema_source=None)
 ```
 
 Create the config instance by with a filepath or key-value pairs.
@@ -51,6 +51,35 @@ Create the config instance by with a filepath or key-value pairs.
 
 - `refgenconf.MissingConfigDataError`:  if a required configurationitem is missing
 - `ValueError`:  if entries is given as a string and is not a file
+
+
+
+
+```python
+def add(self, path, genome, asset, tag=None, seek_keys=None, force=False)
+```
+
+Add an external asset to the config
+#### Parameters:
+
+- `path` (`str`):  a path to the asset to add; must exist and be relativeto the genome_folder
+- `genome` (`str`):  genome name
+- `asset` (`str`):  asset name
+- `tag` (`str`):  tag name
+- `seek_keys` (`dict`):  seek keys to add
+- `force` (`bool`):  whether to force existing asset overwrite
+
+
+
+
+```python
+def alias_dir(self)
+```
+
+Path to the genome alias directory
+#### Returns:
+
+- `str`:  path to the directory where the assets are stored
 
 
 
@@ -107,21 +136,22 @@ the parent genome will be removed as well
 
 
 ```python
-def cfg_tag_asset(self, genome, asset, tag, new_tag)
+def cfg_tag_asset(self, genome, asset, tag, new_tag, force=False)
 ```
 
 Retags the asset selected by the tag with the new_tag. Prompts if default already exists and overrides upon confirmation.
 
-This method does not override the original asset entry in the RefGenConf object. It creates its copy and tags
-it with the new_tag.
-Additionally, if the retagged asset has any children their parent will be retagged as new_tag that was
-introduced upon this method execution.
+This method does not override the original asset entry in the
+RefGenConf object. It creates its copy and tags it with the new_tag.
+Additionally, if the retagged asset has any children their parent will
+ be retagged as new_tag that was introduced upon this method execution.
 #### Parameters:
 
 - `genome` (`str`):  name of a reference genome assembly of interest
 - `asset` (`str`):  name of particular asset of interest
 - `tag` (`str`):  name of the tag that identifies the asset of interest
 - `new_tag` (`str`):  name of particular the new tag
+- `force` (`bool`):  force any actions that require approval
 
 
 #### Returns:
@@ -142,7 +172,8 @@ def chk_digest_update_child(self, genome, remote_asset_name, child_name, server_
 
 Check local asset digest against the remote one and populate children of the asset with the provided asset:tag.
 
-In case the local asset does not exist, the config is populated with the remote asset digest and children data
+In case the local asset does not exist, the config is populated with the remote
+ asset digest and children data
 #### Parameters:
 
 - `genome` (`str`):  name of the genome to check the asset digests for
@@ -159,13 +190,44 @@ In case the local asset does not exist, the config is populated with the remote 
 
 
 ```python
+def compare(self, genome1, genome2, explain=False)
+```
+
+Check genomes compatibility level. Compares Annotated Sequence Digests (ASDs) -- digested sequences and metadata
+#### Parameters:
+
+- `genome1` (`str`):  name of the first genome to compare
+- `genome2` (`str`):  name of the first genome to compare
+- `explain` (`bool`):  whether the returned code explanation shouldbe displayed
+
+
+#### Returns:
+
+- `int`:  compatibility code
+
+
+
+
+```python
+def data_dir(self)
+```
+
+Path to the genome data directory
+#### Returns:
+
+- `str`:  path to the directory where the assets are stored
+
+
+
+
+```python
 def file_path(self)
 ```
 
-Return the path to the config file or None if not set
+Path to the genome configuration file
 #### Returns:
 
-- `str | None`:  path to the file the object will would to
+- `str`:  path to the genome configuration file
 
 
 
@@ -187,6 +249,30 @@ Determine path to a particular asset for a particular genome.
 #### Returns:
 
 - `str`:  path to asset for given genome and asset kind/name
+
+
+
+
+```python
+def genome_aliases(self)
+```
+
+Mapping of human-readable genome identifiers to genome identifiers
+#### Returns:
+
+- `dict`:  mapping of human-readable genome identifiers to genomeidentifiers
+
+
+
+
+```python
+def genome_aliases_table(self)
+```
+
+Mapping of human-readable genome identifiers to genome identifiers
+#### Returns:
+
+- `dict`:  mapping of human-readable genome identifiers to genomeidentifiers
 
 
 
@@ -221,6 +307,42 @@ Get as single string this configuration's reference genome assembly IDs.
 
 
 ```python
+def get_asds_path(self, genome)
+```
+
+Get path to the Annotated Sequence Digests JSON file for a given genome. Note that the path and/or genome may not exist.
+#### Parameters:
+
+- `genome` (`str`):  genome name
+
+
+#### Returns:
+
+- `str`:  ASDs path
+
+
+
+
+```python
+def get_asset_table(self, genomes=None, server_url=None, get_json_url=<function RefGenConf.<lambda> at 0x10b911700>)
+```
+
+Get a rich.Table object representing assets available locally
+#### Parameters:
+
+- `genomes` (`list[str]`):  genomes to restrict the results with
+- `server_url` (`str`):  server URL to query for the remote genome data
+- `get_json_url` (`function(str, str) -> str`):  how to build URL fromgenome server URL base, genome, and asset
+
+
+#### Returns:
+
+- `rich.table.Table`:  table of assets available locally
+
+
+
+
+```python
 def get_default_tag(self, genome, asset, use_existing=True)
 ```
 
@@ -229,12 +351,60 @@ Determine the asset tag to use as default. The one indicated by the 'default_tag
 
 - `genome` (`str`):  name of a reference genome assembly of interest
 - `asset` (`str`):  name of the particular asset of interest
-- `use_existing` (`bool`):  whether the first tag in the config should be returned in case there is no defaulttag defined for an asset
+- `use_existing` (`bool`):  whether the first tag in the config should bereturned in case there is no default tag defined for an asset
 
 
 #### Returns:
 
 - `str`:  name of the tag to use as the default one
+
+
+
+
+```python
+def get_genome_alias(self, digest, fallback=False, all_aliases=False)
+```
+
+Get the human readable alias for a genome digest
+#### Parameters:
+
+- `digest` (`str`):  digest to find human-readable alias for
+- `fallback` (`bool`):  whether to return the query digest in caseof failure
+- `all_aliases` (`bool`):  whether to return all aliases instead of justthe first one
+
+
+#### Returns:
+
+- `str | list[str]`:  human-readable aliases
+
+
+#### Raises:
+
+- `GenomeConfigFormatError`:  if "genome_digests" section doesnot exist in the config
+- `UndefinedAliasError`:  if a no alias has been defined for therequested digest
+
+
+
+
+```python
+def get_genome_alias_digest(self, alias, fallback=False)
+```
+
+Get the human readable alias for a genome digest
+#### Parameters:
+
+- `alias` (`str`):  alias to find digest for
+- `fallback` (`bool`):  whether to return the query alias in caseof failure and in case it is one of the digests
+
+
+#### Returns:
+
+- `str`:  genome digest
+
+
+#### Raises:
+
+- `UndefinedAliasError`:  if the specified alias has been assigned toany digests
 
 
 
@@ -275,13 +445,13 @@ List locally available reference genome IDs and assets by ID.
 
 
 ```python
-def get_remote_data_str(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x7fe6e33aef80>)
+def get_remote_data_str(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x10b9143a0>)
 ```
 
 List genomes and assets available remotely.
 #### Parameters:
 
-- `get_url` (`function(refgenconf.RefGenConf) -> str`):  how to determineURL request, given RefGenConf instance
+- `get_url` (`function(serverUrl, operationId) -> str`):  how to determineURL request, given server URL and endpoint operationID
 - `genome` (`list[str] | str`):  genomes that the assets should be found for
 - `order` (`function(str) -> object`):  how to key genome IDs and assetnames for sort
 
@@ -294,7 +464,27 @@ List genomes and assets available remotely.
 
 
 ```python
-def getseq(self, genome, locus)
+def get_symlink_paths(self, genome, asset=None, tag=None, all_aliases=False)
+```
+
+Get path to the alias directory for the selected genome-asset-tag
+#### Parameters:
+
+- `genome` (`str`):  reference genome ID
+- `asset` (`str`):  asset name
+- `tag` (`str`):  tag name
+- `all_aliases` (`bool`):  whether to return a collection of symboliclinks or just the first one from the alias list
+
+
+#### Returns:
+
+- `dict`:
+
+
+
+
+```python
+def getseq(self, genome, locus, as_str=False)
 ```
 
 Return the sequence found in a selected range and chromosome. Something like the refget protocol.
@@ -302,6 +492,12 @@ Return the sequence found in a selected range and chromosome. Something like the
 
 - `genome` (`str`):  name of the sequence identifier
 - `locus` (`str`): 1-10'
+- `as_str` (`bool`):  whether to convert the resurned object to stringand return just the sequence
+
+
+#### Returns:
+
+- `str | pyfaidx.FastaRecord | pyfaidx.Sequence`:  selected sequence
 
 
 
@@ -344,6 +540,28 @@ Initialize genome configuration file on disk
 
 - `OSError`:  in case the file could not be initialized due to insufficient permissions or pre-existence
 - `TypeError`:  if no valid filepath cat be determined
+
+
+
+
+```python
+def initialize_genome(self, fasta_path, alias, fasta_unzipped=False, skip_alias_write=False)
+```
+
+Initialize a genome
+
+Create a JSON file with Annotated Sequence Digests (ASDs)
+for the FASTA file in the genome directory.
+#### Parameters:
+
+- `fasta_path` (`str`):  path to a FASTA file to initialize genome with
+- `alias` (`str`):  alias to set for the genome
+- `skip_alias_write` (`bool`):  whether to skip writing the alias to the file
+
+
+#### Returns:
+
+- `str, list[dict[]]`:  human-readable name for the genome
 
 
 
@@ -395,7 +613,7 @@ List types/names of assets that are available for one--or all--genomes.
 
 - `genome` (`str | NoneType`):  reference genome assembly ID, optional;if omitted, the full mapping from genome to asset names
 - `order` (`function(str) -> object`):  how to key genome IDs and assetnames for sort
-- `include_tags` (`bool`):  whether asset tags should be included in the returned dict
+- `include_tags` (`bool`):  whether asset tags should be included in thereturned dict
 
 
 #### Returns:
@@ -424,20 +642,20 @@ List assemblies for which a particular asset is available.
 
 
 ```python
-def listr(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x7fe6e33b40e0>)
+def listr(self, genome=None, get_url=<function RefGenConf.<lambda> at 0x10b9144c0>, as_digests=False)
 ```
 
-List genomes and assets available remotely.
+List genomes and assets available remotely on all servers the object subscribes to
 #### Parameters:
 
-- `get_url` (`function(refgenconf.RefGenConf) -> str`):  how to determineURL request, given RefGenConf instance
+- `get_url` (`function(serverUrl, operationId) -> str`):  how to determineURL request, given server URL and endpoint operationID
 - `genome` (`list[str] | str`):  genomes that the assets should be found for
 - `order` (`function(str) -> object`):  how to key genome IDs and assetnames for sort
 
 
 #### Returns:
 
-- `str, str`:  text reps of remotely available genomes and assets
+- `dict[OrderedDict[list]]`:  remotely available genomes and assetskeyed by genome keyed by source server endpoint
 
 
 
@@ -455,7 +673,42 @@ Plugins registered by entry points in the current Python env
 
 
 ```python
-def pull(self, genome, asset, tag, unpack=True, force=None, get_json_url=<function RefGenConf.<lambda> at 0x7fe6e33b43b0>, build_signal_handler=<function _handle_sigint at 0x7fe6ad9d8950>)
+def populate(self, glob)
+```
+
+Populates *local* refgenie references from refgenie://genome/asset.seek_key:tag registry paths
+#### Parameters:
+
+- `glob` (`dict | str | list`):  String which may contain refgenie registry paths asvalues; or a dict, for which values may contain refgenie registry paths. Dict include nested dicts.
+
+
+#### Returns:
+
+- `dict | str | list`:  modified input dict with refgenie paths populated
+
+
+
+
+```python
+def populater(self, glob, remote_class=None)
+```
+
+Populates *remote* refgenie references from refgenie://genome/asset:tag registry paths
+#### Parameters:
+
+- `glob` (`dict | str | list`):  String which may contain refgenie registry paths asvalues; or a dict, for which values may contain refgenie registry paths. Dict include nested dicts.
+- `remote_class` (`str`):  remote data provider class, e.g. 'http' or 's3'
+
+
+#### Returns:
+
+- `dict | str | list`:  modified input dict with refgenie paths populated
+
+
+
+
+```python
+def pull(self, genome, asset, tag, unpack=True, force=None, force_large=None, size_cutoff=10, get_json_url=<function RefGenConf.<lambda> at 0x10b914790>, build_signal_handler=<function _handle_sigint at 0x10b489310>)
 ```
 
 Download and possibly unpack one or more assets for a given ref gen.
@@ -466,6 +719,8 @@ Download and possibly unpack one or more assets for a given ref gen.
 - `tag` (`str`):  name of particular tag to fetch
 - `unpack` (`bool`):  whether to unpack a tarball
 - `force` (`bool | NoneType`):  how to handle case in which asset pathalready exists; null for prompt (on a per-asset basis), False to effectively auto-reply No to the prompt to replace existing file, and True to auto-replay Yes for existing asset replacement.
+- `force_large` (`bool | NoneType`):  how to handle case in large (> 5GB)asset is to be pulled; null for prompt (on a per-asset basis), False to effectively auto-reply No to the prompt, and True to auto-replay Yes
+- `size_cutoff` (`float`):  maximum archive file size to download withno prompt
 - `get_json_url` (`function(str, str) -> str`):  how to build URL fromgenome server URL base, genome, and asset
 - `build_signal_handler` (`function(str) -> function`):  how to createa signal handler to use during the download; the single argument to this function factory is the download filepath
 
@@ -530,6 +785,24 @@ Remove any relationship links associated with the selected asset
 
 
 ```python
+def remove_genome_aliases(self, digest, aliases=None)
+```
+
+Remove alias for a specified genome digest. This method will remove the digest both from the genomes object and from the aliases mapping in tbe config
+#### Parameters:
+
+- `digest` (`str`):  genome digest to remove an alias for
+- `aliases` (`list[str]`):  a collection to aliases to remove for thegenome. If not provided, all aliases for the digest will be remove
+
+
+#### Returns:
+
+- `bool`:  whether the removal has been performed
+
+
+
+
+```python
 def run_plugins(self, hook)
 ```
 
@@ -542,10 +815,10 @@ Runs all installed plugins for the specified hook.
 
 
 ```python
-def seek(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, check_exist=<function RefGenConf.<lambda> at 0x7fe6e33aeb90>)
+def seek(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, all_aliases=False, check_exist=<function RefGenConf.<lambda> at 0x10b911d30>)
 ```
 
-Seek path to a specified genome-asset-tag
+Seek path to a specified genome-asset-tag alias
 #### Parameters:
 
 - `genome_name` (`str`):  name of a reference genome assembly of interest
@@ -554,7 +827,8 @@ Seek path to a specified genome-asset-tag
 - `seek_key` (`str`):  name of the particular subasset to fetch
 - `strict_exists` (`bool | NoneType`):  how to handle case in whichpath doesn't exist; True to raise IOError, False to raise RuntimeWarning, and None to do nothing at all. Default: None (do not check).
 - `check_exist` (`function(callable) -> bool`):  how to check forasset/path existence
-- `enclosing_dir` (`bool`):  whether a path to the entire enclosing directory should be returned, e.g.for a fasta asset that has 3 seek_keys pointing to 3 files in an asset dir, that asset dir is returned
+- `enclosing_dir` (`bool`):  whether a path to the entire enclosingdirectory should be returned, e.g. for a fasta asset that has 3 seek_keys pointing to 3 files in an asset dir, that asset dir is returned
+- `all_aliases` (`bool`):  whether to return paths to all asset aliases orjust the one for the specified 'genome_name` argument
 
 
 #### Returns:
@@ -572,7 +846,59 @@ Seek path to a specified genome-asset-tag
 
 
 ```python
-def set_default_pointer(self, genome, asset, tag, force=False)
+def seek_src(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, check_exist=<function RefGenConf.<lambda> at 0x10b911f70>)
+```
+
+Seek path to a specified genome-asset-tag
+#### Parameters:
+
+- `genome_name` (`str`):  name of a reference genome assembly of interest
+- `asset_name` (`str`):  name of the particular asset to fetch
+- `tag_name` (`str`):  name of the particular asset tag to fetch
+- `seek_key` (`str`):  name of the particular subasset to fetch
+- `strict_exists` (`bool | NoneType`):  how to handle case in whichpath doesn't exist; True to raise IOError, False to raise RuntimeWarning, and None to do nothing at all. Default: None (do not check).
+- `check_exist` (`function(callable) -> bool`):  how to check forasset/path existence
+- `enclosing_dir` (`bool`):  whether a path to the entire enclosingdirectory should be returned, e.g. for a fasta asset that has 3 seek_keys pointing to 3 files in an asset dir, that asset dir is returned
+
+
+#### Returns:
+
+- `str`:  path to the asset
+
+
+#### Raises:
+
+- `TypeError`:  if the existence check is not a one-arg function
+- `refgenconf.MissingGenomeError`:  if the named assembly isn't knownto this configuration instance
+- `refgenconf.MissingAssetError`:  if the names assembly is known tothis configuration instance, but the requested asset is unknown
+
+
+
+
+```python
+def seekr(self, genome_name, asset_name, tag_name=None, seek_key=None, remote_class='http', get_url=<function RefGenConf.<lambda> at 0x10b911e50>)
+```
+
+Seek a remote path to a specified genome/asset.seek_key:tag
+#### Parameters:
+
+- `genome_name` (`str`):  name of a reference genome assembly of interest
+- `asset_name` (`str`):  name of the particular asset to fetch
+- `tag_name` (`str`):  name of the particular asset tag to fetch
+- `seek_key` (`str`):  name of the particular subasset to fetch
+- `remote_class` (`str`):  remote data provider class, e.g. 'http' or 's3'
+- `get_url` (`function(serverUrl, operationId) -> str`):  how to determineURL request, given server URL and endpoint operationID
+
+
+#### Returns:
+
+- `str`:  path to the asset
+
+
+
+
+```python
+def set_default_pointer(self, genome, asset, tag, force_exists=False, force_digest=None, force_fasta=False)
 ```
 
 Point to the selected tag by default
@@ -581,13 +907,40 @@ Point to the selected tag by default
 - `genome` (`str`):  name of a reference genome assembly of interest
 - `asset` (`str`):  name of the particular asset of interest
 - `tag` (`str`):  name of the particular asset tag to point to by default
-- `force` (`bool`):  whether the default tag change should be forced (even if it exists)
+- `force_digest` (`str`):  digest to force update of. The alias willnot be converted to the digest, even if provided.
+- `force_fasta` (`bool`):  whether setting a default tag for a fasta assetshould be forced. Beware: This could lead to genome identity issues
+- `force_exists` (`bool`):  whether the default tag change should beforced (even if it exists)
 
 
 
 
 ```python
-def subscribe(self, urls, reset=False)
+def set_genome_alias(self, genome, digest=None, servers=None, overwrite=False, reset_digest=False, create_genome=False, no_write=False, get_json_url=<function RefGenConf.<lambda> at 0x10b914a60>)
+```
+
+Assign a human-readable alias to a genome identifier.
+
+Genomes are identified by a unique identifier which is derived from the
+FASTA file (part of fasta asset). This way we can ensure genome
+provenance and compatibility with the server. This function maps a
+human-readable identifier to make referring to the genomes easier.
+#### Parameters:
+
+- `genome` (`str`):  name of the genome to assign to an identifier
+- `digest` (`str`):  identifier to use
+- `overwrite` (`bool`):  whether all the previously set aliases should beremoved and just the current one stored
+- `no_write` (`bool`):  whether to skip writing the alias to the file
+
+
+#### Returns:
+
+- `bool`:  whether the alias has been established
+
+
+
+
+```python
+def subscribe(self, urls, reset=False, no_write=False)
 ```
 
 Add URLs the list of genome_servers.
@@ -603,7 +956,7 @@ Otherwise the current one will be appended to.
 
 
 ```python
-def tag(self, genome, asset, tag, new_tag, files=True)
+def tag(self, genome, asset, tag, new_tag, files=True, force=False)
 ```
 
 Retags the asset selected by the tag with the new_tag. Prompts if default already exists and overrides upon confirmation.
@@ -636,7 +989,7 @@ genome configuration file changes
 
 
 ```python
-def unsubscribe(self, urls)
+def unsubscribe(self, urls, no_write=False)
 ```
 
 Remove URLs the list of genome_servers.
@@ -648,7 +1001,7 @@ Remove URLs the list of genome_servers.
 
 
 ```python
-def update_assets(self, genome, asset=None, data=None)
+def update_assets(self, genome, asset=None, data=None, force_digest=None)
 ```
 
 Updates the genomes in RefGenConf object at any level. If a requested genome-asset mapping is missing, it will be created
@@ -656,6 +1009,7 @@ Updates the genomes in RefGenConf object at any level. If a requested genome-ass
 
 - `genome` (`str`):  genome to be added/updated
 - `asset` (`str`):  asset to be added/updated
+- `force_digest` (`str`):  digest to force update of. The alias willnot be converted to the digest, even if provided.
 - `data` (`Mapping`):  data to be added/updated
 
 
@@ -667,13 +1021,14 @@ Updates the genomes in RefGenConf object at any level. If a requested genome-ass
 
 
 ```python
-def update_genomes(self, genome, data=None)
+def update_genomes(self, genome, data=None, force_digest=None)
 ```
 
 Updates the genomes in RefGenConf object at any level. If a requested genome is missing, it will be added
 #### Parameters:
 
 - `genome` (`str`):  genome to be added/updated
+- `force_digest` (`str`):  digest to force update of. The alias willnot be converted to the digest, even if provided.
 - `data` (`Mapping`):  data to be added/updated
 
 
@@ -695,7 +1050,7 @@ A convenience method which wraps the update assets and uses it to update the ass
 - `asset` (`str`):  asset to be added/updated
 - `tag` (`str`):  tag to be added/updated
 - `data` (`list`):  asset parents to be added/updated
-- `children` (`bool`):  a logical indicating whether the relationship to be added is 'children'
+- `children` (`bool`):  a logical indicating whether the relationship to beadded is 'children'
 
 
 #### Returns:
@@ -706,7 +1061,7 @@ A convenience method which wraps the update assets and uses it to update the ass
 
 
 ```python
-def update_seek_keys(self, genome, asset, tag=None, keys=None)
+def update_seek_keys(self, genome, asset, tag=None, keys=None, force_digest=None)
 ```
 
 A convenience method which wraps the updated assets and uses it to update the seek keys for a tagged asset.
@@ -715,6 +1070,7 @@ A convenience method which wraps the updated assets and uses it to update the se
 - `genome` (`str`):  genome to be added/updated
 - `asset` (`str`):  asset to be added/updated
 - `tag` (`str`):  tag to be added/updated
+- `force_digest` (`str`):  digest to force update of. The alias willnot be converted to the digest, even if provided.
 - `keys` (`Mapping`):  seek_keys to be added/updated
 
 
@@ -726,7 +1082,7 @@ A convenience method which wraps the updated assets and uses it to update the se
 
 
 ```python
-def update_tags(self, genome, asset=None, tag=None, data=None)
+def update_tags(self, genome, asset=None, tag=None, data=None, force_digest=None)
 ```
 
 Updates the genomes in RefGenConf object at any level. If a requested genome-asset-tag mapping is missing, it will be created
@@ -735,6 +1091,7 @@ Updates the genomes in RefGenConf object at any level. If a requested genome-ass
 - `genome` (`str`):  genome to be added/updated
 - `asset` (`str`):  asset to be added/updated
 - `tag` (`str`):  tag to be added/updated
+- `force_digest` (`str`):  digest to force update of. The alias willnot be converted to the digest, even if provided.
 - `data` (`Mapping`):  data to be added/updated
 
 
@@ -774,7 +1131,7 @@ Write the contents to a file. If pre- and post-update plugins are defined, they 
 
 #### Raises:
 
-- `OSError`:  when the object has been created in a read only mode or other process has locked the file
+- `OSError`:  when the object has been created in a read only mode or otherprocess has locked the file
 - `TypeError`:  when the filepath cannot be determined.This takes place only if YacAttMap initialized with a Mapping as an input, not read from file.
 - `OSError`:  when the write is called on an object with no write capabilitiesor when writing to a file that is locked by a different object
 
@@ -831,7 +1188,42 @@ Get path to genome configuration file.
 
 
 
+```python
+def get_dir_digest(path, pm=None)
+```
+
+Generate a MD5 digest that reflects just the contents of the files in the selected directory.
+#### Parameters:
+
+- `path` (`str`):  path to the directory to digest
+- `pm` (`pypiper.PipelineManager`):  a pipeline object, optional.The subprocess module will be used if not provided
+
+
+#### Returns:
+
+- `str`:  a digest, e.g. a3c46f201a3ce7831d85cf4a125aa334
 
 
 
-*Version Information: `refgenconf` v0.9.0, generated by `lucidoc` v0.4.2*
+
+```python
+def looper_refgenie_populate(namespaces)
+```
+
+A looper plugin that populates refgenie references in a PEP from refgenie://genome/asset:tag registry paths. This can be used to convert all refgenie references into their local paths at the looper stage, so the final paths are passed to the workflow. This way the workflow does not need to depend on refgenie to resolve the paths. This is useful for example for CWL pipelines, which are built to have paths resolved outside the workflow.
+#### Parameters:
+
+- `namespaces` (`dict`):  variable namespaces dict
+
+
+#### Returns:
+
+- `dict`:  sample namespace dict
+
+
+
+
+
+
+
+*Version Information: `refgenconf` v0.11.1, generated by `lucidoc` v0.4.2*

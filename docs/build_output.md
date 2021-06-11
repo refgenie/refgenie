@@ -1,6 +1,6 @@
-# Asset build output example 
+# Asset build output example
 
-Command: 
+Command:
 ```
 $ refgenie build -c genomes.yaml hg38/fasta --fasta hg38.fa.gz
 ```
@@ -53,33 +53,33 @@ Removed existing flag: '/Users/mstolarczyk/Desktop/testing/test_genomes/hg38/ref
 MissingAssetError: using 'default' as the default tag
 Inputs required to build 'fasta': fasta
 Building asset 'fasta'
-Target to produce: `/Users/mstolarczyk/Desktop/testing/test_genomes/hg38/fasta/default/build_complete.flag`  
+Target to produce: `/Users/mstolarczyk/Desktop/testing/test_genomes/hg38/fasta/default/build_complete.flag`
 
 > `cp hg38.fa.gz /Users/mstolarczyk/Desktop/testing/test_genomes/hg38/fasta/default/hg38.fa.gz` (38283)
 <pre>
 </pre>
-Command completed. Elapsed time: 0:00:01. Running peak memory: 0.002GB.  
+Command completed. Elapsed time: 0:00:01. Running peak memory: 0.002GB.
   PID: 38283;	Command: cp;	Return code: 0;	Memory used: 0.002GB
 
 
 > `gzip -d /Users/mstolarczyk/Desktop/testing/test_genomes/hg38/fasta/default/hg38.fa.gz` (38284)
 <pre>
 </pre>
-Command completed. Elapsed time: 0:00:09. Running peak memory: 0.002GB.  
+Command completed. Elapsed time: 0:00:09. Running peak memory: 0.002GB.
   PID: 38284;	Command: gzip;	Return code: 0;	Memory used: 0.001GB
 
 
 > `samtools faidx /Users/mstolarczyk/Desktop/testing/test_genomes/hg38/fasta/default/hg38.fa` (38285)
 <pre>
 </pre>
-Command completed. Elapsed time: 0:00:14. Running peak memory: 0.005GB.  
+Command completed. Elapsed time: 0:00:14. Running peak memory: 0.005GB.
   PID: 38285;	Command: samtools;	Return code: 0;	Memory used: 0.005GB
 
 
 > `cut -f 1,2 /Users/mstolarczyk/Desktop/testing/test_genomes/hg38/fasta/default/hg38.fa.fai > /Users/mstolarczyk/Desktop/testing/test_genomes/hg38/fasta/default/hg38.chrom.sizes` (38286)
 <pre>
 </pre>
-Command completed. Elapsed time: 0:00:00. Running peak memory: 0.005GB.  
+Command completed. Elapsed time: 0:00:00. Running peak memory: 0.005GB.
   PID: 38286;	Command: cut;	Return code: 0;	Memory used: 0.001GB
 
 
@@ -88,7 +88,7 @@ Command completed. Elapsed time: 0:00:00. Running peak memory: 0.005GB.
 psutil.ZombieProcess process still exists but it's a zombie (pid=38288)
 Warning: couldn't add memory use for process: 38288
 </pre>
-Command completed. Elapsed time: 0:00:00. Running peak memory: 0.005GB.  
+Command completed. Elapsed time: 0:00:00. Running peak memory: 0.005GB.
   PID: 38288;	Command: touch;	Return code: 0;	Memory used: 0GB
 
 

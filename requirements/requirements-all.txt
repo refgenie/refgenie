@@ -2,4 +2,4 @@ logmuse>=0.2.6
 piper>=0.12.1
 pyfaidx>=0.5.5.2
 refgenconf>=0.11.0
-yacman>=0.8.0
+# yacman>=0.8.2

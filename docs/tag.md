@@ -15,7 +15,7 @@ Here we'll demonstrate how you can specify a tag when building an asset:
 
 ```console
 export REFGENIE="genome_config.yaml"
-refgenie init -c $REFGENIE 
+refgenie init -c $REFGENIE
 refgenie pull hg38/fasta
 refgenie build hg38/bowtie2_index:2.3.5.1
 ```
@@ -48,7 +48,7 @@ refgenie build hg38/bwa_index
 If you pull or build the first asset of a given kind it will become the default one, which `refgenie` will use for any actions when no tag is explicitly specified. For example the
 
 ```console
-refgenie seek hg38/bowtie2_index 
+refgenie seek hg38/bowtie2_index
 ```
 
 call would return the path to the asset tagged with `most_recent` since it was the first `bowtie2_index` asset built/pulled for `hg38` genome.
@@ -56,13 +56,13 @@ call would return the path to the asset tagged with `most_recent` since it was t
 To retrieve the path to any other asset, you need to specify the tag:
 
 ```console
-refgenie seek hg38/bowtie2_index:2.3.3.1 
-``` 
+refgenie seek hg38/bowtie2_index:2.3.3.1
+```
 
 ### Changing the default tag
 
 If you want to make a tag the default one, use the `-d`/`--default` option in `refgenie tag` command:
 
 ```console
-refgenie tag hg38/bowtie2_index:2.3.3.1 -d 
-``` 
+refgenie tag hg38/bowtie2_index:2.3.3.1 -d
+```

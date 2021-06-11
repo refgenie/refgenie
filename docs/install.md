@@ -88,4 +88,3 @@ Use the `refgenie unsubscribe` command to remove `refgenieserver` instance from 
 ```console
 refgenie unsubscribe -s http://refgenomes.databio.org
 ```
-

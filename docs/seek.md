@@ -21,7 +21,7 @@ Refgenie `seek` uses a concept called *seek keys*. Let's formally define how the
 
 As asset can have multiple seek keys. When an asset recipe is defined, the author records which files in the asset are potentially interesting for a user to retrieve a path to. These files are added to the recipe as seek keys.
 
-Many assets have only a single seek key, because the asset really only consists of a single thing. For example, a bowtie2_index asset has only 1 thing you'd need to *seek* to: the folder containing the indexes. But other assets can have multiple seek keys. For example, the `fasta` asset provides not only a fasta file, but a `.fai` fasta index as well as a *chrom_sizes* file that is required by some tools (notably, ucsc tools). These files are really tightly coupled with a particular fasta file and it doesn't make sense to make separate assets for each of them, and this is where seek keys come in. 
+Many assets have only a single seek key, because the asset really only consists of a single thing. For example, a bowtie2_index asset has only 1 thing you'd need to *seek* to: the folder containing the indexes. But other assets can have multiple seek keys. For example, the `fasta` asset provides not only a fasta file, but a `.fai` fasta index as well as a *chrom_sizes* file that is required by some tools (notably, ucsc tools). These files are really tightly coupled with a particular fasta file and it doesn't make sense to make separate assets for each of them, and this is where seek keys come in.
 
 Once you have built a `fasta` asset, you'll be able to retrieve not just the fasta file, but also the `fai`, and `chrom_sizes` files.  These will show up when you type `refgenie list` as `fasta.fai` and `fasta.chrom_sizes` seek keys.
 
@@ -61,5 +61,3 @@ refgenie seek hg38/bowtie2_index
 refgenie seek hg38/fasta.chrom_sizes
 refgenie seek hg38/fasta
 ```
-
-
