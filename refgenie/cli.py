@@ -1,8 +1,10 @@
 import json
 import os
+import re
 import sys
 from collections import OrderedDict
 from functools import partial
+from glob import glob
 
 import logmuse
 from refgenconf import (
@@ -29,7 +31,7 @@ from .refgenie import _skip_lock, parse_registry_path, refgenie_build
 def main():
     """Primary workflow"""
     parser = logmuse.add_logging_options(build_argparser())
-    args, remaining_args = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
     global _LOGGER
     _LOGGER = logmuse.logger_via_cli(args, make_root=True)
     _LOGGER.debug(f"versions: refgenie {__version__} | refgenconf {rgc_version}")
@@ -43,6 +45,14 @@ def main():
     if args.command == ALIAS_CMD and not args.subcommand:
         parser.print_help()
         _LOGGER.error("No alias subcommand command given")
+        sys.exit(1)
+
+    if (
+        args.command == BUILD_CMD
+        and args.asset_registry_paths is None
+        and not args.reduce
+    ):
+        parser.error("You must provide an asset-registry-path")
         sys.exit(1)
 
     gencfg = select_genome_config(
@@ -65,7 +75,7 @@ def main():
     if "asset_registry_paths" in args and args.asset_registry_paths:
         _LOGGER.debug("Found registry_path: {}".format(args.asset_registry_paths))
         asset_list = [parse_registry_path(x) for x in args.asset_registry_paths]
-
+        # [{"protocol": 'pname', "genome": 'gname', "asset", 'aname', "seek_key", 'sname', "tag": 'tname'}, ...]
         for a in asset_list:
             # every asset must have a genome, either provided via registry path
             # or the args.genome arg.
@@ -86,14 +96,6 @@ def main():
                             a["asset"]
                         )
                     )
-
-    else:
-        if args.command in GENOME_ONLY_REQUIRED and not args.genome:
-            parser.error("You must provide either a genome or a registry path")
-            sys.exit(1)
-        if args.command in ASSET_REQUIRED:
-            parser.error("You must provide an asset registry path")
-            sys.exit(1)
 
     if args.command == INIT_CMD:
         _LOGGER.debug("Initializing refgenie genome configuration")
@@ -127,6 +129,89 @@ def main():
         rgc.initialize_config_file(os.path.abspath(gencfg))
 
     elif args.command == BUILD_CMD:
+        if args.reduce:
+
+            def _map_cfg_match_pattern(rgc, match_all_str):
+                return os.path.join(
+                    rgc.data_dir,
+                    *([match_all_str] * 3),
+                    BUILD_STATS_DIR,
+                    BUILD_MAP_CFG,
+                )
+
+            _LOGGER.info("Running the reduce procedure. No assets will be built.")
+            rgc_master = RefGenConf(filepath=gencfg, writable=True)
+            regex_pattern = _map_cfg_match_pattern(rgc_master, "(\S+)")
+            glob_pattern = _map_cfg_match_pattern(rgc_master, "*")
+            rgc_map_filepaths = glob(glob_pattern, recursive=False)
+            if len(rgc_map_filepaths) == 0:
+                _LOGGER.info(f"No map configs to reduce")
+                sys.exit(0)
+            _LOGGER.info(
+                "Map configs to reduce:\n - {}".format("\n - ".join(rgc_map_filepaths))
+            )
+            for rgc_map_filepath in rgc_map_filepaths:
+                matched_genome, matched_asset, matched_tag = re.match(
+                    pattern=regex_pattern, string=rgc_map_filepath
+                ).groups()
+                matched_gat = f"{matched_genome}/{matched_asset}:{matched_tag}"
+                map_rgc = RefGenConf(filepath=rgc_map_filepath, writable=False)
+                if CFG_GENOMES_KEY not in map_rgc:
+                    _LOGGER.warning(
+                        f"'{rgc_map_filepath}' is missing '{CFG_GENOMES_KEY}' key, skipping"
+                    )
+                    continue
+                # this should be a one element list
+                genome_digests = map_rgc[CFG_GENOMES_KEY].keys()
+                if len(genome_digests) > 1:
+                    _LOGGER.warning(
+                        f"There are {len(genome_digests)} genomes in the map build config while 1 expected, skipping"
+                    )
+                    continue
+                genome_digest = genome_digests[0]
+                # alias = map_rgc.get_genome_alias(digest=genome_digest)
+                if genome_digest != matched_genome:
+                    raise Exception(
+                        f"Genome directory name does not match genome in the map config: {matched_genome} != {genome_digest}"
+                    )
+                tag_data = map_rgc[CFG_GENOMES_KEY][matched_genome][CFG_ASSETS_KEY][
+                    matched_asset
+                ][CFG_ASSET_TAGS_KEY][matched_tag]
+                with rgc_master as r:
+                    # rgc_master.set_genome_alias(genome=alias, digest=genome_digest)
+                    if CFG_ASSET_PARENTS_KEY in tag_data:
+                        for parent in tag_data[CFG_ASSET_PARENTS_KEY]:
+                            parsed_parent = parse_registry_path(parent)
+                            r.update_relatives_assets(
+                                genome=parsed_parent["genome"],
+                                asset=parsed_parent["asset"],
+                                tag=parsed_parent["tag"],
+                                data=[matched_gat],
+                                children=True,
+                            )
+
+                    if CFG_ASSET_CHILDREN_KEY in tag_data:
+                        for child in tag_data[CFG_ASSET_CHILDREN_KEY]:
+                            parsed_child = parse_registry_path(child)
+                            r.update_relatives_assets(
+                                genome=parsed_child["genome"],
+                                asset=parsed_child["asset"],
+                                tag=parsed_child["tag"],
+                                data=[matched_gat],
+                                children=False,
+                            )
+                    r.update_tags(
+                        genome=matched_genome,
+                        asset=matched_asset,
+                        tag=matched_tag,
+                        data=tag_data,
+                        force_digest=genome_digest,
+                    )
+                _LOGGER.info(
+                    f"Added entries for {matched_genome}/{matched_asset}:{matched_tag}"
+                )
+                os.remove(rgc_map_filepath)
+            sys.exit(0)
         if not all([x["genome"] == asset_list[0]["genome"] for x in asset_list]):
             _LOGGER.error("Build can only build assets for one genome")
             sys.exit(1)
@@ -144,6 +229,7 @@ def main():
                 _LOGGER.info("'{}' recipe requirements: ".format(recipe))
                 _make_asset_build_reqs(recipe)
             sys.exit(0)
+
         refgenie_build(gencfg, asset_list[0]["genome"], asset_list, recipe_name, args)
 
     elif args.command == GET_ASSET_CMD:

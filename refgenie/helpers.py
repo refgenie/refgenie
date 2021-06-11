@@ -1,3 +1,4 @@
+import errno
 import os
 
 from refgenconf import MissingRecipeError
@@ -61,3 +62,18 @@ def _skip_lock(skip_arg, cfg):
     :return bool: decision -- whether to skip the file lock for read
     """
     return is_writable(os.path.dirname(cfg)) if not skip_arg else True
+
+
+def make_sure_path_exists(path):
+    """
+    Creates all directories in a path if it does not exist.
+
+    :param str path: Path to create.
+    :raises Exception: if the path creation attempt hits an error with
+        a code indicating a cause other than pre-existence.
+    """
+    try:
+        os.makedirs(path)
+    except OSError as exception:
+        if exception.errno != errno.EEXIST:
+            raise
