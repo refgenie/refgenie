@@ -105,11 +105,6 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
     :param argparse.Namespace args: parsed command-line options/arguments
     """
 
-    # 1. touch new map config
-    # 2. init RGC with the config and set genome_folder to master location
-    # 3. build with the new config
-    # - possible deps issues
-
     rgc = RefGenConf(
         filepath=gencfg,
         writable=False,

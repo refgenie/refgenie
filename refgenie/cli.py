@@ -18,6 +18,7 @@ from refgenconf import select_genome_config, upgrade_config
 from requests.exceptions import MissingSchema
 from rich.console import Console
 from ubiquerg import query_yes_no
+from yacman import UndefinedAliasError
 
 from ._version import __version__
 from .argparser import build_argparser
@@ -169,7 +170,7 @@ def main():
                     )
                     continue
                 genome_digest = genome_digests[0]
-                # alias = map_rgc.get_genome_alias(digest=genome_digest)
+                alias = map_rgc.get_genome_alias(digest=genome_digest)
                 if genome_digest != matched_genome:
                     raise Exception(
                         f"Genome directory name does not match genome in the map config: {matched_genome} != {genome_digest}"
@@ -177,8 +178,14 @@ def main():
                 tag_data = map_rgc[CFG_GENOMES_KEY][matched_genome][CFG_ASSETS_KEY][
                     matched_asset
                 ][CFG_ASSET_TAGS_KEY][matched_tag]
+                try:
+                    alias_master = rgc_master.get_genome_alias(digest=genome_digest)
+                    assert alias == alias_master
+                except (UndefinedAliasError, AssertionError):
+                    rgc_master.set_genome_alias(
+                        genome=alias, digest=genome_digest, create_genome=True
+                    )
                 with rgc_master as r:
-                    # rgc_master.set_genome_alias(genome=alias, digest=genome_digest)
                     if CFG_ASSET_PARENTS_KEY in tag_data:
                         for parent in tag_data[CFG_ASSET_PARENTS_KEY]:
                             parsed_parent = parse_registry_path(parent)
