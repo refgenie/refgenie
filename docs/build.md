@@ -9,7 +9,7 @@ Building assets is a bit more complicated than pulling them. You'll need to set 
 
 ## What assets can refgenie build?
 
-At the moment the building functionality is under rapid development and may change in the future. While `refgenie` is totally flexible with respect to genome, it is more restricted in terms of what assets it can build. We are planning to allow users to specify their own recipes for arbitrary assets, but at the moment, `refgenie` can only build a handful of assets for which we have already created building recipes. If you type `refgenie list`, you'll get a list of all the assets you can build with refgenie (under *recipes*). You can also browse the [list of available assets](available_assets.md) here. If you need refgenie to manage an asset not in this list, you can either 1) wait for our pending implementation of custom recipes, or 2) [add custom assets](custom_assets.md), which you would build separately and then use refgenie just to manage them as recipes define reasonable defaults, which rarely require changing.
+At the moment the building functionality is under rapid development and may change in the future. While refgenie is totally flexible with respect to genome, it is more restricted in terms of what assets it can build. We are planning to allow users to specify their own recipes for arbitrary assets, but at the moment, `refgenie` can only build a handful of assets for which we have already created building recipes. If you type `refgenie list`, you'll get a list of all the assets you can build with refgenie (under *recipes*). You can also browse the [list of available assets](available_assets.md) here. If you need refgenie to manage an asset not in this list, you can either 1) wait for our pending implementation of custom recipes, or 2) [add custom assets](custom_assets.md), which you would build separately and then use refgenie just to manage them as recipes define reasonable defaults, which rarely require changing.
 
 ## Recipes require inputs
 
@@ -32,7 +32,7 @@ $ refgenie build hg38/bowtie2_index -q
 	fasta (fasta asset for genome); default: fasta
 ```
 
-Notice how 'fasta' appears under `assets` and not under `files` or `params`. This means to build a bowtie2 index, you do *not* provide a fasta file as an *argument*; instead, you *must already have a fasta asset managed by `refgenie`*. One advantage of this is that it allows refgenie to keep a record of how you've built your assets, so `refgenie` can remember the link between this bowtie2 asset and the fasta asset, which turns out to be very useful for maintaining provenance of your assets. It also makes it easier to build derived assets like this, because you don't actually have to pass any additional arguments to build them.
+Notice how 'fasta' appears under `assets` and not under `files` or `params`. This means to build a bowtie2 index, you do *not* provide a fasta file as an *argument*; instead, you *must already have a fasta asset managed by `refgenie`*. One advantage of this is that it allows refgenie to keep a record of how you've built your assets, so refgenie can remember the link between this bowtie2 asset and the fasta asset, which turns out to be very useful for maintaining provenance of your assets. It also makes it easier to build derived assets like this, because you don't actually have to pass any additional arguments to build them.
 
 So, you'll need to build the `fasta` asset for `hg38` genome before building `bowtie2_index`, but once you have that, building this asset is as simple as typing:
 
@@ -115,7 +115,7 @@ Bulker works on both singularity and docker systems. The bulker docs also contai
 
 ## Versioning the assets
 
-`refgenie` supports tags to facilitate management of multiple "versions" of the same asset. Simply add a `:your_tag_name` appendix to the asset registry path in the `refgenie build` command and the created asset will be tagged:
+Refgenie supports tags to facilitate management of multiple "versions" of the same asset. Simply add a `:your_tag_name` appendix to the asset registry path in the `refgenie build` command and the created asset will be tagged:
 
 ```
 refgenie build hg38/bowtie2_index:my_tag

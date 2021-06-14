@@ -7,6 +7,7 @@ from logging import getLogger
 
 import pypiper
 from refgenconf import RefGenConf, get_dir_digest
+from refgenconf.helpers import block_iter_repr
 from ubiquerg import parse_registry_path as prp
 from ubiquerg.system import is_writable
 from yacman import UndefinedAliasError
@@ -205,7 +206,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             )
         )
         _LOGGER.info(
-            f"Saving outputs to:\n- content: {genome_outfolder}\n- logs: {log_outfolder}"
+            f"Saving outputs to:{block_iter_repr(['content: ' + genome_outfolder, 'logs: ' + log_outfolder])}"
         )
         if args.docker:
             # Set up some docker stuff

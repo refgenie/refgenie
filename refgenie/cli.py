@@ -15,6 +15,7 @@ from refgenconf import (
 )
 from refgenconf import __version__ as rgc_version
 from refgenconf import select_genome_config, upgrade_config
+from refgenconf.helpers import block_iter_repr
 from requests.exceptions import MissingSchema
 from rich.console import Console
 from ubiquerg import query_yes_no
@@ -132,6 +133,8 @@ def main():
     elif args.command == BUILD_CMD:
         if args.reduce:
 
+            from rich.progress import track
+
             def _map_cfg_match_pattern(rgc, match_all_str):
                 return os.path.join(
                     rgc.data_dir,
@@ -148,10 +151,14 @@ def main():
             if len(rgc_map_filepaths) == 0:
                 _LOGGER.info(f"No map configs to reduce")
                 sys.exit(0)
-            _LOGGER.info(
-                "Map configs to reduce:\n - {}".format("\n - ".join(rgc_map_filepaths))
+            _LOGGER.debug(
+                f"Map configs to reduce: {block_iter_repr(rgc_map_filepaths)}"
             )
-            for rgc_map_filepath in rgc_map_filepaths:
+            matched_gats = []
+            for rgc_map_filepath in track(
+                rgc_map_filepaths,
+                description=f"Reducing {len(rgc_map_filepaths)} configs",
+            ):
                 matched_genome, matched_asset, matched_tag = re.match(
                     pattern=regex_pattern, string=rgc_map_filepath
                 ).groups()
@@ -182,6 +189,8 @@ def main():
                     alias_master = rgc_master.get_genome_alias(digest=genome_digest)
                     assert alias == alias_master
                 except (UndefinedAliasError, AssertionError):
+                    # no need to put this in context manager
+                    # it is already used in the method
                     rgc_master.set_genome_alias(
                         genome=alias, digest=genome_digest, create_genome=True
                     )
@@ -214,10 +223,9 @@ def main():
                         data=tag_data,
                         force_digest=genome_digest,
                     )
-                _LOGGER.info(
-                    f"Added entries for {matched_genome}/{matched_asset}:{matched_tag}"
-                )
+                matched_gats.append(matched_gat)
                 os.remove(rgc_map_filepath)
+            _LOGGER.info(f"Added entries for: {block_iter_repr(matched_gats)}")
             sys.exit(0)
         if not all([x["genome"] == asset_list[0]["genome"] for x in asset_list]):
             _LOGGER.error("Build can only build assets for one genome")
