@@ -146,6 +146,12 @@ def build_argparser():
     )
 
     sps[BUILD_CMD].add_argument(
+        "--pull-parents",
+        action="store_true",
+        help="Automatically pull the default parent asset if required but not provided",
+    )
+
+    sps[BUILD_CMD].add_argument(
         "--reduce",
         action="store_true",
         help="Run the reduce procedure: gather the metadata produced with `refgenie build --map`.",

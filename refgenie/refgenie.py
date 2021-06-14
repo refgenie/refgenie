@@ -7,6 +7,12 @@ from logging import getLogger
 
 import pypiper
 from refgenconf import RefGenConf, get_dir_digest
+from refgenconf.exceptions import (
+    MissingAssetError,
+    MissingGenomeError,
+    MissingSeekKeyError,
+    MissingTagError,
+)
 from refgenconf.helpers import block_iter_repr
 from ubiquerg import parse_registry_path as prp
 from ubiquerg.system import is_writable
@@ -368,12 +374,43 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                         rgc.get_default_tag(genome, default["asset"]),
                         req_asset_data["seek_key"],
                     )
-                parent_assets.append(
-                    "{}/{}:{}".format(
-                        rgc.get_genome_alias_digest(g, fallback=True), a, t
+                try:
+                    parent_assets.append(
+                        "{}/{}:{}".format(
+                            rgc.get_genome_alias_digest(g, fallback=True), a, t
+                        )
                     )
-                )
-                input_assets[req_asset[KEY]] = _seek(rgc, g, a, t, s)
+                except UndefinedAliasError:
+                    _LOGGER.warning(f"'{g}' namespace has not been initialized yet")
+                    if args.pull_parents:
+                        _LOGGER.info(f"Pulling missing parent: {g}/{a}:{t}")
+                        ret = rgc.pull(genome=g, asset=a, tag=t)
+                        if ret is None or any(ret) is None:
+                            _LOGGER.info(
+                                f"Missing parent asset pull requested, but failed: {g}/{a}:{t}"
+                            )
+                            sys.exit(1)
+                    else:
+                        raise
+                try:
+                    input_assets[req_asset[KEY]] = _seek(rgc, g, a, t, s)
+                except (
+                    MissingAssetError,
+                    MissingGenomeError,
+                    MissingTagError,
+                    MissingSeekKeyError,
+                ):
+                    if args.pull_parents:
+                        _LOGGER.info(f"Pulling missing parent: {g}/{a}:{t}")
+                        ret = rgc.pull(genome=g, asset=a, tag=t)
+                        if ret is None or any(ret) is None:
+                            _LOGGER.info(
+                                f"Missing parent asset pull requested, but failed: {g}/{a}:{t}"
+                            )
+                            sys.exit(1)
+                    else:
+                        raise
+
             _LOGGER.debug("Using parents: {}".format(", ".join(parent_assets)))
             _LOGGER.debug("Provided files: {}".format(specified_args))
             _LOGGER.debug("Provided parameters: {}".format(specified_params))
