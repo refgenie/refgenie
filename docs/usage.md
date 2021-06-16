@@ -1,8 +1,7 @@
 # Usage reference
-
 ## `refgenie --help`
 ```console
-version: 0.11.0-dev | refgenconf 0.11.0
+version: 0.11.1-dev | refgenconf 0.11.2-dev
 usage: refgenie [-h] [--version] [--silent] [--verbosity V] [--logdev]
                 {init,list,listr,pull,build,seek,seekr,add,remove,getseq,tag,id,subscribe,unsubscribe,alias,compare,upgrade,populate,populater}
                 ...
@@ -148,11 +147,11 @@ Prompt handling:
 ```console
 usage: refgenie build [-h] [-c C] [--skip-read-lock] [-R] [-C CONFIG_FILE] [-N]
                       [--tag-description TAG_DESCRIPTION]
-                      [--genome-description GENOME_DESCRIPTION] [-d]
-                      [--assets ASSETS [ASSETS ...]] [--files FILES [FILES ...]]
-                      [--params PARAMS [PARAMS ...]] [-v VOLUMES [VOLUMES ...]]
-                      [-o OUTFOLDER] [-q] [-r RECIPE] [-g G]
-                      asset-registry-paths [asset-registry-paths ...]
+                      [--genome-description GENOME_DESCRIPTION] [-d] [--map]
+                      [--pull-parents] [--reduce] [--assets ASSETS [ASSETS ...]]
+                      [--files FILES [FILES ...]] [--params PARAMS [PARAMS ...]]
+                      [-v VOLUMES [VOLUMES ...]] [-q] [-r RECIPE] [-g G]
+                      [asset-registry-paths ...]
 
 Build genome assets.
 
@@ -177,6 +176,12 @@ optional arguments:
                                         Add genome level description (e.g. The mouse
                                         mitochondrial genome, released in Dec 2013).
   -d, --docker                          Run all commands in the refgenie docker container.
+  --map                                 Run the map procedure: build assets and store the
+                                        metadata in separate configs.
+  --pull-parents                        Automatically pull the default parent asset if
+                                        required but not provided
+  --reduce                              Run the reduce procedure: gather the metadata
+                                        produced with `refgenie build --map`.
   --assets ASSETS [ASSETS ...]          Override the default genome, asset and tag of the
                                         parents (e.g. fasta=hg38/fasta:default
                                         gtf=mm10/gencode_gtf:default).
@@ -187,9 +192,6 @@ optional arguments:
   -v VOLUMES [VOLUMES ...], --volumes VOLUMES [VOLUMES ...]
                                         If using docker, also mount these folders as
                                         volumes.
-  -o OUTFOLDER, --outfolder OUTFOLDER   Override the default path to genomes folder, which
-                                        is the genome_folder attribute in the genome
-                                        configuration file.
   -q, --requirements                    Show the build requirements for the specified
                                         asset and exit.
   -r RECIPE, --recipe RECIPE            Provide a recipe to use.

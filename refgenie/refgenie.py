@@ -380,14 +380,15 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                             rgc.get_genome_alias_digest(g, fallback=True), a, t
                         )
                     )
-                except UndefinedAliasError:
+                except UndefinedAliasError as e:
                     _LOGGER.warning(f"'{g}' namespace has not been initialized yet")
                     if args.pull_parents:
                         _LOGGER.info(f"Pulling missing parent: {g}/{a}:{t}")
                         ret = rgc.pull(genome=g, asset=a, tag=t)
-                        if ret is None or any(ret) is None:
+                        if ret is None or not all(ret):
                             _LOGGER.info(
-                                f"Missing parent asset pull requested, but failed: {g}/{a}:{t}"
+                                f"Missing parent asset pull requested, but failed: {g}/{a}:{t}. "
+                                f"Reason: {str(e)}"
                             )
                             sys.exit(1)
                     else:
@@ -399,13 +400,14 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                     MissingGenomeError,
                     MissingTagError,
                     MissingSeekKeyError,
-                ):
+                ) as e:
                     if args.pull_parents:
                         _LOGGER.info(f"Pulling missing parent: {g}/{a}:{t}")
                         ret = rgc.pull(genome=g, asset=a, tag=t)
-                        if ret is None or any(ret) is None:
+                        if ret is None or not all(ret):
                             _LOGGER.info(
-                                f"Missing parent asset pull requested, but failed: {g}/{a}:{t}"
+                                f"Missing parent asset pull requested, but failed: {g}/{a}:{t}. "
+                                f"Reason: {str(e)}"
                             )
                             sys.exit(1)
                     else:

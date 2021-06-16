@@ -140,3 +140,19 @@ refgenie build genome1/asset2 --map
 # combine built assets metadata in the main config
 refgenie build --reduce
 ```
+
+## Automatically pull parents of _derived assets_
+
+Starting with refgenie 0.11.1 `refgenie build` command can automatically pull the default parent assets if required but not provided. This feature can be toggled on with `--pull-parents` option.
+
+For example you can build a `bowtie2_index` asset right after refgenie initialization, like so:
+
+```bash
+export REFGENIE=refgneie_config.yaml
+refgenie init -c $REFGENIE
+refgenie build hg38/bowtie2_index --pull-parents
+```
+
+The `refgenie build --pull-parents` command will first try to download the default parent for `hg38/bowtie2_index` asset, which is `hg38/fasta`, and build the `hg38/bowtie2_index` asset right after.
+
+In case the default asset parents are not available on any of the servers the you have `refgneie subscribe` to, the build will not start and exit with `1`.
