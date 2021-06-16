@@ -152,6 +152,12 @@ def build_argparser():
     )
 
     sps[BUILD_CMD].add_argument(
+        "--preserve-map-configs",
+        action="store_true",
+        help="Do not remove the genome configuration files produced in the potential map step of building",
+    )
+
+    sps[BUILD_CMD].add_argument(
         "--reduce",
         action="store_true",
         help="Run the reduce procedure: gather the metadata produced with `refgenie build --map`.",

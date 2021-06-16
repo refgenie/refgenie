@@ -27,7 +27,12 @@ from .asset_build_packages import *
 from .const import *
 from .exceptions import *
 from .helpers import _raise_missing_recipe_error, _single_folder_writeable
-from .refgenie import _skip_lock, parse_registry_path, refgenie_build
+from .refgenie import (
+    _skip_lock,
+    parse_registry_path,
+    refgenie_build,
+    refgenie_build_reduce,
+)
 
 
 def main():
@@ -132,100 +137,10 @@ def main():
 
     elif args.command == BUILD_CMD:
         if args.reduce:
-
-            from rich.progress import track
-
-            def _map_cfg_match_pattern(rgc, match_all_str):
-                return os.path.join(
-                    rgc.data_dir,
-                    *([match_all_str] * 3),
-                    BUILD_STATS_DIR,
-                    BUILD_MAP_CFG,
-                )
-
-            _LOGGER.info("Running the reduce procedure. No assets will be built.")
-            rgc_master = RefGenConf(filepath=gencfg, writable=True)
-            regex_pattern = _map_cfg_match_pattern(rgc_master, "(\S+)")
-            glob_pattern = _map_cfg_match_pattern(rgc_master, "*")
-            rgc_map_filepaths = glob(glob_pattern, recursive=False)
-            if len(rgc_map_filepaths) == 0:
-                _LOGGER.info(f"No map configs to reduce")
-                sys.exit(0)
-            _LOGGER.debug(
-                f"Map configs to reduce: {block_iter_repr(rgc_map_filepaths)}"
+            refgenie_build_reduce(
+                gencfg=gencfg,
+                preserve_map_configs=args.preserve_map_configs,
             )
-            matched_gats = []
-            for rgc_map_filepath in track(
-                rgc_map_filepaths,
-                description=f"Reducing {len(rgc_map_filepaths)} configs",
-            ):
-                matched_genome, matched_asset, matched_tag = re.match(
-                    pattern=regex_pattern, string=rgc_map_filepath
-                ).groups()
-                matched_gat = f"{matched_genome}/{matched_asset}:{matched_tag}"
-                map_rgc = RefGenConf(filepath=rgc_map_filepath, writable=False)
-                if CFG_GENOMES_KEY not in map_rgc:
-                    _LOGGER.warning(
-                        f"'{rgc_map_filepath}' is missing '{CFG_GENOMES_KEY}' key, skipping"
-                    )
-                    continue
-                # this should be a one element list
-                genome_digests = map_rgc[CFG_GENOMES_KEY].keys()
-                if len(genome_digests) > 1:
-                    _LOGGER.warning(
-                        f"There are {len(genome_digests)} genomes in the map build config while 1 expected, skipping"
-                    )
-                    continue
-                genome_digest = genome_digests[0]
-                alias = map_rgc.get_genome_alias(digest=genome_digest)
-                if genome_digest != matched_genome:
-                    raise Exception(
-                        f"Genome directory name does not match genome in the map config: {matched_genome} != {genome_digest}"
-                    )
-                tag_data = map_rgc[CFG_GENOMES_KEY][matched_genome][CFG_ASSETS_KEY][
-                    matched_asset
-                ][CFG_ASSET_TAGS_KEY][matched_tag]
-                try:
-                    alias_master = rgc_master.get_genome_alias(digest=genome_digest)
-                    assert alias == alias_master
-                except (UndefinedAliasError, AssertionError):
-                    # no need to put this in context manager
-                    # it is already used in the method
-                    rgc_master.set_genome_alias(
-                        genome=alias, digest=genome_digest, create_genome=True
-                    )
-                with rgc_master as r:
-                    if CFG_ASSET_PARENTS_KEY in tag_data:
-                        for parent in tag_data[CFG_ASSET_PARENTS_KEY]:
-                            parsed_parent = parse_registry_path(parent)
-                            r.update_relatives_assets(
-                                genome=parsed_parent["genome"],
-                                asset=parsed_parent["asset"],
-                                tag=parsed_parent["tag"],
-                                data=[matched_gat],
-                                children=True,
-                            )
-
-                    if CFG_ASSET_CHILDREN_KEY in tag_data:
-                        for child in tag_data[CFG_ASSET_CHILDREN_KEY]:
-                            parsed_child = parse_registry_path(child)
-                            r.update_relatives_assets(
-                                genome=parsed_child["genome"],
-                                asset=parsed_child["asset"],
-                                tag=parsed_child["tag"],
-                                data=[matched_gat],
-                                children=False,
-                            )
-                    r.update_tags(
-                        genome=matched_genome,
-                        asset=matched_asset,
-                        tag=matched_tag,
-                        data=tag_data,
-                        force_digest=genome_digest,
-                    )
-                matched_gats.append(matched_gat)
-                os.remove(rgc_map_filepath)
-            _LOGGER.info(f"Added entries for: {block_iter_repr(matched_gats)}")
             sys.exit(0)
         if not all([x["genome"] == asset_list[0]["genome"] for x in asset_list]):
             _LOGGER.error("Build can only build assets for one genome")

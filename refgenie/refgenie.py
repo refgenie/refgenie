@@ -1,8 +1,10 @@
 import csv
 import json
 import os
+import re
 import signal
 import sys
+from glob import glob
 from logging import getLogger
 
 import pypiper
@@ -14,6 +16,7 @@ from refgenconf.exceptions import (
     MissingTagError,
 )
 from refgenconf.helpers import block_iter_repr
+from rich.progress import track
 from ubiquerg import parse_registry_path as prp
 from ubiquerg.system import is_writable
 from yacman import UndefinedAliasError
@@ -99,6 +102,122 @@ def refgenie_initg(rgc, genome, content_checksums):
                 genome_dir
             )
         )
+
+
+def refgenie_build_reduce(gencfg, preserve_map_configs=False):
+    """
+    Asset building process may be split into two tasks: building assets (_Map_ procedure)
+    and gathering asset metadata (_Reduce_ procedure).
+
+    This function performs the _Reduce_ procedure:
+    finds the genome configuration files produced in the _Map_ step,
+    updates the main genome configuration file with their contents and removes them.
+
+    :param str gencfg: an absolute path to the genome configuration file
+    :param bool preserve_map_configs: a boolean indicating whether the map configs should be preserved,
+        by default they are removed once the contents are integrated into the master genome config.
+    :return bool: a boolean indicating whether the master config has been successfully updated
+        or None in case there were no map configs found.
+    """
+
+    def _map_cfg_match_pattern(data_dir, match_all_str):
+        """
+        Create a path to the map genome config witb a provided 'match all' character,
+        which needs to be different depending on the matchig scenario.
+
+        :param str data_dir: an absolute path to the data directory
+        :param str match_all_str: match all character to use
+        """
+        return os.path.join(
+            data_dir,
+            *([match_all_str] * 3),
+            BUILD_STATS_DIR,
+            BUILD_MAP_CFG,
+        )
+
+    _LOGGER.info("Running the reduce procedure. No assets will be built.")
+    rgc_master = RefGenConf(filepath=gencfg, writable=True)
+    regex_pattern = _map_cfg_match_pattern(rgc_master.data_dir, "(\S+)")
+    glob_pattern = _map_cfg_match_pattern(rgc_master.data_dir, "*")
+    rgc_map_filepaths = glob(glob_pattern, recursive=False)
+    if len(rgc_map_filepaths) == 0:
+        _LOGGER.info(f"No map configs to reduce")
+        return None
+    _LOGGER.debug(f"Map configs to reduce: {block_iter_repr(rgc_map_filepaths)}")
+    matched_gats = []
+    for rgc_map_filepath in track(
+        rgc_map_filepaths,
+        description=f"Reducing {len(rgc_map_filepaths)} configs",
+    ):
+        matched_genome, matched_asset, matched_tag = re.match(
+            pattern=regex_pattern, string=rgc_map_filepath
+        ).groups()
+        matched_gat = f"{matched_genome}/{matched_asset}:{matched_tag}"
+        map_rgc = RefGenConf(filepath=rgc_map_filepath, writable=False)
+        if CFG_GENOMES_KEY not in map_rgc:
+            _LOGGER.warning(
+                f"'{rgc_map_filepath}' is missing '{CFG_GENOMES_KEY}' key, skipping"
+            )
+            continue
+        # this should be a one element list
+        genome_digests = map_rgc[CFG_GENOMES_KEY].keys()
+        if len(genome_digests) > 1:
+            _LOGGER.warning(
+                f"There are {len(genome_digests)} genomes in the map build config while 1 expected, skipping"
+            )
+            continue
+        genome_digest = genome_digests[0]
+        alias = map_rgc.get_genome_alias(digest=genome_digest)
+        if genome_digest != matched_genome:
+            raise Exception(
+                f"Genome directory name does not match genome in the map config: {matched_genome} != {genome_digest}"
+            )
+        tag_data = map_rgc[CFG_GENOMES_KEY][matched_genome][CFG_ASSETS_KEY][
+            matched_asset
+        ][CFG_ASSET_TAGS_KEY][matched_tag]
+        try:
+            alias_master = rgc_master.get_genome_alias(digest=genome_digest)
+            assert alias == alias_master
+        except (UndefinedAliasError, AssertionError):
+            # no need to put this in context manager
+            # it is already used in the method
+            rgc_master.set_genome_alias(
+                genome=alias, digest=genome_digest, create_genome=True
+            )
+        with rgc_master as r:
+            if CFG_ASSET_PARENTS_KEY in tag_data:
+                for parent in tag_data[CFG_ASSET_PARENTS_KEY]:
+                    parsed_parent = parse_registry_path(parent)
+                    r.update_relatives_assets(
+                        genome=parsed_parent["genome"],
+                        asset=parsed_parent["asset"],
+                        tag=parsed_parent["tag"],
+                        data=[matched_gat],
+                        children=True,
+                    )
+
+            if CFG_ASSET_CHILDREN_KEY in tag_data:
+                for child in tag_data[CFG_ASSET_CHILDREN_KEY]:
+                    parsed_child = parse_registry_path(child)
+                    r.update_relatives_assets(
+                        genome=parsed_child["genome"],
+                        asset=parsed_child["asset"],
+                        tag=parsed_child["tag"],
+                        data=[matched_gat],
+                        children=False,
+                    )
+            r.update_tags(
+                genome=matched_genome,
+                asset=matched_asset,
+                tag=matched_tag,
+                data=tag_data,
+                force_digest=genome_digest,
+            )
+        matched_gats.append(matched_gat)
+        if not preserve_map_configs:
+            os.remove(rgc_map_filepath)
+    _LOGGER.info(f"Added entries for: {block_iter_repr(matched_gats)}")
+    return True
 
 
 def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
@@ -390,7 +509,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                                 f"Missing parent asset pull requested, but failed: {g}/{a}:{t}. "
                                 f"Reason: {str(e)}"
                             )
-                            sys.exit(1)
+                            return False
                     else:
                         raise
                 try:
@@ -409,7 +528,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                                 f"Missing parent asset pull requested, but failed: {g}/{a}:{t}. "
                                 f"Reason: {str(e)}"
                             )
-                            sys.exit(1)
+                            return False
                     else:
                         raise
 
@@ -546,10 +665,6 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             rgc_map._symlink_alias(genome, asset_key, asset_tag)
         else:
             _raise_missing_recipe_error(recipe_name)
-
-
-def _key_to_name(k):
-    return k.replace("_", " ")
 
 
 def _handle_sigint(gat):
