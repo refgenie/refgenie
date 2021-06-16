@@ -155,5 +155,5 @@ jobs:
 
     - name: refgenie build --pull-parents
       run: |
-        refgenie build rCRSd/bowtie2_index --pull-parents
+        refgenie build rCRSd/bowtie2_index -c genomes/g.yaml --pull-parents
         ./tests/assert_in_file.sh genomes/g.yaml rCRSd 0
