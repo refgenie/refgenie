@@ -155,5 +155,5 @@ jobs:
 
     - name: refgenie build --pull-parents
       run: |
-        refgenie build rCRSd/fasta_child -c genomes/g.yaml --pull-parent --recipe tests/data/recipe_parent.json
+        refgenie build rCRSd/fasta_child -c genomes/g.yaml --pull-parent --recipe tests/data/recipe_child.json
         ./tests/assert_in_file.sh genomes/g.yaml rCRSd 0 # rCRSd should be initialized because fasta had to be pulled
