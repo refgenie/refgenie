@@ -152,3 +152,8 @@ jobs:
           echo "Error: seek and populate returned different paths -- seek: ${seek_path}; populate: ${populate_path}"
           exit 1
         fi
+
+    - name: refgenie build --pull-parents
+      run: |
+        refgenie build rCRSd/bowtie2_index --pull-parents
+        ./tests/assert_in_file.sh genomes/g.yaml rCRSd 0

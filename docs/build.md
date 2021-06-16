@@ -125,7 +125,7 @@ You can also learn more about [tagging refgenie assets](tag.md).
 
 ## Build assets concurrently
 
-Starting with refgenie 0.11.1 the assets may be built following the _MapReduce_ programming model, whereby the `refgenie build` process is split into two tasks: building assets (_Map_ procedure) and gathering asset metadata (_Reduce_ procedure). These tasks can be launched with `--map` and `--reduce` flags, respectively.
+Starting with refgenie 0.11.1, the assets may be built following the _MapReduce_ programming model, whereby the `refgenie build` process is split into two tasks: building assets (_Map_ procedure) and gathering asset metadata (_Reduce_ procedure). These tasks can be launched with `--map` and `--reduce` flags, respectively.
 
 _Map_ procedure builds the assets as usual, but stores the metadata in a separate, newly created genome configuration file. This avoids any conflicts in concurrent asset builds.
 
@@ -143,16 +143,16 @@ refgenie build --reduce
 
 ## Automatically pull parents of _derived assets_
 
-Starting with refgenie 0.11.1 `refgenie build` command can automatically pull the default parent assets if required but not provided. This feature can be toggled on with `--pull-parents` option.
+Starting with refgenie 0.11.1, `refgenie build` command can automatically pull the default parent assets if required but not provided. This feature can be toggled on with `--pull-parents` option.
 
 For example you can build a `bowtie2_index` asset right after refgenie initialization, like so:
 
 ```bash
-export REFGENIE=refgneie_config.yaml
+export REFGENIE=refgenie_config.yaml
 refgenie init -c $REFGENIE
 refgenie build hg38/bowtie2_index --pull-parents
 ```
 
 The `refgenie build --pull-parents` command will first try to download the default parent for `hg38/bowtie2_index` asset, which is `hg38/fasta`, and build the `hg38/bowtie2_index` asset right after.
 
-In case the default asset parents are not available on any of the servers the you have `refgneie subscribe` to, the build will not start and exit with `1`.
+In case the default asset parents are not available on any of the servers you have `refgneie subscribe`d to, the build will not start and exit with `1`.
