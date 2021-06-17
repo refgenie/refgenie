@@ -2,16 +2,16 @@ name: Build package
 
 on:
   push:
-    branches: [master, dev]
+    branches: [master]
   pull_request:
-    branches: [master, dev]
+    branches: [master]
 
 jobs:
   build-package:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: [3.6, 3.9]
         os: [ubuntu-latest, macos-latest]
 
     steps:

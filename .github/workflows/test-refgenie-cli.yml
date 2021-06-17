@@ -2,7 +2,7 @@ name: Test refgenie CLI
 
 on:
   push:
-    branches: [master, dev]
+    branches: [master]
 
 jobs:
   test_CLI:
