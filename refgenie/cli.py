@@ -157,7 +157,9 @@ def main():
                 _make_asset_build_reqs(recipe)
             sys.exit(0)
 
-        ret = refgenie_build(gencfg, asset_list[0]["genome"], asset_list, recipe_name, args)
+        ret = refgenie_build(
+            gencfg, asset_list[0]["genome"], asset_list, recipe_name, args
+        )
         if not ret:
             sys.exit(1)
         else:
