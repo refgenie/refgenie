@@ -583,7 +583,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                         "Genome '{}' has not been initialized yet; "
                         "no key found for this alias".format(genome)
                     )
-                    return
+                    return False
             recipe_name = None
             genome_outfolder = os.path.join(rgc.data_dir, genome)
             build_stats_dir = os.path.abspath(
@@ -618,7 +618,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                         genome, asset_key, asset_tag, log_path
                     )
                 )
-                return
+                return False
             _LOGGER.info("Finished building '{}' asset".format(asset_key))
             with rgc_map as r:
                 # update asset relationships
@@ -667,6 +667,8 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                 )
         else:
             _raise_missing_recipe_error(recipe_name)
+
+        return True
 
 
 def _handle_sigint(gat):
