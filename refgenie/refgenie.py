@@ -139,7 +139,7 @@ def refgenie_build_reduce(gencfg, preserve_map_configs=False):
     rgc_master = RefGenConf(filepath=gencfg, writable=True)
     regex_pattern = _map_cfg_match_pattern(rgc_master.data_dir, "(\S+)")
     glob_pattern = _map_cfg_match_pattern(rgc_master.data_dir, "*")
-    rgc_map_filepaths = glob(glob_pattern, recursive=False)
+    rgc_map_filepaths = glob(glob_pattern, recursive=True)
     if len(rgc_map_filepaths) == 0:
         _LOGGER.info(f"No map configs to reduce")
         return None
@@ -172,9 +172,11 @@ def refgenie_build_reduce(gencfg, preserve_map_configs=False):
             raise Exception(
                 f"Genome directory name does not match genome in the map config: {matched_genome} != {genome_digest}"
             )
-        tag_data = map_rgc[CFG_GENOMES_KEY][matched_genome][CFG_ASSETS_KEY][
-            matched_asset
-        ][CFG_ASSET_TAGS_KEY][matched_tag]
+        asset_data = tag_data = map_rgc[CFG_GENOMES_KEY][matched_genome][
+            CFG_ASSETS_KEY
+        ][matched_asset]
+        tag_data = asset_data[CFG_ASSET_TAGS_KEY][matched_tag]
+        default_tag_in_map = asset_data[CFG_ASSET_DEFAULT_TAG_KEY]
         try:
             alias_master = rgc_master.get_genome_alias(digest=genome_digest)
             assert alias == alias_master
@@ -212,6 +214,13 @@ def refgenie_build_reduce(gencfg, preserve_map_configs=False):
                 tag=matched_tag,
                 data=tag_data,
                 force_digest=genome_digest,
+            )
+            # set a default tag in the master config to the one built in map mode,
+            # this will not overwrite an existing tag though
+            r.set_default_pointer(
+                genome=matched_genome,
+                asset=matched_asset,
+                tag=default_tag_in_map,
             )
         matched_gats.append(matched_gat)
         if not preserve_map_configs:
@@ -267,7 +276,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
         """
         Builds assets with pypiper and updates a genome config file.
 
-        This function actually run the build commands in a given build package,
+        This function actually runs the build commands in a given build package,
         and then update the refgenie config file.
 
         :param str genome: The assembly key; e.g. 'mm10'.
@@ -276,33 +285,21 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             of required input_assets, commands to run, and outputs to register as
             assets.
         """
-
         if args.map:
-            genome_alias = rgc.get_genome_alias(digest=genome)
             # Performing a build map step.
             # The reduce step will need to be performed to get the built
             # asset metadata to the master config file
-            map_gencfg = os.path.abspath(
-                os.path.join(
-                    rgc.data_dir,
-                    genome,
-                    asset_key,
-                    tag,
-                    BUILD_STATS_DIR,
-                    BUILD_MAP_CFG,
-                )
-            )
-
+            genome_alias = rgc.get_genome_alias(digest=genome)
             # create an empty config file in the genome directory
-            _LOGGER.info(f"Using new map genome config: {map_gencfg}")
-            make_sure_path_exists(os.path.dirname(map_gencfg))
-            open(map_gencfg, "a").close()
+            _LOGGER.info(f"Using new map genome config: {locked_map_gencfg}")
+            make_sure_path_exists(os.path.dirname(locked_map_gencfg))
+            open(locked_map_gencfg, "a").close()
             # initialize a new RefGenConf.
             # Use the master location for data storage,
             # but change path to the in asset dir location
             rgc_map = RefGenConf(
                 entries={"genome_folder": rgc.genome_folder},
-                filepath=map_gencfg,
+                filepath=locked_map_gencfg,
             )
             # set the alias first (if available), based on the master file
 
@@ -322,16 +319,8 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
         else:
             rgc_map = rgc
 
-        log_outfolder = os.path.abspath(
-            os.path.join(
-                genome_outfolder,
-                asset_key,
-                tag,
-                BUILD_STATS_DIR,
-            )
-        )
         _LOGGER.info(
-            f"Saving outputs to:{block_iter_repr(['content: ' + genome_outfolder, 'logs: ' + log_outfolder])}"
+            f"Saving outputs to:{block_iter_repr(['content: ' + genome_outfolder, 'logs: ' + build_stats_dir])}"
         )
         if args.docker:
             # Set up some docker stuff
@@ -348,7 +337,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             return False, rgc_map
 
         pm = pypiper.PipelineManager(
-            name="refgenie", outfolder=log_outfolder, args=args
+            name=PKG_NAME, outfolder=build_stats_dir, args=args
         )
         tk = pypiper.NGSTk(pm=pm)
         if args.docker:
@@ -376,7 +365,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
         tk.make_dir(asset_vars["asset_outfolder"])
 
         target = os.path.join(
-            log_outfolder, TEMPLATE_TARGET.format(genome, asset_key, tag)
+            build_stats_dir, TEMPLATE_TARGET.format(genome, asset_key, tag)
         )
         # add target command
         command_list_populated.append("touch {target}".format(target=target))
@@ -393,7 +382,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
         else:
             # save build recipe to the JSON-formatted file
             recipe_file_name = TEMPLATE_RECIPE_JSON.format(asset_key, tag)
-            with open(os.path.join(log_outfolder, recipe_file_name), "w") as outfile:
+            with open(os.path.join(build_stats_dir, recipe_file_name), "w") as outfile:
                 json.dump(build_pkg, outfile)
             # since the assets are always built to a standard dir structure, we
             # can just stitch a path together for asset digest calculation
@@ -597,6 +586,11 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                     return
             recipe_name = None
             genome_outfolder = os.path.join(rgc.data_dir, genome)
+            build_stats_dir = os.path.abspath(
+                os.path.join(genome_outfolder, asset_key, asset_tag, BUILD_STATS_DIR)
+            )
+            locked_map_gencfg = os.path.join(build_stats_dir, LOCKED_BUILD_MAP_CFG)
+            map_gencfg = os.path.join(build_stats_dir, BUILD_MAP_CFG)
             is_built, rgc_map = _build_asset(
                 genome,
                 asset_key,
@@ -663,6 +657,14 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                         {CFG_TAG_DESC_KEY: args.tag_description},
                     )
             rgc_map._symlink_alias(genome, asset_key, asset_tag)
+            if args.map:
+                # move the contents of the locked map config to a map config,
+                # which is discoverable by the reduce step
+                os.rename(locked_map_gencfg, map_gencfg)
+                _LOGGER.info(
+                    f"Asset metadata saved in '{map_gencfg}'. "
+                    f"To make the asset accessible globally run 'refgenie build --reduce'"
+                )
         else:
             _raise_missing_recipe_error(recipe_name)
 
