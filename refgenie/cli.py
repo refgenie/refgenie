@@ -1,10 +1,8 @@
 import json
 import os
-import re
 import sys
 from collections import OrderedDict
 from functools import partial
-from glob import glob
 
 import logmuse
 from refgenconf import (
@@ -19,7 +17,6 @@ from refgenconf.helpers import block_iter_repr
 from requests.exceptions import MissingSchema
 from rich.console import Console
 from ubiquerg import query_yes_no
-from yacman import UndefinedAliasError
 
 from ._version import __version__
 from .argparser import build_argparser
