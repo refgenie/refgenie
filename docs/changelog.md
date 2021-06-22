@@ -2,6 +2,13 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## [0.11.1] - 2021-06-22
+
+## Added
+- _MapReduce_ framework support in `refgenie build` that supports automating asset builds at scale (`--map` and `--reduce` options)
+- an option to automatically pull parent assets when building a derived asset (`--pull-parents` option in `refgenie build`)
+
+
 ## [0.11.0] - 2021-04-27
 
 ## Added

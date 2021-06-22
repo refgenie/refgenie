@@ -141,6 +141,17 @@ refgenie build genome1/asset2 --map
 refgenie build --reduce
 ```
 
+**Refgenie does not account for assets dependancy.** Therefore, for best results, consider the following order of building assets:
+
+1. `refgenie build --map` all fasta assets to establish genome namespaces
+2. Wait until jobs are completed, call `refgenie build --reduce`
+3. `refgenie build --map` all other top-level assets, e.g. fasta_txome, gencode_gtf
+4. Wait until jobs are completed, call `refgenie build --reduce`
+5. `refgenie build --map` all derived assets, e.g. bowtie2_index, bwa_index
+6. Wait until jobs are completed, call `refgenie build --reduce`
+
+Alternatively, the assets can be automatically retrieved from refgenieserver, if they exist.
+
 ## Automatically pull parents of _derived assets_
 
 Starting with refgenie 0.11.1, `refgenie build` command can automatically pull the default parent assets if required but not provided. This feature can be toggled on with `--pull-parents` option.
