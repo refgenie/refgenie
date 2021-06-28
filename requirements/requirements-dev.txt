@@ -1,2 +1,1 @@
 -e git+git://github.com/refgenie/refgenconf@dev#egg=refgenconf
--e git+git://github.com/databio/yacman@dev#egg=yacman
