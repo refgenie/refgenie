@@ -18,7 +18,7 @@ Yes, you can. In `refgenie v0.7.0` we've introduced [tagging](tag.md), to facili
 
 ## Can multiple users share a single refgenie configuration file?
 
-Yes, this is now the recommended way to use refgenie for groups. Starting with release `v0.7.0`, refgenie now supports genome config file locks and race-free writes, so refgenie will now automatically control multi-user conflicts to prevent metadata loss. With this change, multiple users can simultaneously read and write a single group-level configuration file. 
+Yes, this is now the recommended way to use refgenie for groups. Starting with release `v0.7.0`, refgenie now supports genome config file locks and race-free writes, so refgenie will now automatically control multi-user conflicts to prevent metadata loss. With this change, multiple users can simultaneously read and write a single group-level configuration file.
 
 ## How can I track how a downloaded asset was created?
 

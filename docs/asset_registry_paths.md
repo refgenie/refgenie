@@ -1,9 +1,9 @@
 # Asset registry paths
 
 Each asset is defined by four components:
- 
+
 1. genome name
-2. asset name 
+2. asset name
 3. tag name
 4. seek key
 
@@ -38,7 +38,7 @@ How did it work?
 Alternatively, you can specify all of these namespace components as command line arguments:
 
 ```console
-refgenie seek -g rCRSd -a fasta -t default 
+refgenie seek -g rCRSd -a fasta -t default
 ```
 
 One advantage of this approach is that it allows you to refer to multiple assets belonging to the same genome.

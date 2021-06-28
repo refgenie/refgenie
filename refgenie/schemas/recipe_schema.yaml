@@ -34,7 +34,7 @@ properties:
     description: "Registry path of the container to use"
   command_list:
     type: array
-    items: 
+    items:
       type: string
     description: "List of commands that create the asset"
 required: [description, assets, required_files, required_assets, required_parameters, command_list]

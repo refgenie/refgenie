@@ -25,9 +25,9 @@ Below, we go through the assets you can build and how to build them.
 
 ### fasta
 
-<i class="fas fa-file-import"></i> required files: `--files fasta=/path/to/fasta_file` (*e.g.* [example_genome.fa.gz](http://big.databio.org/example_data/rCRS.fa.gz))  
-<i class="fas fa-sliders-h"></i> required parameters: *none*  
-<i class="fas fa-exclamation-triangle"></i> required asset: *none*  
+<i class="fas fa-file-import"></i> required files: `--files fasta=/path/to/fasta_file` (*e.g.* [example_genome.fa.gz](http://big.databio.org/example_data/rCRS.fa.gz))
+<i class="fas fa-sliders-h"></i> required parameters: *none*
+<i class="fas fa-exclamation-triangle"></i> required asset: *none*
 <i class="fas fa-tools"></i> required software: [samtools](http://www.htslib.org/)
 
 We recommend for every genome, you first build the `fasta` asset, because it's a starting point for building a lot of other assets.
@@ -47,9 +47,9 @@ refgenie seek rCRS/fasta
 
 ### blacklist
 
-<i class="fas fa-file-import"></i> required files: `--files blacklist=/path/to/blacklist_file` (*e.g.* [hg38-blacklist.v2.bed.gz](https://github.com/Boyle-Lab/Blacklist/tree/master/lists))  
-<i class="fas fa-sliders-h"></i> required parameters: *none*  
-<i class="fas fa-exclamation-triangle"></i> required asset: *none*  
+<i class="fas fa-file-import"></i> required files: `--files blacklist=/path/to/blacklist_file` (*e.g.* [hg38-blacklist.v2.bed.gz](https://github.com/Boyle-Lab/Blacklist/tree/master/lists))
+<i class="fas fa-sliders-h"></i> required parameters: *none*
+<i class="fas fa-exclamation-triangle"></i> required asset: *none*
 <i class="fas fa-tools"></i> required software: *none*
 
 The `blacklist` asset represents regions that should be excluded from sequencing experiments. The ENCODE blacklist represents a comprehensive listing of these regions for several model organisms [^Amemiya2019].
@@ -68,9 +68,9 @@ refgenie build hg38/blacklist --files blacklist=hg38-blacklist.v2.bed.gz
 
 ### refgene_anno
 
-<i class="fas fa-file-import"></i> required files: `--files refgene=/path/to/refGene_file` (*e.g.* [refGene.txt.gz](http://varianttools.sourceforge.net/Annotation/RefGene))  
-<i class="fas fa-sliders-h"></i> required parameters: *none*  
-<i class="fas fa-exclamation-triangle"></i> required asset: *none*  
+<i class="fas fa-file-import"></i> required files: `--files refgene=/path/to/refGene_file` (*e.g.* [refGene.txt.gz](http://varianttools.sourceforge.net/Annotation/RefGene))
+<i class="fas fa-sliders-h"></i> required parameters: *none*
+<i class="fas fa-exclamation-triangle"></i> required asset: *none*
 <i class="fas fa-tools"></i> required software: *none*
 
 The `refgene_anno` asset is used to produce derived assets including transcription start sites (TSSs), exons, introns, and premature mRNA sequences.
@@ -89,9 +89,9 @@ refgenie build hg38/refgene_anno --files refgene=refGene.txt.gz
 
 ### gencode_gtf
 
-<i class="fas fa-file-import"></i> required files: `--files gencode_gtf=/path/to/gencode_file` (*e.g.* [gencode.gtf.gz](ftp://ftp.ebi.ac.uk/pub/databases/gencode/_README.TXT))  
-<i class="fas fa-sliders-h"></i> required parameters: *none*  
-<i class="fas fa-exclamation-triangle"></i> required asset: *none*  
+<i class="fas fa-file-import"></i> required files: `--files gencode_gtf=/path/to/gencode_file` (*e.g.* [gencode.gtf.gz](ftp://ftp.ebi.ac.uk/pub/databases/gencode/_README.TXT))
+<i class="fas fa-sliders-h"></i> required parameters: *none*
+<i class="fas fa-exclamation-triangle"></i> required asset: *none*
 <i class="fas fa-tools"></i> required software: *none*
 
 The `gencode_gtf` asset contains all annotated transcripts.
@@ -109,9 +109,9 @@ refgenie build mm10/gencode_gtf --files gencode_gtf=gencode.vM23.annotation.gtf.
 
 ### ensembl_gtf
 
-<i class="fas fa-file-import"></i> required files: `--files ensembl_gtf=/path/to/ensembl_file` (*e.g.* [ensembl.gtf.gz](https://useast.ensembl.org/info/genome/genebuild/genome_annotation.html))  
-<i class="fas fa-sliders-h"></i> required parameters: *none*  
-<i class="fas fa-exclamation-triangle"></i> required asset: *none*  
+<i class="fas fa-file-import"></i> required files: `--files ensembl_gtf=/path/to/ensembl_file` (*e.g.* [ensembl.gtf.gz](https://useast.ensembl.org/info/genome/genebuild/genome_annotation.html))
+<i class="fas fa-sliders-h"></i> required parameters: *none*
+<i class="fas fa-exclamation-triangle"></i> required asset: *none*
 <i class="fas fa-tools"></i> required software: *none*
 
 The `ensembl_gtf` asset is used to build other derived assets including a comprehensive TSS annotation and gene body annotation.
@@ -130,9 +130,9 @@ refgenie build hg38/ensembl-gtf --files ensembl_gtf=Homo_sapiens.GRCh38.97.gtf.g
 
 ### ensembl_rb
 
-<i class="fas fa-file-import"></i> required files: `--files gff=/path/to/gff_file` (*e.g.* [regulatory_features.ff.gz](http://useast.ensembl.org/info/genome/funcgen/regulatory_build.html))  
-<i class="fas fa-sliders-h"></i> required parameters: *none*  
-<i class="fas fa-exclamation-triangle"></i> required asset: *none*  
+<i class="fas fa-file-import"></i> required files: `--files gff=/path/to/gff_file` (*e.g.* [regulatory_features.ff.gz](http://useast.ensembl.org/info/genome/funcgen/regulatory_build.html))
+<i class="fas fa-sliders-h"></i> required parameters: *none*
+<i class="fas fa-exclamation-triangle"></i> required asset: *none*
 <i class="fas fa-tools"></i> required software: *none*
 
 The `ensembl_rb` asset is used to produce derived assets including feature annotations.
@@ -150,9 +150,9 @@ refgenie build hg38/ensembl_rb --files gff=homo_sapiens.GRCh38.Regulatory_Build.
 
 ### dbnsfp
 
-<i class="fas fa-file-import"></i> required files: `--files dbnsfp=/path/to/dbnsfp_file` (*e.g.* [dbNSFP4.0a.zip](http://varianttools.sourceforge.net/Annotation/dbNSFP))  
-<i class="fas fa-sliders-h"></i> required parameters: *none*  
-<i class="fas fa-exclamation-triangle"></i> required asset: *none*  
+<i class="fas fa-file-import"></i> required files: `--files dbnsfp=/path/to/dbnsfp_file` (*e.g.* [dbNSFP4.0a.zip](http://varianttools.sourceforge.net/Annotation/dbNSFP))
+<i class="fas fa-sliders-h"></i> required parameters: *none*
+<i class="fas fa-exclamation-triangle"></i> required asset: *none*
 <i class="fas fa-tools"></i> required software: *none*
 
 The `dbnsfp` asset is the annotation database for non-synonymous SNPs.
@@ -168,9 +168,9 @@ For many of the following derived assets, you will need the corresponding softwa
 
 ### bowtie2_index
 
-<i class="fas fa-file-import"></i> required files: *none*  
-<i class="fas fa-sliders-h"></i> required parameters: *none*  
-<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
+<i class="fas fa-file-import"></i> required files: *none*
+<i class="fas fa-sliders-h"></i> required parameters: *none*
+<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)
 <i class="fas fa-tools"></i> required software: [bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml)
 
 ```
@@ -179,9 +179,9 @@ refgenie build test/bowtie2_index
 
 ### bismark_bt1_index and bismark_bt2_index
 
-<i class="fas fa-file-import"></i> required files: *none*  
-<i class="fas fa-sliders-h"></i> required parameters: *none*  
-<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
+<i class="fas fa-file-import"></i> required files: *none*
+<i class="fas fa-sliders-h"></i> required parameters: *none*
+<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)
 <i class="fas fa-tools"></i> required software: [bismark](https://www.bioinformatics.babraham.ac.uk/projects/bismark/)
 
 ```
@@ -191,9 +191,9 @@ refgenie build test/bismark_bt2_index
 
 ### bwa_index
 
-<i class="fas fa-file-import"></i> required files: *none*  
-<i class="fas fa-sliders-h"></i> required parameters: *none*  
-<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
+<i class="fas fa-file-import"></i> required files: *none*
+<i class="fas fa-sliders-h"></i> required parameters: *none*
+<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)
 <i class="fas fa-tools"></i> required software: [bwa](http://bio-bwa.sourceforge.net/)
 
 ```
@@ -202,8 +202,8 @@ refgenie build test/bwa_index
 
 ### hisat2_index
 
-<i class="fas fa-file-import"></i> required files: *none*  
-<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
+<i class="fas fa-file-import"></i> required files: *none*
+<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)
 <i class="fas fa-tools"></i> required software: [hisat2](https://ccb.jhu.edu/software/hisat2/index.shtml)
 
 ```
@@ -212,9 +212,9 @@ refgenie build test/hisat2_index
 
 ### epilog_index
 
-<i class="fas fa-file-import"></i> required files: *none*  
-<i class="fas fa-sliders-h"></i> required parameters: `--params context=CG` (Default)  
-<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
+<i class="fas fa-file-import"></i> required files: *none*
+<i class="fas fa-sliders-h"></i> required parameters: `--params context=CG` (Default)
+<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)
 <i class="fas fa-tools"></i> required software: [epilog](https://github.com/databio/epilog)
 
 ```
@@ -223,9 +223,9 @@ refgenie build test/epilog_index --params context=CG
 
 ### kallisto_index
 
-<i class="fas fa-file-import"></i> required files: *none*  
-<i class="fas fa-sliders-h"></i> required parameters: *none*  
-<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
+<i class="fas fa-file-import"></i> required files: *none*
+<i class="fas fa-sliders-h"></i> required parameters: *none*
+<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)
 <i class="fas fa-tools"></i> required software: [kallisto](https://pachterlab.github.io/kallisto/)
 
 ```
@@ -234,9 +234,9 @@ refgenie build test/kallisto_index
 
 ### salmon_index
 
-<i class="fas fa-file-import"></i> required files: *none*  
-<i class="fas fa-sliders-h"></i> required parameters: *none*  
-<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
+<i class="fas fa-file-import"></i> required files: *none*
+<i class="fas fa-sliders-h"></i> required parameters: *none*
+<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)
 <i class="fas fa-tools"></i> required software: [salmon](https://salmon.readthedocs.io/en/latest/salmon.html)
 
 ```
@@ -245,9 +245,9 @@ refgenie build test/salmon_index
 
 ### star_index
 
-<i class="fas fa-file-import"></i> required files: *none*  
-<i class="fas fa-sliders-h"></i> required parameters: *none*  
-<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
+<i class="fas fa-file-import"></i> required files: *none*
+<i class="fas fa-sliders-h"></i> required parameters: *none*
+<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)
 <i class="fas fa-tools"></i> required software: [star](https://github.com/alexdobin/STAR)
 
 ```
@@ -256,9 +256,9 @@ refgenie build test/star_index
 
 ### suffixerator_index
 
-<i class="fas fa-file-import"></i> required files: *none*  
-<i class="fas fa-sliders-h"></i> required parameters: `--params memlimit=8GB` (Default)  
-<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
+<i class="fas fa-file-import"></i> required files: *none*
+<i class="fas fa-sliders-h"></i> required parameters: `--params memlimit=8GB` (Default)
+<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)
 <i class="fas fa-tools"></i> required software: [GenomeTools](http://genometools.org/)
 
 ```
@@ -267,9 +267,9 @@ refgenie build test/suffixerator_index --params memlimit=8GB
 
 ### tallymer_index
 
-<i class="fas fa-file-import"></i> required files: *none*  
-<i class="fas fa-sliders-h"></i> required parameters: `--params mersize=30 minocc=2` (Default)  
-<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)  
+<i class="fas fa-file-import"></i> required files: *none*
+<i class="fas fa-sliders-h"></i> required parameters: `--params mersize=30 minocc=2` (Default)
+<i class="fas fa-exclamation-triangle"></i> required asset: [`fasta`](available_assets.md#fasta)
 <i class="fas fa-tools"></i> required software: [GenomeTools](http://genometools.org/)
 
 ```
@@ -278,9 +278,9 @@ refgenie build test/tallymer_index --params mersize=30 minocc=2
 
 ### feat_annotation
 
-<i class="fas fa-file-import"></i> required files: *none*  
-<i class="fas fa-sliders-h"></i> required parameters: *none*  
-<i class="fas fa-exclamation-triangle"></i> required asset: [`ensembl_gtf`](build.md#ensembl-gtf), [`ensembl_rb`](build.md#ensembl-rb)  
+<i class="fas fa-file-import"></i> required files: *none*
+<i class="fas fa-sliders-h"></i> required parameters: *none*
+<i class="fas fa-exclamation-triangle"></i> required asset: [`ensembl_gtf`](build.md#ensembl-gtf), [`ensembl_rb`](build.md#ensembl-rb)
 <i class="fas fa-tools"></i> required software: *none*
 
 The `feat_annotation` asset includes the following genomic feature annotations: enhancers, promoters, promoter flanking regions, 5' UTR, 3' UTR, exons, and introns.

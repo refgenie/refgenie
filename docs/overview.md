@@ -15,7 +15,7 @@ One effort to distribute standard, organized reference sequences and annotation 
   1. Web-based access to individual pre-built assets via web interface or application programming interface (API)
   2. An interface for scripted asset "builds," each of which produces structured output for arbitrary genome inputs.
 
-This two-pronged approach enables users to either retrieve or produce *identically structured* outputs on demand for *any genome* of interest, including new assemblies, private assemblies, or custom genomes for which a public set of assets cannot exist. 
+This two-pronged approach enables users to either retrieve or produce *identically structured* outputs on demand for *any genome* of interest, including new assemblies, private assemblies, or custom genomes for which a public set of assets cannot exist.
 
 ## Refgenie ecosystem
 

@@ -2,9 +2,18 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## [0.12.0] - 2021-06-28
+
+### Added
+- _MapReduce_ framework support in `refgenie build` that supports automating asset builds at scale (`--map` and `--reduce` options)
+- an option to automatically pull parent assets when building a derived asset (`--pull-parents` option in `refgenie build`)
+
+### Fixed
+- misleading exit codes in `refgenie build`; [#258](https://github.com/refgenie/refgenie/issues/258)
+
 ## [0.11.0] - 2021-04-27
 
-## Added
+### Added
 - remote commands, which work without genome config file:
   - `refgenie seekr`
   - `refgenie populater`
@@ -16,7 +25,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 **Version `0.10.0` requires an upgrade to the configuration file and asset structure. Please refer to the [upgrade tutorial](config_upgrade_03_to_04.md) for instructions on how to migrate your config upon upgrade to `0.10.0`.**
 
-## Changed
+### Changed
 
 - instead of using human-readable names as genome identifiers refgenie uses sequence-derived digests in the config
 - asset data moved to `data` directory
@@ -24,7 +33,7 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - refgenieserver API v3 is now used for remote assets retrieval
 - improved visual interface in `list`, `listr` and `pull` subcommands
 
-## Added
+### Added
 
 - `data` and `alias` directories in genome directory that are used to store asset and aliases data, respectively
 - `refgenie alias` command for genome aliases management
@@ -33,23 +42,24 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [0.9.3] - 2020-07-29
 
-## Changed
+### Changed
 - short option string for `--no-overwrite` from `-n` to `-o`
 
-## Added
+### Added
 - option to handle large asset archives pulling from the CLI (`-l`/`--no-large` flag)
 - option to set the maximum archive size to `pull` with no confirmation required (`--size-cutoff` argument)
 - `-s`/`--seek-keys` argument to `refgenie add` to specify seek keys for added assets
 
-## Fixed
+### Fixed
 - `refgenie add` issues -- added assets are no longer imported to the `genome_folder`; [#180](https://github.com/refgenie/refgenie/issues/180)
 
 ## [0.9.2] - 2020-07-01
 
-## Changed
+### Changed
 - in `refgenie build` reduced the config file locking time to prevent problems in multi-build context
 - dropped Python 2 support
-## Added
+
+### Added
 - parametrized `kmer` in salmon recipes
 - support for all genome configuration file parameter values initialization in `refgenie init`
 

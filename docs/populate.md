@@ -56,4 +56,3 @@ pre_submit:
 ```
 
 Now, just add sample attributes in your sample take with refgenie registry paths, like `refgenie://hg38/fasta`. You can add these either as sample attributes directly in the sample table, or using a [derived attribute](http://pep.databio.org/en/latest/specification/#sample-modifier-derive). Looper will automatically use refgenie to pre-populate the registry paths into correct local paths before submitting the jobs.
-

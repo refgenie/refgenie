@@ -1,6 +1,6 @@
 # Using refgenie with iGenomes
 
-If you're already using iGenomes, it's easy to configure `refgenie` to use your existing folder structure. [iGenomes](https://support.illumina.com/sequencing/sequencing_software/igenome.html) is project that provides sequences and annotation files for commonly analyzed organisms. Each iGenome is available as a compressed file that contains sequences and annotation files for a single genomic build of an organism. 
+If you're already using iGenomes, it's easy to configure `refgenie` to use your existing folder structure. [iGenomes](https://support.illumina.com/sequencing/sequencing_software/igenome.html) is project that provides sequences and annotation files for commonly analyzed organisms. Each iGenome is available as a compressed file that contains sequences and annotation files for a single genomic build of an organism.
 
 Initialize a refgenie config file if you don't have one you want to use for your iGenomes assets:
 
@@ -18,7 +18,7 @@ This command line tool is distributed with `refgenie` and is ready to use after 
 * `-g`: name of the genome that should be assigned to the assets,
 * `-p`: a path to the downloaded archive or a directory (unarchived iGenomes folder).
 
-usage: 
+usage:
 
 ```console
 $ import_igenome -h
@@ -46,7 +46,7 @@ $ import_igenome -g staph -p Staphylococcus_aureus_NCTC_8325_NCBI_2006-02-13.tar
 
 Extracting 'Staphylococcus_aureus_NCTC_8325_NCBI_2006-02-13.tar.gz'
 Moved 'Staphylococcus_aureus_NCTC_8325_NCBI_2006-02-13.tar.gz' to '/Users/mstolarczyk/Desktop/testing/test_genomes/staph'
-Added assets: 
+Added assets:
 - staph/Chromosomes
 - staph/BWAIndex
 - staph/BowtieIndex
@@ -58,7 +58,7 @@ Added assets:
 ## Option 2: `refgenie add`
 
 You can also add individual assets you want `refgenie` to track with `refgenie add`. This way of iGenomes integration with `refgenie` is useful if you do not plan to add all of the assets for the downloaded iGenome. It is also useful beyond iGenomes, since you can technically add whatever assets you want, from whatever sources, into your refgenie.
- 
+
 
 ```console
 refgenie add genome/asset -p RELATIVE_PATH

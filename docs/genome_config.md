@@ -17,7 +17,7 @@ from refgenconf import upgrade_config
 upgrade_config(target_version="0.4", filepath="/path/to/old/cfg.yml")
 ```
 
-Below is a CHANGELOG describing all changes introduced in configuration file versions. 
+Below is a CHANGELOG describing all changes introduced in configuration file versions.
 
 ## Genome configuration file example
 
@@ -77,7 +77,7 @@ genomes:
 ### Optional (used by refgenieserver)
 - **genome_archive_folder**: Path to folder where asset archives will be stored.
 - **genome_archive_folder**: Path to folder file asset archives config will be stored.
-- **remote_url_base**: Path/URL to prepend to served asset archives, if non-local ones are to be served 
+- **remote_url_base**: Path/URL to prepend to served asset archives, if non-local ones are to be served
 
 
 For genomes that are managed by `refgenie` (that is, they were built or pulled with `refgenie`), these asset attributes will be automatically populated. You can edit them and refgenie will respect your edits (unless you re-build or re-pull the asset, which will overwrite those fields). You can also add your own assets and `refgenie` won't touch them. For more info, see [using custom assets](custom_assets.md).
@@ -96,7 +96,7 @@ For genomes that are managed by `refgenie` (that is, they were built or pulled w
 
 - use sequence-derived unique genome identifiers instead of genome names in every file name and directory name
 - move all the contents from the refgenie directory to a new `data` directory
-- add an `alias` directory with contents corresponding to the aliases defined in the configuration file. The contents of the child directories are symbolic links to the asset files in the `data` directory  
+- add an `alias` directory with contents corresponding to the aliases defined in the configuration file. The contents of the child directories are symbolic links to the asset files in the `data` directory
 
 ## [0.3] - 2019-10-21; refgenie v0.7.0
 
@@ -111,10 +111,8 @@ For genomes that are managed by `refgenie` (that is, they were built or pulled w
 
 - Added `config_version` entry
 - Added the `assets` level in the config hierarchy.
-- We moved the assets down a layer to accommodate other genome-level attributes we intend to use in the future (like a description, checksums, other provenance information). Earlier refgenie config files will need to be updated. 
+- We moved the assets down a layer to accommodate other genome-level attributes we intend to use in the future (like a description, checksums, other provenance information). Earlier refgenie config files will need to be updated.
 
 ## [0.1] - 2019-05-10; refgenie v0.3.0
 
 - Initial version of the config file with the initial refgenie release.
-
- 

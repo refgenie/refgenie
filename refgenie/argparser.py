@@ -140,6 +140,30 @@ def build_argparser():
     )
 
     sps[BUILD_CMD].add_argument(
+        "--map",
+        action="store_true",
+        help="Run the map procedure: build assets and store the metadata in separate configs.",
+    )
+
+    sps[BUILD_CMD].add_argument(
+        "--pull-parents",
+        action="store_true",
+        help="Automatically pull the default parent asset if required but not provided",
+    )
+
+    sps[BUILD_CMD].add_argument(
+        "--preserve-map-configs",
+        action="store_true",
+        help="Do not remove the genome configuration files produced in the potential map step of building",
+    )
+
+    sps[BUILD_CMD].add_argument(
+        "--reduce",
+        action="store_true",
+        help="Run the reduce procedure: gather the metadata produced with `refgenie build --map`.",
+    )
+
+    sps[BUILD_CMD].add_argument(
         "--assets",
         nargs="+",
         action="append",
@@ -174,16 +198,6 @@ def build_argparser():
         required=False,
         default=None,
         help="If using docker, also mount these folders as volumes.",
-    )
-
-    sps[BUILD_CMD].add_argument(
-        "-o",
-        "--outfolder",
-        dest="outfolder",
-        required=False,
-        default=None,
-        help="Override the default path to genomes folder, which is the "
-        "genome_folder attribute in the genome configuration file.",
     )
 
     sps[BUILD_CMD].add_argument(
@@ -349,8 +363,7 @@ def build_argparser():
         TAG_CMD,
         ID_CMD,
     ]:
-        sps[cmd].add_argument(
-            "asset_registry_paths",
+        build_arg_kwargs = dict(
             metavar="asset-registry-paths",
             type=str,
             nargs="+",
@@ -361,6 +374,11 @@ def build_argparser():
                 else ")."
             ),
         )
+        # make asset-registry-path argument optional for build command
+        # and require it manually in CLI when running a non-reduce build
+        if cmd == BUILD_CMD:
+            build_arg_kwargs.update({"nargs": "*", "default": None})
+        sps[cmd].add_argument("asset_registry_paths", **build_arg_kwargs)
 
     sps[LIST_LOCAL_CMD].add_argument(
         "-r", "--recipes", action="store_true", help="List available recipes."

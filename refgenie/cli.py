@@ -13,6 +13,7 @@ from refgenconf import (
 )
 from refgenconf import __version__ as rgc_version
 from refgenconf import select_genome_config, upgrade_config
+from refgenconf.helpers import block_iter_repr
 from requests.exceptions import MissingSchema
 from rich.console import Console
 from ubiquerg import query_yes_no
@@ -23,13 +24,18 @@ from .asset_build_packages import *
 from .const import *
 from .exceptions import *
 from .helpers import _raise_missing_recipe_error, _single_folder_writeable
-from .refgenie import _skip_lock, parse_registry_path, refgenie_build
+from .refgenie import (
+    _skip_lock,
+    parse_registry_path,
+    refgenie_build,
+    refgenie_build_reduce,
+)
 
 
 def main():
     """Primary workflow"""
     parser = logmuse.add_logging_options(build_argparser())
-    args, remaining_args = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
     global _LOGGER
     _LOGGER = logmuse.logger_via_cli(args, make_root=True)
     _LOGGER.debug(f"versions: refgenie {__version__} | refgenconf {rgc_version}")
@@ -43,6 +49,14 @@ def main():
     if args.command == ALIAS_CMD and not args.subcommand:
         parser.print_help()
         _LOGGER.error("No alias subcommand command given")
+        sys.exit(1)
+
+    if (
+        args.command == BUILD_CMD
+        and args.asset_registry_paths is None
+        and not args.reduce
+    ):
+        parser.error("You must provide an asset-registry-path")
         sys.exit(1)
 
     gencfg = select_genome_config(
@@ -65,7 +79,7 @@ def main():
     if "asset_registry_paths" in args and args.asset_registry_paths:
         _LOGGER.debug("Found registry_path: {}".format(args.asset_registry_paths))
         asset_list = [parse_registry_path(x) for x in args.asset_registry_paths]
-
+        # [{"protocol": 'pname', "genome": 'gname', "asset", 'aname', "seek_key", 'sname', "tag": 'tname'}, ...]
         for a in asset_list:
             # every asset must have a genome, either provided via registry path
             # or the args.genome arg.
@@ -86,14 +100,6 @@ def main():
                             a["asset"]
                         )
                     )
-
-    else:
-        if args.command in GENOME_ONLY_REQUIRED and not args.genome:
-            parser.error("You must provide either a genome or a registry path")
-            sys.exit(1)
-        if args.command in ASSET_REQUIRED:
-            parser.error("You must provide an asset registry path")
-            sys.exit(1)
 
     if args.command == INIT_CMD:
         _LOGGER.debug("Initializing refgenie genome configuration")
@@ -127,6 +133,12 @@ def main():
         rgc.initialize_config_file(os.path.abspath(gencfg))
 
     elif args.command == BUILD_CMD:
+        if args.reduce:
+            refgenie_build_reduce(
+                gencfg=gencfg,
+                preserve_map_configs=args.preserve_map_configs,
+            )
+            sys.exit(0)
         if not all([x["genome"] == asset_list[0]["genome"] for x in asset_list]):
             _LOGGER.error("Build can only build assets for one genome")
             sys.exit(1)
@@ -144,7 +156,14 @@ def main():
                 _LOGGER.info("'{}' recipe requirements: ".format(recipe))
                 _make_asset_build_reqs(recipe)
             sys.exit(0)
-        refgenie_build(gencfg, asset_list[0]["genome"], asset_list, recipe_name, args)
+
+        ret = refgenie_build(
+            gencfg, asset_list[0]["genome"], asset_list, recipe_name, args
+        )
+        if not ret:
+            sys.exit(1)
+        else:
+            sys.exit(0)
 
     elif args.command == GET_ASSET_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)

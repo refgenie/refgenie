@@ -4,7 +4,7 @@ jupyter:True
 Below we present an example use of `refgenconf` package. It is installed automatically with `refgenie` (or separately installable with `pip install refgenconf`). All the asset fetching functionality is impelmented in `refgenconf` package, so pipelines that just use Python API do not need to depend on `refgenie`.
 
 ## Goal
-The goal of the code below is to **get a path to the refgenie-managed fasta file for a user-specified genome**. 
+The goal of the code below is to **get a path to the refgenie-managed fasta file for a user-specified genome**.
 
 Genome FASTA is a part of `fasta` asset, accessible as a `fasta` seek key. To retrieve the path this file on the command line one would say: `refgenie seek <genome>/fasta`. For example:
 ```
@@ -13,7 +13,7 @@ refgenie seek hg38/fasta
 
 ## Steps
 
-First, let's set the `$REFGENIE` environmet variable. It should be set by a pipeline user or the config file path should be provided explictly, e.g. as an input to the pipeline (here shown as `user_provided_cfg_path = None` -- not provided) 
+First, let's set the `$REFGENIE` environmet variable. It should be set by a pipeline user or the config file path should be provided explictly, e.g. as an input to the pipeline (here shown as `user_provided_cfg_path = None` -- not provided)
 
 
 ```python
@@ -30,14 +30,14 @@ Next, let's import components of `refgenconf` that we'll use
 from refgenconf import RefGenConf, select_genome_config, RefgenconfError, CFG_ENV_VARS, CFG_FOLDER_KEY
 ```
 
-Now, we can use the `select_genome_config` function to determine the preferred path to the config file. If `user_provided_cfg_path` is `None` (not specified) the `$REFGENIE` environment variable is used. 
+Now, we can use the `select_genome_config` function to determine the preferred path to the config file. If `user_provided_cfg_path` is `None` (not specified) the `$REFGENIE` environment variable is used.
 
 
 ```python
 refgenie_cfg_path = select_genome_config(filename=user_provided_cfg_path, check_exist=False)
 ```
 
-The function returns `None` if none of the above point to a valid path. That's why we raise an aproppriate error below. Obviously, the name of `--rfg-config` argument depends on pipeline design. 
+The function returns `None` if none of the above point to a valid path. That's why we raise an aproppriate error below. Obviously, the name of `--rfg-config` argument depends on pipeline design.
 
 
 ```python
@@ -81,7 +81,7 @@ print("Determined path to fasta asset: {}".format(fasta))
 ```
 
 ```.output
-                                                      
+
 ```
 
 ```.output

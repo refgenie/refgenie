@@ -2,7 +2,9 @@ name: Test refgenie CLI
 
 on:
   push:
-    branches: [master, dev]
+    branches: [master]
+  pull_request:
+    branches: [master]
 
 jobs:
   test_CLI:
@@ -152,3 +154,8 @@ jobs:
           echo "Error: seek and populate returned different paths -- seek: ${seek_path}; populate: ${populate_path}"
           exit 1
         fi
+
+    - name: refgenie build --pull-parents
+      run: |
+        refgenie build rCRSd/fasta_child -c genomes/g.yaml --pull-parent --recipe tests/data/recipe_child.json
+        ./tests/assert_in_file.sh genomes/g.yaml rCRSd 0 # rCRSd should be initialized because fasta had to be pulled

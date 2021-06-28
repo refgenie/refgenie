@@ -36,7 +36,7 @@ That's it! Easy.
 
 You can also browse and download pre-built `refgenie` assemblies manually at [refgenomes.databio.org](http://refgenomes.databio.org).
 
-<!-- 
+<!--
 ## Older builds (deprecated)
 
 For earlier versions of refgenie, there was no `refgenie pull` command, so users would just download the pre-indexed archives and use those. These archives are built for common genomes. These are `tar gzipped` files, so **you will need to unarchive them after downloading**. The complete collection is listed at [http://big.databio.org/refgenomes/](http://big.databio.org/refgenomes/):
