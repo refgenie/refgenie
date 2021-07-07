@@ -113,7 +113,7 @@ def assert_refgenie_asset_exists(
 * R package `reticulate`
 
 
-```r
+```
 library('reticulate')
 
 assertRefgenieAssetExists <-
