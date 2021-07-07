@@ -24,6 +24,7 @@ nav:
     - Compare genomes: compare.md
     - Run my own asset server: refgenieserver.md
     - Use refgenie from Python: refgenconf.md
+    - Use refgenie in your pipeline: code_snippets.md
     - Use refgenie on the cloud: remote.md
     - Use refgenie with iGenomes: igenomes.md
     - Upgrade from config 0.3 to 0.4: config_upgrade_03_to_04.md

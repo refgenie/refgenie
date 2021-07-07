@@ -324,7 +324,7 @@ Get path to the Annotated Sequence Digests JSON file for a given genome. Note th
 
 
 ```python
-def get_asset_table(self, genomes=None, server_url=None, get_json_url=<function RefGenConf.<lambda> at 0x10339adc0>)
+def get_asset_table(self, genomes=None, server_url=None, get_json_url=<function RefGenConf.<lambda> at 0x107e9fe50>)
 ```
 
 Get a rich.Table object representing assets available locally
@@ -445,7 +445,7 @@ List locally available reference genome IDs and assets by ID.
 
 
 ```python
-def get_remote_data_str(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x10339daf0>)
+def get_remote_data_str(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x107e9cb80>)
 ```
 
 List genomes and assets available remotely.
@@ -660,7 +660,7 @@ List values for all seek keys for the specified genome and asset. Leave the argu
 
 
 ```python
-def listr(self, genome=None, get_url=<function RefGenConf.<lambda> at 0x10339dc10>, as_digests=False)
+def listr(self, genome=None, get_url=<function RefGenConf.<lambda> at 0x107e9cca0>, as_digests=False)
 ```
 
 List genomes and assets available remotely on all servers the object subscribes to
@@ -726,7 +726,7 @@ Populates *remote* refgenie references from refgenie://genome/asset:tag registry
 
 
 ```python
-def pull(self, genome, asset, tag, unpack=True, force=None, force_large=None, size_cutoff=10, get_json_url=<function RefGenConf.<lambda> at 0x10339dee0>, build_signal_handler=<function _handle_sigint at 0x102f0c4c0>)
+def pull(self, genome, asset, tag, unpack=True, force=None, force_large=None, size_cutoff=10, get_json_url=<function RefGenConf.<lambda> at 0x107e9cf70>, build_signal_handler=<function _handle_sigint at 0x107a0e550>)
 ```
 
 Download and possibly unpack one or more assets for a given ref gen.
@@ -833,7 +833,7 @@ Runs all installed plugins for the specified hook.
 
 
 ```python
-def seek(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, all_aliases=False, check_exist=<function RefGenConf.<lambda> at 0x10339d430>)
+def seek(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, all_aliases=False, check_exist=<function RefGenConf.<lambda> at 0x107e9c4c0>)
 ```
 
 Seek path to a specified genome-asset-tag alias
@@ -864,7 +864,7 @@ Seek path to a specified genome-asset-tag alias
 
 
 ```python
-def seek_src(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, check_exist=<function RefGenConf.<lambda> at 0x10339d670>)
+def seek_src(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, check_exist=<function RefGenConf.<lambda> at 0x107e9c700>)
 ```
 
 Seek path to a specified genome-asset-tag
@@ -894,7 +894,7 @@ Seek path to a specified genome-asset-tag
 
 
 ```python
-def seekr(self, genome_name, asset_name, tag_name=None, seek_key=None, remote_class='http', get_url=<function RefGenConf.<lambda> at 0x10339d550>)
+def seekr(self, genome_name, asset_name, tag_name=None, seek_key=None, remote_class='http', get_url=<function RefGenConf.<lambda> at 0x107e9c5e0>)
 ```
 
 Seek a remote path to a specified genome/asset.seek_key:tag
@@ -933,7 +933,7 @@ Point to the selected tag by default
 
 
 ```python
-def set_genome_alias(self, genome, digest=None, servers=None, overwrite=False, reset_digest=False, create_genome=False, no_write=False, get_json_url=<function RefGenConf.<lambda> at 0x1033a01f0>)
+def set_genome_alias(self, genome, digest=None, servers=None, overwrite=False, reset_digest=False, create_genome=False, no_write=False, get_json_url=<function RefGenConf.<lambda> at 0x107ea1280>)
 ```
 
 Assign a human-readable alias to a genome identifier.
@@ -1229,9 +1229,12 @@ def looper_refgenie_populate(namespaces)
 ```
 
 A looper plugin that populates refgenie references in a PEP from refgenie://genome/asset:tag registry paths. This can be used to convert all refgenie references into their local paths at the looper stage, so the final paths are passed to the workflow. This way the workflow does not need to depend on refgenie to resolve the paths. This is useful for example for CWL pipelines, which are built to have paths resolved outside the workflow.
+
+The namespaces structure required to run the plugin is:
+`namespaces["pipeline"]["var_templates"]["refgenie_config"]`
 #### Parameters:
 
-- `namespaces` (`dict`):  variable namespaces dict
+- `namespaces` (`Mapping`):  a nested variable namespaces dict
 
 
 #### Returns:
@@ -1239,9 +1242,16 @@ A looper plugin that populates refgenie references in a PEP from refgenie://geno
 - `dict`:  sample namespace dict
 
 
+#### Raises:
+
+- `TypeError`:  if the input namespaces is not a mapping
+- `KeyError`:  if the namespaces mapping does not include 'pipeline'
+- `NotImplementedError`:  if 'var_templates' key is missing in the 'pipeline' namespace or'refgenie_config' is missing in 'var_templates' section.
 
 
 
 
 
-*Version Information: `refgenconf` v0.11.2-dev, generated by `lucidoc` v0.4.2*
+
+
+*Version Information: `refgenconf` v0.12.0, generated by `lucidoc` v0.4.2*
