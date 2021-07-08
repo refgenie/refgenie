@@ -1,5 +1,5 @@
 logmuse>=0.2.6
-piper>=0.12.1
+# piper>=0.12.2
 pyfaidx>=0.5.5.2
 refgenconf>=0.12.0
 yacman>=0.8.2
