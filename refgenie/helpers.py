@@ -8,7 +8,7 @@ from .asset_build_packages import asset_build_packages
 from .exceptions import MissingFolderError
 
 
-def _parse_user_build_input(input):
+def _parse_user_kw_input(input):
     """
     Parse user input specification. Used in build for specific parents and input parsing.
 

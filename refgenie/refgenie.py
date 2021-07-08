@@ -24,7 +24,7 @@ from yacman import UndefinedAliasError
 from .asset_build_packages import *
 from .const import *
 from .helpers import (
-    _parse_user_build_input,
+    _parse_user_kw_input,
     _raise_missing_recipe_error,
     _skip_lock,
     _writeable,
@@ -229,7 +229,7 @@ def refgenie_build_reduce(gencfg, preserve_map_configs=False):
     return True
 
 
-def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
+def refgenie_build(gencfg, genome, asset_list, recipe_name, args, pipeline_kwargs):
     """
     Runs the refgenie build recipe.
 
@@ -245,8 +245,8 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
         writable=False,
         skip_read_lock=_skip_lock(args.skip_read_lock, gencfg),
     )
-    specified_args = _parse_user_build_input(args.files)
-    specified_params = _parse_user_build_input(args.params)
+    specified_args = _parse_user_kw_input(args.files)
+    specified_params = _parse_user_kw_input(args.params)
 
     def _read_json_file(filepath):
         """
@@ -271,6 +271,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
         specific_args,
         specific_params,
         alias,
+        pipeline_kwargs,
         **kwargs,
     ):
         """
@@ -337,7 +338,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             return False, rgc_map
 
         pm = pypiper.PipelineManager(
-            name=PKG_NAME, outfolder=build_stats_dir, args=args
+            name=PKG_NAME, outfolder=build_stats_dir, args=args, **pipeline_kwargs
         )
         tk = pypiper.NGSTk(pm=pm)
         if args.docker:
@@ -447,7 +448,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
             parent_assets = []
             specified_asset_keys, specified_assets = None, None
             if args.assets is not None:
-                parsed_parents_input = _parse_user_build_input(args.assets)
+                parsed_parents_input = _parse_user_kw_input(args.assets)
                 specified_asset_keys = list(parsed_parents_input.keys())
                 specified_assets = list(parsed_parents_input.values())
                 _LOGGER.debug(f"Custom assets requested: {args.assets}")
@@ -600,6 +601,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_name, args):
                 specified_args,
                 specified_params,
                 ori_genome,
+                pipeline_kwargs,
                 **input_assets,
             )
             if not is_built:

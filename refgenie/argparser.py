@@ -140,6 +140,15 @@ def build_argparser():
     )
 
     sps[BUILD_CMD].add_argument(
+        "--pipeline-kwargs",
+        nargs="+",
+        action="append",
+        required=False,
+        default=None,
+        help="Extra arguments to pass to the build pipeline. Format: arg_name=arg_val arg_name1=arg_val1",
+    )
+
+    sps[BUILD_CMD].add_argument(
         "--map",
         action="store_true",
         help="Run the map procedure: build assets and store the metadata in separate configs.",

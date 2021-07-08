@@ -4,6 +4,9 @@ This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 
 ## [0.12.1] - unreleased
+
+### Added
+- `--pipeline-kwargs` arguemnt to `refgenie build` command, which allows you to pass keyword arguments to the pypiper pipeline.
 ## [0.12.0] - 2021-06-28
 
 ### Added

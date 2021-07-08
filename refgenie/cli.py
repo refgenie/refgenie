@@ -25,6 +25,7 @@ from .const import *
 from .exceptions import *
 from .helpers import _raise_missing_recipe_error, _single_folder_writeable
 from .refgenie import (
+    _parse_user_kw_input,
     _skip_lock,
     parse_registry_path,
     refgenie_build,
@@ -35,9 +36,15 @@ from .refgenie import (
 def main():
     """Primary workflow"""
     parser = logmuse.add_logging_options(build_argparser())
-    args, _ = parser.parse_known_args()
+    args, unknown_args = parser.parse_known_args()
     global _LOGGER
     _LOGGER = logmuse.logger_via_cli(args, make_root=True)
+    if len(unknown_args) > 0:
+        _LOGGER.warning(
+            "Unrecognized arguments: {}".format(
+                " ".join([str(x) for x in unknown_args])
+            )
+        )
     _LOGGER.debug(f"versions: refgenie {__version__} | refgenconf {rgc_version}")
     _LOGGER.debug(f"Args: {args}")
 
@@ -157,13 +164,16 @@ def main():
                 _make_asset_build_reqs(recipe)
             sys.exit(0)
 
+        pipeline_kwargs = _parse_user_kw_input(args.pipeline_kwargs)
         ret = refgenie_build(
-            gencfg, asset_list[0]["genome"], asset_list, recipe_name, args
+            gencfg,
+            asset_list[0]["genome"],
+            asset_list,
+            recipe_name,
+            args,
+            pipeline_kwargs,
         )
-        if not ret:
-            sys.exit(1)
-        else:
-            sys.exit(0)
+        sys.exit(1 if ret else 0)
 
     elif args.command == GET_ASSET_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
