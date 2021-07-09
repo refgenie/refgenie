@@ -173,7 +173,7 @@ def main():
             args,
             pipeline_kwargs,
         )
-        sys.exit(1 if ret else 0)
+        sys.exit(0 if ret else 1)
 
     elif args.command == GET_ASSET_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)

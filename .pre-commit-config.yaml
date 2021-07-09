@@ -10,7 +10,7 @@ repos:
       - id: check-ast
 
   - repo: https://github.com/PyCQA/isort
-    rev: 5.9.1
+    rev: 5.9.2
     hooks:
       - id: isort
         args: ["--profile", "black"]
