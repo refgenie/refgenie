@@ -16,7 +16,7 @@ from refgenconf import select_genome_config, upgrade_config
 from refgenconf.helpers import block_iter_repr
 from requests.exceptions import MissingSchema
 from rich.console import Console
-from ubiquerg import query_yes_no
+from rich.prompt import Confirm
 
 from ._version import __version__
 from .argparser import build_argparser
@@ -339,8 +339,8 @@ def main():
                 )
                 return
         if len(asset_list) > 1:
-            if not query_yes_no(
-                "Are you sure you want to remove {} assets?".format(len(asset_list))
+            if not Confirm.ask(
+                f"Are you sure you want to remove {len(asset_list)} assets?"
             ):
                 _LOGGER.info("Action aborted by the user")
                 return
