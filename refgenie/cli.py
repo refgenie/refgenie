@@ -13,7 +13,9 @@ from refgenconf import (
 )
 from refgenconf import __version__ as rgc_version
 from refgenconf import select_genome_config, upgrade_config
+from refgenconf.const import TEMPLATE_RECIPE_YAML
 from refgenconf.helpers import block_iter_repr
+from refgenconf.recipe import recipe_factory
 from requests.exceptions import MissingSchema
 from rich.console import Console
 from rich.prompt import Confirm
@@ -157,11 +159,21 @@ def main():
             recipe_name = args.recipe
         if args.requirements:
             for a in asset_list:
-                recipe = recipe_name or a["asset"]
-                if recipe not in asset_build_packages.keys():
-                    _raise_missing_recipe_error(recipe)
-                _LOGGER.info("'{}' recipe requirements: ".format(recipe))
-                _make_asset_build_reqs(recipe)
+                rgc = RefGenConf(
+                    filepath=gencfg, writable=False, skip_read_lock=skip_read_lock
+                )
+                r = recipe_name or a["asset"]
+                recipe = recipe_factory(
+                    recipe_definition_file=os.path.join(
+                        rgc.recipe_dir, TEMPLATE_RECIPE_YAML.format(r)
+                    ),
+                    asset_class_definition_file_dir=rgc.asset_class_dir,
+                )
+                if args.text:
+                    print(recipe.requirements + "\n")
+                    continue
+                c = Console()
+                c.print(recipe.requirements_table)
             sys.exit(0)
 
         pipeline_kwargs = _parse_user_kw_input(args.pipeline_kwargs)

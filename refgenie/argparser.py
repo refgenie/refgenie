@@ -217,6 +217,12 @@ def build_argparser():
     )
 
     sps[BUILD_CMD].add_argument(
+        "--text",
+        action="store_true",
+        help="Can be used with '--requirements' to display the recipe requirements in text form.",
+    )
+
+    sps[BUILD_CMD].add_argument(
         "-r",
         "--recipe",
         required=False,
