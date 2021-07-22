@@ -6,6 +6,7 @@ import signal
 import sys
 from glob import glob
 from logging import getLogger
+from time import gmtime, strftime
 
 import attmap
 import pypiper
@@ -333,12 +334,10 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
             "assets": input_assets_dict,
         }
         # save inputs to json file
-        inputs_file = os.path.join(
-            build_stats_dir, TEMPLATE_RECIPE_INPUTS_JSON.format(asset, tag)
-        )
+        inputs_file = rgc.get_recipe_inputs_path(genome, asset, tag)
         with open(inputs_file, "w") as f:
             json.dump(inputs, f, indent=4)
-        _LOGGER.info(f"Using inputs: {inputs}\nInputs saved to: {inputs_file}")
+        _LOGGER.debug(f"Using inputs: {inputs}\nInputs saved to: {inputs_file}")
 
         # create a bundle list to simplify calls below
         gat = [genome, asset, build_namespaces["tag"]]
@@ -361,7 +360,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
             signal.signal(signal.SIGINT, _handle_sigint(gat))
             pm.run(command_list_populated, target, container=pm.container)
         except pypiper.exceptions.SubprocessError:
-            _LOGGER.error("asset '{}' build failed".format(asset))
+            _LOGGER.error(f"Asset '{genome}/{asset}:{tag}' build failed")
             return False, rgc_map
         else:
             # save build recipe to the JSON-formatted file
@@ -374,8 +373,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
             asset_dir = os.path.join(rgc_map.data_dir, *gat)
             if not os.path.exists(asset_dir):
                 raise OSError(
-                    "Could not compute asset digest. Path does not "
-                    "exist: {}".format(asset_dir)
+                    f"Could not compute asset digest. Path does not exist: {asset_dir}"
                 )
             digest = get_dir_digest(asset_dir)
             _LOGGER.info(f"Asset digest: {digest}")
@@ -397,6 +395,8 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
                         CFG_ASSET_PATH_KEY: asset,
                         CFG_ASSET_CHECKSUM_KEY: digest,
                         "custom_properties": build_namespaces["custom_properties"],
+                        "asset_class": recipe.output_class.name,
+                        "date_built": strftime("%Y-%m-%d_%H:%M", gmtime()),
                     },
                 )
                 r.update_seek_keys(

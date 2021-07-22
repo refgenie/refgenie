@@ -163,17 +163,22 @@ def main():
                     filepath=gencfg, writable=False, skip_read_lock=skip_read_lock
                 )
                 r = recipe_name or a["asset"]
-                recipe = recipe_factory(
-                    recipe_definition_file=os.path.join(
-                        rgc.recipe_dir, TEMPLATE_RECIPE_YAML.format(r)
-                    ),
-                    asset_class_definition_file_dir=rgc.asset_class_dir,
-                )
+                try:
+                    recipe = recipe_factory(
+                        recipe_definition_file=os.path.join(
+                            rgc.recipe_dir, TEMPLATE_RECIPE_YAML.format(r)
+                        ),
+                        asset_class_definition_file_dir=rgc.asset_class_dir,
+                    )
+                except Exception as e:
+                    _LOGGER.error(
+                        f"Error building recipe for asset '{a['asset']}': {e}"
+                    )
+                    sys.exit(1)
                 if args.text:
                     print(recipe.requirements + "\n")
                     continue
-                c = Console()
-                c.print(recipe.requirements_table)
+                Console().print(recipe.requirements_table)
             sys.exit(0)
 
         pipeline_kwargs = _parse_user_kw_input(args.pipeline_kwargs)
