@@ -17,6 +17,7 @@ from refgenconf.exceptions import (
     MissingGenomeError,
     MissingSeekKeyError,
     MissingTagError,
+    RefgenconfError,
 )
 from refgenconf.helpers import block_iter_repr
 from rich.progress import track
@@ -263,8 +264,9 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
         This function actually runs the build commands in a given build package,
         and then update the refgenie config file.
 
-        :param str genome: The assembly key; e.g. 'mm10'.
-        :param str asset: The unique asset identifier; e.g. 'bowtie2_index'
+        :param attmap.AttMap build_namespaces: a mapping of namespaces to populate the templates with
+        :param str alias: the genome alias to use
+        :param dict pipeline_kwargs: the kwargs to pass to the pypiper pipeline
         :param refgenconf.Recipe recipe: A recipe object specifying lists
             of required input_assets, commands to run, and outputs to register as
             assets.
@@ -390,6 +392,13 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
                     data={CFG_ASSET_DESC_KEY: recipe.description},
                     force_digest=genome,
                 )
+                try:
+                    r.set_asset_class(genome, asset, recipe.output_class.name)
+                except RefgenconfError:
+                    _LOGGER.error(
+                        f"You can't mix assets of different classes within a single asset namespace"
+                    )
+                    raise
                 r.update_tags(
                     *gat,
                     force_digest=genome,
@@ -397,7 +406,6 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
                         CFG_ASSET_PATH_KEY: asset,
                         CFG_ASSET_CHECKSUM_KEY: digest,
                         "custom_properties": build_namespaces["custom_properties"],
-                        "asset_class": recipe.output_class.name,
                         "date_built": strftime("%Y-%m-%d_%H:%M", gmtime()),
                     },
                 )
