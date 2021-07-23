@@ -375,7 +375,9 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
                 raise OSError(
                     f"Could not compute asset digest. Path does not exist: {asset_dir}"
                 )
-            digest = get_dir_digest(asset_dir)
+            digest = get_dir_digest(
+                path=asset_dir, exclude_files=recipe.checksum_exclude_list
+            )
             _LOGGER.info(f"Asset digest: {digest}")
             # add updates to config file
             with rgc_map as r:
