@@ -11,7 +11,7 @@ from time import gmtime, strftime
 import attmap
 import pypiper
 from refgenconf import RefGenConf, get_dir_digest, recipe_factory
-from refgenconf.const import TEMPLATE_RECIPE_JSON
+from refgenconf.const import CFG_ASSET_TAGS_KEY, TEMPLATE_RECIPE_JSON
 from refgenconf.exceptions import (
     MissingAssetError,
     MissingGenomeError,
@@ -179,7 +179,7 @@ def refgenie_build_reduce(gencfg, preserve_map_configs=False):
         asset_data = tag_data = map_rgc[CFG_GENOMES_KEY][matched_genome][
             CFG_ASSETS_KEY
         ][matched_asset]
-        tag_data = asset_data[CFG_tagS_KEY][matched_tag]
+        tag_data = asset_data[CFG_ASSET_TAGS_KEY][matched_tag]
         default_tag_in_map = asset_data[CFG_ASSET_DEFAULT_TAG_KEY]
         try:
             alias_master = rgc_master.get_genome_alias(digest=genome_digest)
@@ -225,6 +225,11 @@ def refgenie_build_reduce(gencfg, preserve_map_configs=False):
                 genome=matched_genome,
                 asset=matched_asset,
                 tag=default_tag_in_map,
+            )
+            r.set_asset_class(
+                genome=matched_genome,
+                asset=matched_asset,
+                asset_class=asset_data[CFG_ASSET_CLASS_KEY],
             )
         matched_gats.append(matched_gat)
         if not preserve_map_configs:
@@ -308,13 +313,6 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
         _LOGGER.info(
             f"Saving outputs to:{block_iter_repr([f'content: {genome_outfolder}', f'logs: {build_stats_dir}'])}"
         )
-        if args.docker:
-            # Set up some docker stuff
-            if args.volumes:
-                # TODO: is volumes list defined here?
-                volumes = volumes.append(genome_outfolder)
-            else:
-                volumes = genome_outfolder
 
         if not _writeable(genome_outfolder):
             _LOGGER.error(
@@ -322,11 +320,22 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
             )
             return False, rgc_map
 
-        pm = pypiper.PipelineManager(
-            name=PKG_NAME, outfolder=build_stats_dir, args=args, **pipeline_kwargs
+        pipeline_name = (
+            pipeline_kwargs["pipeline_name"]
+            if "pipeline_name" in pipeline_kwargs
+            else None
+            or f"{PKG_NAME}_build_{build_namespaces['asset']}_{build_namespaces['tag']}"
         )
-        tk = pypiper.NGSTk(pm=pm)
+        pm = pypiper.PipelineManager(
+            name=pipeline_name,
+            outfolder=build_stats_dir,
+            args=args,
+            **pipeline_kwargs,
+        )
         if args.docker:
+            # Set up some docker stuff
+            volumes = args.volumes or []
+            volumes.append(genome_outfolder)
             pm.get_container(recipe.container, volumes)
         _LOGGER.debug("Recipe: " + str(recipe))
 
@@ -349,8 +358,8 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
             namespaces=build_namespaces
         )
 
-        # create output directory
-        tk.make_dir(build_namespaces["asset_outfolder"])
+        # create output directory if it doesn't exist
+        make_sure_path_exists(build_namespaces["asset_outfolder"])
 
         target = os.path.join(
             build_stats_dir, TEMPLATE_TARGET.format(genome, asset, tag)
@@ -405,8 +414,10 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
                     data={
                         CFG_ASSET_PATH_KEY: asset,
                         CFG_ASSET_CHECKSUM_KEY: digest,
-                        "custom_properties": build_namespaces["custom_properties"],
-                        "date_built": strftime("%Y-%m-%d_%H:%M", gmtime()),
+                        CFG_ASSET_CUSTOM_PROPS_KEY: build_namespaces[
+                            "custom_properties"
+                        ],
+                        CFG_ASSET_DATE_KEY: strftime("%Y-%m-%d_%H:%M", gmtime()),
                     },
                 )
                 r.update_seek_keys(
@@ -450,13 +461,15 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
         assets = {}
         input_assets_dict = {}
         parent_assets = []
-        specified_assets, specified_assets = None, None
+        specified_asset_keys, specified_assets = None, None
         if args.assets is not None:
             parsed_parents_input = _parse_user_kw_input(args.assets)
-            specified_assets = list(parsed_parents_input.keys())
+            specified_asset_keys = list(parsed_parents_input.keys())
             specified_assets = list(parsed_parents_input.values())
-            _LOGGER.debug(f"Custom assets requested: {args.assets}")
-        if not specified_assets and isinstance(args.assets, list):
+            _LOGGER.info(
+                f"Custom assets requested: {block_iter_repr(args.assets, flatten=True)}"
+            )
+        if not specified_asset_keys and isinstance(args.assets, list):
             _LOGGER.warning(
                 "Specified parent assets format is invalid. Using defaults."
             )
@@ -464,19 +477,25 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
             req_asset_data = parse_registry_path(req_asset_name)
             # for each req asset see if non-default parents were requested
             if (
-                specified_assets is not None
-                and req_asset_data["asset"] in specified_assets
+                specified_asset_keys is not None
+                and req_asset_data["asset"] in specified_asset_keys
             ):
-                parent_data = parse_registry_path(
-                    specified_assets[specified_assets.index(req_asset_data["asset"])]
-                )
+                spec_idx = specified_asset_keys.index(req_asset_data["asset"])
+                parent_data = parse_registry_path(specified_assets[spec_idx])
                 g, a, t, s = (
                     parent_data["genome"],
                     parent_data["asset"],
                     parent_data["tag"]
                     or rgc.get_default_tag(genome, parent_data["asset"]),
-                    parent_data["seek_key"],
+                    # use default seek_key if not specified
+                    req_asset_data["seek_key"] or specified_asset_keys[spec_idx],
                 )
+                specified_asset_class = rgc.get_asset_class(g, a)
+                if specified_asset_keys[spec_idx] != specified_asset_class:
+                    raise RefgenconfError(
+                        f"Class of the specified asset ({specified_assets[spec_idx]} "
+                        f"-> {specified_asset_class}) class does not match the recipe requirement: {specified_asset_keys[spec_idx]}"
+                    )
             else:  # if no custom parents requested for the req asset, use default one
                 default = parse_registry_path(req_asset[DEFAULT])
                 g, a, t, s = (
@@ -487,9 +506,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
                 )
             try:
                 parent_assets.append(
-                    "{}/{}:{}".format(
-                        rgc.get_genome_alias_digest(g, fallback=True), a, t
-                    )
+                    f"{rgc.get_genome_alias_digest(g, fallback=True)}/{a}:{t}"
                 )
             except UndefinedAliasError as e:
                 _LOGGER.warning(f"'{g}' namespace has not been initialized yet")
