@@ -473,36 +473,34 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
             _LOGGER.warning(
                 "Specified parent assets format is invalid. Using defaults."
             )
-        for req_asset_name, req_asset in recipe.required_assets.items():
-            req_asset_data = parse_registry_path(req_asset_name)
+        for req_class_name, req_asset_map in recipe.required_assets.items():
             # for each req asset see if non-default parents were requested
             if (
                 specified_asset_keys is not None
-                and req_asset_data["asset"] in specified_asset_keys
+                and req_class_name in specified_asset_keys
             ):
-                spec_idx = specified_asset_keys.index(req_asset_data["asset"])
+                spec_idx = specified_asset_keys.index(req_class_name)
                 parent_data = parse_registry_path(specified_assets[spec_idx])
                 g, a, t, s = (
                     parent_data["genome"],
                     parent_data["asset"],
                     parent_data["tag"]
                     or rgc.get_default_tag(genome, parent_data["asset"]),
-                    # use default seek_key if not specified
-                    req_asset_data["seek_key"] or specified_asset_keys[spec_idx],
+                    specified_asset_keys[spec_idx],
                 )
-                specified_asset_class = rgc.get_asset_class(g, a)
-                if specified_asset_keys[spec_idx] != specified_asset_class:
-                    raise RefgenconfError(
-                        f"Class of the specified asset ({specified_assets[spec_idx]} "
-                        f"-> {specified_asset_class}) class does not match the recipe requirement: {specified_asset_keys[spec_idx]}"
-                    )
             else:  # if no custom parents requested for the req asset, use default one
-                default = parse_registry_path(req_asset[DEFAULT])
+                default = parse_registry_path(req_asset_map[DEFAULT])
                 g, a, t, s = (
                     genome,
                     default["asset"],
-                    rgc.get_default_tag(genome, default["asset"]),
-                    req_asset_data["seek_key"],
+                    default["tag"] or rgc.get_default_tag(genome, default["asset"]),
+                    default["seek_key"],
+                )
+            effective_asset_class = rgc.get_asset_class(g, a)
+            if req_class_name != effective_asset_class:
+                raise RefgenconfError(
+                    f"Class of the input asset ({g}/{a}:{t}) does not match the recipe input class requirement: "
+                    f"{effective_asset_class} != {req_class_name}"
                 )
             try:
                 parent_assets.append(
@@ -522,8 +520,8 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
                 else:
                     raise
             try:
-                assets[req_asset_name] = _seek(rgc, g, a, t, s)
-                input_assets_dict[req_asset_name] = parent_assets[0]
+                assets[req_class_name] = _seek(rgc, g, a, t, s)
+                input_assets_dict[req_class_name] = parent_assets[0]
             except (
                 MissingAssetError,
                 MissingGenomeError,
