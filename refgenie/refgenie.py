@@ -434,29 +434,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
 
     for single_asset in asset_list:
         asset = single_asset["asset"]
-
-        def _get_recipe_def_src(recipe_def_src):
-            """
-            Return the recipe definition source for the given input.
-            The input can be either a URL, absolute file path or just a recipe name.
-            """
-            if recipe_def_src is None:
-                recipe_def_src = asset
-            return (
-                recipe_def_src
-                if is_url(recipe_def_src)
-                else os.path.join(
-                    rgc.recipe_dir, TEMPLATE_RECIPE_YAML.format(recipe_def_src)
-                )
-            )
-
-        recipe_definition_src = _get_recipe_def_src(recipe_source)
-        _LOGGER.info(f"Using recipe definition from: {recipe_definition_src}")
-        recipe = recipe_factory(
-            recipe_definition_file=recipe_definition_src,
-            asset_class_definition_file_dir=rgc.asset_class_dir,
-        )
-
+        recipe = rgc.get_recipe(recipe_name=recipe_source or asset)
         # handle user-requested parents for the required assets
         assets = {}
         input_assets_dict = {}
