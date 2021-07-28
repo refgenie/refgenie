@@ -369,11 +369,20 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
         try:
             # run build command
             signal.signal(signal.SIGINT, _handle_sigint(gat))
-            pm.run(command_list_populated, target, container=pm.container)
+            return_code = pm.run(
+                command_list_populated,
+                target,
+                container=pm.container,
+                default_return_code=None,
+            )
         except pypiper.exceptions.SubprocessError:
             _LOGGER.error(f"Asset '{genome}/{asset}:{tag}' build failed")
             return False, rgc_map
         else:
+            if return_code is None:
+                # if no commands were run, stop the pipeline and return
+                pm.stop_pipeline()
+                return None, rgc_map
             # save build recipe to the JSON-formatted file
             recipe_file_path = os.path.join(
                 build_stats_dir, TEMPLATE_RECIPE_JSON.format(asset, tag)
@@ -434,7 +443,8 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
 
     for single_asset in asset_list:
         asset = single_asset["asset"]
-        recipe = rgc.get_recipe(recipe_name=recipe_source or asset)
+        recipe_source = recipe_source or asset
+        recipe = rgc.get_recipe(recipe_name=recipe_source)
         # handle user-requested parents for the required assets
         assets = {}
         input_assets_dict = {}
@@ -606,15 +616,17 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
         map_gencfg = os.path.join(build_stats_dir, BUILD_MAP_CFG)
 
         _LOGGER.info(
-            f"Building '{genome}/{asset}:{tag}' using '{recipe_source or asset}' recipe"
+            f"Building '{genome}/{asset}:{tag}' using '{recipe_source}' recipe"
         )
-
         is_built, rgc_map = _build_asset(
             build_namespaces,
             recipe,
             ori_genome,
             pipeline_kwargs,
         )
+        if is_built is None:
+            _LOGGER.info("No commands were executed")
+            return True
         if not is_built:
             log_path = os.path.abspath(
                 os.path.join(
@@ -622,7 +634,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
                     asset,
                     tag,
                     BUILD_STATS_DIR,
-                    ORI_LOG_NAME,
+                    ORI_LOG_NAME_REGEX,
                 )
             )
             _LOGGER.info(
