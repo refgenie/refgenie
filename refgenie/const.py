@@ -25,6 +25,8 @@ UNSUBSCRIBE_CMD = "unsubscribe"
 ALIAS_CMD = "alias"
 COMPARE_CMD = "compare"
 UPGRADE_CMD = "upgrade"
+RECIPE_CMD = "recipe"
+ASSET_CLASS_CMD = "asset_class"
 
 GENOME_ONLY_REQUIRED = [REMOVE_CMD, GETSEQ_CMD]
 
@@ -59,6 +61,8 @@ SUBPARSER_MESSAGES = {
     UPGRADE_CMD: "Upgrade config. This will alter the files on disk.",
     POPULATE_CMD: "Populate registry paths with local paths.",
     POPULATE_REMOTE_CMD: "Populate registry paths with remote paths.",
+    RECIPE_CMD: "Interact with recipes.",
+    ASSET_CLASS_CMD: "Interact with asset classes.",
 }
 
 
@@ -70,4 +74,34 @@ ALIAS_SUBPARSER_MESSAGES = {
     ALIAS_REMOVE_CMD: "Remove aliases.",
     ALIAS_SET_CMD: "Set aliases.",
     ALIAS_GET_CMD: "Get aliases.",
+}
+
+RECIPE_SHOW_CMD = "show"
+RECIPE_ADD_CMD = "add"
+RECIPE_REMOVE_CMD = "remove"
+RECIPE_PULL_CMD = "pull"
+RECIPE_LIST_CMD = "list"
+RECIPE_REQS_CMD = "requirements"
+
+RECIPE_SUBPARSER_MESSAGES = {
+    RECIPE_REMOVE_CMD: "Remove recipes.",
+    RECIPE_SHOW_CMD: "Show recipes.",
+    RECIPE_ADD_CMD: "Add recipes.",
+    RECIPE_PULL_CMD: "Pull recipes.",
+    RECIPE_LIST_CMD: "List recipes.",
+    RECIPE_REQS_CMD: "Show recipe requirements.",
+}
+
+ASSET_CLASS_SHOW_CMD = "show"
+ASSET_CLASS_ADD_CMD = "add"
+ASSET_CLASS_REMOVE_CMD = "remove"
+ASSET_CLASS_PULL_CMD = "pull"
+ASSET_CLASS_LIST_CMD = "list"
+
+ASSET_CLASS_SUBPARSER_MESSAGES = {
+    ASSET_CLASS_REMOVE_CMD: "Remove asset classes.",
+    ASSET_CLASS_SHOW_CMD: "Show asset classes.",
+    ASSET_CLASS_ADD_CMD: "Add asset classes.",
+    ASSET_CLASS_PULL_CMD: "Pull asset classes.",
+    ASSET_CLASS_LIST_CMD: "List asset classes.",
 }

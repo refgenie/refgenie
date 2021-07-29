@@ -231,6 +231,83 @@ def build_argparser():
         help="Provide a recipe to use.",
     )
 
+    recipe_subparser = sps[RECIPE_CMD]
+    recipe_subsubparsers = recipe_subparser.add_subparsers(dest="subcommand")
+
+    recipe_sps = {}
+    for cmd, desc in RECIPE_SUBPARSER_MESSAGES.items():
+        recipe_sps[cmd] = add_subparser(cmd, desc, recipe_subsubparsers)
+        recipe_sps[cmd].add_argument(
+            "-c",
+            "--genome-config",
+            required=False,
+            dest="genome_config",
+            metavar="C",
+            help="Path to local genome configuration file. Optional if {} environment variable is set.".format(
+                ", ".join(CFG_ENV_VARS)
+            ),
+        )
+        recipe_sps[cmd].add_argument(
+            "--skip-read-lock",
+            required=False,
+            action="store_true",
+            help="Whether the config file should not be locked for reading",
+        )
+
+        if cmd not in [RECIPE_LIST_CMD, RECIPE_ADD_CMD]:
+            recipe_sps[cmd].add_argument(
+                "recipe_name",
+                metavar="RECIPE_NAME",
+                type=str,
+                nargs=1,
+                help="Recipe name to perform the action on.",
+            )
+        if cmd == RECIPE_ADD_CMD:
+            recipe_sps[cmd].add_argument(
+                "--path",
+                required=True,
+                type=str,
+                help="Path to the recipe to add.",
+            )
+
+    asset_class_subparser = sps[ASSET_CLASS_CMD]
+    asset_class_subsubparsers = asset_class_subparser.add_subparsers(dest="subcommand")
+
+    asset_class_sps = {}
+    for cmd, desc in ASSET_CLASS_SUBPARSER_MESSAGES.items():
+        asset_class_sps[cmd] = add_subparser(cmd, desc, asset_class_subsubparsers)
+        asset_class_sps[cmd].add_argument(
+            "-c",
+            "--genome-config",
+            required=False,
+            dest="genome_config",
+            metavar="C",
+            help="Path to local genome configuration file. Optional if {} environment variable is set.".format(
+                ", ".join(CFG_ENV_VARS)
+            ),
+        )
+        asset_class_sps[cmd].add_argument(
+            "--skip-read-lock",
+            required=False,
+            action="store_true",
+            help="Whether the config file should not be locked for reading",
+        )
+        if cmd not in [ASSET_CLASS_LIST_CMD, ASSET_CLASS_ADD_CMD]:
+            asset_class_sps[cmd].add_argument(
+                "asset_class_name",
+                metavar="ASSET_CLASS_NAME",
+                type=str,
+                nargs=1,
+                help="Asset class name to perform the action on.",
+            )
+        if cmd == ASSET_CLASS_ADD_CMD:
+            asset_class_sps[cmd].add_argument(
+                "--path",
+                required=True,
+                type=str,
+                help="Path to the asset class to add.",
+            )
+
     alias_subparser = sps[ALIAS_CMD]
     alias_subsubparsers = alias_subparser.add_subparsers(dest="subcommand")
 
