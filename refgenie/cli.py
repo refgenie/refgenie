@@ -13,6 +13,7 @@ from refgenconf import (
 )
 from refgenconf import __version__ as rgc_version
 from refgenconf import select_genome_config, upgrade_config
+from refgenconf.asset import asset_class_factory
 from refgenconf.const import TEMPLATE_RECIPE_YAML
 from refgenconf.helpers import block_iter_repr
 from refgenconf.recipe import recipe_factory
@@ -456,6 +457,40 @@ def main():
             )
         pop_fun = partial(rgc.populater, remote_class=args.remote_class)
         process_populate(pop_fun=pop_fun, file_path=args.file)
+
+    elif args.command == RECIPE_CMD:
+        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        if args.subcommand == RECIPE_LIST_CMD:
+            print(", ".join(rgc.list_recipes()))
+        elif args.subcommand == RECIPE_ADD_CMD:
+            rgc.add_recipe(recipe_path=args.path, force=args.force)
+        else:
+            # these require a recipe name to be specified
+            rn = args.recipe_name[0]
+            recipe = recipe_factory(rgc.get_recipe_file(rn))
+            if args.subcommand == RECIPE_SHOW_CMD:
+                print(recipe)
+            if args.subcommand == RECIPE_REMOVE_CMD:
+                rgc.remove_recipe(recipe_name=rn, force=args.force)
+            if args.subcommand == RECIPE_PULL_CMD:
+                raise NotImplementedError("Not yet implemented")
+
+    elif args.command == ASSET_CLASS_CMD:
+        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        if args.subcommand == ASSET_CLASS_LIST_CMD:
+            print(", ".join(rgc.list_recipes()))
+        elif args.subcommand == ASSET_CLASS_ADD_CMD:
+            rgc.add_asset_class(asset_class_path=args.path, force=args.force)
+        else:
+            # these require a recipe name to be specified
+            acn = args.asset_class_name[0]
+            asset_class = asset_class_factory(rgc.get_asset_class_file(acn))
+            if args.subcommand == ASSET_CLASS_SHOW_CMD:
+                print(asset_class)
+            if args.subcommand == ASSET_CLASS_REMOVE_CMD:
+                rgc.remove_asset_class(asset_class_name=acn, force=args.force)
+            if args.subcommand == ASSET_CLASS_PULL_CMD:
+                raise NotImplementedError("Not yet implemented")
 
 
 def process_populate(pop_fun, file_path=None):

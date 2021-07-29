@@ -270,6 +270,15 @@ def build_argparser():
                 help="Path to the recipe to add.",
             )
 
+        if cmd in [RECIPE_ADD_CMD, RECIPE_REMOVE_CMD]:
+            recipe_sps[cmd].add_argument(
+                "-f",
+                "--force",
+                required=False,
+                action="store_true",
+                help="Whether to force the action on the recipe.",
+            )
+
     asset_class_subparser = sps[ASSET_CLASS_CMD]
     asset_class_subsubparsers = asset_class_subparser.add_subparsers(dest="subcommand")
 
@@ -306,6 +315,15 @@ def build_argparser():
                 required=True,
                 type=str,
                 help="Path to the asset class to add.",
+            )
+
+        if cmd in [ASSET_CLASS_ADD_CMD, ASSET_CLASS_REMOVE_CMD]:
+            asset_class_sps[cmd].add_argument(
+                "-f",
+                "--force",
+                required=False,
+                action="store_true",
+                help="Whether to force the action on the asset class.",
             )
 
     alias_subparser = sps[ALIAS_CMD]
