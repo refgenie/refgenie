@@ -20,6 +20,7 @@ from refgenconf.recipe import recipe_factory
 from requests.exceptions import MissingSchema
 from rich.console import Console
 from rich.prompt import Confirm
+from yaml import dump
 
 from ._version import __version__
 from .argparser import build_argparser
@@ -480,7 +481,7 @@ def main():
             rn = args.recipe_name[0]
             recipe = recipe_factory(rgc.get_recipe_file(rn))
             if args.subcommand == RECIPE_SHOW_CMD:
-                print(recipe)
+                print(dump(recipe.to_dict()))
             if args.subcommand == RECIPE_REMOVE_CMD:
                 rgc.remove_recipe(recipe_name=rn, force=args.force)
             if args.subcommand == RECIPE_PULL_CMD:
@@ -497,7 +498,7 @@ def main():
             acn = args.asset_class_name[0]
             asset_class = asset_class_factory(rgc.get_asset_class_file(acn))
             if args.subcommand == ASSET_CLASS_SHOW_CMD:
-                print(asset_class)
+                print(dump(asset_class.to_dict()))
             if args.subcommand == ASSET_CLASS_REMOVE_CMD:
                 rgc.remove_asset_class(asset_class_name=acn, force=args.force)
             if args.subcommand == ASSET_CLASS_PULL_CMD:
