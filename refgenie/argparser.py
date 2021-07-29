@@ -80,32 +80,50 @@ def build_argparser():
         "-s",
         "--genome-server",
         nargs="+",
+        metavar="S",
         default=[DEFAULT_SERVER],
         help=f"URL(s) to use for the {CFG_SERVERS_KEY} attribute in config file. Default: {DEFAULT_SERVER}.",
     )
     sps[INIT_CMD].add_argument(
         "-f",
         "--genome-folder",
+        metavar="F",
         help="Absolute path to parent folder refgenie-managed assets.",
+    )
+    sps[INIT_CMD].add_argument(
+        "-r",
+        "--recipe-folder",
+        metavar="F",
+        help="Absolute path to parent folder refgenie-managed recipes.",
+    )
+    sps[INIT_CMD].add_argument(
+        "-l",
+        "--asset-class-folder",
+        metavar="F",
+        help="Absolute path to parent folder refgenie-managed asset classes.",
     )
     sps[INIT_CMD].add_argument(
         "-a",
         "--genome-archive-folder",
+        metavar="F",
         help="Absolute path to parent archive folder refgenie-managed assets; used by refgenieserver.",
     )
     sps[INIT_CMD].add_argument(
         "-b",
         "--genome-archive-config",
+        metavar="C",
         help="Absolute path to desired archive config file; used by refgenieserver.",
     )
     sps[INIT_CMD].add_argument(
         "-u",
         "--remote-url-base",
+        metavar="U",
         help="URL to use as an alternative, remote archive location; used by refgenieserver.",
     )
     sps[INIT_CMD].add_argument(
         "-j",
         "--settings-json",
+        metavar="J",
         help="Absolute path to a JSON file with the key "
         "value pairs to inialize the configuration "
         "file with. Overwritten by itemized specifications.",

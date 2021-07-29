@@ -113,12 +113,19 @@ def main():
 
     if args.command == INIT_CMD:
         _LOGGER.debug("Initializing refgenie genome configuration")
+        default_genome_folder = os.path.dirname(os.path.abspath(gencfg))
         entries = OrderedDict(
             {
                 CFG_VERSION_KEY: REQ_CFG_VERSION,
-                CFG_FOLDER_KEY: os.path.dirname(os.path.abspath(gencfg)),
+                CFG_FOLDER_KEY: default_genome_folder,
+                CFG_RECIPE_FOLDER_KEY: os.path.join(default_genome_folder, "recipes"),
+                CFG_ASSET_CLASS_FOLDER_KEY: os.path.join(
+                    default_genome_folder, "asset_classes"
+                ),
                 CFG_SERVERS_KEY: args.genome_server or [DEFAULT_SERVER],
                 CFG_GENOMES_KEY: None,
+                CFG_RECIPES_KEY: None,
+                CFG_ASSET_CLASSES_KEY: None,
             }
         )
         if args.settings_json:
@@ -134,6 +141,10 @@ def main():
                 )
         if args.genome_folder:
             entries.update({CFG_FOLDER_KEY: args.genome_folder})
+        if args.recipe_folder:
+            entries.update({CFG_RECIPE_FOLDER_KEY: args.recipe_folder})
+        if args.asset_class_folder:
+            entries.update({CFG_ASSET_CLASS_FOLDER_KEY: args.asset_class_folder})
         if args.genome_archive_folder:
             entries.update({CFG_ARCHIVE_KEY: args.genome_archive_folder})
         if args.genome_archive_config:
