@@ -484,7 +484,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
                     default["tag"] or rgc.get_default_tag(genome, default["asset"]),
                     default["seek_key"],
                 )
-            effective_asset_class = rgc.get_asset_class(g, a)
+            effective_asset_class = rgc.get_assets_asset_class(g, a)
             if req_class_name != effective_asset_class:
                 raise RefgenconfError(
                     f"Class of the input asset ({g}/{a}:{t}) does not match the recipe input class requirement: "
