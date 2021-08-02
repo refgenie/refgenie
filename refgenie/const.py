@@ -81,6 +81,7 @@ RECIPE_ADD_CMD = "add"
 RECIPE_REMOVE_CMD = "remove"
 RECIPE_PULL_CMD = "pull"
 RECIPE_LIST_CMD = "list"
+RECIPE_LIST_REMOTE_CMD = "listr"
 RECIPE_REQS_CMD = "requirements"
 
 RECIPE_SUBPARSER_MESSAGES = {
@@ -89,6 +90,7 @@ RECIPE_SUBPARSER_MESSAGES = {
     RECIPE_ADD_CMD: "Add recipes.",
     RECIPE_PULL_CMD: "Pull recipes.",
     RECIPE_LIST_CMD: "List recipes.",
+    RECIPE_LIST_REMOTE_CMD: "List recipes on a remote server.",
     RECIPE_REQS_CMD: "Show recipe requirements.",
 }
 
@@ -97,6 +99,7 @@ ASSET_CLASS_ADD_CMD = "add"
 ASSET_CLASS_REMOVE_CMD = "remove"
 ASSET_CLASS_PULL_CMD = "pull"
 ASSET_CLASS_LIST_CMD = "list"
+ASSET_CLASS_LIST_REMOTE_CMD = "listr"
 
 ASSET_CLASS_SUBPARSER_MESSAGES = {
     ASSET_CLASS_REMOVE_CMD: "Remove asset classes.",
@@ -104,4 +107,5 @@ ASSET_CLASS_SUBPARSER_MESSAGES = {
     ASSET_CLASS_ADD_CMD: "Add asset classes.",
     ASSET_CLASS_PULL_CMD: "Pull asset classes.",
     ASSET_CLASS_LIST_CMD: "List asset classes.",
+    ASSET_CLASS_LIST_REMOTE_CMD: "List asset classes on a remote server.",
 }

@@ -20,6 +20,7 @@ from refgenconf.recipe import recipe_factory
 from requests.exceptions import MissingSchema
 from rich.console import Console
 from rich.prompt import Confirm
+from rich.syntax import Syntax
 from yaml import dump
 
 from ._version import __version__
@@ -27,7 +28,7 @@ from .argparser import build_argparser
 from .asset_build_packages import *
 from .const import *
 from .exceptions import *
-from .helpers import _raise_missing_recipe_error, _single_folder_writeable
+from .helpers import _single_folder_writeable
 from .refgenie import (
     _parse_user_kw_input,
     _skip_lock,
@@ -334,10 +335,7 @@ def main():
                     )
                 )
         else:
-            if args.recipes:
-                print(", ".join(sorted(list(asset_build_packages.keys()))))
-            else:
-                console.print(rgc.get_asset_table(genomes=args.genome))
+            console.print(rgc.get_asset_table(genomes=args.genome))
 
     elif args.command == GETSEQ_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
@@ -473,24 +471,78 @@ def main():
     elif args.command == RECIPE_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
         if args.subcommand == RECIPE_LIST_CMD:
-            print(", ".join(rgc.list_recipes()))
+            console = Console()
+            console.print(rgc.get_recipe_table())
+        elif args.subcommand == RECIPE_LIST_REMOTE_CMD:
+            if args.genome_server is not None:
+                rgc.subscribe(
+                    urls=args.genome_server, reset=not args.append_server, no_write=True
+                )
+            num_servers = 0
+            bad_servers = []
+            for server_url in rgc[CFG_SERVERS_KEY]:
+                num_servers += 1
+                try:
+                    table = rgc.get_recipe_table(server_url=server_url)
+                except (DownloadJsonError, ConnectionError, MissingSchema):
+                    bad_servers.append(server_url)
+                    continue
+                else:
+                    console = Console()
+                    console.print(table)
+            if num_servers >= len(rgc[CFG_SERVERS_KEY]) and bad_servers:
+                _LOGGER.error(
+                    f"Could not list recipes from the following servers: {block_iter_repr(bad_servers)}"
+                )
         elif args.subcommand == RECIPE_ADD_CMD:
             rgc.add_recipe(recipe_path=args.path, force=args.force)
         else:
             # these require a recipe name to be specified
             rn = args.recipe_name[0]
-            recipe = recipe_factory(rgc.get_recipe_file(rn))
+            recipe = recipe_factory(
+                recipe_definition_file=rgc.get_recipe_file(rn),
+                asset_class_definition_file_dir=rgc.asset_class_dir,
+            )
             if args.subcommand == RECIPE_SHOW_CMD:
-                print(dump(recipe.to_dict()))
+                recipe_yaml = dump(recipe.to_dict())
+                console = Console()
+                syntax = Syntax(
+                    recipe_yaml, "yaml", theme="ansi_light", background_color="default"
+                )
+                console.print(syntax)
+                if args.requirements:
+                    console.print(recipe.requirements_table)
             if args.subcommand == RECIPE_REMOVE_CMD:
                 rgc.remove_recipe(recipe_name=rn, force=args.force)
             if args.subcommand == RECIPE_PULL_CMD:
-                raise NotImplementedError("Not yet implemented")
+                rgc.pull_recipe(recipe_name=rn)
 
     elif args.command == ASSET_CLASS_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
         if args.subcommand == ASSET_CLASS_LIST_CMD:
-            print(", ".join(rgc.list_recipes()))
+            console = Console()
+            console.print(rgc.get_asset_class_table())
+        elif args.subcommand == ASSET_CLASS_LIST_REMOTE_CMD:
+            if args.genome_server is not None:
+                rgc.subscribe(
+                    urls=args.genome_server, reset=not args.append_server, no_write=True
+                )
+            num_servers = 0
+            bad_servers = []
+            for server_url in rgc[CFG_SERVERS_KEY]:
+                num_servers += 1
+                try:
+                    table = rgc.get_asset_class_table(server_url=server_url)
+                except (DownloadJsonError, ConnectionError, MissingSchema):
+                    bad_servers.append(server_url)
+                    continue
+                else:
+                    console = Console()
+                    console.print(table)
+            if num_servers >= len(rgc[CFG_SERVERS_KEY]) and bad_servers:
+                _LOGGER.error(
+                    f"Could not list asset classes from the following servers: {block_iter_repr(bad_servers)}"
+                )
         elif args.subcommand == ASSET_CLASS_ADD_CMD:
             rgc.add_asset_class(asset_class_path=args.path, force=args.force)
         else:
@@ -498,11 +550,19 @@ def main():
             acn = args.asset_class_name[0]
             asset_class = asset_class_factory(rgc.get_asset_class_file(acn))
             if args.subcommand == ASSET_CLASS_SHOW_CMD:
-                print(dump(asset_class.to_dict()))
+                asset_class_yaml = dump(asset_class.to_dict())
+                syntax = Syntax(
+                    asset_class_yaml,
+                    "yaml",
+                    theme="default",
+                    background_color="default",
+                )
+                console = Console()
+                console.print(syntax)
             if args.subcommand == ASSET_CLASS_REMOVE_CMD:
                 rgc.remove_asset_class(asset_class_name=acn, force=args.force)
             if args.subcommand == ASSET_CLASS_PULL_CMD:
-                raise NotImplementedError("Not yet implemented")
+                rgc.pull_asset_class(asset_class_name=acn)
 
 
 def process_populate(pop_fun, file_path=None):

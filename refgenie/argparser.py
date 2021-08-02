@@ -272,7 +272,7 @@ def build_argparser():
             help="Whether the config file should not be locked for reading",
         )
 
-        if cmd not in [RECIPE_LIST_CMD, RECIPE_ADD_CMD]:
+        if cmd not in [RECIPE_LIST_CMD, RECIPE_ADD_CMD, RECIPE_LIST_REMOTE_CMD]:
             recipe_sps[cmd].add_argument(
                 "recipe_name",
                 metavar="RECIPE_NAME",
@@ -297,6 +297,31 @@ def build_argparser():
                 help="Whether to force the action on the recipe.",
             )
 
+        if cmd == RECIPE_SHOW_CMD:
+            recipe_sps[cmd].add_argument(
+                "-r",
+                "--requirements",
+                required=False,
+                action="store_true",
+                help="Whether to show the recipe requirements.",
+            )
+
+        if cmd == RECIPE_LIST_REMOTE_CMD:
+            recipe_sps[cmd].add_argument(
+                "-s",
+                "--genome-server",
+                nargs="+",
+                required=False,
+                metavar="S",
+                help="One or more URLs to use. This information will not persist in the genome config file.",
+            )
+            recipe_sps[cmd].add_argument(
+                "-p",
+                "--append-server",
+                action="store_true",
+                help="Whether the provided servers should be appended to the list.",
+            )
+
     asset_class_subparser = sps[ASSET_CLASS_CMD]
     asset_class_subsubparsers = asset_class_subparser.add_subparsers(dest="subcommand")
 
@@ -319,7 +344,11 @@ def build_argparser():
             action="store_true",
             help="Whether the config file should not be locked for reading",
         )
-        if cmd not in [ASSET_CLASS_LIST_CMD, ASSET_CLASS_ADD_CMD]:
+        if cmd not in [
+            ASSET_CLASS_LIST_CMD,
+            ASSET_CLASS_ADD_CMD,
+            ASSET_CLASS_LIST_REMOTE_CMD,
+        ]:
             asset_class_sps[cmd].add_argument(
                 "asset_class_name",
                 metavar="ASSET_CLASS_NAME",
@@ -342,6 +371,22 @@ def build_argparser():
                 required=False,
                 action="store_true",
                 help="Whether to force the action on the asset class.",
+            )
+
+        if cmd == ASSET_CLASS_LIST_REMOTE_CMD:
+            asset_class_sps[cmd].add_argument(
+                "-s",
+                "--genome-server",
+                nargs="+",
+                required=False,
+                metavar="S",
+                help="One or more URLs to use. This information will not persist in the genome config file.",
+            )
+            asset_class_sps[cmd].add_argument(
+                "-p",
+                "--append-server",
+                action="store_true",
+                help="Whether the provided servers should be appended to the list.",
             )
 
     alias_subparser = sps[ALIAS_CMD]
