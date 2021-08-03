@@ -461,8 +461,9 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
             _LOGGER.warning(
                 "Specified parent assets format is invalid. Using defaults."
             )
-        for req_class_name, req_asset_map in recipe.required_assets.items():
+        for recipe_name, req_asset_map in recipe.required_assets.items():
             # for each req asset see if non-default parents were requested
+            req_class_name = req_asset_map["asset_class"]
             if (
                 specified_asset_keys is not None
                 and req_class_name in specified_asset_keys
@@ -487,7 +488,8 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
             effective_asset_class = rgc.get_assets_asset_class(g, a)
             if req_class_name != effective_asset_class:
                 raise RefgenconfError(
-                    f"Class of the input asset ({g}/{a}:{t}) does not match the recipe input class requirement: "
+                    f"Class of the input asset ({g}/{a}:{t}) does not match the"
+                    f"'{recipe_name}' recipe input class requirement: "
                     f"{effective_asset_class} != {req_class_name}"
                 )
             try:
