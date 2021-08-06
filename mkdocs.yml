@@ -6,57 +6,58 @@ pypi_name: refgenie
 
 nav:
   - Getting Started:
-    - Introduction: README.md
-    - Demo videos: demo_videos.md
-    - Overview: overview.md
-    - Install and configure: install.md
-    - Basic tutorial: tutorial.md
-    - Citing refgenie: manuscripts.md
+      - Introduction: README.md
+      - Demo videos: demo_videos.md
+      - Overview: overview.md
+      - Install and configure: install.md
+      - Basic tutorial: tutorial.md
+      - Citing refgenie: manuscripts.md
   - How-to guides:
-    - Refer to assets: asset_registry_paths.md
-    - Download pre-built assets: pull.md
-    - Build assets: build.md
-    - Add custom assets: custom_assets.md
-    - Retrieve paths to assets: seek.md
-    - Use asset tags: tag.md
-    - Use aliases: aliases.md
-    - Populate refgenie paths: populate.md
-    - Compare genomes: compare.md
-    - Run my own asset server: refgenieserver.md
-    - Use refgenie from Python: refgenconf.md
-    - Use refgenie in your pipeline: code_snippets.md
-    - Use refgenie on the cloud: remote.md
-    - Use refgenie with iGenomes: igenomes.md
-    - Upgrade from config 0.3 to 0.4: config_upgrade_03_to_04.md
+      - Refer to assets: asset_registry_paths.md
+      - Download pre-built assets: pull.md
+      - Build assets: build.md
+      - Add custom assets: custom_assets.md
+      - Retrieve paths to assets: seek.md
+      - Use asset tags: tag.md
+      - Use aliases: aliases.md
+      - Populate refgenie paths: populate.md
+      - Compare genomes: compare.md
+      - Run my own asset server: refgenieserver.md
+      - Use refgenie from Python: refgenconf.md
+      - Use refgenie in your pipeline: code_snippets.md
+      - Use refgenie on the cloud: remote.md
+      - Use refgenie with iGenomes: igenomes.md
+      - Upgrade from config 0.3 to 0.4: config_upgrade_03_to_04.md
   - Reference:
-    - Genome configuration file: genome_config.md
-    - Glossary: glossary.md
-    - Buildable assets: available_assets.md
-    - Usage: usage.md
-    - Python API: autodoc_build/refgenconf.md
-    - FAQ: faq.md
-    - Support: https://github.com/databio/refgenie/issues
-    - Contributing: contributing.md
-    - Changelog: changelog.md
+      - Genome configuration file: genome_config.md
+      - Recipe: recipe_specification.md
+      - Asset class: asset_class_specification.md
+      - Glossary: glossary.md
+      - Buildable assets: available_assets.md
+      - Usage: usage.md
+      - Python API: autodoc_build/refgenconf.md
+      - FAQ: faq.md
+      - Support: https://github.com/databio/refgenie/issues
+      - Contributing: contributing.md
+      - Changelog: changelog.md
 
 theme: databio
 
 plugins:
-- databio:
-    jupyter_source: "docs_jupyter"
-    jupyter_build: "docs_jupyter/build"
-    autodoc_build: "docs/autodoc_build"
-    autodoc_package: "refgenconf"
-    no_top_level: true
-- search
-
+  - databio:
+      jupyter_source: "docs_jupyter"
+      jupyter_build: "docs_jupyter/build"
+      autodoc_build: "docs/autodoc_build"
+      autodoc_package: "refgenconf"
+      no_top_level: true
+  - search
 
 navbar:
   left:
-  - text: Refgenomes server
-    icon: fa-server
-    href: servers
+    - text: Refgenomes server
+      icon: fa-server
+      href: servers
   right:
-  - text: Manuscripts
-    icon: fa-file-alt
-    href: manuscripts
+    - text: Manuscripts
+      icon: fa-file-alt
+      href: manuscripts
