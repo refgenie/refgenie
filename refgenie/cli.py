@@ -5,6 +5,7 @@ from collections import OrderedDict
 from functools import partial
 
 import logmuse
+from attmap.attmap import AttMap
 from refgenconf import (
     DownloadJsonError,
     MissingAssetError,
@@ -13,7 +14,7 @@ from refgenconf import (
 )
 from refgenconf import __version__ as rgc_version
 from refgenconf import select_genome_config, upgrade_config
-from refgenconf.asset import asset_class_factory
+from refgenconf.asset_class import asset_class_factory
 from refgenconf.const import TEMPLATE_RECIPE_YAML
 from refgenconf.helpers import block_iter_repr
 from refgenconf.recipe import recipe_factory
@@ -546,10 +547,10 @@ def main():
         elif args.subcommand == ASSET_CLASS_ADD_CMD:
             rgc.add_asset_class(asset_class_path=args.path, force=args.force)
         else:
-            # these require a recipe name to be specified
+            # these require a asset_class name to be specified
             acn = args.asset_class_name[0]
-            asset_class = asset_class_factory(rgc.get_asset_class_file(acn))
             if args.subcommand == ASSET_CLASS_SHOW_CMD:
+                asset_class, _ = asset_class_factory(rgc.get_asset_class_file(acn))
                 asset_class_yaml = dump(asset_class.to_dict())
                 syntax = Syntax(
                     asset_class_yaml,
@@ -562,7 +563,7 @@ def main():
             if args.subcommand == ASSET_CLASS_REMOVE_CMD:
                 rgc.remove_asset_class(asset_class_name=acn, force=args.force)
             if args.subcommand == ASSET_CLASS_PULL_CMD:
-                rgc.pull_asset_class(asset_class_name=acn)
+                rgc.pull_asset_class(asset_class_name=acn, force=args.force)
 
 
 def process_populate(pop_fun, file_path=None):

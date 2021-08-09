@@ -288,6 +288,15 @@ def build_argparser():
                 help="Path to the recipe to add.",
             )
 
+        if cmd == RECIPE_PULL_CMD:
+            recipe_sps[cmd].add_argument(
+                "-f",
+                "--force",
+                required=False,
+                action="store_true",
+                help="Whether to force the pull even if the recipe exists.",
+            )
+
         if cmd in [RECIPE_ADD_CMD, RECIPE_REMOVE_CMD]:
             recipe_sps[cmd].add_argument(
                 "-f",
@@ -371,6 +380,15 @@ def build_argparser():
                 required=False,
                 action="store_true",
                 help="Whether to force the action on the asset class.",
+            )
+
+        if cmd == ASSET_CLASS_PULL_CMD:
+            asset_class_sps[cmd].add_argument(
+                "-f",
+                "--force",
+                required=False,
+                action="store_true",
+                help="Whether to force the pull even if the asset class exists.",
             )
 
         if cmd == ASSET_CLASS_LIST_REMOTE_CMD:

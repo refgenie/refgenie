@@ -73,7 +73,7 @@ def make_sure_path_exists(path):
         a code indicating a cause other than pre-existence.
     """
     try:
-        os.makedirs(path)
+        os.makedirs(path, exist_ok=True)
     except OSError as exception:
         if exception.errno != errno.EEXIST:
             raise

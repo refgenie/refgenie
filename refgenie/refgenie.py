@@ -580,8 +580,8 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
                 genome = rgc.get_genome_alias_digest(genome, fallback=True)
             except UndefinedAliasError:
                 _LOGGER.error(
-                    "Genome '{}' has not been initialized yet; "
-                    "no key found for this alias".format(genome)
+                    f"Genome '{genome}' has not been initialized yet; "
+                    "no key found for this alias"
                 )
                 return False
 
@@ -640,11 +640,11 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
                 )
             )
             _LOGGER.info(
-                "'{}/{}:{}' was not added to the config, but directory has been left in place. "
-                "See the log file for details: {}".format(genome, asset, tag, log_path)
+                f"'{genome}/{asset}:{tag}' was not added to the config, but directory has been left in place. "
+                f"See the log file for details: {log_path}"
             )
             return False
-        _LOGGER.info("Finished building '{}' asset".format(asset))
+        _LOGGER.info(f"Finished building '{asset}' asset")
         with rgc_map as r:
             # update asset relationships
             r.update_relatives_assets(genome, asset, tag, parent_assets)  # adds parents
@@ -655,21 +655,17 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
                     parsed_parent["genome"],
                     parsed_parent["asset"],
                     parsed_parent["tag"],
-                    ["{}/{}:{}".format(genome, asset, tag)],
+                    [f"{genome}/{asset}:{tag}"],
                     True,
                 )
             if args.genome_description is not None:
                 _LOGGER.debug(
-                    "adding genome ({}) description: '{}'".format(
-                        genome, args.genome_description
-                    )
+                    f"Adding genome ({genome}) description: '{args.genome_description}'"
                 )
                 r.update_genomes(genome, {CFG_GENOME_DESC_KEY: args.genome_description})
             if args.tag_description is not None:
                 _LOGGER.debug(
-                    "adding tag ({}/{}:{}) description: '{}'".format(
-                        genome, asset, tag, args.tag_description
-                    )
+                    f"Adding tag ({genome}/{asset}:{tag}) description: '{args.tag_description}'"
                 )
                 r.update_tags(
                     genome,

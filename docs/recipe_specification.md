@@ -6,7 +6,7 @@
 
 # Overview
 
-Before we start, let's take a moment to understand what a recipe is and what it's components are. Additionally, we'll look at an example recipe that will be used throughout this document.
+Before we start, let's take a moment to understand what a recipe is and what it's components are. Additionally, we'll look at an example recipe definition that will be used throughout this document.
 
 ## Overview of recipe components
 
@@ -14,7 +14,7 @@ A refgenie recipe my consist of the following keys:
 
 - `name`: (REQUIRED) - A string identifying the recipe.
 - `version`: (REQUIRED) - A string identifying the version of the recipe.
-- `description`: (REQUIRED) - A string describing the recipe, which may include a breif description of the outputs of the recipe, software used to generate the outputs, and other relevant information.
+- `description`: (REQUIRED) - A string describing the recipe, which may include a brief description of the outputs of the recipe, software used to generate the outputs, and other relevant information.
 - `inputs`: (REQUIRED) - A nested dictionary of input parameters for the recipe, which include: `files`, `assets` and `params`.
 - `command_template_list`: (REQUIRED) - A list of strings, each of which is a [Jinja2](https://jinja.palletsprojects.com/en/3.0.x/) command template for a particular command.
 - `default_tag`: (REQUIRED) - A string, which is the default tag to use for the asset produced by the recipe. The string can be a Jinja2 template, which will be evaluated to determine the tag.
