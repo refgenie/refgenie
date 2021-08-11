@@ -415,8 +415,7 @@ def main():
                 for a in args.aliases:
                     print(rgc.get_genome_alias_digest(alias=a))
                 return
-            console = Console()
-            console.print(rgc.genome_aliases_table)
+            Console().print(rgc.genome_aliases_table)
 
         if args.subcommand == ALIAS_SET_CMD:
             rgc.set_genome_alias(
@@ -448,8 +447,7 @@ def main():
             table.add_column("Indication")
             for code in codes:
                 table.add_row(str(code), FLAGS[code])
-            console = Console()
-            console.print(table)
+            Console().print(table)
 
     elif args.command == UPGRADE_CMD:
         upgrade_config(
@@ -472,8 +470,7 @@ def main():
     elif args.command == RECIPE_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
         if args.subcommand == RECIPE_LIST_CMD:
-            console = Console()
-            console.print(rgc.get_recipe_table())
+            Console().print(rgc.get_recipe_table())
         elif args.subcommand == RECIPE_LIST_REMOTE_CMD:
             if args.genome_server is not None:
                 rgc.subscribe(
@@ -489,14 +486,13 @@ def main():
                     bad_servers.append(server_url)
                     continue
                 else:
-                    console = Console()
-                    console.print(table)
+                    Console().print(table)
             if num_servers >= len(rgc[CFG_SERVERS_KEY]) and bad_servers:
                 _LOGGER.error(
                     f"Could not list recipes from the following servers: {block_iter_repr(bad_servers)}"
                 )
         elif args.subcommand == RECIPE_ADD_CMD:
-            rgc.add_recipe(recipe_path=args.path, force=args.force)
+            rgc.add_recipe(recipe_path=args.source, force=args.force)
         else:
             # these require a recipe name to be specified
             rn = args.recipe_name[0]
@@ -505,24 +501,57 @@ def main():
                 asset_class_definition_file_dir=rgc.asset_class_dir,
             )
             if args.subcommand == RECIPE_SHOW_CMD:
-                recipe_yaml = dump(recipe.to_dict())
-                console = Console()
-                syntax = Syntax(
-                    recipe_yaml, "yaml", theme="ansi_light", background_color="default"
+                Console().print(
+                    Syntax(
+                        dump(recipe.to_dict()),
+                        "yaml",
+                        theme="ansi_light",
+                        background_color="default",
+                    )
                 )
-                console.print(syntax)
                 if args.requirements:
                     console.print(recipe.requirements_table)
             if args.subcommand == RECIPE_REMOVE_CMD:
                 rgc.remove_recipe(recipe_name=rn, force=args.force)
             if args.subcommand == RECIPE_PULL_CMD:
-                rgc.pull_recipe(recipe_name=rn)
+                rgc.pull_recipe(recipe_name=rn, force=args.force)
+            if args.subcommand == RECIPE_TEST_CMD:
+                console = Console()
+                from .test_recipe import test_recipe
 
+                rgc = RefGenConf(
+                    filepath=gencfg, writable=False, skip_read_lock=skip_read_lock
+                )
+                temp_rgc = RefGenConf(
+                    entries={
+                        "genome_folder": os.path.join(rgc.data_dir, "_recipe_test")
+                    }
+                )
+                temp_rgc.make_writable(
+                    filepath=os.path.join(
+                        rgc.data_dir, "_recipe_test", "temp_genome_config.yaml"
+                    )
+                )
+                recipe = rgc.get_recipe(args.recipe_name[0])
+                is_valid, message = test_recipe(
+                    rgc=temp_rgc,
+                    recipe=recipe,
+                    test_inputs=recipe.get_test_inputs(rgc=rgc),
+                    alias="test_genome",
+                    args=args,
+                )
+
+                if not is_valid:
+                    console.print(
+                        f"Recipe '{recipe.name}' is invalid :x:\nReason: {message}"
+                    )
+                else:
+                    console.print(f"Recipe '{recipe.name}' is valid :tada:")
+                return
     elif args.command == ASSET_CLASS_CMD:
         rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
         if args.subcommand == ASSET_CLASS_LIST_CMD:
-            console = Console()
-            console.print(rgc.get_asset_class_table())
+            Console().print(rgc.get_asset_class_table())
         elif args.subcommand == ASSET_CLASS_LIST_REMOTE_CMD:
             if args.genome_server is not None:
                 rgc.subscribe(
@@ -538,28 +567,26 @@ def main():
                     bad_servers.append(server_url)
                     continue
                 else:
-                    console = Console()
-                    console.print(table)
+                    Console().print(table)
             if num_servers >= len(rgc[CFG_SERVERS_KEY]) and bad_servers:
                 _LOGGER.error(
                     f"Could not list asset classes from the following servers: {block_iter_repr(bad_servers)}"
                 )
         elif args.subcommand == ASSET_CLASS_ADD_CMD:
-            rgc.add_asset_class(asset_class_path=args.path, force=args.force)
+            rgc.add_asset_class(asset_class_path=args.source, force=args.force)
         else:
             # these require a asset_class name to be specified
             acn = args.asset_class_name[0]
             if args.subcommand == ASSET_CLASS_SHOW_CMD:
                 asset_class, _ = asset_class_factory(rgc.get_asset_class_file(acn))
-                asset_class_yaml = dump(asset_class.to_dict())
-                syntax = Syntax(
-                    asset_class_yaml,
-                    "yaml",
-                    theme="default",
-                    background_color="default",
+                Console().print(
+                    Syntax(
+                        dump(asset_class.to_dict()),
+                        "yaml",
+                        theme="default",
+                        background_color="default",
+                    )
                 )
-                console = Console()
-                console.print(syntax)
             if args.subcommand == ASSET_CLASS_REMOVE_CMD:
                 rgc.remove_asset_class(asset_class_name=acn, force=args.force)
             if args.subcommand == ASSET_CLASS_PULL_CMD:

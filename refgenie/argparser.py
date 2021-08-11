@@ -282,10 +282,10 @@ def build_argparser():
             )
         if cmd == RECIPE_ADD_CMD:
             recipe_sps[cmd].add_argument(
-                "--path",
+                "--source",
                 required=True,
                 type=str,
-                help="Path to the recipe to add.",
+                help="Path/URL to the recipe to add.",
             )
 
         if cmd == RECIPE_PULL_CMD:
@@ -367,10 +367,10 @@ def build_argparser():
             )
         if cmd == ASSET_CLASS_ADD_CMD:
             asset_class_sps[cmd].add_argument(
-                "--path",
+                "--source",
                 required=True,
                 type=str,
-                help="Path to the asset class to add.",
+                help="Path/URL to the asset class to add.",
             )
 
         if cmd in [ASSET_CLASS_ADD_CMD, ASSET_CLASS_REMOVE_CMD]:

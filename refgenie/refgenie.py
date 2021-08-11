@@ -11,7 +11,7 @@ from time import gmtime, strftime
 import attmap
 import pypiper
 from refgenconf import RefGenConf, get_dir_digest, recipe_factory
-from refgenconf.const import CFG_ASSET_TAGS_KEY, TEMPLATE_RECIPE_JSON
+from refgenconf.const import CFG_ASSET_TAGS_KEY, CFG_CHECKSUM_KEY, TEMPLATE_RECIPE_JSON
 from refgenconf.exceptions import (
     MissingAssetError,
     MissingGenomeError,
@@ -20,9 +20,11 @@ from refgenconf.exceptions import (
     RefgenconfError,
 )
 from refgenconf.helpers import block_iter_repr
+from rich.console import Console
 from rich.progress import track
 from ubiquerg import is_url
 from ubiquerg import parse_registry_path as prp
+from ubiquerg.files import checksum
 from ubiquerg.system import is_writable
 from yacman import UndefinedAliasError
 
