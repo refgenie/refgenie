@@ -341,17 +341,6 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
             pm.get_container(recipe.container, volumes)
         _LOGGER.debug("Recipe: " + str(recipe))
 
-        inputs = {
-            "files": specified_files,
-            "params": specified_params,
-            "assets": input_assets_dict,
-        }
-        # save inputs to json file
-        inputs_file = rgc.get_recipe_inputs_path(genome, asset, tag)
-        with open(inputs_file, "w") as f:
-            json.dump(inputs, f, indent=4)
-        _LOGGER.debug(f"Using inputs: {inputs}\nInputs saved to: {inputs_file}")
-
         # create a bundle list to simplify calls below
         gat = [genome, asset, build_namespaces["tag"]]
 
@@ -385,6 +374,38 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
                 # if no commands were run, stop the pipeline and return
                 pm.stop_pipeline()
                 return None, rgc_map
+            # prepare inputs dict, calulate the checksums for files and assets
+            inputs = {
+                "files": {
+                    file_name: {
+                        "checksum": checksum(file_path),
+                        "path": file_path,
+                    }
+                    for file_name, file_path in specified_files.items()
+                }
+                if specified_files
+                else {},
+                "assets": {
+                    asset_name: {
+                        "checksum": rgc.id(
+                            genome=parse_registry_path(asset_path)["genome"],
+                            asset=parse_registry_path(asset_path)["asset"],
+                            tag=parse_registry_path(asset_path)["tag"],
+                        ),
+                        "path": asset_path,
+                    }
+                    for asset_name, asset_path in input_assets_dict.items()
+                }
+                if input_assets_dict
+                else {},
+                "params": specified_params,
+            }
+            # save inputs to json file
+            inputs_file = rgc.get_recipe_inputs_path(genome, asset, tag)
+            with open(inputs_file, "w") as f:
+                json.dump(inputs, f, indent=4)
+            _LOGGER.debug(f"Using inputs: {inputs}\nInputs saved to: {inputs_file}")
+
             # save build recipe to the JSON-formatted file
             recipe_file_path = os.path.join(
                 build_stats_dir, TEMPLATE_RECIPE_JSON.format(asset, tag)
