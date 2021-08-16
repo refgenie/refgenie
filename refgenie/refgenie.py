@@ -609,6 +609,16 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
                 return False
 
         genome_outfolder = os.path.join(rgc.data_dir, genome)
+        # resolve custom properties
+        custom_properties = {}
+        try:
+            custom_properties = recipe.resolve_custom_properties(use_docker=args.docker)
+        except Exception as e:
+            _LOGGER.error(
+                f"Error resolving custom properties for '{recipe.name}' recipe: {e}"
+            )
+        else:
+            _LOGGER.info(f"Resolved custom properties: {custom_properties}")
         # collect variables required to populate the command templates
         build_namespaces = attmap.AttMap(
             {
@@ -616,8 +626,8 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
                 "asset": asset,
                 "params": specified_params,
                 "files": specified_files,
-                "custom_properties": recipe.resolved_custom_properties,
                 "assets": assets,
+                "custom_properties": custom_properties,
             }
         )
         # determine tag; it's either forced or defined in the recipe or default
