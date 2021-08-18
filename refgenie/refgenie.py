@@ -32,9 +32,9 @@ from .asset_build_packages import *
 from .const import *
 from .helpers import (
     _parse_user_kw_input,
-    _raise_missing_recipe_error,
     _skip_lock,
     _writeable,
+    is_file_gzipped,
     make_sure_path_exists,
 )
 
@@ -536,8 +536,8 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
                 assets[req_class_name] = _seek(rgc, g, a, t, s)
                 input_assets_dict[req_class_name] = parent_assets[0]
             except (
-                MissingAssetError,
                 MissingGenomeError,
+                MissingAssetError,
                 MissingTagError,
                 MissingSeekKeyError,
             ) as e:
@@ -597,6 +597,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
                     fasta_path=specified_files["fasta"],
                     alias=ori_genome,
                     skip_alias_write=True,
+                    fasta_unzipped=not is_file_gzipped(specified_files["fasta"]),
                 )
         else:
             try:

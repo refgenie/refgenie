@@ -77,3 +77,14 @@ def make_sure_path_exists(path):
     except OSError as exception:
         if exception.errno != errno.EEXIST:
             raise
+
+
+def is_file_gzipped(path):
+    """
+    Check if a file is gzipped.
+
+    :param str path: Path to the file to check.
+    :return bool: True if the file is gzipped, False otherwise.
+    """
+    with open(path, "rb") as f:
+        return f.read(2) == b"\x1f\x8b"
