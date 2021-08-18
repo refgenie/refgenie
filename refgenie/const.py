@@ -83,6 +83,7 @@ RECIPE_PULL_CMD = "pull"
 RECIPE_LIST_CMD = "list"
 RECIPE_LIST_REMOTE_CMD = "listr"
 RECIPE_REQS_CMD = "requirements"
+RECIPE_TEST_CMD = "test"
 
 RECIPE_SUBPARSER_MESSAGES = {
     RECIPE_REMOVE_CMD: "Remove recipes.",
@@ -92,6 +93,7 @@ RECIPE_SUBPARSER_MESSAGES = {
     RECIPE_LIST_CMD: "List recipes.",
     RECIPE_LIST_REMOTE_CMD: "List recipes on a remote server.",
     RECIPE_REQS_CMD: "Show recipe requirements.",
+    RECIPE_TEST_CMD: "Test recipes.",
 }
 
 ASSET_CLASS_SHOW_CMD = "show"

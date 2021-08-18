@@ -297,6 +297,13 @@ def build_argparser():
                 help="Whether to force the pull even if the recipe exists.",
             )
 
+            recipe_sps[cmd].add_argument(
+                "--skip-asset-class",
+                required=False,
+                action="store_true",
+                help="Whether to skip asset class pull.",
+            )
+
         if cmd in [RECIPE_ADD_CMD, RECIPE_REMOVE_CMD]:
             recipe_sps[cmd].add_argument(
                 "-f",
@@ -313,6 +320,26 @@ def build_argparser():
                 required=False,
                 action="store_true",
                 help="Whether to show the recipe requirements.",
+            )
+            recipe_sps[cmd].add_argument(
+                "--remote",
+                required=False,
+                action="store_true",
+                help="Whether to show the remote recipe.",
+            )
+            recipe_sps[cmd].add_argument(
+                "-s",
+                "--genome-server",
+                nargs="+",
+                required=False,
+                metavar="S",
+                help="One or more URLs to use. This information will not persist in the genome config file.",
+            )
+            recipe_sps[cmd].add_argument(
+                "-p",
+                "--append-server",
+                action="store_true",
+                help="Whether the provided servers should be appended to the list.",
             )
 
         if cmd == RECIPE_LIST_REMOTE_CMD:
@@ -392,6 +419,28 @@ def build_argparser():
             )
 
         if cmd == ASSET_CLASS_LIST_REMOTE_CMD:
+            asset_class_sps[cmd].add_argument(
+                "-s",
+                "--genome-server",
+                nargs="+",
+                required=False,
+                metavar="S",
+                help="One or more URLs to use. This information will not persist in the genome config file.",
+            )
+            asset_class_sps[cmd].add_argument(
+                "-p",
+                "--append-server",
+                action="store_true",
+                help="Whether the provided servers should be appended to the list.",
+            )
+        if cmd == ASSET_CLASS_SHOW_CMD:
+            asset_class_sps[cmd].add_argument(
+                "-r",
+                "--remote",
+                required=False,
+                action="store_true",
+                help="Whether to show the remote asset class.",
+            )
             asset_class_sps[cmd].add_argument(
                 "-s",
                 "--genome-server",

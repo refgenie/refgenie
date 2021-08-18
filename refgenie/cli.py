@@ -15,9 +15,18 @@ from refgenconf import (
 from refgenconf import __version__ as rgc_version
 from refgenconf import select_genome_config, upgrade_config
 from refgenconf.asset_class import asset_class_factory
-from refgenconf.const import TEMPLATE_RECIPE_YAML
-from refgenconf.helpers import block_iter_repr
+from refgenconf.const import (
+    API_ID_ASSET_CLASS_CONTENTS,
+    API_ID_RECIPE_CONTENTS,
+    API_VERSION,
+    CFG_SERVERS_KEY,
+    PRIVATE_API,
+    TEMPLATE_RECIPE_YAML,
+)
+from refgenconf.exceptions import RefgenconfError
+from refgenconf.helpers import block_iter_repr, send_data_request
 from refgenconf.recipe import recipe_factory
+from refgenconf.refgenconf import construct_request_url
 from requests.exceptions import MissingSchema
 from rich.console import Console
 from rich.prompt import Confirm
@@ -496,12 +505,27 @@ def main():
         else:
             # these require a recipe name to be specified
             rn = args.recipe_name[0]
-            recipe = recipe_factory(
-                recipe_definition_file=rgc.get_recipe_file(rn),
-                asset_class_definition_file_dir=rgc.asset_class_dir,
-            )
             if args.subcommand == RECIPE_SHOW_CMD:
-                Console().print(
+                console = Console()
+                if args.remote:
+                    recipe_contents = _get_contents_from_server(
+                        rgc=rgc,
+                        genome_server=args.genome_server,
+                        append_server=args.append_server,
+                        api_id=API_ID_RECIPE_CONTENTS,
+                        format_kwargs=dict(recipe=rn),
+                    )
+                    rf_kwargs = dict(recipe_definition_dict=recipe_contents)
+                else:
+                    rf_kwargs = dict(recipe_definition_file=rgc.get_recipe_file(rn))
+                rf_kwargs.update(
+                    {"asset_class_definition_file_dir": rgc.asset_class_dir}
+                )
+                recipe = recipe_factory(**rf_kwargs)
+                if recipe is None:
+                    sys.exit(1)
+                console = Console()
+                console.print(
                     Syntax(
                         dump(recipe.to_dict()),
                         "yaml",
@@ -514,7 +538,7 @@ def main():
             if args.subcommand == RECIPE_REMOVE_CMD:
                 rgc.remove_recipe(recipe_name=rn, force=args.force)
             if args.subcommand == RECIPE_PULL_CMD:
-                rgc.pull_recipe(recipe_name=rn, force=args.force)
+                rgc.pull_recipe(recipe_name=rn, force=args.force, pull_asset_class=True)
             if args.subcommand == RECIPE_TEST_CMD:
                 console = Console()
                 from .test_recipe import test_recipe
@@ -578,10 +602,23 @@ def main():
             # these require a asset_class name to be specified
             acn = args.asset_class_name[0]
             if args.subcommand == ASSET_CLASS_SHOW_CMD:
-                asset_class, _ = asset_class_factory(rgc.get_asset_class_file(acn))
-                Console().print(
+                console = Console()
+                if args.remote:
+                    asset_class_contents = _get_contents_from_server(
+                        rgc=rgc,
+                        genome_server=args.genome_server,
+                        append_server=args.append_server,
+                        api_id=API_ID_ASSET_CLASS_CONTENTS,
+                        format_kwargs=dict(asset_class=acn),
+                    )
+                    acf_kwargs = dict(asset_class_definition_dict=asset_class_contents)
+                else:
+                    acf_kwargs = dict(
+                        asset_class_definition_file=rgc.get_asset_class_file(acn)
+                    )
+                console.print(
                     Syntax(
-                        dump(asset_class.to_dict()),
+                        dump(asset_class_factory(**acf_kwargs)[0].to_dict()),
                         "yaml",
                         theme="default",
                         background_color="default",
@@ -591,6 +628,48 @@ def main():
                 rgc.remove_asset_class(asset_class_name=acn, force=args.force)
             if args.subcommand == ASSET_CLASS_PULL_CMD:
                 rgc.pull_asset_class(asset_class_name=acn, force=args.force)
+
+
+def _get_contents_from_server(rgc, format_kwargs, genome_server, append_server, api_id):
+    """
+    Get the contents of an asset_class or recipe from a genome server.
+
+    :param rgc: RefGenConf object
+    :param format_kwargs: dict of kwargs to pass to the format function
+    :param genome_server: URL of the genome server
+    :param append_server: whether to append the genome server to the URL
+    :param api_id: API ID of the asset_class or recipe endpoint
+    :return: dict of the asset_class or recipe
+    """
+    if genome_server is not None:
+        rgc.subscribe(
+            urls=genome_server,
+            reset=not append_server,
+            no_write=True,
+        )
+    num_servers = 0
+    bad_servers = []
+    contents = {}
+    for server_url in rgc[CFG_SERVERS_KEY]:
+        num_servers += 1
+        try:
+            url = construct_request_url(
+                server_url,
+                api_id,
+                API_VERSION,
+            )
+            if url is None:
+                raise DownloadJsonError({"detail": "Incompatible API"})
+            contents = send_data_request(url=url.format(**format_kwargs))
+        except (DownloadJsonError, ConnectionError, MissingSchema) as e:
+            bad_servers.append(f"{server_url} ({e})")
+            continue
+    if num_servers >= len(rgc[CFG_SERVERS_KEY]) and bad_servers:
+        err_msg = f"Could not retrieve data from the following servers: {block_iter_repr(bad_servers)}"
+        if not contents:
+            raise RefgenconfError(err_msg)
+        _LOGGER.error(err_msg)
+    return contents
 
 
 def process_populate(pop_fun, file_path=None):
@@ -631,46 +710,3 @@ def perm_check_x(file_to_check, message_tag="genome directory"):
         _LOGGER.error("Insufficient permissions to write to {}: ".format(file_to_check))
         return False
     return True
-
-
-def _make_asset_build_reqs(asset):
-    """
-    Prepare requirements and inputs lists and display it
-
-    :params str asset: name of the asset
-    """
-
-    def _format_reqs(req_list):
-        """
-
-        :param list[dict] req_list:
-        :return list[str]:
-        """
-        templ = "\t{} ({})"
-        return [
-            templ.format(req[KEY], req[DESC])
-            if DEFAULT not in req
-            else (templ + "; default: {}").format(req[KEY], req[DESC], req[DEFAULT])
-            for req in req_list
-        ]
-
-    reqs_list = []
-    if asset_build_packages[asset][REQ_FILES]:
-        reqs_list.append(
-            "- files:\n{}".format(
-                "\n".join(_format_reqs(asset_build_packages[asset][REQ_FILES]))
-            )
-        )
-    if asset_build_packages[asset][REQ_ASSETS]:
-        reqs_list.append(
-            "- assets:\n{}".format(
-                "\n".join(_format_reqs(asset_build_packages[asset][REQ_ASSETS]))
-            )
-        )
-    if asset_build_packages[asset][REQ_PARAMS]:
-        reqs_list.append(
-            "- params:\n{}".format(
-                "\n".join(_format_reqs(asset_build_packages[asset][REQ_PARAMS]))
-            )
-        )
-    _LOGGER.info("\n".join(reqs_list))
