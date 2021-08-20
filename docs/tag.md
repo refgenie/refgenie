@@ -1,9 +1,18 @@
 # Tagging assets
 
 ## Why to tag assets?
+
 It is natural in a research environment to use various flavors of the reference genome related resources that may result from different versions of the software used to create them. And this is what inspired the introduction of assets tagging concept in `refgenie`.
 
-Tag can be **any text or number**, so it is well suited to contain software version information or even a concise description, like `0.4.1` or `new_build_strategy`.
+### Tag character whitelist
+
+Tag can be **any text or number** composed of characters safe for Uniform Resource Identifiers (URIs) as per [RFC3986](https://www.ietf.org/rfc/rfc3986.txt), so it is well suited to contain software version information or even a concise description, like `0.4.1` or `new_build_strategy`.
+
+RFC3986 section 2.3. _Unreserved Characters_: characters that are allowed in a URI include uppercase and lowercase letters, decimal digits, hyphen, period, underscore, and tilde.
+
+```
+"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~"
+```
 
 ## How to tag assets?
 
@@ -19,7 +28,9 @@ refgenie init -c $REFGENIE
 refgenie pull hg38/fasta
 refgenie build hg38/bowtie2_index:2.3.5.1
 ```
+
 or
+
 ```console
 refgenie build hg38/bowtie2_index:2.3.3.1
 ```
@@ -28,12 +39,11 @@ refgenie build hg38/bowtie2_index:2.3.3.1
 
 If you already built an asset, you can add a tag to it. Here, we'll add a tag for `most_recent` to our bowtie2 index asset:
 
-
 ```console
 refgenie tag hg38/bowtie2_index:2.3.5.1 --tag most_recent
 ```
 
-Now you could retrieve this asset using either of those tags. In other words, *assets can have more than 1 tag*.
+Now you could retrieve this asset using either of those tags. In other words, _assets can have more than 1 tag_.
 
 ### No tagging at all
 
