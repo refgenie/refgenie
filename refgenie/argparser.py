@@ -2,6 +2,7 @@ from argparse import HelpFormatter
 
 import pypiper
 from refgenconf import __version__ as rgc_version
+from refgenconf.const import CFG_ENV_VARS, CFG_SERVERS_KEY, DEFAULT_SERVER
 from ubiquerg import VersionInHelpParser
 
 from ._version import __version__
@@ -340,6 +341,14 @@ def build_argparser():
                 "--append-server",
                 action="store_true",
                 help="Whether the provided servers should be appended to the list.",
+            )
+
+        if cmd == RECIPE_TEST_CMD:
+            recipe_sps[cmd].add_argument(
+                "-d",
+                "--docker",
+                action="store_true",
+                help="Run all commands in the refgenie docker container.",
             )
 
         if cmd == RECIPE_LIST_REMOTE_CMD:

@@ -19,8 +19,19 @@ from refgenconf.const import (
     API_ID_ASSET_CLASS_CONTENTS,
     API_ID_RECIPE_CONTENTS,
     API_VERSION,
+    CFG_ARCHIVE_CONFIG_KEY,
+    CFG_ARCHIVE_KEY,
+    CFG_ASSET_CLASS_FOLDER_KEY,
+    CFG_ASSET_CLASSES_KEY,
+    CFG_FOLDER_KEY,
+    CFG_GENOMES_KEY,
+    CFG_RECIPE_FOLDER_KEY,
+    CFG_RECIPES_KEY,
     CFG_SERVERS_KEY,
+    CFG_VERSION_KEY,
+    DEFAULT_SERVER,
     PRIVATE_API,
+    REQ_CFG_VERSION,
     TEMPLATE_RECIPE_YAML,
 )
 from refgenconf.exceptions import RefgenconfError
@@ -560,6 +571,7 @@ def main():
                 is_valid, message = test_recipe(
                     rgc=temp_rgc,
                     recipe=recipe,
+                    asset_class=rgc.get_asset_class(recipe.output_class.name),
                     test_inputs=recipe.get_test_inputs(rgc=rgc),
                     alias="test_genome",
                     args=args,

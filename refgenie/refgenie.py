@@ -10,8 +10,31 @@ from time import gmtime, strftime
 
 import attmap
 import pypiper
-from refgenconf import RefGenConf, get_dir_digest, recipe_factory
-from refgenconf.const import CFG_ASSET_TAGS_KEY, CFG_CHECKSUM_KEY, TEMPLATE_RECIPE_JSON
+from refgenconf import RefGenConf, get_dir_digest
+from refgenconf.const import (
+    BUILD_MAP_CFG,
+    BUILD_STATS_DIR,
+    CFG_ALIASES_KEY,
+    CFG_ASSET_CHECKSUM_KEY,
+    CFG_ASSET_CHILDREN_KEY,
+    CFG_ASSET_CLASS_KEY,
+    CFG_ASSET_CUSTOM_PROPS_KEY,
+    CFG_ASSET_DATE_KEY,
+    CFG_ASSET_DEFAULT_TAG_KEY,
+    CFG_ASSET_DESC_KEY,
+    CFG_ASSET_PARENTS_KEY,
+    CFG_ASSET_PATH_KEY,
+    CFG_ASSET_TAGS_KEY,
+    CFG_ASSETS_KEY,
+    CFG_GENOME_DESC_KEY,
+    CFG_GENOMES_KEY,
+    CFG_TAG_DESC_KEY,
+    LOCKED_BUILD_MAP_CFG,
+    ORI_LOG_NAME_REGEX,
+    TAG_NAME_BANNED_CHARS,
+    TEMPLATE_RECIPE_JSON,
+    TEMPLATE_TARGET,
+)
 from refgenconf.exceptions import (
     MissingAssetError,
     MissingGenomeError,
@@ -22,7 +45,6 @@ from refgenconf.exceptions import (
 from refgenconf.helpers import block_iter_repr
 from rich.console import Console
 from rich.progress import track
-from ubiquerg import is_url
 from ubiquerg import parse_registry_path as prp
 from ubiquerg.files import checksum
 from ubiquerg.system import is_writable
@@ -178,9 +200,9 @@ def refgenie_build_reduce(gencfg, preserve_map_configs=False):
             raise Exception(
                 f"Genome directory name does not match genome in the map config: {matched_genome} != {genome_digest}"
             )
-        asset_data = tag_data = map_rgc[CFG_GENOMES_KEY][matched_genome][
-            CFG_ASSETS_KEY
-        ][matched_asset]
+        asset_data = map_rgc[CFG_GENOMES_KEY][matched_genome][CFG_ASSETS_KEY][
+            matched_asset
+        ]
         tag_data = asset_data[CFG_ASSET_TAGS_KEY][matched_tag]
         default_tag_in_map = asset_data[CFG_ASSET_DEFAULT_TAG_KEY]
         try:
@@ -233,6 +255,9 @@ def refgenie_build_reduce(gencfg, preserve_map_configs=False):
                 asset=matched_asset,
                 asset_class=asset_data[CFG_ASSET_CLASS_KEY],
             )
+            r[CFG_GENOMES_KEY][matched_genome][CFG_ASSETS_KEY][matched_asset][
+                CFG_ASSET_DESC_KEY
+            ] = asset_data[CFG_ASSET_DESC_KEY]
         matched_gats.append(matched_gat)
         if not preserve_map_configs:
             os.remove(rgc_map_filepath)
