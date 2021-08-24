@@ -19,8 +19,8 @@ A refgenie recipe my consist of the following keys:
 - `command_template_list`: (REQUIRED) - A list of strings, each of which is a [Jinja2](https://jinja.palletsprojects.com/en/3.0.x/) command template for a particular command.
 - `default_tag`: (REQUIRED) - A string, which is the default tag to use for the asset produced by the recipe. The string can be a Jinja2 template, which will be evaluated to determine the tag.
 - `container`: (RECOMMENDED) - a container registry path, which can be used to run the recipe.
-<!-- - `test`: (RECOMMENDED) - A dictionary of test parameters. -->
 - `custom_properties`: (OPTIONAL) - A dictionary of custom properties of the asset produced by the recipe.
+- `test`: (RECOMMENDED) - A dictionary of test settings.
 
 ## Example recipe
 

@@ -31,7 +31,6 @@ from refgenconf.const import (
     CFG_TAG_DESC_KEY,
     LOCKED_BUILD_MAP_CFG,
     ORI_LOG_NAME_REGEX,
-    TAG_NAME_CHAR_WHITELIST,
     TEMPLATE_RECIPE_JSON,
     TEMPLATE_TARGET,
 )
@@ -42,7 +41,7 @@ from refgenconf.exceptions import (
     MissingTagError,
     RefgenconfError,
 )
-from refgenconf.helpers import block_iter_repr
+from refgenconf.helpers import block_iter_repr, validate_tag
 from rich.console import Console
 from rich.progress import track
 from ubiquerg import parse_registry_path as prp
@@ -657,16 +656,11 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
             }
         )
         # determine tag; it's either forced or defined in the recipe or default
-        tag = (
+        tag = validate_tag(
             single_asset["tag"]
             or recipe.resolve_default_tag(namespaces=build_namespaces)
             or rgc.get_default_tag(genome, asset, use_existing=False)
         )
-
-        if not all([c in TAG_NAME_CHAR_WHITELIST for c in tag]):
-            raise ValueError(
-                f"The tag name can consist only of these characters: {TAG_NAME_CHAR_WHITELIST}"
-            )
 
         build_namespaces["tag"] = tag
         build_namespaces.update(
