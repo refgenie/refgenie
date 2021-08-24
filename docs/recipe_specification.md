@@ -116,6 +116,7 @@ Within the `command_template_list`, you have access to variables from several so
 - files (`Dict[str, Dict[str, str]]`): The _resolved_ input files.
 - assets (`Dict[str, Dict[str, str]]`): The _resolved_ input assets.
 - custom*properties (`Dict[str, Dict[str, Any]]`): The \_resolved* custom properties.
+- test (`Dict[str, Dict[str, str]]`): The recipe testing setup.
 
 This is a dict-like representation of an example namespaces object available to the command templates:
 
@@ -135,6 +136,7 @@ namespaces = {
     "custom_properties": {
         "version": "0.0.1",
         "settings": "a=1, b=2"
+    }
 }
 ```
 
@@ -146,3 +148,23 @@ The `default_tag` value can be a string or a Jinja2 template, that combines the 
 ## custom_properties
 
 This section is an object where keys are the names of custom properties and values are shell commands that will be executed in the asset building requirement. This is a way to record any computing enviroment specific information, like the version of a software package used to produce the asset. Please note that the build namespaces are not available to the commands in this section.
+
+## test
+
+This section is used to specify the test setup for the recipe. The test setup is a dictionary of test parameters, which include:
+
+- `genome`: the genome digest to use for derived asset tests. Any input assets will be sourced from this genome namespace.
+- `inputs`: the input files to the recipes. The values must be URLs to remote files, so that the recipes are portable. The keys in this section must match the keys in the `inputs.files` section or the recipe. Currently `inputs.params` and `inputs.assets` cannot be changed, default values from the top-level `inputs` section are used.
+- `outputs`: the outputs to test the results of running the recipe commands against. There are two ways the outputs can be tested: 1) by comparing the file checksum (`checksum`), or 2) by comparing the value (`value`). The keys in this section must match the `seek_keys` in the asset class definition.
+
+```yaml
+test:
+  genome: 6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905
+  inputs:
+    fasta: /path/to/genome/fasta.fa
+  outputs:
+    html:
+      md5sum: d41d8cd98f00b204e9800998ecf8427e
+      # OR
+      value: 100
+```

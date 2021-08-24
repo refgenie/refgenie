@@ -31,7 +31,7 @@ from refgenconf.const import (
     CFG_TAG_DESC_KEY,
     LOCKED_BUILD_MAP_CFG,
     ORI_LOG_NAME_REGEX,
-    TAG_NAME_BANNED_CHARS,
+    TAG_NAME_CHAR_WHITELIST,
     TEMPLATE_RECIPE_JSON,
     TEMPLATE_TARGET,
 )
@@ -662,10 +662,12 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
             or recipe.resolve_default_tag(namespaces=build_namespaces)
             or rgc.get_default_tag(genome, asset, use_existing=False)
         )
-        if any([c in tag for c in TAG_NAME_BANNED_CHARS]):
+
+        if not all([c in TAG_NAME_CHAR_WHITELIST for c in tag]):
             raise ValueError(
-                f"The tag name can't consist of characters: {TAG_NAME_BANNED_CHARS}"
+                f"The tag name can consist only of these characters: {TAG_NAME_CHAR_WHITELIST}"
             )
+
         build_namespaces["tag"] = tag
         build_namespaces.update(
             {"asset_outfolder": os.path.join(genome_outfolder, asset, tag)}
@@ -739,7 +741,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
             os.rename(locked_map_gencfg, map_gencfg)
             _LOGGER.info(
                 f"Asset metadata saved in '{map_gencfg}'. "
-                f"To make the asset accessible globally run 'refgenie build --reduce'"
+                f"To make the asset accessible globally run: refgenie build --reduce"
             )
 
         return True
