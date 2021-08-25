@@ -130,7 +130,7 @@ def build_argparser():
         "file with. Overwritten by itemized specifications.",
     )
     sps[BUILD_CMD] = pypiper.add_pypiper_args(
-        sps[BUILD_CMD], groups=None, args=["recover", "config", "new-start"]
+        sps[BUILD_CMD], groups=None, args=["recover", "new-start"]
     )
 
     # Add any arguments specific to subcommands.

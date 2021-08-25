@@ -356,6 +356,8 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
             name=pipeline_name,
             outfolder=build_stats_dir,
             args=args,
+            recover=args.recover,
+            new_start=args.new_start,
             **pipeline_kwargs,
         )
         if args.docker:
