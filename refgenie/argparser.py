@@ -647,6 +647,19 @@ def build_argparser():
         action="store_true",
         help="Remove the genome alias if last asset for that genome is removed.",
     )
+
+    sps[PULL_CMD].add_argument(
+        "--skip-asset-class",
+        action="store_true",
+        help="Skip pulling asset class definition for the pulled asset.",
+    )
+
+    sps[PULL_CMD].add_argument(
+        "--skip-recipe",
+        action="store_true",
+        help="Skip pulling recipe for the pulled asset.",
+    )
+
     force_group = sps[PULL_CMD].add_argument_group(
         title="Prompt handling",
         description="These flags configure the pull prompt responses.",

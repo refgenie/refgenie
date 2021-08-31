@@ -327,6 +327,16 @@ def main():
                 force_large=force_large,
                 size_cutoff=args.size_cutoff,
             )
+            if not args.skip_asset_class:
+                ac_to_pull = rgc.get_assets_asset_class(a["genome"], a["asset"])
+                _LOGGER.info(
+                    f"The '{a['asset']}' asset is of '{ac_to_pull}'' class. "
+                    f"Pulling the asset class definition from the server."
+                )
+                rgc.pull_asset_class(asset_class_name=ac_to_pull, force=force)
+
+            if not args.skip_recipe:
+                rgc.pull_recipe(recipe_name=a["asset"], force=force)
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
         rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
