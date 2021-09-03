@@ -450,7 +450,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
             _LOGGER.info(f"Asset digest: {digest}")
             # add updates to config file
             with rgc_map as r:
-                if asset == "fasta":
+                if recipe.output_class.name == "fasta":
                     r.update_genomes(
                         genome, data={CFG_ALIASES_KEY: [alias]}, force_digest=genome
                     )
