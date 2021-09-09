@@ -482,7 +482,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
                     *gat,
                     force_digest=genome,
                     keys={
-                        k: v.format(**build_namespaces)
+                        k: v["value"].format(**build_namespaces)
                         for k, v in recipe.output_class.seek_keys.items()
                     },
                 )
@@ -739,7 +739,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
                 f"Asset metadata saved in '{map_gencfg}'. "
                 f"To make the asset accessible globally run: refgenie build --reduce"
             )
-
+        rgc_map.validate_asset_seek_keys(genome=genome, asset=asset, tag=tag)
         return True
 
 
