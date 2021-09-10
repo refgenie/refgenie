@@ -53,6 +53,8 @@ custom_properties:
 default_tag: "{{custom_properties.version}}"
 ```
 
+This GitHub repository contains numerous recipe examples: [refgenie/recipes](https://github.com/refgenie/recipes/tree/master/recipes)
+
 # Details of the recipe components
 
 Let's describe the components of the recipe specification in more detail, i.e. their internal structure and the impact they have on the asset build process.

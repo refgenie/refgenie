@@ -19,7 +19,7 @@ A refgenie asset class my consist of the following keys:
 - `name`: (REQUIRED) - A string identifying the asset class.
 - `version`: (REQUIRED) - A string identifying the version of the asset class.
 - `description`: (REQUIRED) - A string describing the asset class, which may include a brief description of the files the class requires and other relevant information.
-- `seek_keys`: (REQUIRED) - A dictionary of key names and template values that will be used to seek for files in the asset based on the asset class definition.
+- `seek_keys`: (REQUIRED) - A dictionary of key names and seek key schemas that include template values that will be used to seek for files in the asset based on the asset class definition.
 - `parents`: (OPTIONAL) - A list of asset class names that are the parents of this asset class.
 
 ## Example asset class
@@ -29,11 +29,22 @@ name: my_asset
 version: 0.0.1
 description: A collection of FASTA, JSON and HTML files.
 seek_keys:
-  fasta: "{genome}.fa.gz"
-  html: "{genome}.html"
-  json: "{genome}.json"
+  fasta:
+    value: "{genome}.fa.gz"
+    type: file
+    description: A FASTA file
+  html:
+    value: "{genome}.html"
+    type: file
+    description: An HTML file
+  json:
+    value: "{genome}.json"
+    type: file
+    description: A JSON file
 parents: []
 ```
+
+This GitHub repository contains numerous asset class examples: [refgenie/recipes](https://github.com/refgenie/recipes/tree/master/asset_classes)
 
 # Asset class inheritance
 
@@ -50,8 +61,14 @@ name: my_asset_parent
 version: 0.0.1
 description: A collection of FASTA and JSON files.
 seek_keys:
-  fasta: "{genome}.fa.gz"
-  json: "{genome}.json"
+  fasta:
+    value: "{genome}.fa.gz"
+    type: file
+    description: A FASTA file
+  json:
+    value: "{genome}.json"
+    type: file
+    description: A JSON file
 parents: []
 ```
 
@@ -62,8 +79,14 @@ name: my_asset_child
 version: 0.0.1
 description: A collection of FASTA, JSON and HTML files.
 seek_keys:
-  html: "{genome}.html"
-  json: "{genome}_child.json"
+  fasta:
+    value: "{genome}.fa.gz"
+    type: file
+    description: A FASTA file
+  json:
+    value: "{genome}_child.json"
+    type: file
+    description: A JSON file
 parents:
   - my_asset_parent
 ```
@@ -90,15 +113,23 @@ The asset class description is a freeform text that describes the asset class, w
 
 ## seek_keys
 
-The seek keys are the most important part of an asset class definition. They define the files that will be sought for in the asset based on the asset class definition.
-The seek keys are a dictionary of key names and template values that will be used to seek for files in the asset based on the asset class definition. This is the list of namespaces that are avilable to use in the seek keys:
+The seek keys are the most important part of an asset class definition. They define the files or values that will be sought for in the asset based on the asset class definition.
+The seek keys are a dictionary of key names and seek key schemas that include template values that will be used to seek for files in the asset based on the asset class definition.
+
+Each seek key schema must include:
+
+- **value**: a template string that will be populated with the variables in namespaces described below
+- **type**: a string that specifies the type of the seek key. The type must be either a [jsonschema basic type](http://json-schema.org/understanding-json-schema/reference/type.html#type-specific-keywords) or a special type (`file`, `directory` or `prefix`) is used. The special types are used to specify that the value is a file, a directory or a prefix of a file. This way the file existence can be checked after the asset is built.
+- **description**: a freeform text that describes the seek key
+
+This is the list of namespaces that are avilable to use in the seek keys:
 
 - genome (`str`): The genome digest.
 - asset (`str`): The asset name.
 - params (`Dict[str, Dict[str, str]]`): The _resolved_ input parameters.
 - files (`Dict[str, Dict[str, str]]`): The _resolved_ input files.
 - assets (`Dict[str, Dict[str, str]]`): The _resolved_ input assets.
-- custom*properties (`Dict[str, Dict[str, Any]]`): The \_resolved* custom properties.
+- custom_properties (`Dict[str, Dict[str, Any]]`): The _resolved_ custom properties.
 
 ## parents
 
