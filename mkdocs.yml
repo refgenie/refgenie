@@ -29,6 +29,7 @@ nav:
       - Use refgenie with iGenomes: igenomes.md
       - Upgrade from config 0.3 to 0.4: config_upgrade_03_to_04.md
   - Reference:
+      - Studies using refgenie: uses_refgenie.md
       - Genome configuration file: genome_config.md
       - Recipe: recipe_specification.md
       - Asset class: asset_class_specification.md
