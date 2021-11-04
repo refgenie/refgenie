@@ -15,10 +15,6 @@ with open("requirements/requirements-all.txt", "r") as reqs_file:
 # Additional keyword arguments for setup()
 extra = {"install_requires": DEPENDENCIES}
 
-# 2to3
-if sys.version_info >= (3,):
-    extra["use_2to3"] = True
-
 with open("refgenie/_version.py", "r") as versionfile:
     version = versionfile.readline().split()[-1].strip("\"'\n")
 
