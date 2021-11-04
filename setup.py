@@ -53,5 +53,3 @@ setup(
     author=u"Nathan Sheffield, Vince Reuter, Michal Stolarczyk",
     **extra
 )
-
-print(msg)
