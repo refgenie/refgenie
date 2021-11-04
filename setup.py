@@ -15,23 +15,11 @@ with open("requirements/requirements-all.txt", "r") as reqs_file:
 # Additional keyword arguments for setup()
 extra = {"install_requires": DEPENDENCIES}
 
-# 2to3
-if sys.version_info >= (3,):
-    extra["use_2to3"] = True
-
 with open("refgenie/_version.py", "r") as versionfile:
     version = versionfile.readline().split()[-1].strip("\"'\n")
 
-# Handle the pypi README formatting.
-try:
-    import pypandoc
-
-    long_description = pypandoc.convert_file("README.md", "rst")
-    msg = "\033[032mPandoc conversion succeeded.\033[0m"
-except (IOError, ImportError, OSError):
-    msg = "\033[0;31mWarning: pandoc conversion failed!\033[0m"
-    long_description = open("README.md").read()
-
+with open("README.md") as f:
+    long_description = f.read()
 
 setup(
     name="refgenie",
@@ -65,5 +53,3 @@ setup(
     author=u"Nathan Sheffield, Vince Reuter, Michal Stolarczyk",
     **extra
 )
-
-print(msg)
