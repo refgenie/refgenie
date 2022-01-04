@@ -530,4 +530,39 @@ asset_build_packages = {
         CONT: "databio/refgenie",
         CMD_LST: ["cp {blacklist} {asset_outfolder}/{genome}_blacklist.bed.gz"],
     },
+    "vcf": {
+        DESC: "Gene sequence variations in the VCF (Variant calling format).",
+        ASSETS: {
+            "vcf": "{genome}.vcf",
+            "zipped_vcf": "{genome}.vcf.gz",
+            "tbi": "{genome}.vcf.gz.tbi",
+            "csi": "{genome}.vcf.gz.csi",
+            "gzi": "{genome}.vcf.gz.gzi",
+            "idx": "{genome}.vcf.gz.idx",
+        },
+        REQ_FILES: [{KEY: "vcf", DESC: "VCF file."}],
+        REQ_ASSETS: [],
+        REQ_PARAMS: [],
+        CONT: "databio/refgenie",
+        CMD_LST: [
+            "cp {vcf} {asset_outfolder}/{vcf}",
+            "bgzip --force --stdout --index --index-name {asset_outfolder}/{vcf}.gz.gzi {asset_outfolder}/{vcf} > {asset_outfolder}/{vcf}.gz",
+            "tabix --force {asset_outfolder}/{vcf}.gz > {asset_outfolder}/{vcf}.gz.tbi",
+            "tabix --force --csi {asset_outfolder}/{vcf}.gz > {asset_outfolder}/{vcf}.gz.csi",
+            "rtg index {asset_outfolder}/{vcf}.gz > {asset_outfolder}/{vcf}.gz.idx"
+        ],
+    },
+    "bed": {
+        DESC: "Genomic regions as coordinates and associated annotations in the BED (Browser Extensible Data).",
+        ASSETS: {
+            "bed": "{genome}.bed",
+        },
+        REQ_FILES: [{KEY: "bed", DESC: "BED file."}],
+        REQ_ASSETS: [],
+        REQ_PARAMS: [],
+        CONT: "databio/refgenie",
+        CMD_LST: [
+            "cp {bed} {asset_outfolder}/{bed}",
+        ],
+    },
 }
