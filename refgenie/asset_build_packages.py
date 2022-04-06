@@ -530,4 +530,19 @@ asset_build_packages = {
         CONT: "databio/refgenie",
         CMD_LST: ["cp {blacklist} {asset_outfolder}/{genome}_blacklist.bed.gz"],
     },
+    "bed12": {
+        DESC: "Genomic feature annotations in BED12 format.",
+        REQ_FILES: [
+            {
+                KEY: "bed12",
+                DESC: "Genomic feature annotations in Browser Extensible Data (BED12) format.",
+            }
+        ],
+        REQ_ASSETS: [],
+        REQ_PARAMS: [],
+        CONT: "databio/refgenie",
+        ASSETS: {"bed12": "{genome}.bed.gz"},
+        CMD_LST: [
+            "cp {ensembl_gtf} {asset_outfolder}/{genome}.bed.gz"],
+    },
 }
