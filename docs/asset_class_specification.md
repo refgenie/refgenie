@@ -4,6 +4,10 @@
 
 # Introduction
 
+Asset classes are data models that define assets. They specify a list of asset attributes of interest, which correspond to information that a user may want to "look up" (or *seek*) for that asset. An asset would be considered an instance of a class
+
+# Motivation
+
 Recipes used to be tightly coupled to assets. For instance, to get a fasta asset, you must build the fasta recipe. This means a namespace could only have one fasta asset (_e.g._ hg38/fasta), and this asset was used for all other assets that require that type of asset as input.
 
 Generally speaking, there was no way to have more than one asset of the same type under one namespace, which should be allowed so that recipes can require multiple inputs of the same type. To do this, the tight 1:1 coupling between recipes and assets has been relaxed by introducing the concept of _asset classes_.
@@ -14,7 +18,7 @@ Before we start, let's take a moment to understand what an asset class is and wh
 
 ## Overview of asset class components
 
-A refgenie asset class my consist of the following keys:
+A refgenie asset class is a `yaml` file that may consist of the following keys:
 
 - `name`: (REQUIRED) - A string identifying the asset class.
 - `version`: (REQUIRED) - A string identifying the version of the asset class.
@@ -27,7 +31,7 @@ A refgenie asset class my consist of the following keys:
 ```yaml
 name: my_asset
 version: 0.0.1
-description: A collection of FASTA, JSON and HTML files.
+description: A collection of a FASTA, JSON and HTML file.
 seek_keys:
   fasta:
     value: "{genome}.fa.gz"
@@ -59,7 +63,7 @@ Let's consider the following example:
 ```yaml
 name: my_asset_parent
 version: 0.0.1
-description: A collection of FASTA and JSON files.
+description: A collection of a FASTA and JSON file.
 seek_keys:
   fasta:
     value: "{genome}.fa.gz"
@@ -77,7 +81,7 @@ parents: []
 ```yaml
 name: my_asset_child
 version: 0.0.1
-description: A collection of FASTA, JSON and HTML files.
+description: A collection of a FASTA, JSON and HTML file.
 seek_keys:
   fasta:
     value: "{genome}.fa.gz"
@@ -87,6 +91,10 @@ seek_keys:
     value: "{genome}_child.json"
     type: file
     description: A JSON file
+  html:
+    value: "{genome}.html"
+    type: file
+    description: An HTML file
 parents:
   - my_asset_parent
 ```
@@ -113,8 +121,8 @@ The asset class description is a freeform text that describes the asset class, w
 
 ## seek_keys
 
-The seek keys are the most important part of an asset class definition. They define the files or values that will be sought for in the asset based on the asset class definition.
-The seek keys are a dictionary of key names and seek key schemas that include template values that will be used to seek for files in the asset based on the asset class definition.
+The seek keys are the most important part of an asset class definition. They define the files or values that can be looked up in the asset.
+The seek keys are a dictionary of key names and seek key schemas that include template values that will be used to locate files in the asset based on the asset class definition.
 
 Each seek key schema must include:
 
@@ -133,6 +141,4 @@ This is the list of namespaces that are avilable to use in the seek keys:
 
 ## parents
 
-The `parents` key is a list of asset class names and/or definition sources (absolute file path or URL) of the parents of this asset class.
-
-**If names are listed** then these parent asset classes must be either already managed by refgenie or the definition files must be present in the same directory as the child asset class definition file.
+The `parents` key is a list of asset class names and/or definition sources (absolute file path or URL) of the parents of this asset class. **If parents are specified**, then either these parent asset classes must be already managed by refgenie, or the definition files must be present in the same directory as the child asset class definition file.

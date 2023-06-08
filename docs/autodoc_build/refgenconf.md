@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
 </script>
 
 <style>
-h3 .content {
+h3 .content { 
     padding-left: 22px;
     text-indent: -15px;
  }
@@ -18,15 +18,13 @@ h3 .hljs .content {
     martin-bottom: 0px;
 }
 h4 .content, table .content, p .content, li .content { margin-left: 30px; }
-h4 .content {
+h4 .content { 
     font-style: italic;
     font-size: 1em;
     margin-bottom: 0px;
 }
 
 </style>
-
-[TOC]
 
 
 # Package `refgenconf` Documentation
@@ -75,37 +73,6 @@ Add an external asset to the config
 
 
 ```python
-def add_asset_class(self, asset_class_dict=None, asset_class_path=None, source=None, force=False)
-```
-
-Add a asset_class to the config
-#### Parameters:
-
-- `asset_class_name` (`str`):  a name for the asset_class
-- `asset_class_dict` (`dict`):  a dictionary of asset_class contents,check the asset_class specification for details
-- `asset_class_path` (`str`):  a path to the asset_class file
-- `source` (`str`):  the source of the asset_class
-- `force` (`bool`):  whether to force existing asset_class overwrite
-
-
-
-
-```python
-def add_recipe(self, recipe_dict=None, recipe_path=None, source=None, force=False)
-```
-
-Add a recipe to the config
-#### Parameters:
-
-- `recipe_dict` (`dict`):  a dictionary of recipe contents,check the recipe specification for details
-- `recipe_path` (`str`):  a path to the recipe file
-- `source` (`str`):  the source of the recipe
-- `force` (`bool`):  whether to force existing recipe overwrite
-
-
-
-
-```python
 def alias_dir(self)
 ```
 
@@ -113,18 +80,6 @@ Path to the genome alias directory
 #### Returns:
 
 - `str`:  path to the directory where the assets are stored
-
-
-
-
-```python
-def asset_class_dir(self)
-```
-
-Path to the asset class directory
-#### Returns:
-
-- `str`:  path to the directory where the asset classes are stored
 
 
 
@@ -369,62 +324,10 @@ Get path to the Annotated Sequence Digests JSON file for a given genome. Note th
 
 
 ```python
-def get_asset_class(self, asset_class_name)
+def get_asset_table(self, genomes=None, server_url=None, get_json_url=<function RefGenConf.<lambda> at 0x7f810efbc940>)
 ```
 
-Return the asset class with the given name, if it exists. Alternatively, the asset class can be created from a file, if the asset_class_name is a file path or a URL.
-#### Parameters:
-
-- `recipe_name` (`str`):  name of the asset class to return
-
-
-#### Returns:
-
-- `refgenconf.asset.AssetClass`:  the asset class with the given name
-
-
-
-
-```python
-def get_asset_class_file(self, asset_class_name)
-```
-
-Return the absolute path to the recipe file for the given recipe name.
-#### Parameters:
-
-- `recipe_name` (`str`):  name of the recipe to get the recipe file for
-
-
-#### Returns:
-
-- `str`:  absolute path to the recipe file
-
-
-
-
-```python
-def get_asset_class_table(self, server_url=None, get_json_url=<function RefGenConf.<lambda> at 0x1030a00d0>)
-```
-
-Get a table of availalbe asset classes
-#### Parameters:
-
-- `server_url` (`str`):  url of the server to query
-- `get_json_url` (`callable(str, str) -> str`):  a function that returnsa url to a json file
-
-
-#### Returns:
-
-- `rich.Table`:  table of asset classes
-
-
-
-
-```python
-def get_asset_table(self, genomes=None, server_url=None, get_json_url=<function RefGenConf.<lambda> at 0x1030a0310>)
-```
-
-Get a rich.Table object representing available assets
+Get a rich.Table object representing assets available locally
 #### Parameters:
 
 - `genomes` (`list[str]`):  genomes to restrict the results with
@@ -434,37 +337,7 @@ Get a rich.Table object representing available assets
 
 #### Returns:
 
-- `rich.table.Table`:  table of available assets
-
-
-
-
-```python
-def get_assets_asset_class(self, genome, asset)
-```
-
-Return the class of the asset, if the 'asset_class' key exists in the config or None otherwise.
-#### Parameters:
-
-- `genome` (`str`):  name of a reference genome assembly/digest of interest
-- `asset` (`str`):  name of the particular asset of interest
-
-
-#### Returns:
-
-- `str`:  name of the class to use for the asset
-
-
-
-
-```python
-def get_build_groups(self)
-```
-
-Generate a list of build groups from the local refgenie recipe registry. The build order is determined based on the recipes' dependencies.
-#### Returns:
-
-- `List[Set[str]]`:  a list of sets that represent the build order
+- `rich.table.Table`:  table of assets available locally
 
 
 
@@ -572,97 +445,7 @@ List locally available reference genome IDs and assets by ID.
 
 
 ```python
-def get_recipe(self, recipe_name)
-```
-
-Return the recipe with the given name, if it exists. Alternatively, the recipe can be created from a file, if the recipe_name is a file path or a URL.
-#### Parameters:
-
-- `recipe_name` (`str`):  name of the recipe to return
-
-
-#### Returns:
-
-- `refgenconf.recipe.Recipe`:  the recipe with the given name
-
-
-
-
-```python
-def get_recipe_file(self, recipe_name)
-```
-
-Return the absolute path to the recipe file for the given recipe name.
-#### Parameters:
-
-- `recipe_name` (`str`):  name of the recipe to get the recipe file for
-
-
-#### Returns:
-
-- `str`:  absolute path to the recipe file
-
-
-
-
-```python
-def get_recipe_inputs(self, genome, asset, tag=None)
-```
-
-Get recipe inputs for a given genome and asset.
-#### Parameters:
-
-- `genome` (`str`):  genome name
-- `asset` (`str`):  asset name
-- `tag` (`str`):  tag name
-
-
-#### Returns:
-
-- `dict`:  recipe inputs
-
-
-
-
-```python
-def get_recipe_inputs_path(self, genome, asset, tag=None)
-```
-
-Get path to the recipe inputs JSON file for a given genome and asset.
-#### Parameters:
-
-- `genome` (`str`):  genome name
-- `asset` (`str`):  asset name
-- `tag` (`str`):  tag name
-
-
-#### Returns:
-
-- `str`:  recipe inputs path
-
-
-
-
-```python
-def get_recipe_table(self, server_url=None, get_json_url=<function RefGenConf.<lambda> at 0x1030a01f0>)
-```
-
-Get a table of recipes
-#### Parameters:
-
-- `server_url` (`str`):  url of the server to query
-- `get_json_url` (`callable(str, str) -> str`):  a function that returnsa url to a json file
-
-
-#### Returns:
-
-- `rich.Table`:  table of recipes
-
-
-
-
-```python
-def get_remote_data_str(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x1030a1820>)
+def get_remote_data_str(self, genome=None, order=None, get_url=<function RefGenConf.<lambda> at 0x7f810efb7670>)
 ```
 
 List genomes and assets available remotely.
@@ -695,7 +478,7 @@ Get path to the alias directory for the selected genome-asset-tag
 
 #### Returns:
 
-- `dict`:
+- `dict`: 
 
 
 
@@ -803,7 +586,7 @@ Check whether all required tag attributes are defined in the RefGenConf object. 
 
 
 ```python
-def list(self, genome=None, order=None, include_tags=False, asset_classes=False)
+def list(self, genome=None, order=None, include_tags=False)
 ```
 
 List local assets; map each namespace to a list of available asset names
@@ -812,24 +595,11 @@ List local assets; map each namespace to a list of available asset names
 - `order` (`callable(str) -> object`):  how to key genome IDs for sort
 - `genome` (`list[str] | str`):  genomes that the assets should be found for
 - `include_tags` (`bool`):  whether asset tags should be included in the returned dict
-- `asset_classes` (`bool`):  whether asset classes should be listed instead of asset names
 
 
 #### Returns:
 
 - `Mapping[str, Iterable[str]]`:  mapping from assembly name tocollection of available asset names.
-
-
-
-
-```python
-def list_asset_classes(self)
-```
-
-List locally available asset classes
-#### Returns:
-
-- `List[str]`:  list of available asset classes
 
 
 
@@ -872,18 +642,6 @@ List assemblies for which a particular asset is available.
 
 
 ```python
-def list_recipes(self)
-```
-
-List locally available recipes
-#### Returns:
-
-- `List[str]`:  list of available recipes
-
-
-
-
-```python
 def list_seek_keys_values(self, genomes=None, assets=None)
 ```
 
@@ -902,7 +660,7 @@ List values for all seek keys for the specified genome and asset. Leave the argu
 
 
 ```python
-def listr(self, genome=None, get_url=<function RefGenConf.<lambda> at 0x1030a1940>, as_digests=False)
+def listr(self, genome=None, get_url=<function RefGenConf.<lambda> at 0x7f810efb7790>, as_digests=False)
 ```
 
 List genomes and assets available remotely on all servers the object subscribes to
@@ -968,7 +726,7 @@ Populates *remote* refgenie references from refgenie://genome/asset:tag registry
 
 
 ```python
-def pull(self, genome, asset, tag, unpack=True, force=None, force_large=None, size_cutoff=10, get_json_url=<function RefGenConf.<lambda> at 0x1030a1c10>, build_signal_handler=<function _handle_sigint at 0x102dca940>)
+def pull(self, genome, asset, tag, unpack=True, force=None, force_large=None, size_cutoff=10, get_json_url=<function RefGenConf.<lambda> at 0x7f810efb7a60>, build_signal_handler=<function _handle_sigint at 0x7f810f4541f0>)
 ```
 
 Download and possibly unpack one or more assets for a given ref gen.
@@ -994,46 +752,6 @@ Download and possibly unpack one or more assets for a given ref gen.
 
 - `refgenconf.UnboundEnvironmentVariablesError`:  if genome folderpath contains any env. var. that's unbound
 - `refgenconf.RefGenConfError`:  if the object update is requested ina non-writable state
-
-
-
-
-```python
-def pull_asset_class(self, asset_class_name, get_url=<function RefGenConf.<lambda> at 0x1030a10d0>, force=False)
-```
-
-Pull the asset class with the given name from the remote server.
-#### Parameters:
-
-- `recipe_name` (`str`):  name of the asset_class to pull
-- `get_url` (`function(serverUrl, operationId) -> str`):  how to determineURL request, given server URL and endpoint operationID
-- `force` (`bool`):  whether to overwrite existing asset class file
-
-
-
-
-```python
-def pull_recipe(self, recipe_name, get_url=<function RefGenConf.<lambda> at 0x1030a1310>, force=False, pull_asset_class=False)
-```
-
-Pull the recipe with the given name from the remote server.
-#### Parameters:
-
-- `recipe_name` (`str`):  name of the recipe to pull
-- `get_url` (`function(serverUrl, operationId) -> str`):  how to determineURL request, given server URL and endpoint operationID
-- `force` (`bool`):  whether to overwrite existing recipe file
-
-
-
-
-```python
-def recipe_dir(self)
-```
-
-Path to the recipe directory
-#### Returns:
-
-- `str`:  path to the directory where the recipes are stored
 
 
 
@@ -1071,19 +789,6 @@ the parent genome will be removed as well
 
 
 ```python
-def remove_asset_class(self, asset_class_name, force=False)
-```
-
-Remove an asset class from the config
-#### Parameters:
-
-- `asset_class` (`str`):  the name of the asset class to remove
-- `force` (`bool`):  whether to force existing asset class removal
-
-
-
-
-```python
 def remove_asset_from_relatives(self, genome, asset, tag)
 ```
 
@@ -1116,19 +821,6 @@ Remove alias for a specified genome digest. This method will remove the digest b
 
 
 ```python
-def remove_recipe(self, recipe_name, force=False)
-```
-
-Remove a recipe from the config
-#### Parameters:
-
-- `recipe_name` (`str`):  the name of the recipe to remove
-- `force` (`bool`):  whether to force existing recipe removal
-
-
-
-
-```python
 def run_plugins(self, hook)
 ```
 
@@ -1141,7 +833,7 @@ Runs all installed plugins for the specified hook.
 
 
 ```python
-def seek(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, all_aliases=False, check_exist=<function RefGenConf.<lambda> at 0x1030a0b80>)
+def seek(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, all_aliases=False, check_exist=<function RefGenConf.<lambda> at 0x7f810efbcf70>)
 ```
 
 Seek path to a specified genome-asset-tag alias
@@ -1172,7 +864,7 @@ Seek path to a specified genome-asset-tag alias
 
 
 ```python
-def seek_src(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, check_exist=<function RefGenConf.<lambda> at 0x1030a0dc0>)
+def seek_src(self, genome_name, asset_name, tag_name=None, seek_key=None, strict_exists=None, enclosing_dir=False, check_exist=<function RefGenConf.<lambda> at 0x7f810efb71f0>)
 ```
 
 Seek path to a specified genome-asset-tag
@@ -1202,7 +894,7 @@ Seek path to a specified genome-asset-tag
 
 
 ```python
-def seekr(self, genome_name, asset_name, tag_name=None, seek_key=None, remote_class='http', get_url=<function RefGenConf.<lambda> at 0x1030a0ca0>)
+def seekr(self, genome_name, asset_name, tag_name=None, seek_key=None, remote_class='http', get_url=<function RefGenConf.<lambda> at 0x7f810efb70d0>)
 ```
 
 Seek a remote path to a specified genome/asset.seek_key:tag
@@ -1219,20 +911,6 @@ Seek a remote path to a specified genome/asset.seek_key:tag
 #### Returns:
 
 - `str`:  path to the asset
-
-
-
-
-```python
-def set_asset_class(self, genome, asset, asset_class)
-```
-
-Set the asset class to use for a particular asset.
-#### Parameters:
-
-- `genome` (`str`):  identifier (digest) of a reference genome assembly of interest
-- `asset` (`str`):  name of the particular asset of interest
-- `asset_class` (`str`):  name of the class to use for the asset
 
 
 
@@ -1255,7 +933,7 @@ Point to the selected tag by default
 
 
 ```python
-def set_genome_alias(self, genome, digest=None, servers=None, overwrite=False, reset_digest=False, create_genome=False, no_write=False, get_json_url=<function RefGenConf.<lambda> at 0x1030a1ee0>)
+def set_genome_alias(self, genome, digest=None, servers=None, overwrite=False, reset_digest=False, create_genome=False, no_write=False, get_json_url=<function RefGenConf.<lambda> at 0x7f810efb7d30>)
 ```
 
 Assign a human-readable alias to a genome identifier.
@@ -1478,204 +1156,6 @@ Write the contents to a file. If pre- and post-update plugins are defined, they 
 
 
 
-## <a name="Recipe"></a> Class `Recipe`
-A representation of the recipe
-
-
-```python
-def __init__(self, name: str, version: str, output_asset_class: refgenconf.asset_class.AssetClass, command_template_list: List[str], inputs: Dict[Dict[Dict[str, str], str], str], test: Dict[Dict[Dict[str, str], str], str]=None, description: str=None, container: str=None, custom_properties: Dict[str, str]=None, default_tag: str=None, checksum_exclude_list: List[str]=None)
-```
-
-Initialize a recipe
-
-For convenience, use the `recipe_factory` function to create a recipes.
-#### Parameters:
-
-- `name` (`str`):  The name of the recipe
-- `version` (`str`):  The version of the recipe
-- `output_asset_class` (`AssetClass`):  The output asset class that the recipe will produce
-- `command_template_list` (`List[str]`):  A list of command templates
-- `inputs` (`Dict[Dict[Dict[str, str], str], str]`):  A dictionary of input values organized in namespaces
-- `description` (`str`):  A description of the recipe
-- `container` (`str`):  The container to use for running the recipe, e.g. 'databio/refgenie'
-- `custom_properties` (`Dict[str, str]`):  A dictionary of custom properties to use/to resolve
-- `default_tag` (`str`):  The default tag to use for the recipe/to resolve
-- `checksum_exclude_list` (`List[str]`):  A list of filepaths to exclude from the checksum calculation
-
-
-
-
-```python
-def get_test_inputs(self, rgc=None) -> Dict[str, Dict[str, str]]
-```
-
-Get all the inputs to test the recipe.
-
-This requires the inputs files to be specified as URLs.
-Asset and param type inputs cannot be overridden, the default values are used.
-#### Parameters:
-
-- `rgc` (`RefGenConf`):  A RefGenConf object to store the test data in.Conditionally required, if assets need to be pulled.
-
-
-#### Returns:
-
-- `Dict[str, Dict[str, str]]`:  A dictionary of test data
-
-
-
-
-```python
-def get_test_outputs(self) -> Dict[str, Dict[str, str]]
-```
-
-Get all the outputs to test the recipe.
-#### Returns:
-
-- `Dict[str, Dict[str, str]]`:  A dictionary of test outputs
-
-
-
-
-```python
-def populate_command_templates(self, namespaces: attmap.attmap.AttMap) -> List[str]
-```
-
-Populate the command templates
-#### Parameters:
-
-- `namespaces` (`attmap.Attmap`):  A mapping of template values organized in namespaces
-
-
-#### Returns:
-
-- `List[str]`:  A list of populated command templates
-
-
-
-
-```python
-def resolve_custom_properties(self, use_docker=False) -> Dict[str, Any]
-```
-
-Resolve custom properties
-#### Parameters:
-
-- `use_docker` (`bool`):  If True, resolve custom properties in the container
-
-
-#### Returns:
-
-- `Dict[str, Any]`:  A dictionary of custom properties
-
-
-
-
-```python
-def resolve_default_tag(self, namespaces: attmap.attmap.AttMap) -> str
-```
-
-Resolve the default tag
-#### Parameters:
-
-- `namespaces` (`attmap.Attmap`):  A mapping of template values organized in namespaces
-
-
-#### Returns:
-
-- `str`:  The default tag
-
-
-
-
-```python
-def to_dict(self) -> Dict[str, str]
-```
-
-Convert the recipe to a dictionary
-#### Returns:
-
-- `Dict[str, str]`:  A dictionary representation of the recipe
-
-
-
-
-```python
-def to_json(self, filepath) -> None
-```
-
-Save the recipe to a JSON file
-#### Parameters:
-
-- `filepath` (`str`):  The filepath to save the recipe to
-
-
-
-
-```python
-def to_yaml(self, filepath) -> None
-```
-
-Save the recipe to a YAML file
-#### Parameters:
-
-- `filepath` (`str`):  The filepath to save the recipe to
-
-
-
-
-## <a name="AssetClass"></a> Class `AssetClass`
-A representation of the asset class.
-
-
-```python
-def __init__(self, name: str, version: str, seek_keys: Dict[str, str], description: str=None, parents: List[refgenconf.asset_class.AssetClass]=None)
-```
-
-Initialize the asset class
-
-For convenience, use `asset_class_factory` to create asset classes.
-#### Parameters:
-
-- `name` (`str`):  The name of the asset class
-- `version` (`str`):  The version of the asset class
-- `seek_keys` (`Dict[str, str]`):  The seek keys that the asset class defines
-- `description` (`str`):  The description of the asset class
-- `parents` (`List[AssetClass]`):  The parents of the asset class
-
-
-
-
-```python
-def to_dict(self) -> Dict[str, Any]
-```
-
-
-
-```python
-def to_json(self, filepath) -> None
-```
-
-Save the asset class to a JSON file
-#### Parameters:
-
-- `filepath` (`str`):  The filepath to save the asset class to
-
-
-
-
-```python
-def to_yaml(self, filepath) -> None
-```
-
-Save the asset class to a YAML file
-#### Parameters:
-
-- `filepath` (`str`):  The filepath to save the asset class to
-
-
-
-
 ## <a name="GenomeConfigFormatError"></a> Class `GenomeConfigFormatError`
 Exception for invalid genome config file format.
 
@@ -1709,54 +1189,6 @@ Use of environment variable that isn't bound to a value.
 
 
 ```python
-def asset_class_factory(asset_class_definition_file: str=None, asset_class_schema_file: str='/usr/local/lib/python3.9/site-packages/refgenconf/schemas/asset_class_schema.yaml', asset_class_definition_dict: Dict[str, Any]=None, asset_class_definition_file_dir: str=None) -> Tuple[refgenconf.asset_class.AssetClass, List[refgenconf.asset_class.AssetClass]]
-```
-
-Read yaml file and return a AssetClass object and a list of its parents.
-#### Parameters:
-
-- `asset_class_definition_file` (`str`):  path/URL to yaml file that defines the asset class
-- `asset_class_schema_file` (`str`):  path/URL to schema file to validate against (optional)
-
-
-#### Returns:
-
-- `Tuple[AssetClass, List[AssetClass]]`:  AssetClass object and a list of its parents
-
-
-#### Raises:
-
-- `FileNotFoundError`:  if asset_class_definition_file does not exist
-
-
-
-
-```python
-def recipe_factory(recipe_definition_file: str=None, recipe_schema_file: str='/usr/local/lib/python3.9/site-packages/refgenconf/schemas/recipe_schema.yaml', asset_class_definition_file_dir: str=None, recipe_definition_dict: Dict[str, Any]=None) -> refgenconf.recipe.Recipe
-```
-
-Factory method to create a recipe from a definition file
-#### Parameters:
-
-- `recipe_definition_file` (`str`):  The recipe definition file
-- `recipe_schema_file` (`str`):  The recipe schema file
-- `asset_class_definition_file_dir` (`str`):  The directory containing the asset class definition files
-- `recipe_definition_dict` (`Dict[str, Dict[str, Any]]`):  A dictionary of recipe definition
-
-
-#### Returns:
-
-- `refgenconf.recipe.Recipe`:  A recipe
-
-
-#### Raises:
-
-- `MissingAssetClassError`:  If the asset class definition file is missing
-
-
-
-
-```python
 def select_genome_config(filename=None, conf_env_vars=['REFGENIE'], **kwargs)
 ```
 
@@ -1775,7 +1207,7 @@ Get path to genome configuration file.
 
 
 ```python
-def get_dir_digest(path, pm=None, exclude_files=[])
+def get_dir_digest(path, pm=None)
 ```
 
 Generate a MD5 digest that reflects just the contents of the files in the selected directory.
@@ -1822,4 +1254,4 @@ The namespaces structure required to run the plugin is:
 
 
 
-*Version Information: `refgenconf` v0.13.0-dev, generated by `lucidoc` v0.4.2*
+*Version Information: `refgenconf` v0.12.2, generated by `lucidoc` v0.4.3*

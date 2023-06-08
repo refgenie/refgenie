@@ -6,17 +6,17 @@
 
 # Overview
 
-Before we start, let's take a moment to understand what a recipe is and what it's components are. Additionally, we'll look at an example recipe definition that will be used throughout this document.
+Let's start with a brief description of a recipe and it's components. Additionally, we'll look at an example recipe definition that will be used throughout this document.
 
 ## Overview of recipe components
 
-A refgenie recipe my consist of the following keys:
+A refgenie recipe is a `yaml` file that may consist of the following keys:
 
 - `name`: (REQUIRED) - A string identifying the recipe.
 - `version`: (REQUIRED) - A string identifying the version of the recipe.
 - `description`: (REQUIRED) - A string describing the recipe, which may include a brief description of the outputs of the recipe, software used to generate the outputs, and other relevant information.
-- `inputs`: (REQUIRED) - A nested dictionary of input parameters for the recipe, which include: `files`, `assets` and `params`.
-- `command_template_list`: (REQUIRED) - A list of strings, each of which is a [Jinja2](https://jinja.palletsprojects.com/en/3.0.x/) command template for a particular command.
+- `inputs`: (REQUIRED) - A nested dictionary of input parameters for the recipe, which includes 3 keys: `files`, `assets` and `params`.
+- `command_template_list`: (REQUIRED) - A list of strings, each of which is a [Jinja2](https://jinja.palletsprojects.com/en/3.0.x/) command template for a particular command. This basically means each string is a shell command with allowed variables encoded like `{variable}`.
 - `default_tag`: (REQUIRED) - A string, which is the default tag to use for the asset produced by the recipe. The string can be a Jinja2 template, which will be evaluated to determine the tag.
 - `container`: (RECOMMENDED) - a container registry path, which can be used to run the recipe.
 - `custom_properties`: (OPTIONAL) - A dictionary of custom properties of the asset produced by the recipe.
