@@ -10,7 +10,7 @@ Sometimes it is desirable to run a refgenie-unaware workflow and benefit from th
 
 Both `populate` and `populater` can populate refgenie registry paths either in a **file** or a **string**.
 
-## String intput
+## String input
 
 Use a pipe (`|`) to populate an in-line command argument with a local path managed by refgenie:
 
