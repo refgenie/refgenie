@@ -50,6 +50,6 @@ setup(
     package_data={"refgenie": [os.path.join("refgenie", "*")]},
     include_package_data=True,
     url="http://refgenie.databio.org",
-    author=u"Nathan Sheffield, Vince Reuter, Michal Stolarczyk",
+    author="Nathan Sheffield, Vince Reuter, Michal Stolarczyk",
     **extra
 )
