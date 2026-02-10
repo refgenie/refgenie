@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import os
 import sys
@@ -32,8 +34,8 @@ from .refgenie import (
 )
 
 
-def main():
-    """Primary workflow"""
+def main() -> None:
+    """Primary workflow for the refgenie CLI."""
     parser = logmuse.add_logging_options(build_argparser())
     args, _ = parser.parse_known_args()
     global _LOGGER
@@ -431,14 +433,12 @@ def main():
         process_populate(pop_fun=pop_fun, file_path=args.file)
 
 
-def process_populate(pop_fun, file_path=None):
-    """
-    Process a populate request (file or stdin) with a custom populator function
+def process_populate(pop_fun, file_path: str | None = None) -> None:
+    """Process a populate request with a custom populator function.
 
-    :param callable(dict | str | list) -> dict | str | list pop_fun: a function
-        that populates refgenie registry paths in objects
-    :param str file_path: path to the file to populate refgenie registry paths in,
-        skip for stdin processing
+    Args:
+        pop_fun: Function that populates refgenie registry paths in objects.
+        file_path: Path to the file to populate. If None, reads from stdin.
     """
     if file_path is not None:
         _LOGGER.debug(f"Populating file: {file_path}")
@@ -452,14 +452,18 @@ def process_populate(pop_fun, file_path=None):
             sys.stdout.write(pop_fun(glob=line))
 
 
-def perm_check_x(file_to_check, message_tag="genome directory"):
-    """
-    Check X_OK permission on a path, providing according messaging and bool val.
+def perm_check_x(file_to_check: str, message_tag: str = "genome directory") -> bool:
+    """Check X_OK permission on a path.
 
-    :param str file_to_check: path to query for permission
-    :param str message_tag: context for error message if check fails
-    :return bool: os.access(path, X_OK) for the given path
-    :raise ValueError: if there's no filepath to check for permission
+    Args:
+        file_to_check: Path to query for permission.
+        message_tag: Context for error message if check fails.
+
+    Returns:
+        True if the path has execute permission.
+
+    Raises:
+        ValueError: If there's no filepath to check.
     """
     if not file_to_check:
         msg = "You must provide a path to {}".format(message_tag)
@@ -471,18 +475,21 @@ def perm_check_x(file_to_check, message_tag="genome directory"):
     return True
 
 
-def _make_asset_build_reqs(asset):
+def _make_asset_build_reqs(asset: str) -> None:
+    """Display build requirements and inputs for an asset.
+
+    Args:
+        asset: Name of the asset.
     """
-    Prepare requirements and inputs lists and display it
 
-    :params str asset: name of the asset
-    """
+    def _format_reqs(req_list: list[dict]) -> list[str]:
+        """Format requirement dicts into display strings.
 
-    def _format_reqs(req_list):
-        """
+        Args:
+            req_list: List of requirement dicts.
 
-        :param list[dict] req_list:
-        :return list[str]:
+        Returns:
+            Formatted requirement strings.
         """
         templ = "\t{} ({})"
         return [

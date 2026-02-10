@@ -1,0 +1,64 @@
+[project]
+name = "refgenie"
+version = "0.12.2-dev"
+description = "Refgenie creates a standardized folder structure for reference genome files and indexes"
+readme = "README.md"
+license = "BSD-2-Clause"
+requires-python = ">=3.10"
+authors = [
+    { name = "Nathan Sheffield" },
+    { name = "Vince Reuter" },
+    { name = "Michal Stolarczyk" },
+]
+keywords = ["bioinformatics", "sequencing", "ngs", "reference genome"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+    "logmuse>=0.2.6",
+    "piper>=0.12.1",
+    "pyfaidx>=0.5.5.2",
+    "refgenconf>=0.12.2",
+    "yacman>=0.8.3",
+]
+
+[project.urls]
+Homepage = "https://refgenie.databio.org"
+
+[project.scripts]
+refgenie = "refgenie.__main__:main"
+import_igenome = "refgenie.add_assets_igenome:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["refgenie*"]
+
+[tool.setuptools.package-data]
+refgenie = ["schemas/*"]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
+]
+
+[tool.pytest.ini_options]
+addopts = "-rfE"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["refgenie"]

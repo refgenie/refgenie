@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logmuse
 
 from ._version import __version__
