@@ -12,9 +12,10 @@ from refgenconf import (
     MissingAssetError,
     MissingGenomeError,
     RefGenConf,
+    select_genome_config,
+    upgrade_config,
 )
 from refgenconf import __version__ as rgc_version
-from refgenconf import select_genome_config, upgrade_config
 from refgenconf.helpers import block_iter_repr
 from requests.exceptions import MissingSchema
 from rich.console import Console
@@ -321,8 +322,9 @@ def main() -> None:
                     with rgc as r:
                         r.cfg_remove_assets(**gat)
                     _LOGGER.info(
-                        "Removed an incomplete asset "
-                        "'{genome}/{asset}:{tag}'".format(*gat)
+                        "Removed an incomplete asset '{genome}/{asset}:{tag}'".format(
+                            *gat
+                        )
                     )
                     return
             except (KeyError, MissingAssetError, MissingGenomeError):

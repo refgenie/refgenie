@@ -11,7 +11,9 @@ from .asset_build_packages import asset_build_packages
 from .exceptions import MissingFolderError
 
 
-def _parse_user_build_input(input: Iterable[Iterable[str]] | None) -> dict[str, str] | None:
+def _parse_user_build_input(
+    input: Iterable[Iterable[str]] | None,
+) -> dict[str, str] | None:
     """Parse user input specification for build command.
 
     Used in build for specific parents and input parsing.

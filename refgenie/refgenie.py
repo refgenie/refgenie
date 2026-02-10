@@ -162,7 +162,7 @@ def refgenie_build_reduce(
     glob_pattern = _map_cfg_match_pattern(rgc_master.data_dir, "*")
     rgc_map_filepaths = glob(glob_pattern, recursive=True)
     if len(rgc_map_filepaths) == 0:
-        _LOGGER.info(f"No map configs to reduce")
+        _LOGGER.info("No map configs to reduce")
         return None
     _LOGGER.debug(f"Map configs to reduce: {block_iter_repr(rgc_map_filepaths)}")
     matched_gats = []
@@ -427,8 +427,9 @@ def refgenie_build(
             asset_dir = os.path.join(rgc_map.data_dir, *gat)
             if not os.path.exists(asset_dir):
                 raise OSError(
-                    "Could not compute asset digest. Path does not "
-                    "exist: {}".format(asset_dir)
+                    "Could not compute asset digest. Path does not exist: {}".format(
+                        asset_dir
+                    )
                 )
             digest = get_dir_digest(asset_dir)
             _LOGGER.info(f"Asset digest: {digest}")

@@ -118,7 +118,9 @@ class TestBuildArgparser:
             POPULATE_CMD,
             POPULATE_REMOTE_CMD,
         }
-        assert expected.issubset(registered), f"Missing commands: {expected - registered}"
+        assert expected.issubset(registered), (
+            f"Missing commands: {expected - registered}"
+        )
 
     def test_no_command_gives_none(self, parser):
         args, _ = parser.parse_known_args([])
