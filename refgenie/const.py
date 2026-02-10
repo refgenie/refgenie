@@ -2,6 +2,7 @@
 Constant variables for refgenie package. Ones that are integral to refgenconf
 and/or refgenieserver should be defined in refgenconf.const
 """
+
 from refgenconf.const import *
 
 PKG_NAME = "refgenie"
