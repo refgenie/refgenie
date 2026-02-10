@@ -1,20 +1,24 @@
 # TO be imported from refget package when it is finished
 # from refget import fasta_checksum
 
+from __future__ import annotations
+
 import binascii
 import hashlib
 import os
 
 import pyfaidx
 
+from collections.abc import Callable
 
-def trunc512_digest(seq, offset=24):
+
+def trunc512_digest(seq: str, offset: int = 24) -> str:
     digest = hashlib.sha512(seq.encode()).digest()
     hex_digest = binascii.hexlify(digest[:offset])
     return str(hex_digest.decode())
 
 
-def parse_fasta(fa_file):
+def parse_fasta(fa_file: str) -> pyfaidx.Fasta:
     try:
         fa_object = pyfaidx.Fasta(fa_file)
     except pyfaidx.UnsupportedCompressionFormat:
@@ -31,10 +35,10 @@ def parse_fasta(fa_file):
     return fa_object
 
 
-def fasta_checksum(fa_file, checksum_function=trunc512_digest):
-    """
-    Just calculate checksum of fasta file without loading it.
-    """
+def fasta_checksum(
+    fa_file: str, checksum_function: Callable[[str], str] = trunc512_digest
+) -> tuple[str, dict[str, str]]:
+    """Calculate checksum of a FASTA file without loading it."""
     fa_object = parse_fasta(fa_file)
     content_checksums = {}
     for k in fa_object.keys():

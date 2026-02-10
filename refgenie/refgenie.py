@@ -1,12 +1,17 @@
+from __future__ import annotations
+
+import argparse
 import csv
 import json
 import os
 import re
 import signal
 import sys
+from collections.abc import Callable
 from glob import glob
 from logging import getLogger
 from time import gmtime, strftime
+from typing import Any
 
 import attmap
 import pypiper
@@ -42,7 +47,6 @@ from refgenconf.exceptions import (
     RefgenconfError,
 )
 from refgenconf.helpers import block_iter_repr, validate_tag
-from rich.console import Console
 from rich.progress import track
 from ubiquerg import parse_registry_path as prp
 from ubiquerg.files import checksum
@@ -62,7 +66,7 @@ from .helpers import (
 _LOGGER = getLogger(PKG_NAME)
 
 
-def parse_registry_path(path):
+def parse_registry_path(path: str) -> dict[str, str | None]:
     return prp(
         path,
         defaults=[
@@ -76,17 +80,15 @@ def parse_registry_path(path):
 
 
 def get_build_namespaces(
-    genome,
-    asset,
-    tag,
-    outfolder,
-    specified_files=None,
-    specified_params=None,
-    **kwargs,
-):
-    """
-    Gives a dict with variables used to populate an build commands with.
-    """
+    genome: str,
+    asset: str,
+    tag: str,
+    outfolder: str,
+    specified_files: dict[str, str] | None = None,
+    specified_params: dict[str, str] | None = None,
+    **kwargs: Any,
+) -> attmap.AttMap:
+    """Build a dict of variables used to populate build command templates."""
     build_namespaces = attmap.AttMap(
         {
             "genome": genome,
@@ -101,19 +103,18 @@ def get_build_namespaces(
     return build_namespaces
 
 
-def refgenie_initg(rgc, genome, content_checksums):
-    """
-    Initializing a genome means adding `collection_checksum` attributes in the
-    genome config file. This should perhaps be a function in refgenconf, but not
-    a CLI-hook. Also adds `content_checksums` tsv file (should be a recipe cmd?).
+def refgenie_initg(rgc: RefGenConf, genome: str, content_checksums: dict[str, str]) -> None:
+    """Initialize a genome by saving sequence digests to a TSV file.
 
-    This function updates the provided RefGenConf object with the
-    genome(collection)-level checksum and saves the individual checksums to a
-    TSV file in the fasta asset directory.
+    Updates the provided RefGenConf object with the genome-level checksum
+    and saves the individual checksums to a TSV file in the fasta asset
+    directory.
 
-    :param refgenconf.RefGenConf rgc: genome configuration object
-    :param str genome: name of the genome
-    :param dict content_checksums: checksums of individual content_checksums, e.g. chromosomes
+    Args:
+        rgc: Genome configuration object.
+        genome: Name of the genome.
+        content_checksums: Checksums of individual sequences, e.g.
+            chromosomes.
     """
     genome_dir = os.path.join(rgc.data_dir, genome)
     if is_writable(genome_dir):
@@ -131,29 +132,30 @@ def refgenie_initg(rgc, genome, content_checksums):
         )
 
 
-def refgenie_build_reduce(gencfg, preserve_map_configs=False):
+def refgenie_build_reduce(gencfg: str, preserve_map_configs: bool = False) -> bool | None:
+    """Perform the Reduce step of a map/reduce asset build.
+
+    Finds the genome configuration files produced in the Map step,
+    updates the main genome configuration file with their contents,
+    and removes them.
+
+    Args:
+        gencfg: Absolute path to the genome configuration file.
+        preserve_map_configs: Whether the map configs should be preserved.
+            By default they are removed once integrated into the master
+            genome config.
+
+    Returns:
+        Whether the master config was successfully updated, or None if
+        no map configs were found.
     """
-    Asset building process may be split into two tasks: building assets (_Map_ procedure)
-    and gathering asset metadata (_Reduce_ procedure).
 
-    This function performs the _Reduce_ procedure:
-    finds the genome configuration files produced in the _Map_ step,
-    updates the main genome configuration file with their contents and removes them.
+    def _map_cfg_match_pattern(data_dir: str, match_all_str: str) -> str:
+        """Create a path to the map genome config with a match-all character.
 
-    :param str gencfg: an absolute path to the genome configuration file
-    :param bool preserve_map_configs: a boolean indicating whether the map configs should be preserved,
-        by default they are removed once the contents are integrated into the master genome config.
-    :return bool: a boolean indicating whether the master config has been successfully updated
-        or None in case there were no map configs found.
-    """
-
-    def _map_cfg_match_pattern(data_dir, match_all_str):
-        """
-        Create a path to the map genome config witb a provided 'match all' character,
-        which needs to be different depending on the matchig scenario.
-
-        :param str data_dir: an absolute path to the data directory
-        :param str match_all_str: match all character to use
+        Args:
+            data_dir: Absolute path to the data directory.
+            match_all_str: Match-all character to use.
         """
         return os.path.join(
             data_dir,
@@ -168,7 +170,7 @@ def refgenie_build_reduce(gencfg, preserve_map_configs=False):
     glob_pattern = _map_cfg_match_pattern(rgc_master.data_dir, "*")
     rgc_map_filepaths = glob(glob_pattern, recursive=True)
     if len(rgc_map_filepaths) == 0:
-        _LOGGER.info(f"No map configs to reduce")
+        _LOGGER.info("No map configs to reduce")
         return None
     _LOGGER.debug(f"Map configs to reduce: {block_iter_repr(rgc_map_filepaths)}")
     matched_gats = []
@@ -264,15 +266,23 @@ def refgenie_build_reduce(gencfg, preserve_map_configs=False):
     return True
 
 
-def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwargs):
-    """
-    Runs the refgenie build recipe.
+def refgenie_build(
+    gencfg: str,
+    genome: str,
+    asset_list: list[dict[str, str | None]],
+    recipe_source: str | None,
+    args: argparse.Namespace,
+    pipeline_kwargs: dict[str, Any] | None,
+) -> bool:
+    """Run the refgenie build recipe.
 
-    :param str gencfg: path to the genome configuration file
-    :param str genome: the genome to build
-    :param list asset_list: a list of assets to build
-    :param str recipe_source: the name of the recipe to use to build the assets
-    :param argparse.Namespace args: parsed command-line options/arguments
+    Args:
+        gencfg: Path to the genome configuration file.
+        genome: The genome to build.
+        asset_list: A list of assets to build.
+        recipe_source: The name of the recipe to use.
+        args: Parsed command-line options/arguments.
+        pipeline_kwargs: Extra keyword arguments for the pypiper pipeline.
     """
 
     rgc = RefGenConf(
@@ -284,23 +294,23 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
     specified_params = _parse_user_kw_input(args.params)
 
     def _build_asset(
-        build_namespaces,
-        recipe,
-        alias,
-        pipeline_kwargs,
-    ):
-        """
-        Builds assets with pypiper and updates a genome config file.
+        build_namespaces: attmap.AttMap,
+        recipe: Any,
+        alias: str,
+        pipeline_kwargs: dict[str, Any] | None,
+    ) -> tuple[bool | None, RefGenConf]:
+        """Build assets with pypiper and update the genome config file.
 
-        This function actually runs the build commands in a given build package,
-        and then update the refgenie config file.
+        Runs the build commands in a given build package, then updates the
+        refgenie config file.
 
-        :param attmap.AttMap build_namespaces: a mapping of namespaces to populate the templates with
-        :param str alias: the genome alias to use
-        :param dict pipeline_kwargs: the kwargs to pass to the pypiper pipeline
-        :param refgenconf.Recipe recipe: A recipe object specifying lists
-            of required input_assets, commands to run, and outputs to register as
-            assets.
+        Args:
+            build_namespaces: Mapping of namespaces to populate command
+                templates with.
+            recipe: A recipe object specifying required input assets,
+                commands to run, and outputs to register.
+            alias: The genome alias to use.
+            pipeline_kwargs: Keyword arguments for the pypiper pipeline.
         """
         if args.map:
             # Performing a build map step.
@@ -463,7 +473,7 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
                     r.set_asset_class(genome, asset, recipe.output_class.name)
                 except RefgenconfError:
                     _LOGGER.error(
-                        f"You can't mix assets of different classes within a single asset namespace"
+                        "You can't mix assets of different classes within a single asset namespace"
                     )
                     raise
                 r.update_tags(
@@ -743,15 +753,17 @@ def refgenie_build(gencfg, genome, asset_list, recipe_source, args, pipeline_kwa
         return True
 
 
-def _handle_sigint(gat):
-    """
-    SIGINT handler, unlocks the config file and exists the program
+def _handle_sigint(gat: list[str]) -> Callable[[int, Any], None]:
+    """Create a SIGINT handler that logs the interruption and exits.
 
-    :param list gat: a list of genome, asset and tag. Used for a message generation.
-    :return function: the SIGINT handling function
+    Args:
+        gat: A list of [genome, asset, tag] for message generation.
+
+    Returns:
+        The SIGINT handling function.
     """
 
-    def handle(sig, frame):
+    def handle(sig: int, frame: Any) -> None:
         _LOGGER.warning("\nThe build was interrupted: {}/{}:{}".format(*gat))
         sys.exit(0)
 
@@ -759,12 +771,14 @@ def _handle_sigint(gat):
 
 
 def _seek(
-    rgc, genome_name, asset_name, tag_name=None, seek_key=None, enclosing_dir=False
-):
-    """
-    Strict seek. Most use cases in this package require file existence
-     check in seek. This function makes it easier
-    """
+    rgc: RefGenConf,
+    genome_name: str,
+    asset_name: str,
+    tag_name: str | None = None,
+    seek_key: str | None = None,
+    enclosing_dir: bool = False,
+) -> str:
+    """Seek with strict file existence check."""
     return rgc.seek_src(
         genome_name=genome_name,
         asset_name=asset_name,

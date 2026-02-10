@@ -1,19 +1,23 @@
+from __future__ import annotations
+
 import json
 import os
 import sys
 from collections import OrderedDict
+from collections.abc import Callable
 from functools import partial
+from typing import Any
 
 import logmuse
-from attmap.attmap import AttMap
 from refgenconf import (
     DownloadJsonError,
     MissingAssetError,
     MissingGenomeError,
     RefGenConf,
+    select_genome_config,
+    upgrade_config,
 )
 from refgenconf import __version__ as rgc_version
-from refgenconf import select_genome_config, upgrade_config
 from refgenconf.asset_class import asset_class_factory
 from refgenconf.const import (
     API_ID_ASSET_CLASS_CONTENTS,
@@ -30,7 +34,6 @@ from refgenconf.const import (
     CFG_SERVERS_KEY,
     CFG_VERSION_KEY,
     DEFAULT_SERVER,
-    PRIVATE_API,
     REQ_CFG_VERSION,
     TEMPLATE_RECIPE_YAML,
 )
@@ -59,8 +62,8 @@ from .refgenie import (
 )
 
 
-def main():
-    """Primary workflow"""
+def main() -> None:
+    """Primary workflow."""
     parser = logmuse.add_logging_options(build_argparser())
     args, unknown_args = parser.parse_known_args()
     global _LOGGER
@@ -388,8 +391,9 @@ def main():
                     with rgc as r:
                         r.cfg_remove_assets(**gat)
                     _LOGGER.info(
-                        "Removed an incomplete asset "
-                        "'{genome}/{asset}:{tag}'".format(*gat)
+                        "Removed an incomplete asset '{genome}/{asset}:{tag}'".format(
+                            *gat
+                        )
                     )
                     return
             except (KeyError, MissingAssetError, MissingGenomeError):
@@ -652,16 +656,24 @@ def main():
                 rgc.pull_asset_class(asset_class_name=acn, force=args.force)
 
 
-def _get_contents_from_server(rgc, format_kwargs, genome_server, append_server, api_id):
-    """
-    Get the contents of an asset_class or recipe from a genome server.
+def _get_contents_from_server(
+    rgc: RefGenConf,
+    format_kwargs: dict[str, Any],
+    genome_server: list[str] | None,
+    append_server: bool,
+    api_id: str,
+) -> dict[str, Any]:
+    """Get the contents of an asset class or recipe from a genome server.
 
-    :param rgc: RefGenConf object
-    :param format_kwargs: dict of kwargs to pass to the format function
-    :param genome_server: URL of the genome server
-    :param append_server: whether to append the genome server to the URL
-    :param api_id: API ID of the asset_class or recipe endpoint
-    :return: dict of the asset_class or recipe
+    Args:
+        rgc: RefGenConf object.
+        format_kwargs: Keyword arguments to pass to the URL format function.
+        genome_server: URL of the genome server.
+        append_server: Whether to append the genome server to the URL.
+        api_id: API ID of the asset class or recipe endpoint.
+
+    Returns:
+        The asset class or recipe contents as a dict.
     """
     if genome_server is not None:
         rgc.subscribe(
@@ -694,14 +706,14 @@ def _get_contents_from_server(rgc, format_kwargs, genome_server, append_server, 
     return contents
 
 
-def process_populate(pop_fun, file_path=None):
-    """
-    Process a populate request (file or stdin) with a custom populator function
+def process_populate(pop_fun: Callable[..., str], file_path: str | None = None) -> None:
+    """Process a populate request (file or stdin) with a populator function.
 
-    :param callable(dict | str | list) -> dict | str | list pop_fun: a function
-        that populates refgenie registry paths in objects
-    :param str file_path: path to the file to populate refgenie registry paths in,
-        skip for stdin processing
+    Args:
+        pop_fun: A function that populates refgenie registry paths in
+            objects.
+        file_path: Path to the file to populate. If None, reads from
+            stdin.
     """
     if file_path is not None:
         _LOGGER.debug(f"Populating file: {file_path}")
@@ -715,14 +727,18 @@ def process_populate(pop_fun, file_path=None):
             sys.stdout.write(pop_fun(glob=line))
 
 
-def perm_check_x(file_to_check, message_tag="genome directory"):
-    """
-    Check X_OK permission on a path, providing according messaging and bool val.
+def perm_check_x(file_to_check: str, message_tag: str = "genome directory") -> bool:
+    """Check X_OK permission on a path, providing messaging and bool val.
 
-    :param str file_to_check: path to query for permission
-    :param str message_tag: context for error message if check fails
-    :return bool: os.access(path, X_OK) for the given path
-    :raise ValueError: if there's no filepath to check for permission
+    Args:
+        file_to_check: Path to query for permission.
+        message_tag: Context for error message if check fails.
+
+    Returns:
+        Whether the path has execute permission.
+
+    Raises:
+        ValueError: If there's no filepath to check for permission.
     """
     if not file_to_check:
         msg = "You must provide a path to {}".format(message_tag)

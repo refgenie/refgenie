@@ -1,11 +1,17 @@
+from __future__ import annotations
+
+import argparse
 import os
 import signal
 import sys
+from collections.abc import Callable
 from logging import getLogger
 from time import gmtime, strftime
+from typing import Any
 
 import pypiper
 from attmap import AttMap
+from refgenconf import RefGenConf
 from refgenconf.const import (
     BUILD_STATS_DIR,
     CFG_ALIASES_KEY,
@@ -26,12 +32,14 @@ from .helpers import _writeable, make_sure_path_exists
 _LOGGER = getLogger(PKG_NAME)
 
 
-def _handle_sigint(gat):
-    """
-    SIGINT handler, unlocks the config file and exists the program
+def _handle_sigint(gat: list[str]) -> Callable[[int, Any], None]:
+    """Create a SIGINT handler that logs the interruption and exits.
 
-    :param list gat: a list of genome, asset and tag. Used for a message generation.
-    :return function: the SIGINT handling function
+    Args:
+        gat: A list of [genome, asset, tag] for message generation.
+
+    Returns:
+        The SIGINT handling function.
     """
 
     def handle(sig, frame):
@@ -42,18 +50,15 @@ def _handle_sigint(gat):
 
 
 def _seek(
-    rgc,
-    genome_name,
-    asset_name,
-    tag_name=None,
-    seek_key=None,
-    enclosing_dir=False,
-    strict_exists=False,
-):
-    """
-    Strict seek. Most use cases in this package require file existence
-     check in seek. This function makes it easier
-    """
+    rgc: RefGenConf,
+    genome_name: str,
+    asset_name: str,
+    tag_name: str | None = None,
+    seek_key: str | None = None,
+    enclosing_dir: bool = False,
+    strict_exists: bool = False,
+) -> str:
+    """Seek with strict file existence check."""
     return rgc.seek_src(
         genome_name=genome_name,
         asset_name=asset_name,
@@ -65,17 +70,14 @@ def _seek(
 
 
 def test_recipe(
-    rgc,
-    recipe,
-    asset_class,
-    test_inputs,
-    alias,
-    args,
-    # pipeline_kwargs,
-):
-    """
-    Tests the recipe.
-    """
+    rgc: RefGenConf,
+    recipe: Any,
+    asset_class: Any,
+    test_inputs: dict[str, Any],
+    alias: str,
+    args: argparse.Namespace,
+) -> tuple[bool, str | None]:
+    """Test a recipe by building it and verifying outputs."""
     _LOGGER.info(f"Starting {recipe.name} recipe test")
     _LOGGER.info(f"Test inputs:\n{test_inputs}")
     asset = recipe.name
@@ -168,7 +170,7 @@ def test_recipe(
                 r.set_asset_class(genome, asset, recipe.output_class.name)
             except RefgenconfError:
                 _LOGGER.error(
-                    f"You can't mix assets of different classes within a single asset namespace"
+                    "You can't mix assets of different classes within a single asset namespace"
                 )
                 raise
             r.update_tags(

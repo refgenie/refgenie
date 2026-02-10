@@ -1,2 +1,0 @@
--e git+git://github.com/databio/pypiper@dev#egg=pypiper
--e git+git://github.com/refgenie/refgenconf@dev#egg=refgenconf

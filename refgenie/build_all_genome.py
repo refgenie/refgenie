@@ -2,6 +2,9 @@
 A helper script to create SLURM submission scripts for all the assets
 defined in asset_build_packages for a given genome
 """
+
+from __future__ import annotations
+
 import argparse
 import os
 
@@ -79,13 +82,15 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-def _make_sub_dir(path, genome):
-    """
-    create submission scripts directory
+def _make_sub_dir(path: str, genome: str) -> str:
+    """Create submission scripts directory.
 
-    :param str path: path where the submission scripts directory should be created
-    :param str genome: name of the genome
-    :return str: created path
+    Args:
+        path: Path where the submission scripts directory should be created.
+        genome: Name of the genome.
+
+    Returns:
+        The created path.
     """
     path = os.path.join(expandpath(path), "submission_scripts", genome)
     if not os.path.exists(path):
@@ -93,13 +98,14 @@ def _make_sub_dir(path, genome):
     return path
 
 
-def _req_input_to_args(req_input):
-    """
-    Given a list of the required inputs for the build command, create an args
-    string
+def _req_input_to_args(req_input: list[dict[str, str]]) -> list[str]:
+    """Create an args string from required build command inputs.
 
-    :param list[str] req_input: input names
-    :return str: args string
+    Args:
+        req_input: Input names.
+
+    Returns:
+        List of argument strings.
     """
     return ["--" + x + " <arg_here>" for x in req_input]
 

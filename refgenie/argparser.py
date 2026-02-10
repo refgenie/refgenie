@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import argparse
 from argparse import HelpFormatter
 
 import pypiper
@@ -9,11 +12,11 @@ from ._version import __version__
 from .const import *
 
 
-def build_argparser():
-    """
-    Builds argument parser.
+def build_argparser() -> argparse.ArgumentParser:
+    """Build the argument parser.
 
-    :return argparse.ArgumentParser
+    Returns:
+        Constructed argument parser.
     """
 
     banner = "%(prog)s - reference genome asset manager"
