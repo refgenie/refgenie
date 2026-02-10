@@ -158,9 +158,9 @@ def refgenie_add(
     rgc.make_writable()
     gat_bundle = [asset_dict["genome"], asset_dict["asset"], tag]
     td = {
-        CFG_ASSET_PATH_KEY: path
-        if os.path.isdir(abs_asset_path)
-        else os.path.dirname(path)
+        CFG_ASSET_PATH_KEY: (
+            path if os.path.isdir(abs_asset_path) else os.path.dirname(path)
+        )
     }
     rgc.update_tags(*gat_bundle, data=td)
     # seek_key points to the entire dir if not specified

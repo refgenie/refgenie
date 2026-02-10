@@ -5,6 +5,7 @@ defined in asset_build_packages for a given genome
 
 from __future__ import annotations
 
+
 import argparse
 import os
 

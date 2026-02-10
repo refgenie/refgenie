@@ -495,9 +495,11 @@ def _make_asset_build_reqs(asset: str) -> None:
         """
         templ = "\t{} ({})"
         return [
-            templ.format(req[KEY], req[DESC])
-            if DEFAULT not in req
-            else (templ + "; default: {}").format(req[KEY], req[DESC], req[DEFAULT])
+            (
+                templ.format(req[KEY], req[DESC])
+                if DEFAULT not in req
+                else (templ + "; default: {}").format(req[KEY], req[DESC], req[DEFAULT])
+            )
             for req in req_list
         ]
 
