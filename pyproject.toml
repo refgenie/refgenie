@@ -49,6 +49,12 @@ test = [
     "pytest",
     "pytest-cov",
 ]
+integration = [
+    "pytest",
+    "fastapi",
+    "uvicorn",
+    "httpx",
+]
 
 [tool.pytest.ini_options]
 addopts = "-rfE"

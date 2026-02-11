@@ -169,7 +169,7 @@ def main() -> None:
             sys.exit(0)
 
     elif args.command == GET_ASSET_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         check = args.check_exists if args.check_exists else None
         for a in asset_list:
             _LOGGER.debug(
@@ -189,7 +189,7 @@ def main() -> None:
         return
 
     elif args.command == GET_REMOTE_ASSET_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         if args.genome_server is not None:
             rgc.subscribe(
                 urls=args.genome_server, reset=not args.append_server, no_write=True
@@ -212,7 +212,7 @@ def main() -> None:
         return
 
     elif args.command == INSERT_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         if len(asset_list) > 1:
             raise NotImplementedError("Can only add 1 asset at a time")
         else:
@@ -229,7 +229,7 @@ def main() -> None:
             )
 
     elif args.command == PULL_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
 
         # existing assets overwriting
         if args.no_overwrite:
@@ -270,7 +270,7 @@ def main() -> None:
             )
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         console = Console()
         if args.command == LIST_REMOTE_CMD:
             if args.genome_server is not None:
@@ -303,12 +303,12 @@ def main() -> None:
                 console.print(rgc.get_asset_table(genomes=args.genome))
 
     elif args.command == GETSEQ_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         print(rgc.getseq(args.genome, args.locus))
 
     elif args.command == REMOVE_CMD:
         force = args.force
-        rgc = RefGenConf(filepath=gencfg, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         for a in asset_list:
             a["tag"] = a["tag"] or rgc.get_default_tag(
                 a["genome"], a["asset"], use_existing=False
@@ -343,7 +343,7 @@ def main() -> None:
             rgc.remove(genome=a["genome"], asset=a["asset"], tag=a["tag"], force=force)
 
     elif args.command == TAG_CMD:
-        rgc = RefGenConf(filepath=gencfg, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         if len(asset_list) > 1:
             raise NotImplementedError("Can only tag 1 asset at a time")
         if args.default:
@@ -354,7 +354,7 @@ def main() -> None:
         rgc.tag(a["genome"], a["asset"], a["tag"], args.tag, force=args.force)
 
     elif args.command == ID_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         if len(asset_list) == 1:
             g, a = asset_list[0]["genome"], asset_list[0]["asset"]
             t = asset_list[0]["tag"] or rgc.get_default_tag(g, a)
@@ -366,15 +366,15 @@ def main() -> None:
             print("{}/{}:{},".format(g, a, t) + rgc.id(g, a, t))
         return
     elif args.command == SUBSCRIBE_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         rgc.subscribe(urls=args.genome_server, reset=args.reset)
         return
     elif args.command == UNSUBSCRIBE_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         rgc.unsubscribe(urls=args.genome_server)
         return
     elif args.command == ALIAS_CMD:
-        rgc = RefGenConf(filepath=gencfg, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         if args.subcommand == ALIAS_GET_CMD:
             if args.aliases is not None:
                 for a in args.aliases:
@@ -396,7 +396,7 @@ def main() -> None:
             return
 
     elif args.command == COMPARE_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         res = rgc.compare(
             args.genome1[0], args.genome2[0], explain=not args.no_explanation
         )
@@ -422,11 +422,11 @@ def main() -> None:
         )
 
     elif args.command == POPULATE_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         process_populate(pop_fun=rgc.populate, file_path=args.file)
 
     elif args.command == POPULATE_REMOTE_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         if args.genome_server is not None:
             rgc.subscribe(
                 urls=args.genome_server, reset=not args.append_server, no_write=True

@@ -189,7 +189,7 @@ def main() -> None:
     )
     if not cfg:
         raise MissingGenomeConfigError(args.config)
-    rgc = refgenconf.RefGenConf(filepath=cfg, writable=False)
+    rgc = refgenconf.RefGenConf.from_yaml_file(cfg)
     pths = [args.path, mkabs(args.path, rgc.genome_folder)]
     if not untar_or_copy(
         pths[0], os.path.join(rgc.genome_folder, args.genome)

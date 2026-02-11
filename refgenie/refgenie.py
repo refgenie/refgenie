@@ -157,7 +157,7 @@ def refgenie_build_reduce(
         )
 
     _LOGGER.info("Running the reduce procedure. No assets will be built.")
-    rgc_master = RefGenConf(filepath=gencfg, writable=True)
+    rgc_master = RefGenConf.from_yaml_file(gencfg)
     regex_pattern = _map_cfg_match_pattern(rgc_master.data_dir, r"(\S+)")
     glob_pattern = _map_cfg_match_pattern(rgc_master.data_dir, "*")
     rgc_map_filepaths = glob(glob_pattern, recursive=True)
@@ -174,7 +174,7 @@ def refgenie_build_reduce(
             pattern=regex_pattern, string=rgc_map_filepath
         ).groups()
         matched_gat = f"{matched_genome}/{matched_asset}:{matched_tag}"
-        map_rgc = RefGenConf(filepath=rgc_map_filepath, writable=False)
+        map_rgc = RefGenConf.from_yaml_file(rgc_map_filepath)
         if CFG_GENOMES_KEY not in map_rgc:
             _LOGGER.warning(
                 f"'{rgc_map_filepath}' is missing '{CFG_GENOMES_KEY}' key, skipping"
