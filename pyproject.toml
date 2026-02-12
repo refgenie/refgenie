@@ -1,6 +1,6 @@
 [project]
 name = "refgenie"
-version = "0.12.2-dev"
+version = "0.13.0"
 description = "Refgenie creates a standardized folder structure for reference genome files and indexes"
 readme = "README.md"
 license = "BSD-2-Clause"
