@@ -190,14 +190,14 @@ def main() -> None:
     if not cfg:
         raise MissingGenomeConfigError(args.config)
     rgc = refgenconf.RefGenConf.from_yaml_file(cfg)
-    pths = [args.path, mkabs(args.path, rgc.genome_folder)]
+    pths = [args.path, mkabs(args.path, rgc[CFG_FOLDER_KEY])]
     if not untar_or_copy(
-        pths[0], os.path.join(rgc.genome_folder, args.genome)
-    ) and not untar_or_copy(pths[1], os.path.join(rgc.genome_folder, args.genome)):
+        pths[0], os.path.join(rgc[CFG_FOLDER_KEY], args.genome)
+    ) and not untar_or_copy(pths[1], os.path.join(rgc[CFG_FOLDER_KEY], args.genome)):
         raise OSError(
             "Path '{}' does not exist. Tried: {}".format(args.path, " and ".join(pths))
         )
-    path_components = [rgc.genome_folder] + [args.genome] + ["*"] * 3 + ["Sequence"]
+    path_components = [rgc[CFG_FOLDER_KEY]] + [args.genome] + ["*"] * 3 + ["Sequence"]
     assets_paths = glob(os.path.join(*path_components))
     assert len(assets_paths) > 0, OSError(
         "Your iGenomes directory is corrupted, more than one directory matched by {}."
@@ -210,7 +210,7 @@ def main() -> None:
     processed = []
     for a in asset_names:
         asset_dict = {"genome": args.genome, "asset": a, "tag": None, "seek_key": None}
-        asset_path = os.path.relpath(os.path.join(assets_path, a), rgc.genome_folder)
+        asset_path = os.path.relpath(os.path.join(assets_path, a), rgc[CFG_FOLDER_KEY])
         if refgenie_add(rgc, asset_dict, asset_path):
             processed.append("{}/{}".format(asset_dict["genome"], asset_dict["asset"]))
     print("Added assets: \n- {}".format("\n- ".join(processed)))

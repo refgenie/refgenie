@@ -9,6 +9,8 @@ import sys
 from glob import glob
 from logging import getLogger
 
+import yaml
+
 import pypiper
 from refgenconf import RefGenConf, get_dir_digest
 from refgenconf.exceptions import (
@@ -21,14 +23,13 @@ from refgenconf.helpers import block_iter_repr
 from rich.progress import track
 from ubiquerg import parse_registry_path as prp
 from ubiquerg.system import is_writable
-from yacman import UndefinedAliasError
+from yacman import UndefinedAliasError, write_lock
 
 from .asset_build_packages import *
 from .const import *
 from .helpers import (
     _parse_user_build_input,
     _raise_missing_recipe_error,
-    _skip_lock,
     _writeable,
     make_sure_path_exists,
 )
@@ -181,7 +182,7 @@ def refgenie_build_reduce(
             )
             continue
         # this should be a one element list
-        genome_digests = map_rgc[CFG_GENOMES_KEY].keys()
+        genome_digests = list(map_rgc[CFG_GENOMES_KEY].keys())
         if len(genome_digests) > 1:
             _LOGGER.warning(
                 f"There are {len(genome_digests)} genomes in the map build config while 1 expected, skipping"
@@ -207,7 +208,7 @@ def refgenie_build_reduce(
             rgc_master.set_genome_alias(
                 genome=alias, digest=genome_digest, create_genome=True
             )
-        with rgc_master as r:
+        with write_lock(rgc_master) as r:
             if CFG_ASSET_PARENTS_KEY in tag_data:
                 for parent in tag_data[CFG_ASSET_PARENTS_KEY]:
                     parsed_parent = parse_registry_path(parent)
@@ -243,6 +244,7 @@ def refgenie_build_reduce(
                 asset=matched_asset,
                 tag=default_tag_in_map,
             )
+            r.write()
         matched_gats.append(matched_gat)
         if not preserve_map_configs:
             os.remove(rgc_map_filepath)
@@ -271,11 +273,7 @@ def refgenie_build(
         True if the build succeeded, False otherwise.
     """
 
-    rgc = RefGenConf(
-        filepath=gencfg,
-        writable=False,
-        skip_read_lock=_skip_lock(args.skip_read_lock, gencfg),
-    )
+    rgc = RefGenConf.from_yaml_file(gencfg)
     specified_args = _parse_user_build_input(args.files)
     specified_params = _parse_user_build_input(args.params)
 
@@ -331,14 +329,17 @@ def refgenie_build(
             # create an empty config file in the genome directory
             _LOGGER.info(f"Using new map genome config: {locked_map_gencfg}")
             make_sure_path_exists(os.path.dirname(locked_map_gencfg))
-            open(locked_map_gencfg, "a").close()
-            # initialize a new RefGenConf.
-            # Use the master location for data storage,
-            # but change path to the in asset dir location
-            rgc_map = RefGenConf(
-                entries={"genome_folder": rgc.genome_folder},
-                filepath=locked_map_gencfg,
-            )
+            # Create a minimal config file with genome_folder, then load
+            # using from_yaml_file to properly initialize the locker.
+            with open(locked_map_gencfg, "w") as f:
+                yaml.dump(
+                    {
+                        CFG_FOLDER_KEY: rgc[CFG_FOLDER_KEY],
+                        CFG_VERSION_KEY: REQ_CFG_VERSION,
+                    },
+                    f,
+                )
+            rgc_map = RefGenConf.from_yaml_file(locked_map_gencfg)
             # set the alias first (if available), based on the master file
 
             rgc_map.set_genome_alias(
@@ -436,7 +437,7 @@ def refgenie_build(
             # add a 'dir' seek_key that points to the asset directory
             build_pkg[ASSETS].update({"dir": "."})
             # add updates to config file
-            with rgc_map as r:
+            with write_lock(rgc_map) as r:
                 if asset_key == "fasta":
                     r.update_genomes(
                         genome, data={CFG_ALIASES_KEY: [alias]}, force_digest=genome
@@ -462,6 +463,7 @@ def refgenie_build(
                     },
                 )
                 r.set_default_pointer(*gat, force_digest=genome)
+                r.write()
         pm.stop_pipeline()
         return True, rgc_map
 
@@ -609,7 +611,7 @@ def refgenie_build(
                     genome = rgc.get_genome_alias_digest(alias=genome, fallback=True)
                 else:
                     # if the recipe is "fasta" we first initialiaze the genome, based on the provided path to the input FASTA file
-                    genome, _ = rgc.initialize_genome(
+                    genome = rgc.initialize_genome(
                         fasta_path=specified_args["fasta"],
                         alias=ori_genome,
                         skip_alias_write=True,
@@ -659,7 +661,7 @@ def refgenie_build(
                 )
                 return False
             _LOGGER.info("Finished building '{}' asset".format(asset_key))
-            with rgc_map as r:
+            with write_lock(rgc_map) as r:
                 # update asset relationships
                 r.update_relatives_assets(
                     genome, asset_key, asset_tag, parent_assets
@@ -695,6 +697,7 @@ def refgenie_build(
                         asset_tag,
                         {CFG_TAG_DESC_KEY: args.tag_description},
                     )
+                r.write()
             rgc_map._symlink_alias(genome, asset_key, asset_tag)
             if args.map:
                 # move the contents of the locked map config to a map config,

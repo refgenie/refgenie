@@ -57,12 +57,6 @@ def build_argparser() -> argparse.ArgumentParser:
                 ", ".join(CFG_ENV_VARS)
             ),
         )
-        sps[cmd].add_argument(
-            "--skip-read-lock",
-            required=False,
-            action="store_true",
-            help="Whether the config file should not be locked for reading",
-        )
 
     # upgrade: upgrade config and alter file structure to the target version
     sps[UPGRADE_CMD].add_argument(
@@ -234,12 +228,6 @@ def build_argparser() -> argparse.ArgumentParser:
             help="Path to local genome configuration file. Optional if {} environment variable is set.".format(
                 ", ".join(CFG_ENV_VARS)
             ),
-        )
-        alias_sps[cmd].add_argument(
-            "--skip-read-lock",
-            required=False,
-            action="store_true",
-            help="Whether the config file should not be locked for reading",
         )
 
     alias_sps[ALIAS_SET_CMD].add_argument(

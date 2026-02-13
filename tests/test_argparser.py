@@ -126,10 +126,3 @@ class TestBuildArgparser:
         args, _ = parser.parse_known_args([])
         assert args.command is None
 
-    def test_skip_read_lock_default_false(self, parser):
-        args = parser.parse_args(["list", "-c", "g.yaml"])
-        assert args.skip_read_lock is False
-
-    def test_skip_read_lock_flag(self, parser):
-        args = parser.parse_args(["list", "-c", "g.yaml", "--skip-read-lock"])
-        assert args.skip_read_lock is True

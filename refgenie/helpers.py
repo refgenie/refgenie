@@ -5,7 +5,6 @@ import os
 from collections.abc import Iterable
 
 from refgenconf import MissingRecipeError
-from ubiquerg import is_writable
 
 from .asset_build_packages import asset_build_packages
 from .exceptions import MissingFolderError
@@ -73,22 +72,6 @@ def _raise_missing_recipe_error(recipe: str) -> None:
         f"Recipe '{recipe}' not found. Available recipes: "
         f"{', '.join(list(asset_build_packages.keys()))}"
     )
-
-
-def _skip_lock(skip_arg: bool, cfg: str) -> bool:
-    """Determine whether to skip the config file read lock.
-
-    If config read lock skip was not forced, check if dir is writable
-    and set the default to the result.
-
-    Args:
-        skip_arg: Whether skip was requested on the CLI.
-        cfg: Path to the config file.
-
-    Returns:
-        Whether to skip the file lock for read.
-    """
-    return is_writable(os.path.dirname(cfg)) if not skip_arg else True
 
 
 def make_sure_path_exists(path: str) -> None:

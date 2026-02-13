@@ -28,7 +28,6 @@ from .const import *
 from .exceptions import *
 from .helpers import _raise_missing_recipe_error, _single_folder_writeable
 from .refgenie import (
-    _skip_lock,
     parse_registry_path,
     refgenie_build,
     refgenie_build_reduce,
@@ -76,7 +75,6 @@ def main() -> None:
         raise MissingGenomeConfigError(args.genome_config)
     _LOGGER.debug("Determined genome config: {}".format(gencfg))
 
-    skip_read_lock = True if gencfg is None else _skip_lock(args.skip_read_lock, gencfg)
     # From user input we want to construct a list of asset dicts, where each
     # asset has a genome name, asset name, and tag
     if "asset_registry_paths" in args and args.asset_registry_paths:
@@ -132,7 +130,7 @@ def main() -> None:
         if args.genome_archive_config:
             entries.update({CFG_ARCHIVE_CONFIG_KEY: args.genome_archive_config})
         _LOGGER.debug("initializing with entries: {}".format(entries))
-        rgc = RefGenConf(entries=entries, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf(entries=entries)
         rgc.initialize_config_file(os.path.abspath(gencfg))
 
     elif args.command == BUILD_CMD:
@@ -319,11 +317,14 @@ def main() -> None:
             gat = {"genome": a["genome"], "asset": a["asset"], "tag": a["tag"]}
             try:
                 if not rgc.is_asset_complete(**gat):
-                    with rgc as r:
+                    from yacman import write_lock
+
+                    with write_lock(rgc) as r:
                         r.cfg_remove_assets(**gat)
+                        r.write()
                     _LOGGER.info(
                         "Removed an incomplete asset '{genome}/{asset}:{tag}'".format(
-                            *gat
+                            **gat
                         )
                     )
                     return
@@ -348,8 +349,11 @@ def main() -> None:
             raise NotImplementedError("Can only tag 1 asset at a time")
         if args.default:
             # set the default tag and exit
-            with rgc as r:
+            from yacman import write_lock
+
+            with write_lock(rgc) as r:
                 r.set_default_pointer(a["genome"], a["asset"], a["tag"], True)
+                r.write()
             sys.exit(0)
         rgc.tag(a["genome"], a["asset"], a["tag"], args.tag, force=args.force)
 

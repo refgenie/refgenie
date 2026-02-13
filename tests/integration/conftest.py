@@ -1,8 +1,9 @@
 """
 Cross-package integration test fixtures for refgenie + refgenconf + refgenieserver.
 
-Creates a minimal FastAPI server mimicking refgenieserver's API, serves archived
-genome assets, and provides a RefGenConf client subscribed to the test server.
+Uses real `refgenie build` and real `archive()` instead of hand-crafted test data.
+This ensures integration tests catch real bugs in the build pipeline, archive
+creation, server startup, and client interaction.
 
 Uses a real threaded uvicorn server so the refgenconf client exercises its actual
 HTTP code paths (requests.get, urlopen, urlretrieve).
@@ -18,16 +19,13 @@ Or use the runner script:
 
 from __future__ import annotations
 
-import hashlib
-import logging
+import gzip
 import os
 import socket
-import tarfile
+import subprocess
+import sys
 import threading
 import time
-from copy import deepcopy
-from pathlib import Path
-from typing import Any
 
 import pytest
 import yaml
@@ -38,238 +36,169 @@ pytestmark = pytest.mark.skipif(
     reason="Integration tests disabled. Run ./tests/scripts/test-integration.sh",
 )
 
-# Test genome: rCRSd (revised Cambridge Reference Sequence, doubled)
-# This digest is computed by SeqColClient.load_fasta() from the FASTA_CONTENT below.
-# It MUST match what initialize_genome() computes, or pull tests will fail.
-GENOME_DIGEST = "1d5d914dc1bfbeb42f568f4fd6fe7af14d30f38860939f69"
+# Test genome alias -- matches what refgenie build uses with t7.fa.gz
 GENOME_ALIAS = "rCRSd"
 GENOME_DESC = "The revised cambridge reference sequence"
 
-# Minimal FASTA content for testing
-FASTA_CONTENT = """>chrM
-GATCACAGGTCTATCACCCTATTAACCACTCACGGGAGCTCTCCATGCATTTGGTATTTT
-CGTCTGGGGGGTGTGCACGCGATAGCATTGCGAGACGCTGGAGCCGGAGCACCCTATGTC
-GCAGTATCTGTCTTTGATTCCTGCCTCATTCTATTATTTATCGCACCTACGTTCAATATT
-"""
+# Path to the test data directory
+TESTS_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
+T7_FASTA_GZ = os.path.join(TESTS_DATA_DIR, "t7.fa.gz")
+RECIPE_PARENT = os.path.join(TESTS_DATA_DIR, "recipe_parent.json")
+
+
+def _read_fasta_content(gz_path):
+    """Read and return the decompressed content of a gzipped FASTA file."""
+    with gzip.open(gz_path, "rt") as f:
+        return f.read()
+
+
+# GENOME_DIGEST is deterministic for a given FASTA file. This digest is
+# computed by initialize_genome() from the t7.fa.gz test data and is also
+# confirmed by the CI workflow in test-refgenie-cli.yml.
+GENOME_DIGEST = "6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905"
+
+# FASTA content read from the test file at import time
+FASTA_CONTENT = _read_fasta_content(T7_FASTA_GZ)
 
 
 @pytest.fixture(scope="session")
-def archived_genome_dir(tmp_path_factory):
-    """Create a temp directory with an archived genome asset (.tgz file).
+def real_build_result(tmp_path_factory):
+    """Build a real genome asset using `refgenie build` subprocess.
 
-    Simulates what `refgenieserver archive` produces: a .tgz archive of the
-    asset directory with computed checksums.
+    Runs `refgenie init` followed by `refgenie build rCRSd/fasta` with the
+    test recipe and test FASTA file. This exercises the full build pipeline.
 
-    Returns a dict with 'path', 'archive_checksum', and 'archive_size'.
+    Returns a dict with config_path, genome_digest, and the build result.
     """
-    base = tmp_path_factory.mktemp("server_genomes")
+    base = tmp_path_factory.mktemp("server_build")
+    config_path = str(base / "genome_config.yaml")
 
-    # Create the asset directory structure:
-    # {genome_digest}/fasta/default/
-    asset_dir = base / GENOME_DIGEST / "fasta" / "default"
-    asset_dir.mkdir(parents=True)
+    # refgenie init
+    result = subprocess.run(
+        [
+            sys.executable, "-m", "refgenie", "init",
+            "-c", config_path,
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, f"Init failed: {result.stderr}"
 
-    # Create minimal FASTA files
-    fa_name = f"{GENOME_DIGEST}.fa"
-    fai_name = f"{GENOME_DIGEST}.fa.fai"
-    chrom_sizes_name = f"{GENOME_DIGEST}.chrom.sizes"
+    # refgenie build
+    result = subprocess.run(
+        [
+            sys.executable, "-m", "refgenie", "build",
+            "-c", config_path,
+            f"{GENOME_ALIAS}/fasta",
+            "--files", f"fasta={T7_FASTA_GZ}",
+            "--recipe", RECIPE_PARENT,
+            "--genome-description", GENOME_DESC,
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, (
+        f"Build failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+    )
 
-    fa_path = asset_dir / fa_name
-    fa_path.write_text(FASTA_CONTENT)
-
-    # Create a minimal .fai index
-    fai_path = asset_dir / fai_name
-    fai_path.write_text("chrM\t180\t6\t60\t61\n")
-
-    # Create chrom sizes
-    chrom_sizes_path = asset_dir / chrom_sizes_name
-    chrom_sizes_path.write_text("chrM\t180\n")
-
-    # Create the .tgz archive (what refgenieserver serves for download)
-    archive_dir = base / GENOME_DIGEST
-    tgz_path = archive_dir / "fasta__default.tgz"
-
-    # The tar should contain the "default" directory
-    with tarfile.open(str(tgz_path), "w:gz") as tar:
-        tar.add(str(asset_dir), arcname="default")
-
-    # Compute archive checksum (md5) — matches how refgenieserver does it
-    md5 = hashlib.md5()
-    with open(str(tgz_path), "rb") as f:
-        for chunk in iter(lambda: f.read(8192), b""):
-            md5.update(chunk)
-    archive_checksum = md5.hexdigest()
-    archive_size = os.path.getsize(str(tgz_path))
+    # Get the genome digest dynamically via refgenie alias get
+    alias_result = subprocess.run(
+        [
+            sys.executable, "-m", "refgenie", "alias", "get",
+            "-c", config_path,
+            "-a", GENOME_ALIAS,
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert alias_result.returncode == 0, f"Alias get failed: {alias_result.stderr}"
+    genome_digest = alias_result.stdout.strip()
+    assert genome_digest == GENOME_DIGEST, (
+        f"Build produced unexpected digest: {genome_digest} != {GENOME_DIGEST}"
+    )
 
     return {
-        "path": base,
-        "archive_checksum": archive_checksum,
-        "archive_size": str(archive_size),
+        "config_path": config_path,
+        "genome_digest": genome_digest,
+        "base_dir": str(base),
     }
 
 
 @pytest.fixture(scope="session")
-def test_server_app(archived_genome_dir):
-    """Create a minimal FastAPI app mimicking refgenieserver's key API endpoints.
+def archived_genome_dir(real_build_result, tmp_path_factory):
+    """Archive the built genome using the real archive() function.
 
-    Uses the same operation IDs as refgenieserver so that refgenconf's
-    `construct_request_url()` can discover endpoints via /openapi.json.
+    Calls refgenieserver.server_builder.archive() with the config from
+    the real build, exercising the real archiving code path including
+    tar creation, checksum computation, and config updates.
+
+    Returns a dict with data_dir, archive_dir, server_config_path,
+    and genome_digest.
     """
-    from fastapi import FastAPI, Query
-    from fastapi.responses import FileResponse, Response
+    from refgenconf import RefGenConf
+    from refgenconf.const import CFG_ARCHIVE_KEY
+    from yacman import write_lock
 
-    from refgenconf.const import (
-        API_ID_ALIASES_DICT,
-        API_ID_ARCHIVE,
-        API_ID_ASSET_ATTRS,
-        API_ID_ASSETS,
-        API_ID_DEFAULT_TAG,
-        API_ID_DIGEST,
-        API_ID_GENOMES_DICT,
-        API_ID_GENOME_ATTRS,
-        API_VERSION,
-        PRIVATE_API,
+    from refgenieserver.server_builder import archive
+
+    archive_dir = tmp_path_factory.mktemp("archives")
+
+    # Update the config to include archive folder
+    rgc = RefGenConf.from_yaml_file(real_build_result["config_path"])
+    with write_lock(rgc) as r:
+        r[CFG_ARCHIVE_KEY] = str(archive_dir)
+        r.write()
+
+    # Run refgenieserver archive
+    rgc = RefGenConf.from_yaml_file(real_build_result["config_path"])
+    archive(
+        rgc=rgc,
+        registry_paths=None,  # archive all
+        force=True,
+        remove=False,
+        cfg_path=real_build_result["config_path"],
+        genomes_desc=None,
     )
 
-    app = FastAPI(title="Test refgenieserver", version="0.0.1")
+    genome_digest = real_build_result["genome_digest"]
 
-    genome_dir = archived_genome_dir["path"]
-    archive_checksum = archived_genome_dir["archive_checksum"]
-    archive_size = archived_genome_dir["archive_size"]
+    # Verify the archive was created
+    tgz_path = os.path.join(str(archive_dir), genome_digest, "fasta__default.tgz")
+    assert os.path.exists(tgz_path), f"Archive not created at {tgz_path}"
 
-    # Test data matching genomes.yaml structure
-    asset_data = {
-        "seek_keys": {
-            "fasta": f"{GENOME_DIGEST}.fa",
-            "fai": f"{GENOME_DIGEST}.fa.fai",
-            "chrom_sizes": f"{GENOME_DIGEST}.chrom.sizes",
-            "dir": ".",
-        },
-        "asset_parents": [],
-        "asset_path": "fasta",
-        "asset_digest": "4eb430296bc02ed7e4006624f1d5ac53",
-        "archive_digest": archive_checksum,
-        "archive_size": archive_size,
+    # The server config is written by archive() into the archive dir
+    server_config_path = os.path.join(
+        str(archive_dir), os.path.basename(real_build_result["config_path"])
+    )
+    assert os.path.exists(server_config_path), (
+        f"Server config not found at {server_config_path}"
+    )
+
+    # Get data_dir from the config
+    rgc = RefGenConf.from_yaml_file(real_build_result["config_path"])
+    data_dir = rgc.data_dir
+
+    return {
+        "data_dir": data_dir,
+        "archive_dir": str(archive_dir),
+        "server_config_path": server_config_path,
+        "genome_digest": genome_digest,
     }
 
-    genome_attrs = {
-        "genome_description": GENOME_DESC,
-        "aliases": [GENOME_ALIAS],
-    }
 
-    # --- API endpoints matching refgenieserver's operation IDs ---
+@pytest.fixture(scope="session")
+def server_config_path(archived_genome_dir):
+    """Return the server config path produced by archive()."""
+    return archived_genome_dir["server_config_path"]
 
-    @app.get(
-        "/v3/genomes/list",
-        operation_id=API_VERSION + "custom_Id_genomes_list",
-    )
-    async def list_genomes():
-        return [GENOME_DIGEST]
 
-    @app.get(
-        "/v3/genomes/alias_dict",
-        operation_id=API_VERSION + API_ID_ALIASES_DICT,
-    )
-    async def get_alias_dict():
-        return {GENOME_DIGEST: [GENOME_ALIAS]}
+@pytest.fixture(scope="session")
+def test_server_app(server_config_path, archived_genome_dir):
+    """Create a real refgenieserver FastAPI app from the test config."""
+    from refgenieserver.app_factory import create_app
 
-    @app.get(
-        "/v3/assets/list",
-        operation_id=API_VERSION + API_ID_ASSETS,
-    )
-    async def list_assets(includeSeekKeys: bool = Query(False)):
-        if includeSeekKeys:
-            return {GENOME_DIGEST: {"fasta": {"default": asset_data["seek_keys"]}}}
-        return {GENOME_DIGEST: ["fasta"]}
-
-    @app.get(
-        "/v3/assets/attrs/{genome}/{asset}",
-        operation_id=API_VERSION + API_ID_ASSET_ATTRS,
-    )
-    async def get_asset_attrs(genome: str, asset: str, tag: str = Query(None)):
-        if genome == GENOME_DIGEST and asset == "fasta":
-            return asset_data
-        return Response(status_code=404)
-
-    @app.get(
-        "/v3/genomes/attrs/{genome}",
-        operation_id=API_VERSION + API_ID_GENOME_ATTRS,
-    )
-    async def get_genome_attrs(genome: str):
-        if genome == GENOME_DIGEST:
-            return genome_attrs
-        return Response(status_code=404)
-
-    @app.get(
-        "/v3/assets/default_tag/{genome}/{asset}",
-        operation_id=API_VERSION + API_ID_DEFAULT_TAG,
-    )
-    async def get_default_tag(genome: str, asset: str):
-        return Response(content="default", media_type="text/plain")
-
-    @app.get(
-        "/v3/assets/asset_digest/{genome}/{asset}",
-        operation_id=API_VERSION + API_ID_DIGEST,
-    )
-    async def get_asset_digest(genome: str, asset: str, tag: str = Query(None)):
-        if genome == GENOME_DIGEST and asset == "fasta":
-            return Response(
-                content=asset_data["asset_digest"], media_type="text/plain"
-            )
-        return Response(status_code=404)
-
-    @app.get(
-        "/v3/assets/archive/{genome}/{asset}",
-        operation_id=API_VERSION + API_ID_ARCHIVE,
-    )
-    async def download_archive(genome: str, asset: str, tag: str = Query(None)):
-        if genome == GENOME_DIGEST and asset == "fasta":
-            tgz_path = str(genome_dir / GENOME_DIGEST / "fasta__default.tgz")
-            return FileResponse(
-                tgz_path,
-                filename="fasta__default.tgz",
-                media_type="application/octet-stream",
-            )
-        return Response(status_code=404)
-
-    @app.get(
-        "/v3/genomes/genome_digest/{alias}",
-        operation_id=API_VERSION + "custom_Id_alias_digest",
-    )
-    async def get_genome_digest(alias: str):
-        if alias == GENOME_ALIAS or alias == GENOME_DIGEST:
-            return Response(content=GENOME_DIGEST, media_type="text/plain")
-        return Response(status_code=404)
-
-    # --- Private API endpoint (used by CLI listr command) ---
-
-    @app.get(
-        "/genomes/dict",
-        operation_id=PRIVATE_API + API_ID_GENOMES_DICT,
-    )
-    async def get_genomes_dict():
-        return {
-            GENOME_DIGEST: {
-                "aliases": [GENOME_ALIAS],
-                "genome_description": GENOME_DESC,
-                "assets": {
-                    "fasta": {
-                        "default_tag": "default",
-                        "tags": {
-                            "default": {
-                                "asset_path": "fasta",
-                                "asset_digest": "4eb430296bc02ed7e4006624f1d5ac53",
-                                "archive_digest": archive_checksum,
-                                "archive_size": archive_size,
-                                "seek_keys": asset_data["seek_keys"],
-                                "asset_parents": [],
-                            }
-                        },
-                    }
-                },
-            }
-        }
-
+    archive_dir = str(archived_genome_dir["archive_dir"])
+    app = create_app(server_config_path, archive_base_dir=archive_dir)
     return app
 
 
@@ -319,50 +248,11 @@ def test_server_url(test_server_app):
 
 
 @pytest.fixture(scope="session")
-def server_config_path(archived_genome_dir, tmp_path_factory):
-    """Create a server config YAML file (what refgenieserver would use)."""
-    config_dir = tmp_path_factory.mktemp("server_config")
-    config_path = config_dir / "server_config.yaml"
+def server_rgc(server_config_path):
+    """Return the RefGenConf object that the server uses (for testing helpers)."""
+    from refgenconf import RefGenConf
 
-    archive_checksum = archived_genome_dir["archive_checksum"]
-    archive_size = archived_genome_dir["archive_size"]
-
-    config = {
-        "config_version": 0.4,
-        "genome_folder": str(archived_genome_dir["path"]),
-        "genome_servers": [],
-        "genomes": {
-            GENOME_DIGEST: {
-                "aliases": [GENOME_ALIAS],
-                "genome_description": GENOME_DESC,
-                "assets": {
-                    "fasta": {
-                        "default_tag": "default",
-                        "tags": {
-                            "default": {
-                                "asset_path": "fasta",
-                                "asset_digest": "4eb430296bc02ed7e4006624f1d5ac53",
-                                "archive_digest": archive_checksum,
-                                "archive_size": archive_size,
-                                "seek_keys": {
-                                    "fasta": f"{GENOME_DIGEST}.fa",
-                                    "fai": f"{GENOME_DIGEST}.fa.fai",
-                                    "chrom_sizes": f"{GENOME_DIGEST}.chrom.sizes",
-                                    "dir": ".",
-                                },
-                                "asset_parents": [],
-                            }
-                        },
-                    }
-                },
-            }
-        },
-    }
-
-    with open(str(config_path), "w") as f:
-        yaml.dump(config, f, default_flow_style=False)
-
-    return str(config_path)
+    return RefGenConf.from_yaml_file(server_config_path)
 
 
 @pytest.fixture

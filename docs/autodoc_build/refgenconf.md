@@ -34,17 +34,13 @@ A sort of oracle of available reference genome assembly assets
 
 
 ```python
-def __init__(self, filepath=None, entries=None, writable=False, wait_max=60, skip_read_lock=False, genome_exact=False, schema_source=None)
+def __init__(self, entries=None)
 ```
 
-Create the config instance by with a filepath or key-value pairs.
+Create the config instance from key-value pairs. Use `RefGenConf.from_yaml_file(filepath)` to load from a file.
 #### Parameters:
 
-- `filepath` (`str`):  a path to the YAML file to read
-- `entries` (`Iterable[(str, object)] | Mapping[str, object]`): config filepath or collection of key-value pairs
-- `writable` (`bool`):  whether to create the object with write capabilities
-- `wait_max` (`int`):  how long to wait for creating an object when thefile that data will be read from is locked
-- `skip_read_lock` (`bool`):  whether the file should not be locked forreading when object is created in read only mode
+- `entries` (`Iterable[(str, object)] | Mapping[str, object]`): collection of key-value pairs
 
 
 #### Raises:
