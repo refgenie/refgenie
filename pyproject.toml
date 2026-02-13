@@ -24,6 +24,8 @@ dependencies = [
     "piper>=0.12.1",
     "pyfaidx>=0.5.5.2",
     "refgenconf>=0.13.0",
+    "rich>=9.0.1",
+    "ubiquerg>=0.9.0",
     "yacman>=0.9.5",
 ]
 
