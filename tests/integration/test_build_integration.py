@@ -77,8 +77,12 @@ def real_build_config(tmp_path_factory):
     # refgenie init
     result = subprocess.run(
         [
-            sys.executable, "-m", "refgenie", "init",
-            "-c", config_path,
+            sys.executable,
+            "-m",
+            "refgenie",
+            "init",
+            "-c",
+            config_path,
         ],
         capture_output=True,
         text=True,
@@ -88,11 +92,17 @@ def real_build_config(tmp_path_factory):
     # refgenie build
     result = subprocess.run(
         [
-            sys.executable, "-m", "refgenie", "build",
-            "-c", config_path,
+            sys.executable,
+            "-m",
+            "refgenie",
+            "build",
+            "-c",
+            config_path,
             f"{GENOME_ALIAS}/fasta",
-            "--files", f"fasta={T7_FASTA_GZ}",
-            "--recipe", RECIPE_PARENT,
+            "--files",
+            f"fasta={T7_FASTA_GZ}",
+            "--recipe",
+            RECIPE_PARENT,
         ],
         capture_output=True,
         text=True,
@@ -101,8 +111,12 @@ def real_build_config(tmp_path_factory):
     # Get the genome digest dynamically via refgenie id
     id_result = subprocess.run(
         [
-            sys.executable, "-m", "refgenie", "id",
-            "-c", config_path,
+            sys.executable,
+            "-m",
+            "refgenie",
+            "id",
+            "-c",
+            config_path,
             f"{GENOME_ALIAS}/fasta",
         ],
         capture_output=True,
@@ -112,9 +126,15 @@ def real_build_config(tmp_path_factory):
     # Compute genome digest from refgenie alias get
     alias_result = subprocess.run(
         [
-            sys.executable, "-m", "refgenie", "alias", "get",
-            "-c", config_path,
-            "-a", GENOME_ALIAS,
+            sys.executable,
+            "-m",
+            "refgenie",
+            "alias",
+            "get",
+            "-c",
+            config_path,
+            "-a",
+            GENOME_ALIAS,
         ],
         capture_output=True,
         text=True,
@@ -374,7 +394,9 @@ class TestRealBuild:
 
         rgc = RefGenConf.from_yaml_file(real_build_config["config_path"])
         fasta_path = rgc.seek(GENOME_ALIAS, "fasta")
-        assert os.path.isfile(fasta_path), f"seek returned nonexistent path: {fasta_path}"
+        assert os.path.isfile(fasta_path), (
+            f"seek returned nonexistent path: {fasta_path}"
+        )
 
     def test_real_build_fasta_content_correct(self, real_build_config):
         """The built FASTA file contains the expected sequences from t7.fa.gz."""
@@ -493,15 +515,13 @@ class TestAddArchiveServePull:
 
         # Get reported digest
         resp_digest = requests.get(
-            f"{build_test_server['url']}/v3/assets/archive_digest/"
-            f"{genome_digest}/fasta"
+            f"{build_test_server['url']}/v3/assets/archive_digest/{genome_digest}/fasta"
         )
         reported_digest = resp_digest.text
 
         # Download archive and compute digest
         resp_archive = requests.get(
-            f"{build_test_server['url']}/v3/assets/archive/"
-            f"{genome_digest}/fasta",
+            f"{build_test_server['url']}/v3/assets/archive/{genome_digest}/fasta",
             params={"tag": "default"},
         )
         computed_digest = hashlib.md5(resp_archive.content).hexdigest()
@@ -524,9 +544,16 @@ class TestFullWorkflowCLI:
         # Init
         result = subprocess.run(
             [
-                sys.executable, "-m", "refgenie", "init",
-                "-c", client_cfg, "-g", genome_folder,
-                "-s", build_test_server["url"],
+                sys.executable,
+                "-m",
+                "refgenie",
+                "init",
+                "-c",
+                client_cfg,
+                "-g",
+                genome_folder,
+                "-s",
+                build_test_server["url"],
             ],
             capture_output=True,
             text=True,
@@ -536,8 +563,12 @@ class TestFullWorkflowCLI:
         # Pull
         result = subprocess.run(
             [
-                sys.executable, "-m", "refgenie", "pull",
-                "-c", client_cfg,
+                sys.executable,
+                "-m",
+                "refgenie",
+                "pull",
+                "-c",
+                client_cfg,
                 f"{GENOME_ALIAS}/fasta:default",
             ],
             capture_output=True,
@@ -548,8 +579,12 @@ class TestFullWorkflowCLI:
         # Seek
         result = subprocess.run(
             [
-                sys.executable, "-m", "refgenie", "seek",
-                "-c", client_cfg,
+                sys.executable,
+                "-m",
+                "refgenie",
+                "seek",
+                "-c",
+                client_cfg,
                 f"{GENOME_ALIAS}/fasta",
             ],
             capture_output=True,
@@ -574,17 +609,30 @@ class TestFullWorkflowCLI:
 
         subprocess.run(
             [
-                sys.executable, "-m", "refgenie", "init",
-                "-c", client_cfg, "-g", genome_folder,
-                "-s", build_test_server["url"],
+                sys.executable,
+                "-m",
+                "refgenie",
+                "init",
+                "-c",
+                client_cfg,
+                "-g",
+                genome_folder,
+                "-s",
+                build_test_server["url"],
             ],
-            capture_output=True, text=True, check=True,
+            capture_output=True,
+            text=True,
+            check=True,
         )
 
         result = subprocess.run(
             [
-                sys.executable, "-m", "refgenie", "listr",
-                "-c", client_cfg,
+                sys.executable,
+                "-m",
+                "refgenie",
+                "listr",
+                "-c",
+                client_cfg,
             ],
             capture_output=True,
             text=True,
@@ -602,26 +650,45 @@ class TestFullWorkflowCLI:
 
         subprocess.run(
             [
-                sys.executable, "-m", "refgenie", "init",
-                "-c", client_cfg, "-g", genome_folder,
-                "-s", build_test_server["url"],
+                sys.executable,
+                "-m",
+                "refgenie",
+                "init",
+                "-c",
+                client_cfg,
+                "-g",
+                genome_folder,
+                "-s",
+                build_test_server["url"],
             ],
-            capture_output=True, text=True, check=True,
+            capture_output=True,
+            text=True,
+            check=True,
         )
 
         subprocess.run(
             [
-                sys.executable, "-m", "refgenie", "pull",
-                "-c", client_cfg,
+                sys.executable,
+                "-m",
+                "refgenie",
+                "pull",
+                "-c",
+                client_cfg,
                 f"{GENOME_ALIAS}/fasta:default",
             ],
-            capture_output=True, text=True, check=True,
+            capture_output=True,
+            text=True,
+            check=True,
         )
 
         result = subprocess.run(
             [
-                sys.executable, "-m", "refgenie", "list",
-                "-c", client_cfg,
+                sys.executable,
+                "-m",
+                "refgenie",
+                "list",
+                "-c",
+                client_cfg,
             ],
             capture_output=True,
             text=True,

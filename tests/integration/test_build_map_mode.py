@@ -55,8 +55,12 @@ def map_build_config(tmp_path_factory):
     # refgenie init
     result = subprocess.run(
         [
-            sys.executable, "-m", "refgenie", "init",
-            "-c", config_path,
+            sys.executable,
+            "-m",
+            "refgenie",
+            "init",
+            "-c",
+            config_path,
         ],
         capture_output=True,
         text=True,
@@ -66,13 +70,19 @@ def map_build_config(tmp_path_factory):
     # refgenie build --map --preserve-map-configs
     result = subprocess.run(
         [
-            sys.executable, "-m", "refgenie", "build",
-            "-c", config_path,
+            sys.executable,
+            "-m",
+            "refgenie",
+            "build",
+            "-c",
+            config_path,
             f"{GENOME_ALIAS}/fasta",
             "--map",
             "--preserve-map-configs",
-            "--files", f"fasta={T7_FASTA_GZ}",
-            "--recipe", RECIPE_PARENT,
+            "--files",
+            f"fasta={T7_FASTA_GZ}",
+            "--recipe",
+            RECIPE_PARENT,
         ],
         capture_output=True,
         text=True,
@@ -118,10 +128,14 @@ def reduced_config(map_build_config, tmp_path_factory):
     # Run reduce
     result = subprocess.run(
         [
-            sys.executable, "-m", "refgenie", "build",
+            sys.executable,
+            "-m",
+            "refgenie",
+            "build",
             "--reduce",
             "--preserve-map-configs",
-            "-c", reduce_config_path,
+            "-c",
+            reduce_config_path,
         ],
         capture_output=True,
         text=True,
@@ -167,8 +181,12 @@ class TestMapBuild:
         if os.path.exists(data_dir):
             for genome_dir in os.listdir(data_dir):
                 map_cfg_path = os.path.join(
-                    data_dir, genome_dir, "fasta", "default",
-                    "_refgenie_build", BUILD_MAP_CFG,
+                    data_dir,
+                    genome_dir,
+                    "fasta",
+                    "default",
+                    "_refgenie_build",
+                    BUILD_MAP_CFG,
                 )
                 if os.path.exists(map_cfg_path):
                     found_map_config = True
@@ -187,8 +205,7 @@ class TestMapBuild:
         # The map step writes to a separate config, not the master
         genomes = rgc.get(CFG_GENOMES_KEY)
         assert genomes is None or len(genomes) == 0, (
-            f"Master config should have no genomes after map step, "
-            f"but found: {genomes}"
+            f"Master config should have no genomes after map step, but found: {genomes}"
         )
 
     def test_map_build_map_config_has_genome(self, map_build_config):
@@ -203,8 +220,12 @@ class TestMapBuild:
         map_cfg_path = None
         for genome_dir in os.listdir(data_dir):
             candidate = os.path.join(
-                data_dir, genome_dir, "fasta", "default",
-                "_refgenie_build", BUILD_MAP_CFG,
+                data_dir,
+                genome_dir,
+                "fasta",
+                "default",
+                "_refgenie_build",
+                BUILD_MAP_CFG,
             )
             if os.path.exists(candidate):
                 map_cfg_path = candidate
@@ -257,16 +278,18 @@ class TestReduceBuild:
         if os.path.exists(data_dir):
             for genome_dir in os.listdir(data_dir):
                 map_cfg_path = os.path.join(
-                    data_dir, genome_dir, "fasta", "default",
-                    "_refgenie_build", BUILD_MAP_CFG,
+                    data_dir,
+                    genome_dir,
+                    "fasta",
+                    "default",
+                    "_refgenie_build",
+                    BUILD_MAP_CFG,
                 )
                 if os.path.exists(map_cfg_path):
                     found = True
                     break
 
-        assert found, (
-            f"Map config should still exist with --preserve-map-configs"
-        )
+        assert found, f"Map config should still exist with --preserve-map-configs"
 
     def test_reduce_seek_returns_valid_path(self, reduced_config):
         """After reduce, seek returns a valid path to the FASTA file."""
@@ -300,24 +323,36 @@ class TestReduceWithoutPreserve:
         # Init
         result = subprocess.run(
             [
-                sys.executable, "-m", "refgenie", "init",
-                "-c", config_path,
+                sys.executable,
+                "-m",
+                "refgenie",
+                "init",
+                "-c",
+                config_path,
             ],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         assert result.returncode == 0
 
         # Map build
         result = subprocess.run(
             [
-                sys.executable, "-m", "refgenie", "build",
-                "-c", config_path,
+                sys.executable,
+                "-m",
+                "refgenie",
+                "build",
+                "-c",
+                config_path,
                 f"{GENOME_ALIAS}/fasta",
                 "--map",
-                "--files", f"fasta={T7_FASTA_GZ}",
-                "--recipe", RECIPE_PARENT,
+                "--files",
+                f"fasta={T7_FASTA_GZ}",
+                "--recipe",
+                RECIPE_PARENT,
             ],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         assert result.returncode == 0, (
             f"Map build failed: {result.stdout}\n{result.stderr}"
@@ -333,8 +368,12 @@ class TestReduceWithoutPreserve:
         map_configs_before = []
         for genome_dir in os.listdir(data_dir):
             candidate = os.path.join(
-                data_dir, genome_dir, "fasta", "default",
-                "_refgenie_build", BUILD_MAP_CFG,
+                data_dir,
+                genome_dir,
+                "fasta",
+                "default",
+                "_refgenie_build",
+                BUILD_MAP_CFG,
             )
             if os.path.exists(candidate):
                 map_configs_before.append(candidate)
@@ -344,11 +383,16 @@ class TestReduceWithoutPreserve:
         # Reduce WITHOUT --preserve-map-configs
         result = subprocess.run(
             [
-                sys.executable, "-m", "refgenie", "build",
+                sys.executable,
+                "-m",
+                "refgenie",
+                "build",
                 "--reduce",
-                "-c", config_path,
+                "-c",
+                config_path,
             ],
-            capture_output=True, text=True,
+            capture_output=True,
+            text=True,
         )
         assert result.returncode == 0, (
             f"Reduce failed: {result.stdout}\n{result.stderr}"

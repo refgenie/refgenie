@@ -76,9 +76,7 @@ class TestServerEndpoints:
 
     def test_asset_attributes(self, test_server_url):
         """Server returns asset attributes."""
-        resp = requests.get(
-            f"{test_server_url}/v3/assets/attrs/{GENOME_DIGEST}/fasta"
-        )
+        resp = requests.get(f"{test_server_url}/v3/assets/attrs/{GENOME_DIGEST}/fasta")
         assert resp.status_code == 200
         data = resp.json()
         assert "asset_digest" in data

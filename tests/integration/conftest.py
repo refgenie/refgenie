@@ -76,8 +76,12 @@ def real_build_result(tmp_path_factory):
     # refgenie init
     result = subprocess.run(
         [
-            sys.executable, "-m", "refgenie", "init",
-            "-c", config_path,
+            sys.executable,
+            "-m",
+            "refgenie",
+            "init",
+            "-c",
+            config_path,
         ],
         capture_output=True,
         text=True,
@@ -87,12 +91,19 @@ def real_build_result(tmp_path_factory):
     # refgenie build
     result = subprocess.run(
         [
-            sys.executable, "-m", "refgenie", "build",
-            "-c", config_path,
+            sys.executable,
+            "-m",
+            "refgenie",
+            "build",
+            "-c",
+            config_path,
             f"{GENOME_ALIAS}/fasta",
-            "--files", f"fasta={T7_FASTA_GZ}",
-            "--recipe", RECIPE_PARENT,
-            "--genome-description", GENOME_DESC,
+            "--files",
+            f"fasta={T7_FASTA_GZ}",
+            "--recipe",
+            RECIPE_PARENT,
+            "--genome-description",
+            GENOME_DESC,
         ],
         capture_output=True,
         text=True,
@@ -104,9 +115,15 @@ def real_build_result(tmp_path_factory):
     # Get the genome digest dynamically via refgenie alias get
     alias_result = subprocess.run(
         [
-            sys.executable, "-m", "refgenie", "alias", "get",
-            "-c", config_path,
-            "-a", GENOME_ALIAS,
+            sys.executable,
+            "-m",
+            "refgenie",
+            "alias",
+            "get",
+            "-c",
+            config_path,
+            "-a",
+            GENOME_ALIAS,
         ],
         capture_output=True,
         text=True,

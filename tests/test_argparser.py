@@ -125,4 +125,3 @@ class TestBuildArgparser:
     def test_no_command_gives_none(self, parser):
         args, _ = parser.parse_known_args([])
         assert args.command is None
-
