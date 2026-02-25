@@ -1,0 +1,42 @@
+name: Integration tests
+
+on:
+  push:
+    branches: [master, dev]
+  pull_request:
+    branches: [master, dev]
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.14"]
+
+    steps:
+    - uses: actions/checkout@v6
+
+    - name: Check out sibling repos
+      run: |
+        git clone --branch dev https://github.com/refgenie/refgenconf.git ../refgenconf
+        git clone --branch dev https://github.com/refgenie/refgenieserver.git ../refgenieserver
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v6
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install all packages
+      run: |
+        pip install -e ../refgenconf
+        pip install -e ../refgenieserver
+        pip install -e .
+        pip install uvicorn httpx fastapi pyyaml requests pytest
+
+    - name: Run integration tests
+      env:
+        RUN_INTEGRATION_TESTS: "true"
+      run: |
+        python -m pytest tests/integration/test_server_client.py -v
+        python -m pytest tests/integration/test_build_integration.py -v
+        python -m pytest tests/integration/test_build_map_mode.py -v

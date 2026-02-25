@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import os
 import sys
@@ -10,9 +12,10 @@ from refgenconf import (
     MissingAssetError,
     MissingGenomeError,
     RefGenConf,
+    select_genome_config,
+    upgrade_config,
 )
 from refgenconf import __version__ as rgc_version
-from refgenconf import select_genome_config, upgrade_config
 from refgenconf.helpers import block_iter_repr
 from requests.exceptions import MissingSchema
 from rich.console import Console
@@ -25,15 +28,14 @@ from .const import *
 from .exceptions import *
 from .helpers import _raise_missing_recipe_error, _single_folder_writeable
 from .refgenie import (
-    _skip_lock,
     parse_registry_path,
     refgenie_build,
     refgenie_build_reduce,
 )
 
 
-def main():
-    """Primary workflow"""
+def main() -> None:
+    """Primary workflow for the refgenie CLI."""
     parser = logmuse.add_logging_options(build_argparser())
     args, _ = parser.parse_known_args()
     global _LOGGER
@@ -73,7 +75,6 @@ def main():
         raise MissingGenomeConfigError(args.genome_config)
     _LOGGER.debug("Determined genome config: {}".format(gencfg))
 
-    skip_read_lock = True if gencfg is None else _skip_lock(args.skip_read_lock, gencfg)
     # From user input we want to construct a list of asset dicts, where each
     # asset has a genome name, asset name, and tag
     if "asset_registry_paths" in args and args.asset_registry_paths:
@@ -129,7 +130,7 @@ def main():
         if args.genome_archive_config:
             entries.update({CFG_ARCHIVE_CONFIG_KEY: args.genome_archive_config})
         _LOGGER.debug("initializing with entries: {}".format(entries))
-        rgc = RefGenConf(entries=entries, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf(entries=entries)
         rgc.initialize_config_file(os.path.abspath(gencfg))
 
     elif args.command == BUILD_CMD:
@@ -166,7 +167,7 @@ def main():
             sys.exit(0)
 
     elif args.command == GET_ASSET_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         check = args.check_exists if args.check_exists else None
         for a in asset_list:
             _LOGGER.debug(
@@ -186,7 +187,7 @@ def main():
         return
 
     elif args.command == GET_REMOTE_ASSET_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         if args.genome_server is not None:
             rgc.subscribe(
                 urls=args.genome_server, reset=not args.append_server, no_write=True
@@ -209,7 +210,7 @@ def main():
         return
 
     elif args.command == INSERT_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         if len(asset_list) > 1:
             raise NotImplementedError("Can only add 1 asset at a time")
         else:
@@ -226,7 +227,7 @@ def main():
             )
 
     elif args.command == PULL_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
 
         # existing assets overwriting
         if args.no_overwrite:
@@ -267,7 +268,7 @@ def main():
             )
 
     elif args.command in [LIST_LOCAL_CMD, LIST_REMOTE_CMD]:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         console = Console()
         if args.command == LIST_REMOTE_CMD:
             if args.genome_server is not None:
@@ -300,12 +301,12 @@ def main():
                 console.print(rgc.get_asset_table(genomes=args.genome))
 
     elif args.command == GETSEQ_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         print(rgc.getseq(args.genome, args.locus))
 
     elif args.command == REMOVE_CMD:
         force = args.force
-        rgc = RefGenConf(filepath=gencfg, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         for a in asset_list:
             a["tag"] = a["tag"] or rgc.get_default_tag(
                 a["genome"], a["asset"], use_existing=False
@@ -316,11 +317,15 @@ def main():
             gat = {"genome": a["genome"], "asset": a["asset"], "tag": a["tag"]}
             try:
                 if not rgc.is_asset_complete(**gat):
-                    with rgc as r:
+                    from yacman import write_lock
+
+                    with write_lock(rgc) as r:
                         r.cfg_remove_assets(**gat)
+                        r.write()
                     _LOGGER.info(
-                        "Removed an incomplete asset "
-                        "'{genome}/{asset}:{tag}'".format(*gat)
+                        "Removed an incomplete asset '{genome}/{asset}:{tag}'".format(
+                            **gat
+                        )
                     )
                     return
             except (KeyError, MissingAssetError, MissingGenomeError):
@@ -339,18 +344,21 @@ def main():
             rgc.remove(genome=a["genome"], asset=a["asset"], tag=a["tag"], force=force)
 
     elif args.command == TAG_CMD:
-        rgc = RefGenConf(filepath=gencfg, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         if len(asset_list) > 1:
             raise NotImplementedError("Can only tag 1 asset at a time")
         if args.default:
             # set the default tag and exit
-            with rgc as r:
+            from yacman import write_lock
+
+            with write_lock(rgc) as r:
                 r.set_default_pointer(a["genome"], a["asset"], a["tag"], True)
+                r.write()
             sys.exit(0)
         rgc.tag(a["genome"], a["asset"], a["tag"], args.tag, force=args.force)
 
     elif args.command == ID_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         if len(asset_list) == 1:
             g, a = asset_list[0]["genome"], asset_list[0]["asset"]
             t = asset_list[0]["tag"] or rgc.get_default_tag(g, a)
@@ -362,15 +370,15 @@ def main():
             print("{}/{}:{},".format(g, a, t) + rgc.id(g, a, t))
         return
     elif args.command == SUBSCRIBE_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         rgc.subscribe(urls=args.genome_server, reset=args.reset)
         return
     elif args.command == UNSUBSCRIBE_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         rgc.unsubscribe(urls=args.genome_server)
         return
     elif args.command == ALIAS_CMD:
-        rgc = RefGenConf(filepath=gencfg, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         if args.subcommand == ALIAS_GET_CMD:
             if args.aliases is not None:
                 for a in args.aliases:
@@ -392,7 +400,7 @@ def main():
             return
 
     elif args.command == COMPARE_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         res = rgc.compare(
             args.genome1[0], args.genome2[0], explain=not args.no_explanation
         )
@@ -418,11 +426,11 @@ def main():
         )
 
     elif args.command == POPULATE_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         process_populate(pop_fun=rgc.populate, file_path=args.file)
 
     elif args.command == POPULATE_REMOTE_CMD:
-        rgc = RefGenConf(filepath=gencfg, writable=False, skip_read_lock=skip_read_lock)
+        rgc = RefGenConf.from_yaml_file(gencfg)
         if args.genome_server is not None:
             rgc.subscribe(
                 urls=args.genome_server, reset=not args.append_server, no_write=True
@@ -431,14 +439,12 @@ def main():
         process_populate(pop_fun=pop_fun, file_path=args.file)
 
 
-def process_populate(pop_fun, file_path=None):
-    """
-    Process a populate request (file or stdin) with a custom populator function
+def process_populate(pop_fun, file_path: str | None = None) -> None:
+    """Process a populate request with a custom populator function.
 
-    :param callable(dict | str | list) -> dict | str | list pop_fun: a function
-        that populates refgenie registry paths in objects
-    :param str file_path: path to the file to populate refgenie registry paths in,
-        skip for stdin processing
+    Args:
+        pop_fun: Function that populates refgenie registry paths in objects.
+        file_path: Path to the file to populate. If None, reads from stdin.
     """
     if file_path is not None:
         _LOGGER.debug(f"Populating file: {file_path}")
@@ -452,14 +458,18 @@ def process_populate(pop_fun, file_path=None):
             sys.stdout.write(pop_fun(glob=line))
 
 
-def perm_check_x(file_to_check, message_tag="genome directory"):
-    """
-    Check X_OK permission on a path, providing according messaging and bool val.
+def perm_check_x(file_to_check: str, message_tag: str = "genome directory") -> bool:
+    """Check X_OK permission on a path.
 
-    :param str file_to_check: path to query for permission
-    :param str message_tag: context for error message if check fails
-    :return bool: os.access(path, X_OK) for the given path
-    :raise ValueError: if there's no filepath to check for permission
+    Args:
+        file_to_check: Path to query for permission.
+        message_tag: Context for error message if check fails.
+
+    Returns:
+        True if the path has execute permission.
+
+    Raises:
+        ValueError: If there's no filepath to check.
     """
     if not file_to_check:
         msg = "You must provide a path to {}".format(message_tag)
@@ -471,18 +481,21 @@ def perm_check_x(file_to_check, message_tag="genome directory"):
     return True
 
 
-def _make_asset_build_reqs(asset):
+def _make_asset_build_reqs(asset: str) -> None:
+    """Display build requirements and inputs for an asset.
+
+    Args:
+        asset: Name of the asset.
     """
-    Prepare requirements and inputs lists and display it
 
-    :params str asset: name of the asset
-    """
+    def _format_reqs(req_list: list[dict]) -> list[str]:
+        """Format requirement dicts into display strings.
 
-    def _format_reqs(req_list):
-        """
+        Args:
+            req_list: List of requirement dicts.
 
-        :param list[dict] req_list:
-        :return list[str]:
+        Returns:
+            Formatted requirement strings.
         """
         templ = "\t{} ({})"
         return [

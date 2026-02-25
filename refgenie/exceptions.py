@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 from refgenconf import CFG_ENV_VARS
 
 __all__ = ["RefgenieError", "MissingGenomeConfigError", "MissingFolderError"]
 
 
 class RefgenieError(Exception):
-    """Base refgenie exception type"""
+    """Base refgenie exception type."""
 
     pass
 
@@ -12,11 +14,11 @@ class RefgenieError(Exception):
 class MissingGenomeConfigError(RefgenieError):
     """Exception for when a genome config filepath doesn't point to a file."""
 
-    def __init__(self, conf_file=None):
-        """
-        Create the error message, using optionally an attempt filepath.
+    def __init__(self, conf_file: str | None = None) -> None:
+        """Create the error message, using optionally an attempt filepath.
 
-        :param str conf_file: path attempted to be used as genome config file
+        Args:
+            conf_file: Path attempted to be used as genome config file.
         """
         msg = "You must provide a config file either as an argument or via an environment variable: {}".format(
             ", ".join(CFG_ENV_VARS)
@@ -27,10 +29,12 @@ class MissingGenomeConfigError(RefgenieError):
 
 
 class MissingFolderError(RefgenieError):
-    def __init__(self, folder):
-        """
-        Create the error message.
+    """Exception for when a folder path doesn't exist."""
 
-        :param str folder: path attempted to be used as folder to save a file to
+    def __init__(self, folder: str) -> None:
+        """Create the error message.
+
+        Args:
+            folder: Path attempted to be used as folder to save a file to.
         """
         super(MissingFolderError, self).__init__(folder)

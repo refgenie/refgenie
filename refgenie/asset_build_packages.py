@@ -372,7 +372,7 @@ asset_build_packages = {
         },
         CMD_LST: [
             "cp {ensembl_gtf} {asset_outfolder}/{genome}.gtf.gz",
-            'gzip -dcf {asset_outfolder}/{genome}.gtf.gz | grep \'exon_number "1";\' | sed \'s/^/chr/\' | awk -v OFS=\'\t\' \'{{print $1, $4, $5, $20, $14, $7}}\' | sed \'s/";//g\' | sed \'s/"//g\' | awk \'{{if($6=="+"){{print $1"\t"$2+20"\t"$2+120"\t"$4"\t"$5"\t"$6}}else{{print $1"\t"$3-120"\t"$3-20"\t"$4"\t"$5"\t"$6}}}}\' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_ensembl_TSS.bed',
+            'gzip -dcf {asset_outfolder}/{genome}.gtf.gz | grep \'exon_number "1";\' | sed \'s/^/chr/\' | awk -v OFS=\'\t\' \'{{print $1, $4, $5, $20, $14, $7}}\' | sed \'s/";//g\' | sed \'s/"//g\' | awk \'{{if($6=="+"){{print $1"\t"$2+20"\t"$2+120"\t"$4"\t"$5"\t"$6}}else{{print $1"\t"$3-120"\t"$3-20"\t"$4"\t"$5"\t"$6}}}}\' | LC_COLLATE=C sort -k1,1 -k2,2n -k4,4 -u > {asset_outfolder}/{genome}_ensembl_TSS.bed',
             'gzip -dcf {asset_outfolder}/{genome}.gtf.gz | awk \'$3 == "gene"\' | sed \'s/^/chr/\' | awk -v OFS=\'\t\' \'{{print $1,$4,$5,$14,$6,$7}}\' | sed \'s/";//g\' | sed \'s/"//g\' | awk \'$4!="Metazoa_SRP"\' | awk \'$4!="U3"\' | awk \'$4!="7SK"\'  | awk \'($3-$2)>200\' | awk \'{{if($6=="+"){{print $1"\t"$2+500"\t"$3"\t"$4"\t"$5"\t"$6}}else{{print $1"\t"$2"\t"$3-500"\t"$4"\t"$5"\t"$6}}}}\' | awk \'$3>$2\' | LC_COLLATE=C sort -k4 -u > {asset_outfolder}/{genome}_ensembl_gene_body.bed',
         ],
     },
@@ -405,7 +405,7 @@ asset_build_packages = {
         },
         CMD_LST: [
             "cp {refgene} {asset_outfolder}/{genome}_refGene.txt.gz",
-            'gzip -dcf {asset_outfolder}/{genome}_refGene.txt.gz | awk \'{{if($4=="+"){{print $3"\t"$5"\t"$5"\t"$13"\t.\t"$4}}else{{print $3"\t"$6"\t"$6"\t"$13"\t.\t"$4}}}}\' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_TSS.bed',
+            'gzip -dcf {asset_outfolder}/{genome}_refGene.txt.gz | awk \'{{if($4=="+"){{print $3"\t"$5"\t"$5"\t"$13"\t.\t"$4}}else{{print $3"\t"$6"\t"$6"\t"$13"\t.\t"$4}}}}\' | LC_COLLATE=C sort -k1,1 -k2,2n -k4,4 -u > {asset_outfolder}/{genome}_TSS.bed',
             "gzip -dcf {asset_outfolder}/{genome}_refGene.txt.gz | awk -v OFS='\t' '$9>1' | awk -v OFS='\t' '{{ n = split($10, a, \",\"); split($11, b, \",\"); for(i=1; i<n; ++i) print $3, a[i], b[i], $13, i, $4 }}' | awk -v OFS='\t' '$6==\"+\" && $5!=1 {{print $0}} $6==\"-\" {{print $0}}' | awk '$4!=prev4 && prev6==\"-\" {{prev4=$4; prev6=$6; delete line[NR-1]; idx-=1}} {{line[++idx]=$0; prev4=$4; prev6=$6}} END {{for (x=1; x<=idx; x++) print line[x]}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_exons.bed",
             "gzip -dcf {asset_outfolder}/{genome}_refGene.txt.gz | awk -v OFS='\t' '$9>1' | awk -F'\t' '{{ exonCount=int($9);split($10,exonStarts,\"[,]\"); split($11,exonEnds,\"[,]\"); for(i=1;i<exonCount;i++) {{printf(\"%s\\t%s\\t%s\\t%s\\t%d\\t%s\\n\",$3,exonEnds[i],exonStarts[i+1],$13,($3==\"+\"?i:exonCount-i),$4);}}}}' | LC_COLLATE=C sort -k1,1 -k2,2n -u > {asset_outfolder}/{genome}_introns.bed",
             'gzip -dcf {asset_outfolder}/{genome}_refGene.txt.gz | grep \'cmpl\' | awk  \'{{print $3"\t"$5"\t"$6"\t"$13"\t.\t"$4}}\' | LC_COLLATE=C sort -k1,1 -k2,2n -u >  {asset_outfolder}/{genome}_pre-mRNA.bed',

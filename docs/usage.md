@@ -42,7 +42,7 @@ https://refgenie.databio.org
 
 ## `refgenie init --help`
 ```console
-usage: refgenie init [-h] -c C [--skip-read-lock] [-s GENOME_SERVER [GENOME_SERVER ...]]
+usage: refgenie init [-h] -c C [-s GENOME_SERVER [GENOME_SERVER ...]]
                      [-f GENOME_FOLDER] [-a GENOME_ARCHIVE_FOLDER]
                      [-b GENOME_ARCHIVE_CONFIG] [-u REMOTE_URL_BASE] [-j SETTINGS_JSON]
 
@@ -52,8 +52,6 @@ optional arguments:
   -h, --help                            show this help message and exit
   -c C, --genome-config C               Path to local genome configuration file. Optional
                                         if REFGENIE environment variable is set.
-  --skip-read-lock                      Whether the config file should not be locked for
-                                        reading
   -s GENOME_SERVER [GENOME_SERVER ...], --genome-server GENOME_SERVER [GENOME_SERVER ...]
                                         URL(s) to use for the genome_servers attribute in
                                         config file. Default:
@@ -78,7 +76,7 @@ optional arguments:
 
 ## `refgenie list --help`
 ```console
-usage: refgenie list [-h] [-c C] [--skip-read-lock] [-g [G ...]] [-r]
+usage: refgenie list [-h] [-c C] [-g [G ...]] [-r]
 
 List available local assets.
 
@@ -86,14 +84,13 @@ optional arguments:
   -h, --help                    show this help message and exit
   -c C, --genome-config C       Path to local genome configuration file. Optional if
                                 REFGENIE environment variable is set.
-  --skip-read-lock              Whether the config file should not be locked for reading
   -g [G ...], --genome [G ...]  Reference assembly ID, e.g. mm10.
   -r, --recipes                 List available recipes.
 ```
 
 ## `refgenie listr --help`
 ```console
-usage: refgenie listr [-h] [-c C] [--skip-read-lock] [-g [G ...]] [-s S [S ...]] [-p]
+usage: refgenie listr [-h] [-c C] [-g [G ...]] [-s S [S ...]] [-p]
 
 List available remote assets.
 
@@ -101,8 +98,6 @@ optional arguments:
   -h, --help                            show this help message and exit
   -c C, --genome-config C               Path to local genome configuration file. Optional
                                         if REFGENIE environment variable is set.
-  --skip-read-lock                      Whether the config file should not be locked for
-                                        reading
   -g [G ...], --genome [G ...]          Reference assembly ID, e.g. mm10.
   -s S [S ...], --genome-server S [S ...]
                                         One or more URLs to use. This information will not
@@ -113,7 +108,7 @@ optional arguments:
 
 ## `refgenie pull --help`
 ```console
-usage: refgenie pull [-h] [-c C] [--skip-read-lock] [-g G]
+usage: refgenie pull [-h] [-c C] [-g G]
                      [--no-overwrite | --force-overwrite] [--no-large | --pull-large]
                      [--size-cutoff S] [-b]
                      asset-registry-paths [asset-registry-paths ...]
@@ -128,7 +123,6 @@ optional arguments:
   -h, --help               show this help message and exit
   -c C, --genome-config C  Path to local genome configuration file. Optional if REFGENIE
                            environment variable is set.
-  --skip-read-lock         Whether the config file should not be locked for reading
   -g G, --genome G         Reference assembly ID, e.g. mm10.
 
 Prompt handling:
@@ -145,7 +139,7 @@ Prompt handling:
 
 ## `refgenie build --help`
 ```console
-usage: refgenie build [-h] [-c C] [--skip-read-lock] [-R] [-C CONFIG_FILE] [-N]
+usage: refgenie build [-h] [-c C] [-R] [-C CONFIG_FILE] [-N]
                       [--tag-description TAG_DESCRIPTION]
                       [--genome-description GENOME_DESCRIPTION] [-d] [--map]
                       [--pull-parents] [--reduce] [--assets ASSETS [ASSETS ...]]
@@ -163,8 +157,6 @@ optional arguments:
   -h, --help                            show this help message and exit
   -c C, --genome-config C               Path to local genome configuration file. Optional
                                         if REFGENIE environment variable is set.
-  --skip-read-lock                      Whether the config file should not be locked for
-                                        reading
   -R, --recover                         Overwrite locks to recover from previous failed
                                         run
   -C CONFIG_FILE, --config CONFIG_FILE  Pipeline configuration file (YAML). Relative paths
@@ -200,7 +192,7 @@ optional arguments:
 
 ## `refgenie seek --help`
 ```console
-usage: refgenie seek [-h] [-c C] [--skip-read-lock] [-g G] [-e]
+usage: refgenie seek [-h] [-c C] [-g G] [-e]
                      asset-registry-paths [asset-registry-paths ...]
 
 Get the path to a local asset.
@@ -213,7 +205,6 @@ optional arguments:
   -h, --help               show this help message and exit
   -c C, --genome-config C  Path to local genome configuration file. Optional if REFGENIE
                            environment variable is set.
-  --skip-read-lock         Whether the config file should not be locked for reading
   -g G, --genome G         Reference assembly ID, e.g. mm10.
   -e, --check-exists       Whether the returned asset path should be checked for existence
                            on disk.
@@ -221,7 +212,7 @@ optional arguments:
 
 ## `refgenie seekr --help`
 ```console
-usage: refgenie seekr [-h] [-c C] [--skip-read-lock] [-g G] [-s S [S ...]] [-p]
+usage: refgenie seekr [-h] [-c C] [-g G] [-s S [S ...]] [-p]
                       [--remote-class RC]
                       asset-registry-paths [asset-registry-paths ...]
 
@@ -236,8 +227,6 @@ optional arguments:
   -h, --help                            show this help message and exit
   -c C, --genome-config C               Path to local genome configuration file. Optional
                                         if REFGENIE environment variable is set.
-  --skip-read-lock                      Whether the config file should not be locked for
-                                        reading
   -g G, --genome G                      Reference assembly ID, e.g. mm10.
   -s S [S ...], --genome-server S [S ...]
                                         One or more URLs to use. This information will not
@@ -249,7 +238,7 @@ optional arguments:
 
 ## `refgenie populate --help`
 ```console
-usage: refgenie populate [-h] [-c C] [--skip-read-lock] [-f F]
+usage: refgenie populate [-h] [-c C] [-f F]
 
 Populate registry paths with local paths.
 
@@ -257,13 +246,12 @@ optional arguments:
   -h, --help               show this help message and exit
   -c C, --genome-config C  Path to local genome configuration file. Optional if REFGENIE
                            environment variable is set.
-  --skip-read-lock         Whether the config file should not be locked for reading
   -f F, --file F           File with registry paths to populate
 ```
 
 ## `refgenie populater --help`
 ```console
-usage: refgenie populater [-h] [-c C] [--skip-read-lock] [-s S [S ...]] [-p]
+usage: refgenie populater [-h] [-c C] [-s S [S ...]] [-p]
                           [--remote-class RC] [-f F]
 
 Populate registry paths with remote paths.
@@ -272,8 +260,6 @@ optional arguments:
   -h, --help                            show this help message and exit
   -c C, --genome-config C               Path to local genome configuration file. Optional
                                         if REFGENIE environment variable is set.
-  --skip-read-lock                      Whether the config file should not be locked for
-                                        reading
   -s S [S ...], --genome-server S [S ...]
                                         One or more URLs to use. This information will not
                                         persist in the genome config file.
@@ -285,7 +271,7 @@ optional arguments:
 
 ## `refgenie add --help`
 ```console
-usage: refgenie add [-h] [-c C] [--skip-read-lock] [-g G] [-f] -p P [-s S]
+usage: refgenie add [-h] [-c C] [-g G] [-f] -p P [-s S]
                     asset-registry-paths [asset-registry-paths ...]
 
 Add local asset to the config file.
@@ -298,7 +284,6 @@ optional arguments:
   -h, --help               show this help message and exit
   -c C, --genome-config C  Path to local genome configuration file. Optional if REFGENIE
                            environment variable is set.
-  --skip-read-lock         Whether the config file should not be locked for reading
   -g G, --genome G         Reference assembly ID, e.g. mm10.
   -f, --force              Do not prompt before action, approve upfront.
   -p P, --path P           Relative local path to asset.
@@ -308,7 +293,7 @@ optional arguments:
 
 ## `refgenie remove --help`
 ```console
-usage: refgenie remove [-h] [-c C] [--skip-read-lock] [-g G] [-f] [-a]
+usage: refgenie remove [-h] [-c C] [-g G] [-f] [-a]
                        asset-registry-paths [asset-registry-paths ...]
 
 Remove a local asset.
@@ -321,7 +306,6 @@ optional arguments:
   -h, --help               show this help message and exit
   -c C, --genome-config C  Path to local genome configuration file. Optional if REFGENIE
                            environment variable is set.
-  --skip-read-lock         Whether the config file should not be locked for reading
   -g G, --genome G         Reference assembly ID, e.g. mm10.
   -f, --force              Do not prompt before action, approve upfront.
   -a, --aliases            Remove the genome alias if last asset for that genome is
@@ -330,7 +314,7 @@ optional arguments:
 
 ## `refgenie getseq --help`
 ```console
-usage: refgenie getseq [-h] [-c C] [--skip-read-lock] -g G -l LOCUS
+usage: refgenie getseq [-h] [-c C] -g G -l LOCUS
 
 Get sequences from a genome.
 
@@ -338,14 +322,13 @@ optional arguments:
   -h, --help               show this help message and exit
   -c C, --genome-config C  Path to local genome configuration file. Optional if REFGENIE
                            environment variable is set.
-  --skip-read-lock         Whether the config file should not be locked for reading
   -g G, --genome G         Reference assembly ID, e.g. mm10.
   -l LOCUS, --locus LOCUS  Coordinates of desired sequence; e.g. 'chr1:50000-50200'.
 ```
 
 ## `refgenie tag --help`
 ```console
-usage: refgenie tag [-h] [-c C] [--skip-read-lock] [-g G] [-f] (-t TAG | -d)
+usage: refgenie tag [-h] [-c C] [-g G] [-f] (-t TAG | -d)
                     asset-registry-paths [asset-registry-paths ...]
 
 Tag an asset.
@@ -358,7 +341,6 @@ optional arguments:
   -h, --help               show this help message and exit
   -c C, --genome-config C  Path to local genome configuration file. Optional if REFGENIE
                            environment variable is set.
-  --skip-read-lock         Whether the config file should not be locked for reading
   -g G, --genome G         Reference assembly ID, e.g. mm10.
   -f, --force              Do not prompt before action, approve upfront.
   -t TAG, --tag TAG        Tag to assign to an asset.
@@ -367,7 +349,7 @@ optional arguments:
 
 ## `refgenie id --help`
 ```console
-usage: refgenie id [-h] [-c C] [--skip-read-lock] [-g G]
+usage: refgenie id [-h] [-c C] [-g G]
                    asset-registry-paths [asset-registry-paths ...]
 
 Return the asset digest.
@@ -380,13 +362,12 @@ optional arguments:
   -h, --help               show this help message and exit
   -c C, --genome-config C  Path to local genome configuration file. Optional if REFGENIE
                            environment variable is set.
-  --skip-read-lock         Whether the config file should not be locked for reading
   -g G, --genome G         Reference assembly ID, e.g. mm10.
 ```
 
 ## `refgenie subscribe --help`
 ```console
-usage: refgenie subscribe [-h] [-c C] [--skip-read-lock] [-r] -s S [S ...]
+usage: refgenie subscribe [-h] [-c C] [-r] -s S [S ...]
 
 Add a refgenieserver URL to the config.
 
@@ -394,8 +375,6 @@ optional arguments:
   -h, --help                            show this help message and exit
   -c C, --genome-config C               Path to local genome configuration file. Optional
                                         if REFGENIE environment variable is set.
-  --skip-read-lock                      Whether the config file should not be locked for
-                                        reading
   -r, --reset                           Overwrite the current list of server URLs.
   -s S [S ...], --genome-server S [S ...]
                                         One or more URLs to add to the genome_servers
@@ -404,7 +383,7 @@ optional arguments:
 
 ## `refgenie unsubscribe --help`
 ```console
-usage: refgenie unsubscribe [-h] [-c C] [--skip-read-lock] -s S [S ...]
+usage: refgenie unsubscribe [-h] [-c C] -s S [S ...]
 
 Remove a refgenieserver URL from the config.
 
@@ -412,8 +391,6 @@ optional arguments:
   -h, --help                            show this help message and exit
   -c C, --genome-config C               Path to local genome configuration file. Optional
                                         if REFGENIE environment variable is set.
-  --skip-read-lock                      Whether the config file should not be locked for
-                                        reading
   -s S [S ...], --genome-server S [S ...]
                                         One or more URLs to remove from the genome_servers
                                         attribute in config file.
@@ -437,7 +414,7 @@ optional arguments:
 
 ## `refgenie upgrade --help`
 ```console
-usage: refgenie upgrade [-h] [-c C] [--skip-read-lock] -v V [-f]
+usage: refgenie upgrade [-h] [-c C] -v V [-f]
 
 Upgrade config. This will alter the files on disk.
 
@@ -445,7 +422,6 @@ optional arguments:
   -h, --help                show this help message and exit
   -c C, --genome-config C   Path to local genome configuration file. Optional if REFGENIE
                             environment variable is set.
-  --skip-read-lock          Whether the config file should not be locked for reading
   -v V, --target-version V  Target config version for the upgrade.
   -f, --force               Do not prompt before action, approve upfront.
 ```

@@ -6,6 +6,9 @@ Each iGenome has the following nested directory structure:
     Build/
     Annotation/ Sequence/
 """
+
+from __future__ import annotations
+
 import argparse
 import os
 import sys
@@ -22,11 +25,11 @@ from .exceptions import MissingGenomeConfigError
 from .refgenie import _seek
 
 
-def build_argparser():
-    """
-    Build a parser for this tool
+def build_argparser() -> argparse.ArgumentParser:
+    """Build a parser for the iGenome import tool.
 
-    :return argparse.ArgumentParser: constructed parser
+    Returns:
+        Constructed argument parser.
     """
     parser = argparse.ArgumentParser(
         description="Integrates every asset from the downloaded iGenomes"
@@ -61,13 +64,18 @@ def build_argparser():
     return parser
 
 
-def untar_or_copy(p, dest):
-    """
-    Depending on a kind of the provided path, either copy or extract it to the destination directory
+def untar_or_copy(p: str, dest: str) -> bool:
+    """Copy or extract a path to the destination directory.
 
-    :param str p: path to the directory to be copied or tarball to be extracted
-    :param str dest: where to extract file or copy dir
-    :return bool: whether the process was successful
+    Depending on whether the provided path is a directory or tarball,
+    either copy or extract it to the destination.
+
+    Args:
+        p: Path to the directory to be copied or tarball to be extracted.
+        dest: Where to extract the file or copy the dir.
+
+    Returns:
+        Whether the process was successful.
     """
     if os.path.exists(p):
         if os.path.isdir(p):
@@ -84,18 +92,27 @@ def untar_or_copy(p, dest):
     return False
 
 
-def refgenie_add(rgc, asset_dict, path, force=False):
-    """
-    Add an external asset to the config.
-    File existence is checked and asset files are transferred to the selected
-    tag subdirectory
+def refgenie_add(
+    rgc: refgenconf.RefGenConf,
+    asset_dict: dict,
+    path: str,
+    force: bool = False,
+) -> bool:
+    """Add an external asset to the config.
 
-    :param refgenconf.RefGenConf rgc: genome configuration object
-    :param dict asset_dict: a single parsed registry path
-    :param str path: the path provided by the user. Must be relative to the
-        specific genome directory
-    :param bool force: whether the replacement of a possibly existing asset
-        should be forced
+    File existence is checked and asset files are transferred to the
+    selected tag subdirectory.
+
+    Args:
+        rgc: Genome configuration object.
+        asset_dict: A single parsed registry path.
+        path: The path provided by the user. Must be relative to the
+            specific genome directory.
+        force: Whether the replacement of a possibly existing asset
+            should be forced.
+
+    Returns:
+        Whether the asset was added successfully.
     """
     # remove the first directory from the provided path if it is the genome name
     path = (
@@ -163,8 +180,8 @@ def refgenie_add(rgc, asset_dict, path, force=False):
     return True
 
 
-def main():
-    """main workflow"""
+def main() -> None:
+    """Main workflow for iGenome import."""
     parser = build_argparser()
     args, remaining_args = parser.parse_known_args()
     cfg = refgenconf.select_genome_config(
@@ -172,15 +189,15 @@ def main():
     )
     if not cfg:
         raise MissingGenomeConfigError(args.config)
-    rgc = refgenconf.RefGenConf(filepath=cfg, writable=False)
-    pths = [args.path, mkabs(args.path, rgc.genome_folder)]
+    rgc = refgenconf.RefGenConf.from_yaml_file(cfg)
+    pths = [args.path, mkabs(args.path, rgc[CFG_FOLDER_KEY])]
     if not untar_or_copy(
-        pths[0], os.path.join(rgc.genome_folder, args.genome)
-    ) and not untar_or_copy(pths[1], os.path.join(rgc.genome_folder, args.genome)):
+        pths[0], os.path.join(rgc[CFG_FOLDER_KEY], args.genome)
+    ) and not untar_or_copy(pths[1], os.path.join(rgc[CFG_FOLDER_KEY], args.genome)):
         raise OSError(
             "Path '{}' does not exist. Tried: {}".format(args.path, " and ".join(pths))
         )
-    path_components = [rgc.genome_folder] + [args.genome] + ["*"] * 3 + ["Sequence"]
+    path_components = [rgc[CFG_FOLDER_KEY]] + [args.genome] + ["*"] * 3 + ["Sequence"]
     assets_paths = glob(os.path.join(*path_components))
     assert len(assets_paths) > 0, OSError(
         "Your iGenomes directory is corrupted, more than one directory matched by {}."
@@ -193,18 +210,23 @@ def main():
     processed = []
     for a in asset_names:
         asset_dict = {"genome": args.genome, "asset": a, "tag": None, "seek_key": None}
-        asset_path = os.path.relpath(os.path.join(assets_path, a), rgc.genome_folder)
+        asset_path = os.path.relpath(os.path.join(assets_path, a), rgc[CFG_FOLDER_KEY])
         if refgenie_add(rgc, asset_dict, asset_path):
             processed.append("{}/{}".format(asset_dict["genome"], asset_dict["asset"]))
     print("Added assets: \n- {}".format("\n- ".join(processed)))
 
 
-def _remove(path):
-    """
-    remove asset if it is a dir or a file
+def _remove(path: str) -> str:
+    """Remove an asset, whether it is a file or a directory.
 
-    :param str path: path to the entity to remove, either a file or a dir
-    :return str: removed path
+    Args:
+        path: Path to the entity to remove.
+
+    Returns:
+        The removed path.
+
+    Raises:
+        ValueError: If path is neither a file nor a directory.
     """
     from shutil import rmtree
 

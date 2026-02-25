@@ -1,0 +1,75 @@
+[project]
+name = "refgenie"
+version = "0.13.0"
+description = "Refgenie creates a standardized folder structure for reference genome files and indexes"
+readme = "README.md"
+license = "BSD-2-Clause"
+requires-python = ">=3.10"
+authors = [
+    { name = "Nathan Sheffield" },
+    { name = "Vince Reuter" },
+    { name = "Michal Stolarczyk" },
+]
+keywords = ["bioinformatics", "sequencing", "ngs", "reference genome"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+dependencies = [
+    "logmuse>=0.2.6",
+    "piper>=0.15.0",
+    "pyfaidx>=0.5.5.2",
+    "refgenconf>=0.13.0",
+    "rich>=9.0.1",
+    "ubiquerg>=0.9.0",
+    "yacman>=0.9.5",
+]
+
+[project.urls]
+Homepage = "https://refgenie.databio.org"
+
+[project.scripts]
+refgenie = "refgenie.__main__:main"
+import_igenome = "refgenie.add_assets_igenome:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["refgenie*"]
+
+[tool.setuptools.package-data]
+refgenie = ["schemas/*"]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
+]
+integration = [
+    "pytest",
+    "fastapi",
+    "uvicorn",
+    "httpx",
+]
+
+[tool.pytest.ini_options]
+addopts = "-rfE"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+extend-exclude = ["docs_jupyter"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501", "F403", "F405", "F401"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["refgenie"]

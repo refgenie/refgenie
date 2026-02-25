@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import argparse
 from argparse import HelpFormatter
 
 import pypiper
@@ -8,11 +11,11 @@ from ._version import __version__
 from .const import *
 
 
-def build_argparser():
-    """
-    Builds argument parser.
+def build_argparser() -> argparse.ArgumentParser:
+    """Build the refgenie argument parser.
 
-    :return argparse.ArgumentParser
+    Returns:
+        Constructed argument parser with all subcommands.
     """
 
     banner = "%(prog)s - reference genome asset manager"
@@ -53,12 +56,6 @@ def build_argparser():
             help="Path to local genome configuration file. Optional if {} environment variable is set.".format(
                 ", ".join(CFG_ENV_VARS)
             ),
-        )
-        sps[cmd].add_argument(
-            "--skip-read-lock",
-            required=False,
-            action="store_true",
-            help="Whether the config file should not be locked for reading",
         )
 
     # upgrade: upgrade config and alter file structure to the target version
@@ -231,12 +228,6 @@ def build_argparser():
             help="Path to local genome configuration file. Optional if {} environment variable is set.".format(
                 ", ".join(CFG_ENV_VARS)
             ),
-        )
-        alias_sps[cmd].add_argument(
-            "--skip-read-lock",
-            required=False,
-            action="store_true",
-            help="Whether the config file should not be locked for reading",
         )
 
     alias_sps[ALIAS_SET_CMD].add_argument(
