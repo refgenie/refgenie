@@ -18,8 +18,8 @@ jobs:
 
     - name: Check out sibling repos
       run: |
-        git clone https://github.com/refgenie/refgenconf.git ../refgenconf
-        git clone https://github.com/refgenie/refgenieserver.git ../refgenieserver
+        git clone --branch dev https://github.com/refgenie/refgenconf.git ../refgenconf
+        git clone --branch dev https://github.com/refgenie/refgenieserver.git ../refgenieserver
 
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v6
