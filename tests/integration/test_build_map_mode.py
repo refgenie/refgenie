@@ -289,7 +289,7 @@ class TestReduceBuild:
                     found = True
                     break
 
-        assert found, f"Map config should still exist with --preserve-map-configs"
+        assert found, "Map config should still exist with --preserve-map-configs"
 
     def test_reduce_seek_returns_valid_path(self, reduced_config):
         """After reduce, seek returns a valid path to the FASTA file."""

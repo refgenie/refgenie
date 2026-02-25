@@ -180,9 +180,8 @@ def archived_asset_config(real_build_config, tmp_path_factory):
     """
     from refgenconf import RefGenConf
     from refgenconf.const import CFG_ARCHIVE_KEY
-    from yacman import write_lock
-
     from refgenieserver.server_builder import archive
+    from yacman import write_lock
 
     assert real_build_config["build_returncode"] == 0, (
         f"Build failed, cannot archive: {real_build_config['build_stderr']}"
@@ -238,7 +237,6 @@ def build_test_server(archived_asset_config):
     Yields dict with url and genome_digest.
     """
     import uvicorn
-
     from refgenieserver.app_factory import create_app
 
     app = create_app(
@@ -305,7 +303,7 @@ def client_rgc(test_server_url, tmp_path):
     This is the main fixture for testing client-server operations.
     """
     from refgenconf import RefGenConf
-    from refgenconf.const import CFG_SERVERS_KEY, CFG_VERSION_KEY, CFG_FOLDER_KEY
+    from refgenconf.const import CFG_FOLDER_KEY, CFG_SERVERS_KEY, CFG_VERSION_KEY
 
     genome_folder = tmp_path / "client_genomes"
     genome_folder.mkdir()
@@ -329,7 +327,7 @@ def client_rgc(test_server_url, tmp_path):
 @pytest.fixture
 def client_config_path(test_server_url, tmp_path):
     """Create a client config file and return its path (for CLI tests)."""
-    from refgenconf.const import CFG_SERVERS_KEY, CFG_VERSION_KEY, CFG_FOLDER_KEY
+    from refgenconf.const import CFG_FOLDER_KEY, CFG_SERVERS_KEY, CFG_VERSION_KEY
 
     genome_folder = tmp_path / "cli_genomes"
     genome_folder.mkdir()

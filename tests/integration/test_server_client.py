@@ -23,8 +23,7 @@ import tarfile
 import pytest
 import requests
 
-from .conftest import GENOME_ALIAS, GENOME_DESC, GENOME_DIGEST, FASTA_CONTENT
-
+from .conftest import FASTA_CONTENT, GENOME_ALIAS, GENOME_DESC, GENOME_DIGEST
 
 # =============================================================================
 # Test group 1: Server endpoint tests (via direct HTTP)
@@ -326,7 +325,6 @@ class TestConfigPersistence:
     def test_write_and_reload(self, client_rgc, tmp_path):
         """Config survives write/reload cycle after pull."""
         import yaml as _yaml
-
         from refgenconf import RefGenConf
 
         client_rgc.pull(GENOME_ALIAS, "fasta", "default", force=True)

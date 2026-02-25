@@ -9,9 +9,8 @@ import sys
 from glob import glob
 from logging import getLogger
 
-import yaml
-
 import pypiper
+import yaml
 from refgenconf import RefGenConf, get_dir_digest
 from refgenconf.exceptions import (
     MissingAssetError,

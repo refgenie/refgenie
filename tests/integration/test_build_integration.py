@@ -191,9 +191,9 @@ class TestRealBuild:
         """After build, asset_digest is set and non-empty in the config."""
         from refgenconf import RefGenConf
         from refgenconf.const import (
-            CFG_ASSETS_KEY,
             CFG_ASSET_CHECKSUM_KEY,
             CFG_ASSET_TAGS_KEY,
+            CFG_ASSETS_KEY,
             CFG_GENOMES_KEY,
         )
 
@@ -524,9 +524,9 @@ class TestAddAssetPythonAPI:
         """After add(), the asset has a computed digest."""
         from refgenconf import RefGenConf
         from refgenconf.const import (
-            CFG_ASSETS_KEY,
             CFG_ASSET_CHECKSUM_KEY,
             CFG_ASSET_TAGS_KEY,
+            CFG_ASSETS_KEY,
             CFG_GENOMES_KEY,
         )
 
@@ -588,8 +588,8 @@ class TestArchiveCreation:
         from refgenconf.const import (
             CFG_ARCHIVE_CHECKSUM_KEY,
             CFG_ARCHIVE_SIZE_KEY,
-            CFG_ASSETS_KEY,
             CFG_ASSET_TAGS_KEY,
+            CFG_ASSETS_KEY,
             CFG_GENOMES_KEY,
         )
 
