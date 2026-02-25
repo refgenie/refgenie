@@ -178,7 +178,7 @@ class TestRefGenConfClientOperations:
         # listr returns {server_url: {genome_alias: assets}}
         for server_url, genome_data in remote_data.items():
             assert len(genome_data) > 0
-            # Should contain rCRSd (by alias)
+            # Should contain the genome alias
             assert GENOME_ALIAS in genome_data
 
     def test_list_remote_as_digests(self, client_rgc):
@@ -258,7 +258,7 @@ class TestAliasOperations:
         """After pull, get_genome_alias returns alias for digest."""
         client_rgc.pull(GENOME_ALIAS, "fasta", "default", force=True)
         alias = client_rgc.get_genome_alias(digest=GENOME_DIGEST)
-        # Should be rCRSd or a list containing it
+        # Should be the genome alias or a list containing it
         if isinstance(alias, list):
             assert GENOME_ALIAS in alias
         else:
@@ -380,7 +380,7 @@ class TestRefgenieCLI:
             text=True,
         )
         assert result.returncode == 0
-        # Output should mention rCRSd or the genome digest
+        # Output should mention genome alias or the genome digest
         assert GENOME_ALIAS in result.stdout or GENOME_DIGEST in result.stdout
 
     def test_pull_command(self, client_config_path):

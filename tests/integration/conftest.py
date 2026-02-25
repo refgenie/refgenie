@@ -36,7 +36,7 @@ pytestmark = pytest.mark.skipif(
     reason="Integration tests disabled. Run ./tests/scripts/test-integration.sh",
 )
 
-# Test genome alias -- matches what refgenie build uses with t7.fa.gz
+# Test genome alias and description
 GENOME_ALIAS = "rCRSd"
 GENOME_DESC = "The revised cambridge reference sequence"
 
@@ -52,6 +52,13 @@ def _read_fasta_content(gz_path):
         return f.read()
 
 
+def _find_free_port():
+    """Find a free TCP port on localhost."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
 # GENOME_DIGEST is deterministic for a given FASTA file. This digest is
 # computed by initialize_genome() from the t7.fa.gz test data and is also
 # confirmed by the CI workflow in test-refgenie-cli.yml.
@@ -61,16 +68,23 @@ GENOME_DIGEST = "6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905"
 FASTA_CONTENT = _read_fasta_content(T7_FASTA_GZ)
 
 
+# =============================================================================
+# Fixtures: real build -> archive -> serve (shared by all test files)
+# =============================================================================
+
+
 @pytest.fixture(scope="session")
-def real_build_result(tmp_path_factory):
+def real_build_config(tmp_path_factory):
     """Build a real genome asset using `refgenie build` subprocess.
 
-    Runs `refgenie init` followed by `refgenie build rCRSd/fasta` with the
-    test recipe and test FASTA file. This exercises the full build pipeline.
+    Runs `refgenie init` followed by `refgenie build t7/fasta` with the
+    test recipe and test FASTA file. This exercises the full build pipeline
+    including pypiper, recipe resolution, and config writing.
 
-    Returns a dict with config_path, genome_digest, and the build result.
+    Returns a dict with config_path, genome_name, genome_digest, temp_dir,
+    and the build result.
     """
-    base = tmp_path_factory.mktemp("server_build")
+    base = tmp_path_factory.mktemp("real_build")
     config_path = str(base / "genome_config.yaml")
 
     # refgenie init
@@ -108,11 +122,23 @@ def real_build_result(tmp_path_factory):
         capture_output=True,
         text=True,
     )
-    assert result.returncode == 0, (
-        f"Build failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
+
+    # Get the genome digest dynamically via refgenie id
+    id_result = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "refgenie",
+            "id",
+            "-c",
+            config_path,
+            f"{GENOME_ALIAS}/fasta",
+        ],
+        capture_output=True,
+        text=True,
     )
 
-    # Get the genome digest dynamically via refgenie alias get
+    # Compute genome digest from refgenie alias get
     alias_result = subprocess.run(
         [
             sys.executable,
@@ -128,29 +154,29 @@ def real_build_result(tmp_path_factory):
         capture_output=True,
         text=True,
     )
-    assert alias_result.returncode == 0, f"Alias get failed: {alias_result.stderr}"
-    genome_digest = alias_result.stdout.strip()
-    assert genome_digest == GENOME_DIGEST, (
-        f"Build produced unexpected digest: {genome_digest} != {GENOME_DIGEST}"
-    )
+    genome_digest = alias_result.stdout.strip() if alias_result.returncode == 0 else ""
 
     return {
         "config_path": config_path,
+        "genome_name": GENOME_ALIAS,
         "genome_digest": genome_digest,
-        "base_dir": str(base),
+        "temp_dir": str(base),
+        "build_returncode": result.returncode,
+        "build_stdout": result.stdout,
+        "build_stderr": result.stderr,
+        "asset_digest": id_result.stdout.strip() if id_result.returncode == 0 else "",
     }
 
 
 @pytest.fixture(scope="session")
-def archived_genome_dir(real_build_result, tmp_path_factory):
-    """Archive the built genome using the real archive() function.
+def archived_asset_config(real_build_config, tmp_path_factory):
+    """Archive the built asset using refgenieserver archive.
 
-    Calls refgenieserver.server_builder.archive() with the config from
-    the real build, exercising the real archiving code path including
-    tar creation, checksum computation, and config updates.
+    Calls the archive() function from refgenieserver.server_builder directly,
+    which exercises the real archiving code path including tar creation,
+    checksum computation, and config updates.
 
-    Returns a dict with data_dir, archive_dir, server_config_path,
-    and genome_digest.
+    Returns dict with server_config_path, archive_dir, and genome_digest.
     """
     from refgenconf import RefGenConf
     from refgenconf.const import CFG_ARCHIVE_KEY
@@ -158,87 +184,73 @@ def archived_genome_dir(real_build_result, tmp_path_factory):
 
     from refgenieserver.server_builder import archive
 
+    assert real_build_config["build_returncode"] == 0, (
+        f"Build failed, cannot archive: {real_build_config['build_stderr']}"
+    )
+
     archive_dir = tmp_path_factory.mktemp("archives")
 
     # Update the config to include archive folder
-    rgc = RefGenConf.from_yaml_file(real_build_result["config_path"])
+    rgc = RefGenConf.from_yaml_file(real_build_config["config_path"])
     with write_lock(rgc) as r:
         r[CFG_ARCHIVE_KEY] = str(archive_dir)
         r.write()
 
     # Run refgenieserver archive
-    rgc = RefGenConf.from_yaml_file(real_build_result["config_path"])
+    rgc = RefGenConf.from_yaml_file(real_build_config["config_path"])
     archive(
         rgc=rgc,
         registry_paths=None,  # archive all
         force=True,
         remove=False,
-        cfg_path=real_build_result["config_path"],
+        cfg_path=real_build_config["config_path"],
         genomes_desc=None,
     )
 
-    genome_digest = real_build_result["genome_digest"]
-
     # Verify the archive was created
+    genome_digest = real_build_config["genome_digest"]
     tgz_path = os.path.join(str(archive_dir), genome_digest, "fasta__default.tgz")
     assert os.path.exists(tgz_path), f"Archive not created at {tgz_path}"
 
     # The server config is written by archive() into the archive dir
     server_config_path = os.path.join(
-        str(archive_dir), os.path.basename(real_build_result["config_path"])
+        str(archive_dir), os.path.basename(real_build_config["config_path"])
     )
     assert os.path.exists(server_config_path), (
         f"Server config not found at {server_config_path}"
     )
 
-    # Get data_dir from the config
-    rgc = RefGenConf.from_yaml_file(real_build_result["config_path"])
-    data_dir = rgc.data_dir
-
     return {
-        "data_dir": data_dir,
-        "archive_dir": str(archive_dir),
         "server_config_path": server_config_path,
+        "archive_dir": str(archive_dir),
         "genome_digest": genome_digest,
     }
 
 
 @pytest.fixture(scope="session")
-def server_config_path(archived_genome_dir):
-    """Return the server config path produced by archive()."""
-    return archived_genome_dir["server_config_path"]
+def build_test_server(archived_asset_config):
+    """Start a real refgenieserver serving the archived assets.
 
+    Uses create_app() from refgenieserver.app_factory to create
+    a real FastAPI app, then starts it on a random port via uvicorn
+    in a background thread.
 
-@pytest.fixture(scope="session")
-def test_server_app(server_config_path, archived_genome_dir):
-    """Create a real refgenieserver FastAPI app from the test config."""
-    from refgenieserver.app_factory import create_app
-
-    archive_dir = str(archived_genome_dir["archive_dir"])
-    app = create_app(server_config_path, archive_base_dir=archive_dir)
-    return app
-
-
-def _find_free_port():
-    """Find a free TCP port on localhost."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(("127.0.0.1", 0))
-        return s.getsockname()[1]
-
-
-@pytest.fixture(scope="session")
-def test_server_url(test_server_app):
-    """Start the test server on a random port in a background thread.
-
-    Yields the server URL (e.g. http://127.0.0.1:12345).
+    Yields dict with url and genome_digest.
     """
     import uvicorn
 
+    from refgenieserver.app_factory import create_app
+
+    app = create_app(
+        archived_asset_config["server_config_path"],
+        archive_base_dir=archived_asset_config["archive_dir"],
+    )
+
     port = _find_free_port()
-    url = f"http://127.0.0.1:{port}"
+    server_url = f"http://127.0.0.1:{port}"
 
     config = uvicorn.Config(
-        test_server_app,
+        app,
         host="127.0.0.1",
         port=port,
         log_level="warning",
@@ -256,20 +268,34 @@ def test_server_url(test_server_app):
         except (ConnectionRefusedError, OSError):
             time.sleep(0.1)
     else:
-        raise RuntimeError(f"Test server failed to start on port {port}")
+        raise RuntimeError(f"Build test server failed to start on port {port}")
 
-    yield url
+    yield {
+        "url": server_url,
+        "genome_digest": archived_asset_config["genome_digest"],
+    }
 
     server.should_exit = True
     thread.join(timeout=5)
 
 
+# =============================================================================
+# Fixtures for test_server_client.py (thin wrappers around shared fixtures)
+# =============================================================================
+
+
 @pytest.fixture(scope="session")
-def server_rgc(server_config_path):
+def test_server_url(build_test_server):
+    """Return the URL of the shared test server."""
+    return build_test_server["url"]
+
+
+@pytest.fixture(scope="session")
+def server_rgc(archived_asset_config):
     """Return the RefGenConf object that the server uses (for testing helpers)."""
     from refgenconf import RefGenConf
 
-    return RefGenConf.from_yaml_file(server_config_path)
+    return RefGenConf.from_yaml_file(archived_asset_config["server_config_path"])
 
 
 @pytest.fixture

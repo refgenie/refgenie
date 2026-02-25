@@ -2,6 +2,20 @@
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html) and [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) format.
 
+## [0.13.0] - 2026-02-25
+
+### Changed
+- Updated yacman dependency for compatibility with yacman v1
+- Modernized packaging to use pyproject.toml with hatchling
+- Dropped support for Python < 3.10
+
+### Added
+- Cross-package integration tests for build, archive, serve, and pull workflows
+
+### Fixed
+- Compatibility with refgenconf 0.13.0 and refgenieserver 0.8.0
+- Various modernization and small bugfix improvements
+
 ## [0.12.1] - 2021-11-04
 
 ### Fixed
