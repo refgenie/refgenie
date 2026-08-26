@@ -12,8 +12,6 @@ fixture-hygiene guards over the test tree itself.
 
 import ast
 import importlib
-import json
-from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -21,7 +19,7 @@ from alembic.autogenerate import compare_metadata
 from alembic.config import Config
 from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
-from sqlalchemy import create_engine, inspect, text as sa_text
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.engine.url import make_url
 from sqlmodel import Session, SQLModel, select
 
@@ -31,7 +29,6 @@ from refgenie import Refgenie
 from refgenie.config.db import DatabaseType, create_default_db_config
 from refgenie.const import TARGET_ALEMBIC_VERSION
 from refgenie.db.migrations.utils import run_sql_migrations
-from refgenie.utils.build import BUILD_DIGEST_SCHEME, build_level1_to_digest
 from refgenie.exceptions import (
     AssetExistsError,
     MissingAliasError,
