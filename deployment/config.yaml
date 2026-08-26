@@ -1,0 +1,6 @@
+type: postgresql
+name: $POSTGRES_DB
+host: $POSTGRES_HOST
+port: 5432
+user: $POSTGRES_USER
+password: $POSTGRES_PASSWORD

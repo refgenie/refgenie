@@ -1,0 +1,122 @@
+version: "3"
+
+tasks:
+  test:
+    desc: Run refgenie tests
+    cmds:
+      - uv run pytest -vv -s -x tests
+
+  ktest:
+    desc: 'Run specific refgenie tests by pattern. Example: task ktest TARGET=alias'
+    cmds:
+      - uv run pytest -vv -s -x tests -k {{.TARGET}}
+    requires:
+      vars: [TARGET]
+
+  lint:
+    desc: Lint refgenie code using ruff
+    cmds:
+      - uv run ruff check .
+
+  lint-fix:
+    desc: Lint and auto-fix refgenie code using ruff
+    cmds:
+      - uv run ruff check --fix .
+
+  reformat:
+    desc: Reformat refgenie code using ruff
+    cmds:
+      - uv run ruff format .
+
+  init:
+    desc: Initialize refgenie backend
+    cmds:
+      - uv run refgenie init
+
+  purge:
+    desc: Purge refgenie backend and remove all assets
+    cmds:
+      - uv run refgenie purge --force
+
+  reinit:
+    desc: Reinitialize refgenie (purge and init)
+    cmds:
+      - task: purge
+      - task: init
+
+  dash:
+    desc: 'Run the local refgenie web UI (serves the built frontend bundle -- run `task web-build` once first, or `task web-dev` for the hot-reloading dev server)'
+    cmds:
+      - uv run refgenie dash
+
+  dash-dev:
+    desc: Run the vite dev server for the web UI (expects `task dash` on port 8080)
+    cmds:
+      - npm --prefix frontend run dev
+
+  web-install:
+    desc: Install frontend dependencies (npm ci)
+    cmds:
+      - npm --prefix frontend ci
+
+  web-build:
+    desc: Build the web UI bundle into refgenie/server/webui/ (never committed; CI builds it for the wheel)
+    cmds:
+      - npm --prefix frontend run build
+
+  web-dev:
+    desc: 'Run the vite dev server for the web UI (expects `task dash` on port 8080). Alias of `dash-dev`.'
+    cmds:
+      - npm --prefix frontend run dev
+
+  web-check:
+    desc: Typecheck and lint the frontend
+    cmds:
+      - npm --prefix frontend run typecheck
+      - npm --prefix frontend run lint
+
+  generate-snakefile:
+    desc: Generate snakemake pipeline for refgenie
+    cmds:
+      - uv run refgenie generate snakefile --output-path generated.smk
+    generates:
+      - generated.smk
+
+  archive:
+    deps:
+      - generate-snakefile
+    desc: 'Run snakemake pipeline to build and archive refgenie assets. Example: task archive JOBS_COUNT=unlimited DRY=true SLURM=true'
+    cmds:
+      - snakemake {{if .DRY}}--dry-run{{end}} --jobs {{.JOBS_COUNT}} --snakefile generated.smk {{if .SLURM}}--default-resources slurm_account=shefflab slurm_partition=standard mem_mb=32000 --cores 8 --workflow-profile snakemake{{end}}
+    requires:
+      vars: [JOBS_COUNT]
+
+  alembic-revision:
+    desc: 'Create new alembic revision for refgenie DB schema. Example: task alembic-revision MESSAGE="Add table" DB_CONN_STR="postgresql://..."'
+    cmds:
+      - uv run alembic -x database_connection_string={{.DB_CONN_STR}} revision --autogenerate -m "{{.MESSAGE}}"
+      - echo "Alembic revision created. REMEMBER TO SET TARGET_ALEMBIC_VERSION in refgenie/const.py AND REMOVE UNNECESSARY COMMANDS!"
+    requires:
+      vars: [MESSAGE, DB_CONN_STR]
+
+  alembic-upgrade:
+    desc: 'Upgrade refgenie database schema to latest revision. Example: task refgenie:alembic-upgrade DB_CONN_STR="postgresql://..."'
+    cmds:
+      - uv run alembic -x database_connection_string={{.DB_CONN_STR}} upgrade head
+    requires:
+      vars: [DB_CONN_STR]
+
+  integration:
+    desc: Run integration tests (starts PostgreSQL, HTTP data channel, bulker)
+    cmds:
+      - ./tests/scripts/test-integration.sh
+
+  build:
+    desc: Build refgenie package distribution
+    cmds:
+      - uv build
+
+  package:
+    desc: Build the wheel/sdist and validate them in an isolated venv (mirrors CI)
+    cmds:
+      - ./tests/scripts/test-package.sh

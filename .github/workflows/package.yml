@@ -1,0 +1,313 @@
+name: Package validation
+
+# `push` alone covers same-repo branches: a PR branch already gets a run when
+# it is pushed. Declaring `pull_request` as well ran this workflow twice for
+# every such push -- measured at exactly 17 push + 17 pull_request over three
+# weeks, half of them redundant. Fork PRs push no branch here, so they keep a
+# `pull_request` trigger, scoped to forks to avoid reintroducing the double-run.
+on:
+  push:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    # Same fork-PR double-run guard as the jobs below, replicated here so the
+    # reusable workflow doesn't run (and doesn't block `needs:`) on the leg
+    # that package/base-install/dash-install themselves skip.
+    if: >-
+      github.event_name != 'pull_request'
+      || github.event.pull_request.head.repo.full_name != github.repository
+    uses: ./.github/workflows/build-frontend.yml
+
+  package:
+    needs: frontend
+    if: >-
+      github.event_name != 'pull_request'
+      || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Download built web UI
+        uses: actions/download-artifact@v8
+        with:
+          name: web-assets
+          path: refgenie/server/webui
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Verify frontend was built before packaging
+        run: |
+          test -f refgenie/server/webui/index.html || {
+            echo "::error::refgenie/server/webui/index.html missing; the frontend was not built before uv build"
+            exit 1
+          }
+
+      - name: Build package
+        run: uv build
+
+      - name: Check wheel and sdist carry the web UI bundle
+        run: python3 tests/scripts/check-wheel-assets.py dist/*.whl dist/*.tar.gz
+
+      - name: Create isolated venv and install wheel
+        run: |
+          uv venv .test-venv
+          WHEEL=$(ls dist/*.whl)
+          uv pip install --python .test-venv "${WHEEL}[server]" pytest
+
+      - name: Run unit tests
+        run: |
+          source .test-venv/bin/activate
+          pytest tests/ --ignore=tests/integration
+
+      - name: Smoke test - CLI import
+        run: .test-venv/bin/python -c "from refgenie.cli.main import main"
+
+      - name: Smoke test - app factory serves the web UI
+        run: |
+          .test-venv/bin/python -c "
+          from fastapi.testclient import TestClient
+          from refgenie.server.main import create_app, create_local_app
+          from refgenie.server.spa import resolve_web_dist
+
+          app = create_app()
+          assert app.state.mode == 'server'
+          assert callable(create_local_app)
+          assert resolve_web_dist() is not None, 'web UI bundle missing from installed wheel'
+          with TestClient(app, base_url='http://localhost') as client:
+              response = client.get('/')
+              assert response.status_code == 200, response.status_code
+              assert 'text/html' in response.headers['content-type']
+          print('The app factory builds from an installed wheel and serves the web UI')
+          "
+
+      - name: Smoke test - CLI help
+        run: .test-venv/bin/refgenie --help
+
+      - name: Smoke test - Core imports
+        run: |
+          .test-venv/bin/python -c "
+          from refgenie import Refgenie
+          from refgenie.models import BuildParams
+          from refgenie.db.tables import Asset, Genome
+          print('Core modules import successfully')
+          "
+
+  # The guard on the [dash] / [server] boundary the app-factory rework
+  # introduces: `package` (installs [server]) and `base-install` (installs
+  # nothing) each miss it from opposite sides. A `[dash]`-only install must
+  # import the web layer and build `create_app(mode="local")` -- and must NOT
+  # pull in apscheduler, which `refgenie[server]` adds and `refgenie[dash]`
+  # must not.
+  dash-install:
+    needs: frontend
+    if: >-
+      github.event_name != 'pull_request'
+      || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Download built web UI
+        uses: actions/download-artifact@v8
+        with:
+          name: web-assets
+          path: refgenie/server/webui
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Verify frontend was built before packaging
+        run: |
+          test -f refgenie/server/webui/index.html || {
+            echo "::error::refgenie/server/webui/index.html missing; the frontend was not built before uv build"
+            exit 1
+          }
+
+      - name: Build package
+        run: uv build
+
+      - name: Create isolated venv and install wheel with only the dash extras
+        run: |
+          uv venv .dash-venv
+          WHEEL=$(ls dist/*.whl)
+          uv pip install --python .dash-venv "${WHEEL}[dash]"
+
+      - name: Assert fastapi is importable, apscheduler is not
+        run: |
+          .dash-venv/bin/python -c "import fastapi; print('fastapi: OK')"
+          if .dash-venv/bin/python -c "import apscheduler" 2>/dev/null; then
+            echo "::error::apscheduler is importable on a [dash]-only install; it belongs to [server]"
+            exit 1
+          fi
+          echo "apscheduler correctly absent from a [dash]-only install"
+
+      - name: Smoke test - create_app(mode=local) builds and serves the web UI
+        run: |
+          .dash-venv/bin/python -c "
+          from fastapi.testclient import TestClient
+          from refgenie.server.main import create_app
+
+          app = create_app(mode='local')
+          assert app.state.mode == 'local'
+          with TestClient(app, base_url='http://localhost') as client:
+              response = client.get('/')
+              assert response.status_code == 200, response.status_code
+          print('create_app(mode=\"local\") builds and serves / on a [dash]-only install')
+          "
+
+      - name: Smoke test - refgenie serve fails with the friendly message
+        run: |
+          set +e
+          out=$(.dash-venv/bin/refgenie serve 2>&1)
+          rc=$?
+          flat=$(printf '%s' "$out" | tr -s ' \t\n' ' ')
+          if [ "$rc" -eq 0 ]; then
+            echo "::error::refgenie serve exited 0 on a [dash]-only install; expected a failure"
+            exit 1
+          elif ! printf '%s' "$flat" | grep -qF "The 'server' extras are not installed."; then
+            echo "::error::refgenie serve did not mention the expected message. Got:"
+            printf '%s\n' "$out"
+            exit 1
+          fi
+          echo "refgenie serve: OK"
+
+      - name: Smoke test - refgenie dash does not raise the extras error
+        run: |
+          out=$(.dash-venv/bin/refgenie dash --help 2>&1)
+          rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::refgenie dash --help failed on a [dash]-only install:"
+            printf '%s\n' "$out"
+            exit 1
+          fi
+          if printf '%s' "$out" | grep -qF "extras are not installed"; then
+            echo "::error::refgenie dash --help incorrectly reports missing extras on a [dash]-only install:"
+            printf '%s\n' "$out"
+            exit 1
+          fi
+          echo "refgenie dash: OK"
+
+  base-install:
+    # The `package` job installs the wheel with [server], so it cannot catch a
+    # dependency that escaped into the base import path. This job installs the
+    # wheel with NO extras: it would have caught apscheduler leaking out of the
+    # server import guard, psycopg sitting under the dash extra while
+    # PostgresConfig is a base config type, and the refgenie-mcp crash.
+    needs: frontend
+    if: >-
+      github.event_name != 'pull_request'
+      || github.event.pull_request.head.repo.full_name != github.repository
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Download built web UI
+        uses: actions/download-artifact@v8
+        with:
+          name: web-assets
+          path: refgenie/server/webui
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Verify frontend was built before packaging
+        run: |
+          test -f refgenie/server/webui/index.html || {
+            echo "::error::refgenie/server/webui/index.html missing; the frontend was not built before uv build"
+            exit 1
+          }
+
+      - name: Build package
+        run: uv build
+
+      - name: Check wheel and sdist carry the web UI bundle
+        run: python3 tests/scripts/check-wheel-assets.py dist/*.whl dist/*.tar.gz
+
+      - name: Create isolated venv and install wheel with no extras
+        run: |
+          uv venv .base-venv
+          WHEEL=$(ls dist/*.whl)
+          uv pip install --python .base-venv "${WHEEL}"
+
+      - name: Assert no extras leaked into the base install
+        run: |
+          for mod in fastapi uvicorn apscheduler mcp; do
+            if .base-venv/bin/python -c "import ${mod}" 2>/dev/null; then
+              echo "::error::${mod} is importable on a base install; it should be behind an extra"
+              exit 1
+            fi
+          done
+          echo "Base install is free of extra-only packages"
+
+      - name: Smoke test - import refgenie
+        run: .base-venv/bin/python -c "import refgenie; from refgenie import Refgenie; print('ok')"
+
+      - name: Smoke test - PostgresConfig driver is present
+        run: |
+          .base-venv/bin/python -c "
+          import psycopg
+          from refgenie.config.db import PostgresConfig
+          from sqlalchemy import create_engine
+          cfg = PostgresConfig(name='n', user='u', password='p', host='h', port=5432)
+          create_engine(cfg.url)  # resolves the psycopg driver; makes no connection
+          print('PostgreSQL driver resolves on a base install')
+          "
+
+      - name: Smoke test - CLI help
+        run: .base-venv/bin/refgenie --help
+
+      - name: Smoke test - serve/dash/mcp fail with the friendly message
+        run: |
+          set +e
+          fail=0
+
+          check() {
+            local label="$1"; shift
+            local expected="$1"; shift
+            out=$("$@" 2>&1)
+            rc=$?
+            # rich hard-wraps log output, so collapse all whitespace before
+            # matching -- otherwise the assertion depends on terminal width.
+            flat=$(printf '%s' "$out" | tr -s ' \t\n' ' ')
+            if [ "$rc" -eq 0 ]; then
+              echo "::error::${label} exited 0 on a base install; expected a failure"
+              fail=1
+            elif ! printf '%s' "$flat" | grep -qF "$expected"; then
+              echo "::error::${label} did not mention '${expected}'. Got:"
+              printf '%s\n' "$out"
+              fail=1
+            else
+              echo "${label}: OK"
+            fi
+          }
+
+          check "refgenie serve" "The 'server' extras are not installed." \
+            .base-venv/bin/refgenie serve
+          check "refgenie dash" "The 'dash' extras are not installed." \
+            .base-venv/bin/refgenie dash
+          check "refgenie-mcp" "The 'mcp' extras are not installed." \
+            .base-venv/bin/refgenie-mcp
+
+          exit "$fail"

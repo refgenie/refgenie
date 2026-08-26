@@ -1,0 +1,96 @@
+name: Run tests
+
+on:
+  push:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+# A newer push to the same ref makes an in-flight run obsolete. Cancelling it
+# frees the runner immediately instead of paying for a result nobody reads.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend:
+    uses: ./.github/workflows/build-frontend.yml
+
+  # One job per tier. Locally a bare `pytest` runs only the `unit` tier so the
+  # inner loop stays under 30s -- CI has to make up the difference and run all
+  # of them, or the retiering would silently reduce coverage. Separate jobs
+  # (rather than steps) so a red check names the tier that broke.
+  #
+  # The `integration` tier is not run here: it needs a Docker PostgreSQL and a
+  # bulker crate, and runs via ./tests/scripts/test-integration.sh. That was
+  # already true before the tiers existed -- those tests self-skipped in CI.
+  test:
+    needs: frontend
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.14"]
+        tier: ["unit", "component", "e2e"]
+        # macOS runners bill at a 10x multiplier (Linux 1x), which made the
+        # macOS leg ~82% of this repo's Actions spend off ~32% of the compute.
+        # It now runs only on demand (workflow_dispatch) and at release, not on
+        # every push. Trigger it manually from the Actions tab before merging
+        # anything platform-sensitive: path handling, symlinks, subprocesses.
+        os: ${{ fromJSON((github.event_name == 'workflow_dispatch' || github.event_name == 'release') && '["ubuntu-latest", "macos-latest"]' || '["ubuntu-latest"]') }}
+
+    name: ${{ matrix.tier }} (py${{ matrix.python-version }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Download built web UI
+        uses: actions/download-artifact@v8
+        with:
+          name: web-assets
+          path: refgenie/server/webui
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Set up Python ${{ matrix.python-version }}
+        run: uv python install ${{ matrix.python-version }}
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cache/uv
+            .venv
+          key: ${{ runner.os }}-uv-${{ matrix.python-version }}-${{ hashFiles('**/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-${{ matrix.python-version }}-
+            ${{ runner.os }}-uv-
+
+      - name: Install the project
+        run: uv sync --all-packages --extra server
+
+      # Only the e2e tier shells out to real bioinformatics tools; skipping the
+      # install elsewhere keeps the extra jobs close to free.
+      - name: Install samtools & bowtie2 (e2e test dependencies)
+        if: matrix.tier == 'e2e'
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            sudo apt-get update && sudo apt-get install -y samtools bowtie2
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            brew install samtools bowtie2 coreutils
+          fi
+
+      # No REFGENIE_* env here: tests provision their own tmp paths, and the
+      # conftest ambient-env guard (added after the 2026-07-28 incident) fails
+      # the run if these variables point anywhere it can't prove disposable --
+      # which included the runner.temp paths this step used to set.
+      # REFGENIE_REQUIRE_WEB_ASSETS is unrelated to that guard (it is not a
+      # catalog/store path): it turns a missing web UI bundle into a hard
+      # pytest.exit() instead of a silent skip of the SPA tests in tests/test_web.py -- see
+      # tests/conftest.py.
+      - name: Run ${{ matrix.tier }} tests
+        env:
+          REFGENIE_REQUIRE_WEB_ASSETS: "1"
+        run: uv run pytest -x --tb=short -m ${{ matrix.tier }} tests

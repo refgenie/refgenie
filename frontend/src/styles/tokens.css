@@ -1,0 +1,109 @@
+/*
+ * Design tokens for the refgenie web UI.
+ *
+ * This is the ONLY file in src/styles that may contain raw values (hex colors,
+ * px/rem lengths). Everything else references these variables. `npm run
+ * style-guard` enforces that.
+ *
+ * The palette is seeded from the retired Jinja stylesheets so the SPA does not
+ * look like a different product: slate #464c56 (dash.css accent, style.css
+ * headings), surface #f8f9fa, border #dee2e6.
+ *
+ * Colors are RGB triplets, not hex, so rgb()/rgba() both work off one token.
+ * No @import of web fonts: the local dash must render identically with no
+ * network access.
+ */
+
+:root {
+  /* === COLOR === */
+  --color-primary: 70, 76, 86; /* #464c56, refgenie slate */
+  --color-primary-dark: 47, 51, 58;
+  --color-accent: 13, 110, 253; /* #0d6efd */
+  --color-accent-dark: 10, 88, 202;
+
+  --color-text: 17, 24, 39;
+  --color-text-muted: 108, 117, 125; /* #6c757d */
+  --color-text-inverse: 255, 255, 255;
+
+  --color-background: 255, 255, 255;
+  --color-surface: 248, 249, 250; /* #f8f9fa */
+  --color-surface-alt: 241, 243, 245;
+  --color-border: 222, 226, 230; /* #dee2e6 */
+  --color-border-strong: 173, 181, 189;
+
+  --color-success: 25, 135, 84;
+  --color-success-surface: 209, 231, 221;
+  --color-warning: 255, 193, 7;
+  --color-warning-surface: 255, 243, 205;
+  --color-danger: 220, 53, 69;
+  --color-danger-surface: 248, 215, 218;
+  --color-info: 13, 202, 240;
+  --color-info-surface: 207, 244, 252;
+
+  /* modal.css falls back to --color-gray-100 for the close-button hover */
+  --color-gray-100: 241, 243, 245;
+
+  /* === SPACING (4px grid) === */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* === TYPOGRAPHY === */
+  --font-family-base: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  --font-family-serif: Georgia, Cambria, "Times New Roman", serif;
+  --font-family-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
+  --font-size-4xl: 2.25rem;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* === BORDER === */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-full: 9999px;
+  --border-width: 1px;
+
+  /* === SHADOW === */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+
+  /* === LAYOUT === */
+  --layout-max-width: 1280px;
+  --nav-width: 15rem;
+  --skeleton-row-height: 1rem;
+  --transition-fast: 120ms ease;
+
+  /* === JOB CONSOLE / MANAGEMENT SURFACE === */
+  --console-max-height: 22rem;
+  --console-z: 40;
+  --toast-z: 60;
+  --toast-width: 22rem;
+  --progress-height: 0.5rem;
+  --progress-height-compact: 0.25rem;
+  --log-tail-height: 9rem;
+  --log-detail-height: 20rem;
+  --field-max-width: 40rem;
+  --menu-min-width: 12rem;
+}

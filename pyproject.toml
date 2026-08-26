@@ -1,0 +1,177 @@
+[build-system]
+requires = ["uv_build>=0.12.1"]
+build-backend = "uv_build"
+
+[project]
+name = "refgenie"
+version = "1.0.0a1"
+description = "Reference genome asset manager"
+readme = "README.md"
+license = "BSD-2-Clause"
+license-files = ["LICENSE.txt"]
+requires-python = ">=3.11"
+authors = [
+    { name = "Nathan Sheffield" },
+    { name = "Vince Reuter" },
+    { name = "Michal Stolarczyk" },
+]
+keywords = [
+    "bioinformatics",
+    "genomics",
+    "reference genome",
+    "genome assembly",
+    "sequence collections",
+    "seqcol",
+    "refget",
+    "GA4GH",
+    "asset management",
+    "reproducibility",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Environment :: Web Environment",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Archiving :: Packaging",
+]
+
+dependencies = [
+    "alembic>=1.19.1",
+    "cryptography>=50.0.0",
+    "gtars>=0.9.2",
+    "httpx>=0.28.1",
+    "jinja2>=3.1.6",
+    "piper>=0.15.1",
+    # PostgresConfig is a first-class base config type (refgenie/config/db.py),
+    # and refgenie.py calls create_engine() on its postgresql+psycopg:// URL,
+    # so the driver cannot live behind an extra.
+    "psycopg>=3.2.9",
+    "pyyaml>=6.0.2",
+    # 0.12.0 is the first release carrying what the server needs:
+    # `refget.seqcolapi.create_seqcol_app` / `prepare_store` and
+    # `create_refget_router(mount_prefix=...)` (the seqcol-store-app-factory
+    # work). Older refget makes `refgenie.server.main` raise TypeError.
+    #
+    # refget.seqcolapi is gated: a base `pip install refget` ships the code but
+    # not fastapi/starlette, so importing it raises. Everything it actually
+    # needs (fastapi via refgenie[dash], sqlmodel below) is already a
+    # refgenie[server] dependency, and only refgenie.server.main imports it, so
+    # refget's own `seqcolapi` extra -- which additionally pulls uvicorn and
+    # psycopg2-binary for its PostgreSQL app -- is deliberately not requested.
+    "refget>=0.12.0",
+    "rich>=15.0.0",
+    "sqlmodel>=0.0.39",
+    "ubiquerg>=0.9.3",
+    "yacman>=1.0.0",
+    "pydantic-settings>=2.15.0",
+]
+
+[project.optional-dependencies]
+snakemake = [
+    "snakemake>=8.25.5",
+]
+dash = [
+    # Floor is 0.141.1: the route-registration guards in tests/test_server.py
+    # use fastapi.routing.iter_route_contexts to walk effective (prefixed)
+    # routes, since 0.137 include_router no longer flattens child routes onto
+    # app.routes. The guards import that walker defensively and skip if it is
+    # absent, so a version drift never crashes test collection.
+    "fastapi>=0.141.1",
+    "uvicorn>=0.32.1",
+]
+# Requires mcp 2.x: refgenie/mcp/tools.py imports MCPServer from
+# mcp.server.mcpserver (the 2.x replacement for the removed
+# mcp.server.fastmcp.FastMCP).
+mcp = ["mcp[cli]>=2.0.0"]
+server = [
+    "refgenie[dash]",
+    "apscheduler>=3.11.0",
+    "mcp[cli]>=2.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/refgenie/refgenie"
+Repository = "https://github.com/refgenie/refgenie"
+Documentation = "https://github.com/refgenie/refgenie/tree/master/docs"
+Issues = "https://github.com/refgenie/refgenie/issues"
+Changelog = "https://github.com/refgenie/refgenie/blob/master/CHANGELOG.md"
+
+[project.scripts]
+refgenie = "refgenie.cli.main:main_cli"
+refgenie-build-fasta = "refgenie.cli.build_fasta:build_fasta_main"
+refgenie-mcp = "refgenie.mcp.stdio:main"
+
+[tool.uv]
+package = true
+
+[tool.uv.build-backend]
+# Flat layout: module is at root level, not in src/
+module-root = ""
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["*.ipynb"]
+
+[tool.ruff.lint]
+select = [
+    "F",    # Pyflakes (F401 unused imports, F841 unused variables, etc.)
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+]
+ignore = [
+    "E501",  # line too long (handled separately if needed)
+    "E731",  # lambda assignment (we use these intentionally)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E712", "E402"]  # Allow bool comparisons and late imports in tests
+"refgenie/db/migrations/*" = ["E402", "F403"]  # Alembic migrations use star imports and late imports
+"refgenie/server/main.py" = ["E402"]  # Server setup requires late imports
+# The built web UI (refgenie/server/webui/) is packaged into the wheel by CI;
+# see .github/workflows/build-frontend.yml.
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.3.0",
+    "ipython>=9.16.1",
+    "pytest>=8.3.5",
+    "pytest-mock>=3.15.1",
+    "mypy>=2.3.0",
+    "ruff>=0.16.1",
+    "sqlalchemy-data-model-visualizer>=0.1.3",
+]
+
+[tool.pytest.ini_options]
+# Tiers. Bare `pytest` runs the fast inner loop: `unit` (plus `integration`,
+# which self-skips unless ./tests/scripts/test-integration.sh has started the
+# services). `component` and `e2e` are deselected -- run them explicitly:
+#
+#   pytest                          unit tier
+#   pytest -m component             real FS + SQLite, no external binaries
+#   pytest -m e2e                   subprocess CLI compat suite (needs samtools)
+#   pytest -m "unit or component"   everything except e2e
+#   ./tests/scripts/test-integration.sh   integration tier (Docker + bulker)
+#
+# Tests get their tier automatically from their location; see the
+# `pytest_collection_modifyitems` hook in tests/conftest.py.
+#
+addopts = "-m 'not component and not e2e'"
+markers = [
+    "shared_state: test uses shared fixtures and should not have database cleaned between tests",
+    "unit: fast, isolated test -- no subprocesses, no external binaries, no network (default tier)",
+    "component: exercises real filesystem and SQLite together; no external binaries or network",
+    "e2e: drives the installed CLI in a subprocess; may require external binaries (samtools)",
+    "integration: requires Docker-backed services; run via ./tests/scripts/test-integration.sh",
+]

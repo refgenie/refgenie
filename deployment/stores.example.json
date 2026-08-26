@@ -1,0 +1,16 @@
+[
+  {
+    "name": "jungle",
+    "url": "https://refgenie.s3.us-east-1.amazonaws.com/refget-store/jungle/",
+    "type": "remote",
+    "priority": 10,
+    "description": "Primary refgenie store; wins alias ties."
+  },
+  {
+    "name": "vgp",
+    "url": "https://refgenie.s3.us-east-1.amazonaws.com/refget-store/vgp/",
+    "type": "remote",
+    "priority": 20,
+    "description": "Vertebrate Genomes Project store."
+  }
+]

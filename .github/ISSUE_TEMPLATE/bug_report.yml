@@ -1,0 +1,71 @@
+name: Bug report
+description: Something in refgenie behaves incorrectly
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Refgenie 1.0 is in alpha. Please check that you are on the latest
+        release before filing.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What did you expect, and what did you get instead?
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: >
+        The exact commands you ran, starting from a known state. Include the
+        output, with `REFGENIE_LOG_LEVEL=DEBUG` set if you can.
+      render: shell
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: refgenie version
+      description: Output of `refgenie --version`
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install it
+      options:
+        - pip / uv from PyPI
+        - from source (git clone)
+        - other
+    validations:
+      required: true
+
+  - type: input
+    id: extras
+    attributes:
+      label: Extras installed
+      description: e.g. none, dash, server, mcp
+      placeholder: none
+
+  - type: input
+    id: platform
+    attributes:
+      label: OS and Python version
+      placeholder: "Ubuntu 24.04, Python 3.12.3"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: backend
+    attributes:
+      label: Database backend
+      options:
+        - SQLite (default)
+        - PostgreSQL
+        - Not sure

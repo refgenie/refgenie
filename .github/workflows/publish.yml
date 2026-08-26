@@ -1,0 +1,116 @@
+name: Publish Python package
+
+# Publishing is gated on a GitHub Release, which is in turn gated on a tag.
+# Creating a release publishes that tag's build:
+#   - pre-release  -> Test PyPI only
+#   - full release -> Test PyPI, then PyPI
+#
+# Both upload jobs use PyPI Trusted Publishing (OIDC), so no API tokens live in
+# this repository. See the "Publishing a release" section of CONTRIBUTING.md for
+# the one-time setup a maintainer must perform in the PyPI / Test PyPI web UI
+# before the first release; until that is done, the upload jobs will fail.
+on:
+  release:
+    types: [published]
+
+jobs:
+  frontend:
+    uses: ./.github/workflows/build-frontend.yml
+
+  build:
+    name: Build distributions
+    needs: frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Download built web UI
+        uses: actions/download-artifact@v8
+        with:
+          name: web-assets
+          path: refgenie/server/webui
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "latest"
+
+      - name: Verify frontend was built before packaging
+        run: |
+          test -f refgenie/server/webui/index.html || {
+            echo "::error::refgenie/server/webui/index.html missing; the frontend was not built before uv build"
+            exit 1
+          }
+
+      - name: Build refgenie package
+        run: uv build
+
+      # Every artifact that reaches Test PyPI or PyPI is downstream of this
+      # job's `dist` artifact, so this is the one place that has to prove
+      # freshness: a wheel/sdist built from anything but this release's exact
+      # commit, or from a dirty frontend checkout, fails the release here.
+      - name: Check wheel and sdist carry a fresh web UI bundle
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+        run: python3 tests/scripts/check-wheel-assets.py dist/*.whl dist/*.tar.gz --require-fresh
+
+      - name: Check distribution metadata
+        run: uvx twine check dist/*
+
+      - name: Upload distributions as a workflow artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: dist
+          path: dist/
+
+  test-pypi:
+    name: Publish to Test PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    # `environment` lets the maintainer scope the Test PyPI trusted publisher to
+    # this job and, optionally, require manual approval before an upload.
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/refgenie
+    permissions:
+      id-token: write
+    steps:
+      - name: Download distributions
+        uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish refgenie to Test PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          # A re-run of a release must not fail because the files are already
+          # there.
+          skip-existing: true
+
+  pypi:
+    name: Publish to PyPI
+    needs: test-pypi
+    # Pre-releases stop at Test PyPI. Only a full GitHub Release reaches PyPI.
+    if: github.event.release.prerelease == false
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/refgenie
+    permissions:
+      id-token: write
+    steps:
+      - name: Download distributions
+        uses: actions/download-artifact@v8
+        with:
+          name: dist
+          path: dist/
+
+      - name: Publish refgenie to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

@@ -1,0 +1,66 @@
+name: Build frontend
+
+# Reusable so the frontend is built exactly once per triggering workflow run
+# (npm ci, typecheck, lint and the vitest suite all run here) and every
+# consumer -- package.yml, test.yaml, publish.yml -- downloads the same
+# artifact rather than repeating the build once per matrix leg.
+on:
+  workflow_call:
+    outputs:
+      artifact:
+        description: Name of the uploaded artifact (always "web-assets")
+        value: web-assets
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: frontend/.node-version
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Typecheck
+        run: npm run typecheck
+        working-directory: frontend
+
+      - name: Lint
+        run: npm run lint
+        working-directory: frontend
+
+      - name: Style guard
+        run: npm run style-guard
+        working-directory: frontend
+
+      - name: Unit tests
+        run: npm run test
+        working-directory: frontend
+
+      - name: Build
+        # Writes ../refgenie/server/webui/ (index.html + hashed _app/* + a
+        # build-info.json commit/dirty stamp -- see frontend/scripts/stamp-build.mjs).
+        run: npm run build
+        working-directory: frontend
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+
+      - name: Verify build output
+        run: |
+          test -f refgenie/server/webui/index.html
+          test -n "$(ls refgenie/server/webui/_app/*.js 2>/dev/null)"
+          test -f refgenie/server/webui/build-info.json
+          du -sh refgenie/server/webui
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: web-assets
+          path: refgenie/server/webui
+          if-no-files-found: error
+          retention-days: 7

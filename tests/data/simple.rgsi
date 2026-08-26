@@ -1,0 +1,6 @@
+##seqcol_digest=O0dheFKCalY1JOWFdRuFETcU4ZDOn-TG
+##names_digest=kUxPiBqlPYR8ma5QQ6TA4fsHE3AsBoJE
+##sequences_digest=H9NsQf_u4FyfnXTv7oHsVWk_eCIh9oUY
+##lengths_digest=PiYsLiuTiaX24gmjYcRLnyq7t8aWudmg
+#name	length	alphabet	sha512t24u	md5	description
+chrTest	192	dna2bit	KTXWq2KBVkYTRRxahgqH0v8FQyDorUft	cd1e4197d2f557fc34ff46c97574bbe7	Simple test sequence

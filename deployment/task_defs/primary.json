@@ -1,0 +1,42 @@
+{
+    "containerDefinitions": [
+        {
+            "name": "refgenie1-container",
+            "image": "PLACEHOLDER",
+            "cpu": 128,
+            "memory": 2048,
+            "memoryReservation": 128,
+            "portMappings": [
+                {
+                    "containerPort": 80,
+                    "hostPort": 8140,
+                    "protocol": "tcp"
+                }
+            ],
+            "essential": true,
+            "environment": [
+                {"name": "REFGENIE_STORES", "value": "[{\"name\": \"jungle\", \"url\": \"https://refgenie.s3.us-east-1.amazonaws.com/refget-store/jungle/\", \"priority\": 10}, {\"name\": \"vgp\", \"url\": \"https://refgenie.s3.us-east-1.amazonaws.com/refget-store/vgp/\", \"priority\": 20}]"},
+                {"name": "REFGENIE_CATALOG_URL", "value": "https://refgenie.s3.us-east-1.amazonaws.com/catalog/publish_catalog.sqlite"}
+            ],
+            "secrets": [
+                {"name": "POSTGRES_HOST", "valueFrom": "POSTGRES_HOST_AWS"},
+                {"name": "POSTGRES_DB", "valueFrom": "REFGENIE_POSTGRES_DB"},
+                {"name": "POSTGRES_PASSWORD", "valueFrom": "REFGENIE_POSTGRES_PASSWORD"},
+                {"name": "POSTGRES_USER", "valueFrom": "REFGENIE_POSTGRES_USER"}
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/refgenie-task",
+                    "awslogs-region": "us-east-1",
+                    "awslogs-stream-prefix": "refgenie"
+                }
+            }
+        }
+    ],
+    "family": "refgenie-task",
+    "taskRoleArn": "arn:aws:iam::235728444054:role/ecsTaskExecutionRole",
+    "executionRoleArn": "arn:aws:iam::235728444054:role/ecsTaskExecutionRole",
+    "networkMode": "bridge",
+    "requiresCompatibilities": ["EC2"]
+}
