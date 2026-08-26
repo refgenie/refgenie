@@ -32,6 +32,7 @@ class AliasBackend(Protocol):
     def remove(self, name: str) -> None: ...
     def list_all(self, genome_digest: str | None = None) -> Iterable: ...
     def get_for_genome(self, genome_digest: str) -> list[str]: ...
+    def get_for_genomes(self, genome_digests: list[str]) -> dict[str, list[str]]: ...
     def exists(self, name: str) -> bool: ...
     def invalidate(self) -> None: ...
     def table(
@@ -316,6 +317,37 @@ class AliasManager(ResourceManager):
             )
             return [alias.name for alias in genome.aliases]
 
+    def get_for_genomes(self, genome_digests: list[str]) -> dict[str, list[str]]:
+        """
+        Get alias names for many genomes at once, in a single query.
+
+        Unlike :meth:`get_for_genome`, an unknown digest maps to an empty list
+        rather than raising. Callers pass digests they already read off genome
+        rows, so a missing one means the genome lost its aliases, not that the
+        caller asked for something that never existed.
+
+        Args:
+            genome_digests: The genome digests to look up.
+
+        Returns:
+            dict[str, list[str]]: Alias names keyed by genome digest, with an
+            entry for every requested digest.
+        """
+        by_digest: dict[str, list[str]] = {digest: [] for digest in genome_digests}
+        if not genome_digests:
+            return by_digest
+        with self._database_session as session:
+            rows = session.exec(
+                select(Alias.name, Alias.genome_digest).where(
+                    Alias.genome_digest.in_(genome_digests)
+                )
+            ).all()
+        for name, digest in rows:
+            # A digest outside the request cannot come back from the filter, but
+            # setdefault keeps this total rather than trusting that.
+            by_digest.setdefault(digest, []).append(name)
+        return by_digest
+
     def exists(self, name: str) -> bool:
         """
         Check if an alias exists.
@@ -489,6 +521,18 @@ class StoreAliasManager(AliasBackend):
     def get_for_genome(self, genome_digest: str) -> list[str]:
         return [a.name for a in self.list_all(genome_digest=genome_digest)]
 
+    def get_for_genomes(self, genome_digests: list[str]) -> dict[str, list[str]]:
+        """Alias names for many genomes, from one pass over the cached store."""
+        by_digest: dict[str, list[str]] = {digest: [] for digest in genome_digests}
+        if not genome_digests:
+            return by_digest
+        self._sync_from_store()
+        wanted = set(genome_digests)
+        for name, digest in self._cache.items():
+            if digest in wanted:
+                by_digest[digest].append(name)
+        return by_digest
+
     def exists(self, name: str) -> bool:
         if name in self._cache:
             return True
@@ -573,6 +617,26 @@ class FederatedAliasManager(AliasBackend):
 
     def get_for_genome(self, genome_digest: str) -> list[str]:
         return [a.name for a in self.list_all(genome_digest=genome_digest)]
+
+    def get_for_genomes(self, genome_digests: list[str]) -> dict[str, list[str]]:
+        """Alias names for many genomes, merged local-first across both backends.
+
+        Same precedence as :meth:`list_all`: a name held by the store wins over
+        the same name in SQL, so a genome built here keeps the name it was built
+        under even when the federation carries a duplicate.
+        """
+        by_digest: dict[str, list[str]] = {digest: [] for digest in genome_digests}
+        if not genome_digests:
+            return by_digest
+        seen: set[str] = set()
+        for backend in (self._local, self._sql):
+            for digest, names in backend.get_for_genomes(genome_digests).items():
+                for name in names:
+                    if name in seen:
+                        continue
+                    seen.add(name)
+                    by_digest[digest].append(name)
+        return by_digest
 
     def exists(self, name: str) -> bool:
         return self._local.exists(name) or self._sql.exists(name)

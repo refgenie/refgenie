@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import or_
+from sqlalchemy import func, or_
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 
@@ -145,16 +145,34 @@ def list_genomes(
     # Use paginate_query for database-level pagination
     paginated_result = paginate_query(session, base_genome_query, pagination)
 
-    # Convert each genome to GenomeResponse with all aliases from the manager
+    # Convert each genome to GenomeResponse with all aliases from the manager.
+    #
+    # Both the aliases and the asset count are fetched for the whole page in one
+    # query each. Per-genome lookups here are an N+1: `get_for_genome` costs a
+    # query (two, on the SQL backend) and `len(genome.asset_groups)` lazy-loads
+    # every group row just to count it, so a 100-row page cost ~300 queries and
+    # grew linearly with the page size.
+    page_digests = [genome.digest for genome in paginated_result.items]
+    aliases_by_digest = rgc.alias.get_for_genomes(page_digests)
+    asset_counts = (
+        dict(
+            session.exec(
+                select(AssetGroup.genome_digest, func.count(AssetGroup.id))
+                .where(AssetGroup.genome_digest.in_(page_digests))
+                .group_by(AssetGroup.genome_digest)
+            ).all()
+        )
+        if page_digests
+        else {}
+    )
+
     genome_responses = []
     for genome in paginated_result.items:
-        aliases = rgc.alias.get_for_genome(genome.digest)
-
         genome_response = GenomeResponse(
             digest=genome.digest,
             description=genome.description,
-            aliases=aliases,
-            asset_count=len(genome.asset_groups),
+            aliases=aliases_by_digest.get(genome.digest, []),
+            asset_count=asset_counts.get(genome.digest, 0),
             species_name=genome.species_name,
             common_name=genome.common_name,
             taxon_id=genome.taxon_id,
