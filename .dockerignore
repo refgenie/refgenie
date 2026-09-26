@@ -1,0 +1,21 @@
+# The web build stage (see Dockerfile) is the only source of truth for the
+# frontend bundle -- excluding it here means a maintainer's stale local build
+# of refgenie/server/webui/ can never leak into a deployed image.
+refgenie/server/webui
+
+frontend/node_modules
+frontend/dist
+frontend/.vite
+
+.venv
+.git
+dist
+dist2
+.pytest_cache
+.ruff_cache
+.mypy_cache
+tests/data
+__pycache__
+*.pyc
+.task
+*.egg-info

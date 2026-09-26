@@ -1,0 +1,43 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      all-pip:
+        applies-to: version-updates
+        patterns:
+          - "*"
+      security-fixes:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      all-actions:
+        applies-to: version-updates
+        patterns:
+          - "*"
+      security-fixes:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      all-docker:
+        applies-to: version-updates
+        patterns:
+          - "*"
+      security-fixes:
+        applies-to: security-updates
+        patterns:
+          - "*"

@@ -1,0 +1,11 @@
+[
+  {
+    "server_url": "https://api.refgenie.org",
+    "genome_digest": "5cb5b9d2d1e2b5e5e2f0a3c4d5e6f708",
+    "asset_group_name": "fasta",
+    "asset_name": "default",
+    "archive_size": 900000000,
+    "asset_digest": "1111111111111111111111111111111111111111111111111111111111111111",
+    "archive_digest": "3333333333333333333333333333333333333333333333333333333333333333"
+  }
+]

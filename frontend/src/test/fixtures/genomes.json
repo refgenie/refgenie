@@ -1,0 +1,27 @@
+{
+  "items": [
+    {
+      "digest": "5cb5b9d2d1e2b5e5e2f0a3c4d5e6f708",
+      "aliases": ["hg38"],
+      "description": "Human GRCh38 reference assembly",
+      "asset_count": 3,
+      "species_name": "Homo sapiens",
+      "common_name": "human",
+      "taxon_id": 9606,
+      "assembly_source": "NCBI",
+      "assembly_accession": "GCA_000001405.15"
+    },
+    {
+      "digest": "a1b2c3d4e5f60718293a4b5c6d7e8f90",
+      "aliases": ["rCRSd"],
+      "description": "Revised Cambridge Reference Sequence, doubled",
+      "asset_count": 1,
+      "species_name": "Homo sapiens",
+      "common_name": "human",
+      "taxon_id": 9606,
+      "assembly_source": null,
+      "assembly_accession": null
+    }
+  ],
+  "pagination": { "offset": 0, "limit": 50, "total": 2 }
+}

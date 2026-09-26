@@ -1,0 +1,20 @@
+manifest:
+  name: refgenie
+  version: 0.1.0
+  commands:
+  - command: samtools
+    docker_image: quay.io/biocontainers/samtools:1.9--h91753b0_8
+    docker_args: -i
+  - command: bowtie2
+    docker_image: quay.io/biocontainers/bowtie2:2.3.5--py37he860b03_0
+  - command: bowtie2-build
+    docker_image: quay.io/biocontainers/bowtie2:2.3.5--py37he860b03_0
+    docker_command: bowtie2-build
+  - command: bwa
+    docker_image: quay.io/biocontainers/bwa:0.7.17--h7132678_9
+    docker_args: -i
+  host_commands:
+  - python3
+  imports:
+  - bulker/alpine:default
+  - bulker/coreutils:default

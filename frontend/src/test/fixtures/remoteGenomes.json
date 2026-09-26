@@ -1,0 +1,14 @@
+[
+  {
+    "server_url": "https://api.refgenie.org",
+    "genome_digest": "5cb5b9d2d1e2b5e5e2f0a3c4d5e6f708",
+    "aliases": ["hg38"],
+    "description": "Human GRCh38 reference assembly"
+  },
+  {
+    "server_url": "https://api.refgenie.org",
+    "genome_digest": "b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0",
+    "aliases": ["mm10"],
+    "description": "Mouse GRCm38"
+  }
+]

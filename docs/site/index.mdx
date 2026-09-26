@@ -1,0 +1,107 @@
+---
+title: "Refgenie"
+template: splash
+editUrl: false
+---
+
+<div class="hero">
+  <img src="/img/refgenie_wordmark.svg" alt="Refgenie" class="hero-logo" />
+  <p class="hero-tagline">Software for reference genome data management.</p>
+  <div class="hero-actions">
+    <a class="hero-btn hero-btn-primary" href="/refgenie/">Get started</a>
+    <a class="hero-btn" href="https://refgenie.org">Browse genomes</a>
+  </div>
+</div>
+
+<div class="home-banner" role="note">
+  <span class="home-banner-tag">Alpha</span>
+  <span class="home-banner-text">
+    <strong>Refgenie v1 alpha is here.</strong> A ground-up rewrite with a built-in server, dashboard, and refget-based digests.
+    <a href="/refgenie/whats_new/">See what's new</a>.
+  </span>
+</div>
+
+<div class="timeline">
+  <div class="timeline-item is-done">
+    <span class="timeline-dot"></span>
+    <span class="timeline-date">August 2026</span>
+    <span class="timeline-label">Alpha released</span>
+  </div>
+  <div class="timeline-item">
+    <span class="timeline-dot"></span>
+    <span class="timeline-date">October 2026</span>
+    <span class="timeline-label">General availability (target)</span>
+  </div>
+</div>
+
+<div class="project-cards">
+  <a class="project-card" href="/refgenie/">
+    <span class="project-card-logo">
+      <img src="/img/refgenie_reloaded.svg" alt="Refgenie v1 logo" />
+    </span>
+    <span class="project-card-title">Refgenie v1</span>
+    <span class="project-card-desc">Reference genome asset management — CLI, built-in server, and dashboard. The current, actively developed refgenie.</span>
+  </a>
+  <a class="project-card" href="/refget/">
+    <span class="project-card-logo">
+      <img src="/refget/img/refget_logo.svg" alt="Refget logo" />
+    </span>
+    <span class="project-card-title">Refget</span>
+    <span class="project-card-desc">The GA4GH refget Python package — sequences, sequence collections, and the RefgetStore.</span>
+  </a>
+  <a class="project-card" href="https://refgenie.org">
+    <span class="project-card-logo">
+      <img src="/img/server-icon.png" alt="Refgenie server" />
+    </span>
+    <span class="project-card-title">Refgenie Server</span>
+    <span class="project-card-desc">Browse and download pre-built genome assets from the public server at refgenie.org.</span>
+  </a>
+  <a class="project-card" href="/legacy/">
+    <span class="project-card-logo">
+      <img src="/legacy/img/refgenie_logo.svg" alt="Refgenie Legacy logo" />
+    </span>
+    <span class="project-card-title">Refgenie Legacy</span>
+    <span class="project-card-desc">Documentation for the original pre-1.0 refgenie and refgenieserver (2016–2026).</span>
+  </a>
+</div>
+
+<div class="ai-section">
+  <h2 class="ai-title">Use refgenie with AI</h2>
+  <p class="ai-blurb">Paste this into your AI agent to have it learn to use refgenie for reference genome data:</p>
+  <div class="ai-prompt">
+    <code id="ai-prompt-text">Read https://docs.refgenie.org/SKILL.md, then use refgenie to help me with reference genome data — download and build genome assets (indexes, sequences), locate portable asset paths for my pipelines, and work with the genomes I have. The skill file teaches you the refgenie CLI and Python API.</code>
+    <button class="ai-copy-btn" type="button" aria-label="Copy prompt">Copy</button>
+  </div>
+  <p class="ai-mcp">The skill file at <a href="/SKILL.md">docs.refgenie.org/SKILL.md</a> teaches an assistant to operate refgenie directly. For live, read-only access to your own database, also connect the built-in MCP server — see <a href="/refgenie/use_with_ai/">Use refgenie with AI</a> for both options.</p>
+</div>
+
+<div class="stats-container">
+  <div class="stat-card">
+    <div class="stat-value" id="stat-bytes">...</div>
+    <div class="stat-label">TOTAL DATA SERVED</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" id="stat-requests">...</div>
+    <div class="stat-label">TOTAL REQUESTS SERVED</div>
+  </div>
+</div>
+
+<script>
+{`
+fetch('https://stats.databio.org/stats/aws/summary.json')
+  .then(r => r.json())
+  .then(d => {
+    document.getElementById('stat-bytes').textContent = (d.BytesDownloaded / 1e12).toFixed(1) + ' TB';
+    document.getElementById('stat-requests').textContent = (d.AllRequests / 1e6).toFixed(1) + ' million';
+  });
+
+const aiBtn = document.querySelector('.ai-copy-btn');
+aiBtn && aiBtn.addEventListener('click', () => {
+  const text = document.getElementById('ai-prompt-text').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    aiBtn.textContent = 'Copied!';
+    setTimeout(() => { aiBtn.textContent = 'Copy'; }, 1500);
+  });
+});
+`}
+</script>

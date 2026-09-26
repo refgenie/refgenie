@@ -1,0 +1,7 @@
+{
+  "items": [
+    { "name": "hg38", "genome_digest": "5cb5b9d2d1e2b5e5e2f0a3c4d5e6f708" },
+    { "name": "rCRSd", "genome_digest": "a1b2c3d4e5f60718293a4b5c6d7e8f90" }
+  ],
+  "pagination": { "offset": 0, "limit": 50, "total": 2 }
+}

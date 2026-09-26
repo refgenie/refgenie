@@ -1,0 +1,42 @@
+name: Feature request
+description: Suggest a capability or change to refgenie
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: >
+        What are you trying to do that refgenie makes hard or impossible?
+        Describe the situation, not the solution.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you'd like to see
+      description: The change you have in mind, and roughly how it would be used.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+      description: Including any workaround you are using today.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - CLI
+        - Python API
+        - Server / REST API
+        - Dashboard
+        - MCP
+        - Recipes and asset classes
+        - Database / migrations
+        - Documentation
+        - Other

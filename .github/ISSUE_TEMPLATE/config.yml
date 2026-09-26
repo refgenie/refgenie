@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/refgenie/refgenie/security/advisories/new
+    about: Report privately. Do not open a public issue for a security problem.
+  - name: Question or usage help
+    url: https://github.com/refgenie/refgenie/discussions
+    about: Ask about how to use refgenie.
