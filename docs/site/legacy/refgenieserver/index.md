@@ -1,9 +1,5 @@
 # refgenieserver
 
-[![Build Status](https://travis-ci.org/databio/refgenieserver.svg?branch=master)](https://travis-ci.org/databio/refgenieserver)
-
-# refgenieserver
-
 This folder contains code for an API to provide reference genomes. `refgenieserver` can do 2 things: `archive` an existing refgenie folder, and then `serve` it. 
 
 ## How to `serve`
