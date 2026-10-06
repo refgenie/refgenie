@@ -52,8 +52,8 @@ start_postgres() {
         -e POSTGRES_PASSWORD="$DB_PASS" \
         -e POSTGRES_DB="$DB_NAME" \
         -p "${DB_PORT}:5432" \
-        --tmpfs /var/lib/postgresql/data \
-        postgres:17
+        --tmpfs /var/lib/postgresql \
+        postgres:18
 
     # Wait for healthy status (up to 30 seconds)
     echo "Waiting for PostgreSQL to be ready..."
