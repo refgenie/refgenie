@@ -115,6 +115,32 @@ export interface AssetFilesResponse {
   files: string[];
 }
 
+/** `refgenie/server/local/schemas.py::LocalFileEntry` (local mode, `/v1/files`). */
+export interface LocalFileEntry {
+  /** POSIX path relative to the asset directory. */
+  path: string;
+  type: 'file' | 'dir';
+  size: number | null;
+  previewable: boolean;
+}
+
+/** `GET /v1/files/assets/{asset_digest}`. */
+export interface LocalAssetFiles {
+  asset_digest: string;
+  entries: LocalFileEntry[];
+  truncated: boolean;
+}
+
+/** `GET /v1/files/assets/{asset_digest}/preview/{path}`. */
+export interface LocalFilePreview {
+  path: string;
+  size: number;
+  content: string;
+  /** True when `content` is only the first `limit` bytes. */
+  truncated: boolean;
+  limit: number;
+}
+
 /** Untyped on the server: `catalog.py::get_asset_relationships` (expand=false). */
 export interface RelationshipsResponse {
   asset_digest: string;

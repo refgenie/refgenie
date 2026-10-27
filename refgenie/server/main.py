@@ -76,6 +76,10 @@ LOCAL_TAGS_METADATA = [
         "name": "Remote",
         "description": "Browsing the catalogs of the servers this instance subscribes to.",
     },
+    {
+        "name": "Local files",
+        "description": "Viewing and downloading an asset's files from this machine's disk (same-origin only).",
+    },
 ]
 
 #: Every capability key the web UI knows about. The UI gates each affordance on
@@ -99,6 +103,7 @@ CAPABILITY_KEYS = (
     "archives",
     "seqcol",
     "drs",
+    "local_files",
 )
 
 
@@ -108,6 +113,11 @@ def _capabilities(mode: AppMode) -> dict[str, bool]:
     Server mode serves data and nothing else: no writes, no remote browsing, no
     jobs. Local mode is the mirror image -- it manages one user's assets, but
     has no archives to download and no seqcol or DRS service.
+
+    ``local_files`` is local mode's own file access (``/v1/files``): view and
+    download an asset's files straight from its directory on disk. It is
+    distinct from ``downloads`` (the public server's staged-file route) and is
+    same-origin only -- the localhost bridge cannot read it.
 
     ``recipes_write`` / ``asset_classes_write`` are false in both modes: adding
     a recipe or asset class takes a server-side path or URL, which over HTTP is
@@ -133,6 +143,7 @@ def _capabilities(mode: AppMode) -> dict[str, bool]:
         "archives": not is_local,
         "seqcol": not is_local,
         "drs": not is_local,
+        "local_files": is_local,
     }
 
 
@@ -401,6 +412,12 @@ def create_app(
         from refgenie.server.jobs import jobs_router
 
         app.include_router(jobs_router, prefix="/v1")
+
+        # Read-only access to asset files on disk. Same-origin only: the
+        # router's require_local_origin dependency refuses bridge origins.
+        from refgenie.server.local.files import router as local_files_router
+
+        app.include_router(local_files_router, prefix="/v1")
 
     app.include_router(refgenie_core_router, prefix="/v4", tags=["Version 4"])
 

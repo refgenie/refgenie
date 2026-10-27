@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { ScopedLink } from '../common/ScopedLink';
 import { useAssetGroups } from '../../hooks/queries/useAssetGroups';
 import { useGenomeIndex } from '../../hooks/queries/useGenomes';
 import { genomeLabel } from '../../utils/genomes';
@@ -60,9 +60,9 @@ export function AssetClassGenomeTable({
       key: 'genome',
       header: 'Genome',
       render: (group) => (
-        <Link className="rg-link font-medium" to={`/genomes/${group.genome_digest}`}>
+        <ScopedLink className="rg-link font-medium" to={`/genomes/${group.genome_digest}`}>
           {genomeLabel(index, group.genome_digest)}
-        </Link>
+        </ScopedLink>
       ),
     },
     {
@@ -82,9 +82,9 @@ export function AssetClassGenomeTable({
       // there.
       render: (group) =>
         group.id !== null ? (
-          <Link className="rg-link" to={`/asset-groups/${group.id}`}>
+          <ScopedLink className="rg-link" to={`/asset-groups/${group.id}`}>
             {group.name}
-          </Link>
+          </ScopedLink>
         ) : (
           <span>{group.name}</span>
         ),

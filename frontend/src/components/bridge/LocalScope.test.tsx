@@ -43,8 +43,11 @@ const permissivePing: PingResponse = {
   bridge: { actions_cross_origin: true },
 };
 
-/** Read-only surfaces the scope is allowed to keep. */
-const ALLOWED: CapabilityKey[] = ['downloads', 'archives', 'seqcol', 'drs'];
+/**
+ * Read-only surfaces the scope is allowed to keep. `jobs` gates only the job
+ * HISTORY page here (a GET); `jobs_cancel` stays masked.
+ */
+const ALLOWED: CapabilityKey[] = ['downloads', 'archives', 'seqcol', 'drs', 'jobs'];
 
 beforeEach(() => {
   localStorage.clear();

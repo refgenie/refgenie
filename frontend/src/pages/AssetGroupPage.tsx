@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { ScopedLink } from '../components/common/ScopedLink';
 import { useAssetGroup } from '../hooks/queries/useAssetGroups';
 import { useAssetClassIndex } from '../hooks/queries/useAssetClasses';
@@ -143,10 +143,10 @@ export function AssetGroupPage() {
               {
                 term: 'Asset class',
                 value: (
-                  <Link className="rg-link" to={`/asset-classes/${groupData.asset_class_id}`}>
+                  <ScopedLink className="rg-link" to={`/asset-classes/${groupData.asset_class_id}`}>
                     {classIndex.data?.byId.get(groupData.asset_class_id)?.name ??
                       `#${groupData.asset_class_id}`}
-                  </Link>
+                  </ScopedLink>
                 ),
               },
             ]}

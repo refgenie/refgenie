@@ -133,7 +133,15 @@ class TestServiceInfoBootstrap:
 
     #: Commands are local-only, bulk data is server-only, and the two
     #: definition writes are off everywhere -- the modes are mirror images.
-    COMMAND_KEYS = ("pull", "build", "delete", "jobs", "remote_browse", "data_channels")
+    COMMAND_KEYS = (
+        "pull",
+        "build",
+        "delete",
+        "jobs",
+        "remote_browse",
+        "data_channels",
+        "local_files",
+    )
     DATA_KEYS = ("downloads", "archives", "seqcol", "drs")
 
     @pytest.mark.parametrize("mode,commands_on", [(APP_MODE_SERVER, False), (APP_MODE_LOCAL, True)])

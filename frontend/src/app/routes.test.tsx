@@ -18,6 +18,20 @@ describe('createRoutes', () => {
     expect(registered).toContain('local/assets/:digest');
   });
 
+  it('registers the read-only /local views for classes, recipes, aliases and jobs', () => {
+    const registered = paths(createRoutes(serverConfig));
+    for (const path of [
+      'local/asset-classes',
+      'local/asset-classes/:id',
+      'local/recipes',
+      'local/recipes/:id',
+      'local/aliases',
+      'local/jobs',
+    ]) {
+      expect(registered).toContain(path);
+    }
+  });
+
   it('registers no /local route on a local dash — it IS the local refgenie', () => {
     const registered = paths(createRoutes(localConfig));
     expect(registered.filter((path) => path.startsWith('local'))).toEqual([]);

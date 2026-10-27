@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { ScopedLink } from '../common/ScopedLink';
 import { DataTable } from '../common/DataTable';
 import type { Column } from '../common/DataTable';
 import type { RecipePublic } from '../../types/api';
@@ -18,9 +18,9 @@ export function RecipeTable({ recipes, loading, error, empty, onRetry }: RecipeT
       header: 'Name',
       render: (recipe) =>
         recipe.id !== null ? (
-          <Link className="rg-link font-medium" to={`/recipes/${recipe.id}`}>
+          <ScopedLink className="rg-link font-medium" to={`/recipes/${recipe.id}`}>
             {recipe.name}
-          </Link>
+          </ScopedLink>
         ) : (
           <span>{recipe.name}</span>
         ),

@@ -16,6 +16,13 @@
 
 const CONNECTION_KEY = 'refgenie.localBridge';
 const SAFARI_DISMISS_KEY = 'refgenie.localBridge.safariDismissed';
+/**
+ * Pulls this page started on a connected local refgenie, so their progress
+ * survives navigation and a reload. Unlike the two keys above it is not part
+ * of the refgenie-ui hand-over; a missing or malformed value reads as "no
+ * jobs", which is always safe.
+ */
+const JOBS_KEY = 'refgenie.localBridge.jobs';
 
 /** The `refgenie dash` default port, and the vite dev proxy target. */
 export const DEFAULT_LOCAL_PORT = 8080;
@@ -93,5 +100,35 @@ export const dismissSafariCard = (
     storage?.setItem(SAFARI_DISMISS_KEY, 'true');
   } catch {
     // Best effort.
+  }
+};
+
+/**
+ * Read the remembered bridge-job list. Returns `[]` on anything unexpected;
+ * the caller (`stores/bridgeJobStore.ts`) owns the entry shape and filters
+ * each item with its own guard.
+ */
+export const recallBridgeJobs = (
+  storage: StorageLike | null = defaultStorage(),
+): unknown[] => {
+  try {
+    const raw = storage?.getItem(JOBS_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+export const rememberBridgeJobs = (
+  entries: readonly unknown[],
+  storage: StorageLike | null = defaultStorage(),
+): void => {
+  try {
+    if (entries.length === 0) storage?.removeItem(JOBS_KEY);
+    else storage?.setItem(JOBS_KEY, JSON.stringify(entries));
+  } catch {
+    // Storage unavailable: progress just will not survive a reload.
   }
 };

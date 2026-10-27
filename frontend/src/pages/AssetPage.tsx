@@ -1,4 +1,4 @@
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useAsset, useAssetFiles } from '../hooks/queries/useAssets';
 import { useRelationshipsExpanded } from '../hooks/queries/useRelationships';
 import { useStagedAssets } from '../hooks/queries/useStagedAssets';
@@ -18,6 +18,8 @@ import { Badge } from '../components/common/Badge';
 import { ErrorState, LoadingState } from '../components/common/states';
 import { ServingModeBadges } from '../components/assets/ServingModeBadges';
 import { AssetFileList } from '../components/assets/AssetFileList';
+import { LocalAssetFileList } from '../components/assets/LocalAssetFileList';
+import { useCapability } from '../hooks/useCapability';
 import { RelationshipLists } from '../components/assets/RelationshipLists';
 import { StagedAssetTable } from '../components/genomes/StagedAssetTable';
 
@@ -29,7 +31,10 @@ export function AssetPage() {
   const navigate = useNavigate();
 
   const asset = useAsset(digest);
-  const files = useAssetFiles(digest);
+  // Local mode reads the asset's own directory (`/v1/files`); the staged-file
+  // listing below is the public server's, and would only 404 locally.
+  const canReadLocalFiles = useCapability('local_files');
+  const files = useAssetFiles(digest, { enabled: !canReadLocalFiles });
   const relationships = useRelationshipsExpanded(digest);
   const staged = useStagedAssets({ asset_digest: digest }, { enabled: !!digest });
 
@@ -142,9 +147,9 @@ export function AssetPage() {
                 // Guarded: the Jinja page linked /recipes/None when this was null.
                 value:
                   record.recipe_id !== null && record.recipe_id !== undefined ? (
-                    <Link className="rg-link" to={`/recipes/${record.recipe_id}`}>
+                    <ScopedLink className="rg-link" to={`/recipes/${record.recipe_id}`}>
                       #{record.recipe_id}
-                    </Link>
+                    </ScopedLink>
                   ) : (
                     ''
                   ),
@@ -216,7 +221,9 @@ export function AssetPage() {
 
           <section>
             <h2 className="text-xl font-semibold mb-4">Files</h2>
-            {files.isPending ? (
+            {canReadLocalFiles && record.digest ? (
+              <LocalAssetFileList assetDigest={record.digest} />
+            ) : files.isPending ? (
               <LoadingState label="Loading files" />
             ) : files.error ? (
               <p className="rg-muted text-sm">

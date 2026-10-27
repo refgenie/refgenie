@@ -4,12 +4,9 @@
  * Under `/local/*` the same browse components render against a connected local
  * refgenie. Their absolute links (`/genomes/{digest}`) would otherwise jump
  * back to the page's own backend carrying a digest that may not exist there.
- * Every genome/asset link inside a scopable component goes through this.
- *
- * Asset-class and recipe links stay plain `Link`s: there are no
- * `/local/asset-classes` or `/local/recipes` routes, so those links
- * intentionally exit the scope. If that ever proves confusing, the fix is to
- * add the routes, not to scope the links.
+ * Every internal link inside a scopable component goes through this: genomes,
+ * assets, asset groups, asset classes, recipes, aliases and jobs all have
+ * `/local` routes.
  */
 
 import { Link } from 'react-router-dom';

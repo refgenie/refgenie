@@ -37,6 +37,9 @@ __all__ = [
     "BuildRequest",
     "DataChannelAddRequest",
     "GenomeInitRequest",
+    "LocalAssetFiles",
+    "LocalFileEntry",
+    "LocalFilePreview",
     "PreflightError",
     "PreflightResult",
     "PullRequest",
@@ -198,3 +201,40 @@ class PreflightResult(BaseModel):
     ok: bool
     errors: list[PreflightError] = []
     resolved: dict[str, Any] = {}
+
+
+# ---------------------------------------------------------------------------
+# Local files (``/v1/files``)
+# ---------------------------------------------------------------------------
+
+
+class LocalFileEntry(BaseModel):
+    """One file or directory inside an asset's content directory."""
+
+    #: POSIX path relative to the asset directory, e.g. ``index/hg38.1.bt2``.
+    path: str
+    type: Literal["file", "dir"]
+    #: Bytes for a file; ``None`` for a directory.
+    size: int | None = None
+    #: Whether ``GET /v1/files/assets/{digest}/preview/{path}`` will show it.
+    previewable: bool = False
+
+
+class LocalAssetFiles(BaseModel):
+    """The 200 body of ``GET /v1/files/assets/{asset_digest}``."""
+
+    asset_digest: str
+    entries: list[LocalFileEntry]
+    #: True when the listing stopped at the entry cap.
+    truncated: bool = False
+
+
+class LocalFilePreview(BaseModel):
+    """The 200 body of ``GET /v1/files/assets/{asset_digest}/preview/{path}``."""
+
+    path: str
+    size: int
+    content: str
+    #: True when ``content`` is only the first ``limit`` bytes of the file.
+    truncated: bool
+    limit: int

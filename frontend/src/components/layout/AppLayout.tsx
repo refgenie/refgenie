@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { NavBar } from './NavBar';
 import { Footer } from './Footer';
 import { BridgeControl } from '../bridge/BridgeControl';
+import { BridgeJobsDock } from '../bridge/BridgeJobsDock';
 import { JobConsole } from '../jobs/JobConsole';
 import { cn } from '../../utils/cn';
 import { useUiConfig } from '../../hooks/useUiConfig';
@@ -10,11 +11,16 @@ import { useCapability } from '../../hooks/useCapability';
 import { useInvalidationBridge } from '../../hooks/useInvalidationBridge';
 import { useJobEvents } from '../../hooks/useJobEvents';
 import { useBridgeAutoConnect } from '../../hooks/useBridgeAutoConnect';
+import { useBridgeJobEntries } from '../../hooks/useBridgeJobPolling';
 
 export function AppLayout() {
   const config = useUiConfig();
   const hasJobs = useCapability('jobs');
   const [bannerDismissed, setBannerDismissed] = useState(false);
+  const isPublic = config.mode !== 'local';
+  // Pulls handed to a connected local refgenie get their own dock on the
+  // public page; it needs the same bottom clearance as the local console.
+  const hasBridgeJobs = useBridgeJobEntries().length > 0 && isPublic;
 
   // The single event transport and the single query-invalidation listener are
   // both mounted here, once. Nothing else in the tree opens a connection.
@@ -25,7 +31,7 @@ export function AppLayout() {
   useBridgeAutoConnect(config.mode !== 'local');
 
   return (
-    <div className={cn('rg-layout', hasJobs && 'rg-layout--docked')}>
+    <div className={cn('rg-layout', (hasJobs || hasBridgeJobs) && 'rg-layout--docked')}>
       <header className="rg-layout__header">
         <div className="rg-layout__bar">
           <NavBar />
@@ -58,6 +64,7 @@ export function AppLayout() {
         <Footer />
       </div>
       {hasJobs && <JobConsole />}
+      {isPublic && <BridgeJobsDock />}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { ScopedLink } from '../common/ScopedLink';
 import { useRecipes } from '../../hooks/queries/useRecipes';
 import { RECIPE_LIST_LIMIT } from '../../services/resources/recipes';
 import { ErrorState } from '../common/states';
@@ -45,9 +45,9 @@ export function AssetClassRecipeList({
           {recipes.map((recipe, index) => (
             <li className="text-sm" key={recipe.id ?? `${recipe.name}-${index}`}>
               {recipe.id !== null ? (
-                <Link className="rg-link font-medium" to={`/recipes/${recipe.id}`}>
+                <ScopedLink className="rg-link font-medium" to={`/recipes/${recipe.id}`}>
                   {recipe.name}
-                </Link>
+                </ScopedLink>
               ) : (
                 <span className="font-medium">{recipe.name}</span>
               )}

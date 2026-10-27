@@ -911,11 +911,16 @@ class AssetPuller(ResourceManager):
         declared_modes = asset_metadata["serving_modes"]
 
         # Get relationship metadata for parent assets
-        relationship_metadata = client.get(
-            operation_id=API_ID_ASSET_RELATIONSHIPS,
-            url_format_params={"asset_digest": asset_digest},
-            params={"expand": True},
-        )
+        try:
+            relationship_metadata = client.get(
+                operation_id=API_ID_ASSET_RELATIONSHIPS,
+                url_format_params={"asset_digest": asset_digest},
+                params={"expand": True},
+            )
+        except Exception as e:
+            raise ServerCannotServe(
+                f"Failed to query asset relationships from {server_url}: {e}"
+            ) from e
         asset_parents = relationship_metadata["parents"]
         asset_name = str(asset_metadata["name"])
         asset_class_name = asset_group_metadata["name"]

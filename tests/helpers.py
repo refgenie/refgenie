@@ -1231,7 +1231,7 @@ ACTION_HEADERS = {"x-refgenie-action": "1"}
 PUBLIC_ORIGIN = "https://refgenie.org"
 EVIL_ORIGIN = "https://evil.example"
 
-#: Shared capability vocabulary -- the same sixteen keys /service-info emits.
+#: Shared capability vocabulary -- the same seventeen keys /service-info emits.
 CAPABILITY_KEY_SET = {
     "pull",
     "build",
@@ -1249,6 +1249,7 @@ CAPABILITY_KEY_SET = {
     "archives",
     "seqcol",
     "drs",
+    "local_files",
 }
 
 

@@ -11,7 +11,8 @@ export interface AssetFileListProps {
 /**
  * The individually-downloadable files of a file-mode asset. Download links are
  * real anchors built by `ApiClient.url()`, gated on `capabilities.downloads`
- * (the local dash has no file-download route).
+ * (the public server's staged files). Local mode lists files from disk with
+ * `LocalAssetFileList` instead, gated on `capabilities.local_files`.
  */
 export function AssetFileList({ assetDigest, files }: AssetFileListProps) {
   const client = useApiClient();

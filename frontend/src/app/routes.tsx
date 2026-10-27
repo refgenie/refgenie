@@ -65,7 +65,9 @@ function LocalAssetDeepLink() {
  * a local dash IS the local refgenie and has the full surface already.
  *
  * There is no `local/assets` list route because there is no `/assets` list
- * route: asset browsing is by genome and by class.
+ * route: asset browsing is by genome and by class. Every entry here is a
+ * read-only view; `LocalScope` masks the command capabilities that would
+ * otherwise render write controls on these same pages.
  */
 function localRoutes(config: UiConfig): RouteObject[] {
   if (config.mode === 'local') return [];
@@ -104,6 +106,25 @@ function localRoutes(config: UiConfig): RouteObject[] {
       element: scoped(<AssetGroupPage />),
       errorElement: <RouteErrorPage />,
     },
+    {
+      path: 'local/asset-classes',
+      element: scoped(<AssetClassesPage />),
+      errorElement: <RouteErrorPage />,
+    },
+    {
+      path: 'local/asset-classes/:id',
+      element: scoped(<AssetClassPage />),
+      errorElement: <RouteErrorPage />,
+    },
+    { path: 'local/recipes', element: scoped(<RecipesPage />), errorElement: <RouteErrorPage /> },
+    {
+      path: 'local/recipes/:id',
+      element: scoped(<RecipePage />),
+      errorElement: <RouteErrorPage />,
+    },
+    { path: 'local/aliases', element: scoped(<AliasesPage />), errorElement: <RouteErrorPage /> },
+    // Job history is a read of GET /v1/jobs; cancel stays masked off.
+    { path: 'local/jobs', element: scoped(<JobsPage />), errorElement: <RouteErrorPage /> },
   ];
 }
 

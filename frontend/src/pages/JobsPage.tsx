@@ -7,7 +7,7 @@
  */
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { ScopedLink } from '../components/common/ScopedLink';
 import { useCapability } from '../hooks/useCapability';
 import { useJobsList } from '../hooks/queries/useJobs';
 import { MiniHero } from '../components/layout/MiniHero';
@@ -96,9 +96,9 @@ export function JobsPage() {
       header: 'Result',
       render: (job) =>
         job.result ? (
-          <Link className="rg-link" to={`/assets/${job.result.asset_digest}`}>
+          <ScopedLink className="rg-link" to={`/assets/${job.result.asset_digest}`}>
             {job.result.registry_path}
-          </Link>
+          </ScopedLink>
         ) : (
           <span className="rg-muted">—</span>
         ),

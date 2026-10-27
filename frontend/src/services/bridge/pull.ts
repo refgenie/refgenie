@@ -7,7 +7,9 @@
  * thing that cannot be shared is progress: `useJobEvents` streams THIS
  * instance's jobs into `jobStore`, and a cross-origin instance's jobs must
  * never enter that store or the console and the invalidation bus would both be
- * reporting on a machine they do not manage. So the bridge polls.
+ * reporting on a machine they do not manage. So the bridge polls, from ONE
+ * place (`hooks/useBridgeJobPolling.ts`) over the jobs remembered in
+ * `stores/bridgeJobStore.ts`, so progress outlives the button that started it.
  *
  * A cross-origin SSE stream to `/v1/jobs/events` would technically work
  * (EventSource sends no headers, the endpoint is an unguarded GET, and bridge
@@ -16,30 +18,5 @@
  * poll that terminates.
  */
 
-import { getJob } from '../jobs';
-import { isTerminal } from '../contracts';
-import type { Job } from '../contracts';
-import type { ApiClient } from '../http';
-
+/** How often `hooks/useBridgeJobPolling.ts` re-reads each active bridge job. */
 export const BRIDGE_POLL_INTERVAL_MS = 1000;
-
-/**
- * Poll until the job is terminal; `onUpdate` fires on every poll. The signal
- * is not optional in practice: without it an unmounted button keeps polling
- * the user's machine for the life of the tab.
- */
-export async function waitForBridgeJob(
-  client: ApiClient,
-  jobId: string,
-  onUpdate: (job: Job) => void,
-  signal: AbortSignal,
-  intervalMs = BRIDGE_POLL_INTERVAL_MS,
-): Promise<Job | null> {
-  for (;;) {
-    if (signal.aborted) return null;
-    const job = await getJob(client, jobId, { signal });
-    onUpdate(job);
-    if (isTerminal(job.status)) return job;
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
-  }
-}

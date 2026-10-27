@@ -31,6 +31,14 @@ configured by the ``REFGENIE_BRIDGE_*`` environment variables, which
 :class:`LocalSecuritySettings` reads directly; nothing else in the codebase
 reads them.
 
+A fifth concern, **local file bytes** (``/v1/files``), is the one read surface
+the bridge must never reach: a public page that could read files off the
+user's disk would turn "disclosure of what genomes you have" into "disclosure
+of your data". :func:`require_local_origin` guards it -- same-origin and the
+trusted dev origins only, whatever ``bridge_mode`` says -- and refuses
+cross-site requests that carry no ``Origin`` at all (``<img>``/``<script>``
+embeds), using the browser's ``Sec-Fetch-Site`` header.
+
 This module is the single owner of local-mode security. ``create_app`` calls
 :func:`install_local_security` and adds no local CORS, host guard or header
 dependency of its own.
@@ -55,6 +63,7 @@ __all__ = [
     "is_bridge_request",
     "require_action_header",
     "require_action_origin",
+    "require_local_origin",
 ]
 
 #: The only actions reachable from an allowlisted *bridge* origin, and only
@@ -116,9 +125,9 @@ class LocalSecuritySettings(BaseSettings):
     )
     #: Exact public origins the bridge admits (comma-separated in the env var;
     #: the env var *replaces* this list). The deployed SPA lives at
-    #: https://refgenie.org.
+    #: https://api.refgenie.org until it moves to https://refgenie.org.
     bridge_origins: Annotated[list[str], NoDecode] = Field(
-        default=["https://refgenie.org"],
+        default=["https://refgenie.org", "https://api.refgenie.org"],
         validation_alias=AliasChoices("bridge_origins", "REFGENIE_BRIDGE_ORIGINS"),
     )
     #: Optional regex over origins, for SPA dev servers and Cloudflare preview
@@ -289,6 +298,50 @@ def require_action_origin(request: Request) -> None:
         detail={
             "code": str(ErrorCode.FORBIDDEN_ORIGIN),
             "message": f"Origin {origin!r} is not allowed to perform actions.",
+        },
+    )
+
+
+#: ``Sec-Fetch-Site`` values that mean "another site started this request".
+_CROSS_SITE_FETCH = frozenset({"cross-site", "same-site"})
+
+
+def require_local_origin(request: Request) -> None:
+    """403 unless the request comes from the local SPA (or a trusted dev origin).
+
+    Guards the routes that hand out bytes from the user's disk. Unlike every
+    other read in local mode, these are **not** part of the bridge surface:
+    a public bridge origin is refused under every ``bridge_mode``, including
+    ``full``. CORS alone would not do -- the bridge origins are on the CORS
+    allowlist (they may read ``/v4`` and ``/v1/jobs``), so a fetch from them
+    would be readable. Refusing in the handler means no bytes are produced.
+
+    * ``Origin`` present: must be this request's own origin or one of
+      ``allowed_origins`` (the developer's Vite server). Bridge origins,
+      regex-matched origins and everything else get 403 ``forbidden_origin``.
+    * ``Origin`` absent: browsers omit it on same-origin GETs and on
+      ``no-cors`` subresource loads. ``Sec-Fetch-Site: cross-site`` or
+      ``same-site`` marks the latter (e.g. ``<img src=...>`` on another
+      page), which is refused too. ``same-origin``, ``none`` (typed URL,
+      bookmark) and a missing header (curl) are allowed; non-browser clients
+      are already on the user's machine, behind the loopback-only host guard.
+    """
+    origin = request.headers.get("origin")
+    settings = _request_settings(request)
+    if origin is None:
+        fetch_site = request.headers.get("sec-fetch-site", "").strip().lower()
+        if fetch_site not in _CROSS_SITE_FETCH:
+            return
+    elif _is_same_origin(request, origin) or origin in settings.allowed_origins:
+        return
+    raise HTTPException(
+        status_code=403,
+        detail={
+            "code": str(ErrorCode.FORBIDDEN_ORIGIN),
+            "message": (
+                "Local files are readable only from this refgenie's own web UI. "
+                "Open your local refgenie directly (http://127.0.0.1:<port>)."
+            ),
         },
     )
 

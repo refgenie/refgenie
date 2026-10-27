@@ -30,6 +30,9 @@ export const QUERY_PREFIXES: Record<InvalidationKey, readonly string[]> = {
     'assets',
     'asset',
     'asset-files',
+    // A re-pull or rebuild replaces the files on disk.
+    'local-asset-files',
+    'local-file-preview',
     'asset-groups',
     'asset-group',
     'relationships',

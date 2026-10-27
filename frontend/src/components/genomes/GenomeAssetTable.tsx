@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom';
 import { DataTable } from '../common/DataTable';
 import { ScopedLink } from '../common/ScopedLink';
 import { DigestChip } from '../common/DigestChip';
@@ -121,9 +120,9 @@ export function GenomeAssetTable({
           )}
           {/* The Jinja page emitted /recipes/None when recipe_id was null. */}
           {asset.recipe_id !== null && asset.recipe_id !== undefined && (
-            <Link className="rg-link text-sm" to={`/recipes/${asset.recipe_id}`}>
+            <ScopedLink className="rg-link text-sm" to={`/recipes/${asset.recipe_id}`}>
               Recipe
-            </Link>
+            </ScopedLink>
           )}
           {asset.digest && (
             <DeleteAssetButton

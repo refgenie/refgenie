@@ -33,6 +33,18 @@ on later visits. While connected, the top bar shows a **connected** badge,
 a **Browse local** link to your local genomes, and a **Disconnect** button
 that forgets the connection.
 
+Your local data is browsable under **Browse local** (or the card on the home
+page): genomes, species, asset classes, recipes, aliases, and the history of
+jobs your local refgenie has run. These views are read-only and always carry
+a "local refgenie" banner.
+
+A pull you start with **Pull to my refgenie** is tracked in a small
+**Pulls to your local refgenie** panel at the bottom of the page. It keeps
+reporting progress while you browse elsewhere on the site, and after a page
+reload, and links to the asset under your local data when it finishes. The
+page checks on the pull only while it is running and while you are connected;
+**Disconnect** also clears the list.
+
 ## Bridge modes
 
 How much the public page may do is controlled by the **bridge mode** on your
@@ -60,7 +72,7 @@ links you there instead.
 Related settings:
 
 - `REFGENIE_BRIDGE_ORIGINS` — comma-separated origins allowed to connect
-  (default `https://refgenie.org`).
+  (default `https://refgenie.org,https://api.refgenie.org`).
 - `REFGENIE_BRIDGE_ORIGIN_REGEX` — optional regex for extra origins (for UI
   development and preview deployments). **A careless regex here disables the
   origin allowlist entirely** — leave it unset unless you know why you need
@@ -100,6 +112,9 @@ website control over your local refgenie:
 - Remote browsing and bridge pulls accept only servers you subscribed to.
   Pulling from any other server goes through the local `/pull` page, where
   you confirm it yourself.
+- File contents are never on the bridge. The local dashboard can show and
+  download an asset's files (`/v1/files`), but only to itself: the public
+  site is refused in every bridge mode, including `full`.
 - No cookies, tokens, or credentials exist anywhere in the exchange.
 
 Two honest non-goals to be aware of:

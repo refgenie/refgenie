@@ -12,6 +12,7 @@ import { isSelfLocal, isWebKitOnly } from '../services/bridge/environment';
 import { forget, remember } from '../services/bridge/persistence';
 import { probeLocal } from '../services/bridge/probe';
 import { useBridgeStore } from '../stores/bridgeStore';
+import { useBridgeJobStore } from '../stores/bridgeJobStore';
 
 export interface BridgeConnectOptions {
   /** A silent re-probe never renders the troubleshooting panel. */
@@ -58,6 +59,9 @@ export function useBridge() {
 
   const disconnect = useCallback(() => {
     forget();
+    // Disconnect forgets the connection, so it forgets the pulls tracked on
+    // it too; the status change alone already stops the poller.
+    useBridgeJobStore.getState().clear();
     useBridgeStore.getState().reset();
   }, []);
 

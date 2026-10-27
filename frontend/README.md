@@ -201,9 +201,11 @@ machine: probe it, badge the assets they already have, browse it under
 src/
   services/bridge/        the /ping contract, the probe, persistence, clients, pull, digests
   stores/bridgeStore.ts   the seven connection statuses
+  stores/bridgeJobStore.ts  pulls handed to the local refgenie, persisted
   hooks/useBridge.ts      store read + connect/disconnect (no effect)
   hooks/useBridgeAutoConnect.ts   the ONE remembered re-probe, mounted by AppLayout
-  components/bridge/      control, connect card, connect dialog, /local scope, pull button
+  hooks/useBridgeJobPolling.ts    the ONE poller for bridge pulls, mounted by BridgeJobsDock
+  components/bridge/      control, connect card, connect dialog, /local scope, pull button, jobs dock
 ```
 
 Properties that are load-bearing, not incidental:
@@ -221,7 +223,9 @@ Properties that are load-bearing, not incidental:
   local data always lives behind `/local/*` with a banner, and never merges into
   a remote list without a badge.
 - **`/local/*` is read-only by construction.** `LocalScope` masks every command
-  capability to false regardless of what the ping claimed; the only cross-origin
+  capability to false regardless of what the ping claimed (it passes `jobs`
+  through, which there gates only the read-only job history; `jobs_cancel`
+  stays false); the only cross-origin
   mutation that exists anywhere is `POST /v1/actions/pull`.
 - **Pull availability comes from the ping, not the page.** On refgenie.org the
   page's own `pull` capability is false, so `useCapability('pull')` would
@@ -231,6 +235,12 @@ Properties that are load-bearing, not incidental:
 - **The two `localStorage` keys are frozen.** `refgenie.localBridge` and
   `refgenie.localBridge.safariDismissed` carry a returning visitor's connection
   across an SPA swap on the same origin.
+  A third key, `refgenie.localBridge.jobs`, is not frozen: it holds the pulls
+  this page started so `BridgeJobsDock` can resume polling after a reload, and
+  a missing or malformed value just reads as no jobs.
+- **Bridge pulls never enter `jobStore`.** That store mirrors THIS instance's
+  jobs. Bridge pulls live in `bridgeJobStore`, polled by
+  `useBridgeJobPolling` only while one is active and the bridge is connected.
 
 Adding a `/local` route means editing `SPA_CLIENT_ROUTES` in **both**
 `src/app/routes.tsx` and `refgenie/server/const.py`;
@@ -349,13 +359,11 @@ curl -si -X POST http://localhost:8080/v1/actions/pull \
 #### Against the deployed site
 
 ```bash
-env -u REFGENIE \
-  REFGENIE_BRIDGE_ORIGINS='https://refgenie.org,https://api.refgenie.org' \
-  uv run refgenie dash --bridge full
+env -u REFGENIE uv run refgenie dash --bridge full
 ```
 
-The SPA currently deploys to `https://api.refgenie.org`, which is **not** in the
-shipped allowlist — hence the extra origin. Check
+The SPA currently deploys to `https://api.refgenie.org`; both it and
+`https://refgenie.org` are in the default bridge allowlist. Check
 `https://api.refgenie.org/service-info` → `refgenie.web_ui.commit` before
 concluding a missing control is a bug; the deployed bundle may predate your
 branch.

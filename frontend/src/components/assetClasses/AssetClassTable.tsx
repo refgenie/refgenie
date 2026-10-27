@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { ScopedLink } from '../common/ScopedLink';
 import { DataTable } from '../common/DataTable';
 import { ServingModeBadges } from '../assets/ServingModeBadges';
 import type { Column } from '../common/DataTable';
@@ -25,9 +25,9 @@ export function AssetClassTable({
       header: 'Name',
       render: (item) =>
         item.id !== null ? (
-          <Link className="rg-link font-medium" to={`/asset-classes/${item.id}`}>
+          <ScopedLink className="rg-link font-medium" to={`/asset-classes/${item.id}`}>
             {item.name}
-          </Link>
+          </ScopedLink>
         ) : (
           <span>{item.name}</span>
         ),

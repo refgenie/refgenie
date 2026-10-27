@@ -25,6 +25,11 @@ export interface Capabilities {
   archives: boolean;
   seqcol: boolean;
   drs: boolean;
+  /**
+   * Local mode's own file access (`/v1/files`): view and download an asset's
+   * files from disk. Same-origin only, so never true through the bridge.
+   */
+  local_files: boolean;
 }
 
 export type CapabilityKey = keyof Capabilities;
@@ -46,6 +51,7 @@ export const CAPABILITY_KEYS: readonly CapabilityKey[] = [
   'archives',
   'seqcol',
   'drs',
+  'local_files',
 ] as const;
 
 export interface WebUiBuildInfo {

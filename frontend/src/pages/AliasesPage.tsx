@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { ScopedLink } from '../components/common/ScopedLink';
 import { useSearchParamsState } from '../hooks/useSearchParamsState';
 import { useAliases } from '../hooks/queries/useAliases';
 import { useCapability } from '../hooks/useCapability';
@@ -31,9 +31,9 @@ export function AliasesPage() {
       key: 'name',
       header: 'Alias',
       render: (alias) => (
-        <Link className="rg-link font-medium" to={`/genomes/${alias.genome_digest}`}>
+        <ScopedLink className="rg-link font-medium" to={`/genomes/${alias.genome_digest}`}>
           {alias.name}
-        </Link>
+        </ScopedLink>
       ),
     },
     {

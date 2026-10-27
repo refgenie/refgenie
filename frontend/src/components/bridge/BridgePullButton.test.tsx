@@ -3,9 +3,11 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { BridgePullButton } from './BridgePullButton';
+import { BridgeJobsDock } from './BridgeJobsDock';
 import { server } from '../../test/server';
 import { renderWithProviders, serverConfig } from '../../test/renderWithProviders';
 import { useBridgeStore } from '../../stores/bridgeStore';
+import { useBridgeJobStore } from '../../stores/bridgeJobStore';
 import { coerceCapabilities } from '../../services/capabilities';
 import type { PingResponse } from '../../services/bridge/contract';
 import type { UiConfig } from '../../types/ui';
@@ -68,6 +70,7 @@ function jobRecord(status: string) {
 beforeEach(() => {
   localStorage.clear();
   useBridgeStore.getState().reset();
+  useBridgeJobStore.getState().clear();
 });
 
 describe('BridgePullButton', () => {
@@ -148,12 +151,16 @@ describe('BridgePullButton', () => {
       }),
     );
 
+    // The dock owns the poller, as AppLayout mounts it on the public page.
     renderWithProviders(
-      <BridgePullButton
-        genomeDigest={GENOME}
-        assetGroupName="fasta"
-        assetName="default"
-      />,
+      <>
+        <BridgePullButton
+          genomeDigest={GENOME}
+          assetGroupName="fasta"
+          assetName="default"
+        />
+        <BridgeJobsDock />
+      </>,
       { config: remoteConfig },
     );
 
@@ -172,10 +179,11 @@ describe('BridgePullButton', () => {
     expect(body).not.toHaveProperty('genome');
 
     // The first poll is not terminal, so the inline progress bar renders.
-    expect(await screen.findByRole('progressbar')).toBeInTheDocument();
+    expect((await screen.findAllByRole('progressbar')).length).toBeGreaterThan(0);
 
+    // The toast and the dock card both report it.
     await waitFor(
-      () => expect(screen.getByText(/now on your local refgenie/i)).toBeInTheDocument(),
+      () => expect(screen.getAllByText(/now on your local refgenie/i).length).toBeGreaterThan(0),
       { timeout: 4000 },
     );
   });

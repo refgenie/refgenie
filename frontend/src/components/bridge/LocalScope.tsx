@@ -27,6 +27,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
+import { NavLink } from 'react-router-dom';
 import { createAppResourceCache } from '../../app/resourceCache';
 import { ResourceCacheContext } from '../../services/resourceCacheContext';
 import { AppContext } from '../../services/clients';
@@ -35,9 +36,24 @@ import { BridgeScopeContext } from '../../services/bridge/scope';
 import { noCapabilities } from '../../services/capabilities';
 import { ConnectDialog } from './ConnectDialog';
 import { useBridge } from '../../hooks/useBridge';
+import { cn } from '../../utils/cn';
 import type { UiConfig } from '../../types/ui';
 
 const LOCAL_SCOPE = { routeBase: '/local' } as const;
+
+/**
+ * The scope's own navigation. The top bar's entries point at the PUBLIC
+ * catalog, so inside `/local` this row is how the user moves between local
+ * views without leaving the scope.
+ */
+const LOCAL_NAV: ReadonlyArray<{ to: string; label: string }> = [
+  { to: '/local/genomes', label: 'Genomes' },
+  { to: '/local/species', label: 'Species' },
+  { to: '/local/asset-classes', label: 'Asset classes' },
+  { to: '/local/recipes', label: 'Recipes' },
+  { to: '/local/aliases', label: 'Aliases' },
+  { to: '/local/jobs', label: 'Jobs' },
+];
 
 export interface LocalScopeProps {
   children: ReactNode;
@@ -75,6 +91,10 @@ export function LocalScope({ children }: LocalScopeProps) {
         // Every command flag stays false. That is the mask, and it is
         // intentional: do not "fix" it later by spreading the ping wholesale.
         ...noCapabilities(),
+        // `jobs` gates only the read-only history page (GET /v1/jobs) inside
+        // this scope; the console and the SSE stream mount in AppLayout,
+        // outside it, and `jobs_cancel` stays false.
+        jobs: ping?.capabilities.jobs === true,
         downloads: ping?.capabilities.downloads === true,
         archives: ping?.capabilities.archives === true,
         seqcol: ping?.capabilities.seqcol === true,
@@ -130,6 +150,22 @@ export function LocalScope({ children }: LocalScopeProps) {
                 this data lives on your computer.
               </span>
             </div>
+            <nav aria-label="Local refgenie">
+              <ul className="rg-nav__list">
+                {LOCAL_NAV.map((entry) => (
+                  <li key={entry.to}>
+                    <NavLink
+                      to={entry.to}
+                      className={({ isActive }) =>
+                        cn('rg-nav__item', isActive && 'rg-nav__item--active')
+                      }
+                    >
+                      {entry.label}
+                    </NavLink>
+                  </li>
+                ))}
+              </ul>
+            </nav>
             {children}
           </div>
         </BridgeScopeContext.Provider>

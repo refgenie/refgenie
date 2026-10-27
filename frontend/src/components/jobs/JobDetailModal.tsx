@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { ScopedLink } from '../common/ScopedLink';
 import { BaseModal } from '../common/BaseModal';
 import { DescriptionList } from '../common/DescriptionList';
 import { JobErrorBlock } from './JobErrorBlock';
@@ -52,9 +52,9 @@ export function JobDetailModal({ job, isOpen, onClose, scrollToEnd }: JobDetailM
                   {
                     term: 'Result',
                     value: (
-                      <Link className="rg-link" to={`/assets/${job.result.asset_digest}`}>
+                      <ScopedLink className="rg-link" to={`/assets/${job.result.asset_digest}`}>
                         {job.result.registry_path}
-                      </Link>
+                      </ScopedLink>
                     ),
                   },
                 ]

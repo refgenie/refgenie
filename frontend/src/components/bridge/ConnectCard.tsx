@@ -4,11 +4,13 @@
  * browsers, where the probe is never attempted because WebKit blocks
  * HTTPS-page-to-localhost fetches outright (WebKit bug 171934).
  *
- * Renders nothing once connected, and nothing at all when this page IS the
- * local dash.
+ * Once connected it turns into the entry point to the local browse scope
+ * (`/local/*`), and it renders nothing at all when this page IS the local
+ * dash.
  */
 
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { CopyButton } from '../common/CopyButton';
 import { ExternalLink } from '../common/ExternalLink';
 import { ConnectDialog } from './ConnectDialog';
@@ -23,7 +25,33 @@ export function ConnectCard() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [safariDismissed, setSafariDismissed] = useState(isSafariCardDismissed());
 
-  if (bridge.status === 'connected' || bridge.status === 'self') return null;
+  if (bridge.status === 'self') return null;
+
+  if (bridge.status === 'connected') {
+    const counts = bridge.ping?.counts;
+    return (
+      <section className="rg-card">
+        <div className="rg-card__body flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-xl font-semibold">Your local refgenie is connected</h2>
+            <p className="rg-muted text-sm">
+              {bridge.ping?.instance_label}
+              {counts ? ` has ${counts.genomes} genomes and ${counts.assets} assets` : ''}. Browse
+              them here, read-only; changes still happen in your local dashboard.
+            </p>
+          </div>
+          <span className="flex flex-wrap gap-2">
+            <Link className="rg-btn rg-btn--primary" to="/local/genomes">
+              Browse local genomes
+            </Link>
+            <Link className="rg-btn" to="/local/jobs">
+              Local jobs
+            </Link>
+          </span>
+        </div>
+      </section>
+    );
+  }
 
   if (bridge.status === 'blocked') {
     if (safariDismissed) return null;

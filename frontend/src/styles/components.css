@@ -537,6 +537,14 @@
   padding: 0 var(--space-1);
 }
 
+/* A local file's preview (LocalFilePreviewModal): keep long lines intact and
+   scroll, rather than wrapping a .fai or a FASTA line into noise. */
+.rg-file-preview {
+  max-height: var(--log-detail-height);
+  overflow: auto;
+  white-space: pre;
+}
+
 /* === BANNER === */
 
 .rg-banner {

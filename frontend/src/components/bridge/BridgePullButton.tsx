@@ -13,11 +13,13 @@
  * to be confirmed on the local origin.
  *
  * The job runs on a machine `jobStore` does not manage, so it is deliberately
- * not registered there and `usePullAction` is not reused: this polls the other
- * instance and reports inline.
+ * not registered there and `usePullAction` is not reused. It is registered in
+ * `bridgeJobStore` instead: the app-level poller and `BridgeJobsDock` report
+ * it from then on, so progress survives navigation and reload, and this
+ * button only mirrors the active job for its own target.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { ExternalLink } from '../common/ExternalLink';
 import { JobProgress } from '../jobs/JobProgress';
 import { phaseInfo } from '../jobs/phases';
@@ -25,14 +27,11 @@ import { useApiClient } from '../../hooks/useApiClient';
 import { useBridge } from '../../hooks/useBridge';
 import { useRouteBase } from '../../hooks/useRouteBase';
 import { useToast } from '../../hooks/useToast';
-import { useInvalidateBridgeDigests } from '../../hooks/queries/useBridgeDigests';
 import { absoluteServerRoot } from '../../services/instanceLinks';
 import { createBridgeClients } from '../../services/bridge/client';
-import { waitForBridgeJob } from '../../services/bridge/pull';
 import { pullAsset } from '../../services/actions';
 import { ApiError } from '../../services/http';
-import { isTerminal } from '../../services/contracts';
-import type { Job } from '../../services/contracts';
+import { isActiveEntry, useBridgeJobStore } from '../../stores/bridgeJobStore';
 
 export interface BridgePullButtonProps {
   genomeDigest: string;
@@ -55,17 +54,21 @@ export function BridgePullButton({
   const client = useApiClient(); // the REMOTE read client
   const routeBase = useRouteBase();
   const toast = useToast();
-  const invalidate = useInvalidateBridgeDigests();
-  const [job, setJob] = useState<Job | null>(null);
   const [pending, setPending] = useState(false);
   // Set when the local refgenie refused because it does not subscribe to this
   // server: the user has to confirm the pull on their own origin instead.
   const [needsLocalConfirm, setNeedsLocalConfirm] = useState(false);
-  const aborter = useRef<AbortController | null>(null);
-
-  // Unmounting must stop the poll; without this the button keeps hitting the
-  // user's machine for the life of the tab.
-  useEffect(() => () => aborter.current?.abort(), []);
+  const instanceId = bridge.ping?.instance_id ?? null;
+  const activeJob = useBridgeJobStore((state) =>
+    state.entries.find(
+      (entry) =>
+        entry.instanceId === instanceId &&
+        entry.genomeDigest === genomeDigest &&
+        entry.assetGroupName === assetGroupName &&
+        entry.assetName === (assetName ?? null) &&
+        isActiveEntry(entry),
+    ),
+  );
 
   // Rendered ONLY on the remote branch with the bridge connected, and gated on
   // the LOCAL instance's pull capability from /ping. `useCapability('pull')`
@@ -96,9 +99,6 @@ export function BridgePullButton({
     (assetName ? `&asset=${encodeURIComponent(assetName)}` : '');
 
   const startPull = async () => {
-    const controller = new AbortController();
-    aborter.current?.abort();
-    aborter.current = controller;
     setPending(true);
     try {
       const { local } = createBridgeClients(baseUrl);
@@ -113,23 +113,16 @@ export function BridgePullButton({
         // puller reach a stdin prompt that hangs a worker forever.
         force: false,
       });
-      const final = await waitForBridgeJob(
-        local,
-        ref.job_id,
-        setJob,
-        controller.signal,
-      );
-      if (!final) return;
-      if (final.status === 'succeeded') {
-        toast.success(`${registryLabel} is now on your local refgenie.`);
-        void invalidate();
-      } else {
-        toast.error(
-          final.error?.message ?? `Job ended with status '${final.status}'.`,
-        );
-      }
+      useBridgeJobStore.getState().track({
+        id: ref.job_id,
+        instanceId: bridge.ping?.instance_id ?? '',
+        label: registryLabel,
+        genomeDigest,
+        assetGroupName,
+        assetName: assetName ?? null,
+        submittedAt: new Date().toISOString(),
+      });
     } catch (error) {
-      if (controller.signal.aborted) return;
       if (error instanceof ApiError && error.code === 'server_not_subscribed') {
         setNeedsLocalConfirm(true);
         toast.error(error.detail);
@@ -140,16 +133,18 @@ export function BridgePullButton({
       );
     } finally {
       setPending(false);
-      setJob(null);
     }
   };
 
-  if (job && !isTerminal(job.status)) {
+  if (activeJob) {
+    const progress = activeJob.job?.status === 'running' ? activeJob.job.progress : null;
     return (
       <span className="rg-pull-button rg-pull-button--active">
-        <JobProgress kind="pull" progress={job.progress} compact />
+        <JobProgress kind="pull" progress={progress} compact />
         <span className="rg-pull-button__phase rg-muted">
-          {phaseInfo('pull', job.progress?.phase).label}
+          {activeJob.job?.status === 'running'
+            ? phaseInfo('pull', progress?.phase).label
+            : 'Queued'}
         </span>
       </span>
     );

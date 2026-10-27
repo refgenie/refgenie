@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { ScopedLink } from '../common/ScopedLink';
 import { useAssetClassIndex } from '../../hooks/queries/useAssetClasses';
 import { specEntries } from '../../utils/recipes';
 import { DescriptionList } from '../common/DescriptionList';
@@ -51,9 +51,9 @@ function InputAssetList({
             <code className="rg-code rg-code--inline">{slot}</code>
             <span className="rg-muted"> → </span>
             {assetClass?.id !== null && assetClass?.id !== undefined ? (
-              <Link className="rg-link" to={`/asset-classes/${assetClass.id}`}>
+              <ScopedLink className="rg-link" to={`/asset-classes/${assetClass.id}`}>
                 {assetClass.name}
-              </Link>
+              </ScopedLink>
             ) : (
               <span className="rg-muted">{spec.asset_class ?? 'unknown'}</span>
             )}
@@ -82,13 +82,13 @@ export function RecipeDetailPanel({ recipe }: RecipeDetailPanelProps) {
             value: (() => {
               const outputClass = classIndex.data?.byId.get(recipe.output_asset_class_id);
               return (
-                <Link className="rg-link" to={`/asset-classes/${recipe.output_asset_class_id}`}>
+                <ScopedLink className="rg-link" to={`/asset-classes/${recipe.output_asset_class_id}`}>
                   {/* `RecipePublic` carries only the FK, so the name is joined
                       client-side. The raw id is the fallback, not the label. */}
                   {outputClass
                     ? `${outputClass.name} v${outputClass.version}`
                     : `#${recipe.output_asset_class_id}`}
-                </Link>
+                </ScopedLink>
               );
             })(),
           },

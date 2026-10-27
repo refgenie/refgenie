@@ -569,6 +569,23 @@ class TestPullFailures:
         assert result is None
         assert "Failed to query asset groups from http://test-server:5000" in caplog.text
 
+    def test_unreachable_relationships_logs_and_returns_none(self, mock_puller, caplog):
+        """When the relationships query raises, the server is skipped like any
+        other unreachable query instead of aborting the pull."""
+        client = MagicMock()
+        client.get_asset_groups.return_value = [
+            {"id": "group1", "name": "fasta", "genome_digest": "abc123digest"}
+        ]
+        client.get_assets.return_value = [
+            {"id": "asset1", "name": "default", "digest": "d1", "serving_modes": []}
+        ]
+        client.get.side_effect = ConnectionError("Connection refused")
+        mock_puller._servers.client.return_value = client
+
+        result = mock_puller.pull(genome=GenomeAlias("testgenome"), asset_group_name="fasta")
+        assert result is None
+        assert "Failed to query asset relationships from http://test-server:5000" in caplog.text
+
     def test_zero_asset_groups_raises(self, mock_puller):
         """Zero asset groups returned raises PullFailedError."""
         from refgenie.exceptions import PullFailedError

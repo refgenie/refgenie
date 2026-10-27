@@ -16,6 +16,9 @@ export const qk = {
   assets: (p: object) => ['assets', p] as const,
   asset: (d: string) => ['asset', d] as const,
   assetFiles: (d: string) => ['asset-files', d] as const,
+  // Local mode's own file access (`/v1/files`), not the staged-file listing.
+  localAssetFiles: (d: string) => ['local-asset-files', d] as const,
+  localFilePreview: (d: string, path: string) => ['local-file-preview', d, path] as const,
 
   assetClasses: (p: object) => ['asset-classes', p] as const,
   assetClass: (id: number) => ['asset-class', id] as const,

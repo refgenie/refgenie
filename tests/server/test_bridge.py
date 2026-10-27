@@ -137,6 +137,25 @@ class TestBridgeCors:
                 assert response.status_code == 200, path
                 assert response.headers.get("access-control-allow-origin") == PUBLIC_ORIGIN, path
 
+    @pytest.mark.parametrize(
+        "path",
+        ["/v4/genomes", "/v4/aliases", "/v4/recipes", "/v4/asset_classes", "/v1/jobs"],
+    )
+    def test_local_browse_reads_are_bridge_readable_under_read_mode(self, path):
+        """The public SPA's ``/local/*`` views (genomes, asset classes, recipes,
+        aliases, job history) are plain GETs; the default ``read`` mode must let
+        the bridge origin read them, with no policy change beyond CORS."""
+        with make_local_client(web_stub_rgc()) as client:
+            response = client.get(path, headers={"Origin": PUBLIC_ORIGIN})
+        assert response.status_code == 200, path
+        assert response.headers.get("access-control-allow-origin") == PUBLIC_ORIGIN
+
+    def test_local_browse_reads_stay_closed_to_unlisted_origins(self):
+        with make_local_client(web_stub_rgc()) as client:
+            for path in ("/v4/aliases", "/v4/recipes", "/v4/asset_classes", "/v1/jobs"):
+                response = client.get(path, headers={"Origin": EVIL_ORIGIN})
+                assert "access-control-allow-origin" not in response.headers, path
+
     def test_bridge_off_produces_no_cors_for_the_public_origin(self, monkeypatch):
         monkeypatch.setenv("REFGENIE_BRIDGE_MODE", "off")
         with make_local_client(web_stub_rgc()) as client:

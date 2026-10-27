@@ -111,6 +111,9 @@ class ErrorCode(StrEnum):
     ASSET_GROUP_NOT_FOUND = "asset_group_not_found"
     ASSET_CLASS_NOT_FOUND = "asset_class_not_found"
     RECIPE_NOT_FOUND = "recipe_not_found"
+    #: ``/v1/files``: the path is not a file inside the asset (missing, a
+    #: directory, or a symlink that leads out of the asset's content).
+    FILE_NOT_FOUND = "file_not_found"
 
     # --- generic ----------------------------------------------------------
     ALREADY_EXISTS = "already_exists"
@@ -123,6 +126,11 @@ class ErrorCode(StrEnum):
     FORBIDDEN_HOST = "forbidden_host"
     FORBIDDEN_ORIGIN = "forbidden_origin"
     VALIDATION_ERROR = "validation_error"
+    #: ``/v1/files``: an absolute path, a ``..`` segment, or another path the
+    #: route refuses before touching the filesystem.
+    INVALID_PATH = "invalid_path"
+    #: ``/v1/files``: the file is binary or compressed; download it instead.
+    NOT_PREVIEWABLE = "not_previewable"
 
 
 class WebError(Exception):
