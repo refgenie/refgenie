@@ -8,7 +8,7 @@ on:
   push:
     # Must equal this spoke's `ref` in hubs/refgenie/spokes.toml: the hub builds
     # that ref, so notifying from any other branch would rebuild the same bytes.
-    branches: [master]
+    branches: [alpha]
     paths:
       - 'docs/refgenie/**'                            # the spoke's docs tree, docs.yml included
       - '.github/workflows/notify-docs-refgenie.yml'  # so a notifier fix proves itself
