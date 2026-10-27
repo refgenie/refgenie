@@ -1,0 +1,26 @@
+{
+  "$comment": "Canonical house web stack. Owned by the web-design-style skill; copied into each project by web-style-sync.mjs and enforced by web-style-guard.mjs.",
+  "require": {
+    "react": "^19",
+    "react-dom": "^19",
+    "react-router": "^7",
+    "react-router-dom": "^7",
+    "typescript": "~5.9",
+    "vite": "^8"
+  },
+  "discouraged": {
+    "@tanstack/react-query": "Use the in-house data pattern: fetch service module + React Context + useSyncExternalStore store. Remove during migration."
+  },
+  "banned": {
+    "bootstrap": "House gen2 design system only.",
+    "bootstrap-icons": "House gen2 design system only.",
+    "tailwindcss": "House gen2 design system only.",
+    "postcss": "Tailwind residue.",
+    "autoprefixer": "Tailwind residue."
+  },
+  "frozen": [
+    "src/styles/utilities.css",
+    "src/styles/modal.css"
+  ],
+  "nodeMin": "20.19"
+}

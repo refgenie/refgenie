@@ -1,0 +1,1585 @@
+/*
+ * refgenie web UI components.
+ *
+ * BEM only (block__element--modifier), tokens only. No raw hex colors, no px
+ * or rem literals, no specificity overrides: `npm run style-guard` enforces it.
+ * Reach for a utility class from utilities.css first; add a block here only
+ * when a utility composition cannot express the rule.
+ */
+
+/* === ACCESSIBILITY HELPERS === */
+
+.sr-only {
+  position: absolute;
+  width: var(--border-width);
+  height: var(--border-width);
+  padding: 0;
+  margin: calc(-1 * var(--border-width));
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* === GENERIC TEXT / LINK / BUTTON === */
+
+.rg-muted {
+  color: rgb(var(--color-text-muted));
+}
+
+.rg-link {
+  color: rgb(var(--color-accent));
+  text-decoration: none;
+}
+
+.rg-link:hover {
+  text-decoration: underline;
+}
+
+.rg-link--plain {
+  color: inherit;
+}
+
+.rg-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+  color: rgb(var(--color-text));
+  background: rgb(var(--color-background));
+  border: var(--border-width) solid rgb(var(--color-border-strong));
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.rg-btn:hover {
+  background: rgb(var(--color-surface));
+}
+
+.rg-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rg-btn--primary {
+  color: rgb(var(--color-text-inverse));
+  background: rgb(var(--color-primary));
+  border-color: rgb(var(--color-primary));
+}
+
+.rg-btn--primary:hover {
+  background: rgb(var(--color-primary-dark));
+}
+
+.rg-btn--sm {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-size-xs);
+}
+
+.rg-btn--bare {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: rgb(var(--color-accent));
+}
+
+.rg-btn--bare:hover {
+  background: none;
+  text-decoration: underline;
+}
+
+/* === ICON === */
+
+.rg-icon {
+  display: inline-block;
+  width: var(--icon-size);
+  height: var(--icon-size);
+  flex: none;
+  vertical-align: var(--icon-shift);
+}
+
+.rg-icon--lg {
+  width: var(--icon-size-lg);
+  height: var(--icon-size-lg);
+}
+
+/*
+ * An icon trailing a run of inline text needs its own gap. Inside a `.rg-btn`,
+ * which is an inline-flex with `gap: var(--space-2)`, the block already
+ * supplies one and the margin would double it.
+ */
+.rg-icon--trailing {
+  margin-left: var(--space-1);
+}
+
+.rg-btn .rg-icon--trailing {
+  margin-left: 0;
+}
+
+/* === LAYOUT === */
+
+.rg-layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: rgb(var(--color-background));
+}
+
+/* One bar across the top at every width. The nav and the bridge control share
+   its inner row; the row carries the same max-width and inset as
+   .rg-layout__content, so the brand lines up with the page body beneath it. */
+.rg-layout__header {
+  border-bottom: var(--border-width) solid rgb(var(--color-border));
+  background: rgb(var(--color-surface));
+}
+
+.rg-layout__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  max-width: var(--layout-max-width);
+  margin: 0 auto;
+  padding: var(--space-3) var(--space-4);
+}
+
+.rg-layout__main {
+  flex: 1 1 auto;
+  min-width: 0;
+  /* The page heads bleed with viewport units, which include the scrollbar.
+     `clip` absorbs the overshoot without creating a scroll container, so it
+     does not trap `position: sticky` the way `hidden` would. */
+  overflow-x: clip;
+}
+
+.rg-layout__content {
+  max-width: var(--layout-max-width);
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-4);
+}
+
+.rg-layout__footer {
+  border-top: var(--border-width) solid rgb(var(--color-border));
+  color: rgb(var(--color-text-muted));
+  font-size: var(--font-size-sm);
+}
+
+.rg-layout__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* === NAV === */
+
+.rg-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.rg-nav__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: rgb(var(--color-primary));
+  font-weight: var(--font-weight-bold);
+  text-decoration: none;
+}
+
+.rg-nav__logo {
+  /* This is the full wordmark (glyph + "refgenie" text), much wider than
+     tall -- not a square glyph, so only a fixed height belongs here. Width
+     follows from the asset's own aspect ratio, or the text would distort. */
+  width: auto;
+  height: var(--space-10);
+}
+
+.rg-nav__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  list-style: none;
+}
+
+.rg-nav__item {
+  display: block;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  color: rgb(var(--color-text));
+  text-decoration: none;
+  font-size: var(--font-size-sm);
+}
+
+.rg-nav__item:hover {
+  background: rgb(var(--color-surface-alt));
+}
+
+.rg-nav__item--active {
+  background: rgb(var(--color-primary));
+  color: rgb(var(--color-text-inverse));
+}
+
+/* `:hover` alone outranks `--active`, so hovering the current page would swap
+   in the pale hover background while the text stayed inverse -- the label
+   vanishes. The active item darkens on hover instead. */
+.rg-nav__item--active:hover {
+  background: rgb(var(--color-primary-dark));
+  color: rgb(var(--color-text-inverse));
+}
+
+/* === CARD / PANEL === */
+
+.rg-card {
+  border: var(--border-width) solid rgb(var(--color-border));
+  border-radius: var(--radius-lg);
+  background: rgb(var(--color-background));
+}
+
+.rg-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border-bottom: var(--border-width) solid rgb(var(--color-border));
+  background: rgb(var(--color-surface));
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+}
+
+.rg-card__title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.rg-card__body {
+  padding: var(--space-4);
+}
+
+.rg-card__footer {
+  padding: var(--space-4);
+  border-top: var(--border-width) solid rgb(var(--color-border));
+  color: rgb(var(--color-text-muted));
+  font-size: var(--font-size-sm);
+}
+
+/* === TABLE === */
+
+.rg-table__wrap {
+  overflow-x: auto;
+  border: var(--border-width) solid rgb(var(--color-border));
+  border-radius: var(--radius-lg);
+}
+
+.rg-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.rg-table__head {
+  background: rgb(var(--color-surface));
+}
+
+.rg-table__head .rg-table__cell {
+  font-weight: var(--font-weight-semibold);
+  color: rgb(var(--color-text-muted));
+  text-transform: uppercase;
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.03em;
+}
+
+.rg-table__row {
+  border-top: var(--border-width) solid rgb(var(--color-border));
+}
+
+.rg-table__row--clickable:hover {
+  background: rgb(var(--color-surface));
+  cursor: pointer;
+}
+
+.rg-table__cell {
+  padding: var(--space-3);
+  text-align: left;
+  vertical-align: top;
+}
+
+.rg-table__cell--numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* === BADGE === */
+
+.rg-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.2;
+  background: rgb(var(--color-surface-alt));
+  color: rgb(var(--color-text));
+  white-space: nowrap;
+}
+
+.rg-badge--file {
+  background: rgb(var(--color-info-surface));
+  color: rgb(var(--color-primary-dark));
+}
+
+.rg-badge--archive {
+  background: rgb(var(--color-success-surface));
+  color: rgb(var(--color-primary-dark));
+}
+
+.rg-badge--default {
+  background: rgb(var(--color-surface-alt));
+}
+
+.rg-badge--local {
+  background: rgb(var(--color-primary));
+  color: rgb(var(--color-text-inverse));
+}
+
+/* === DIGEST CHIP === */
+
+.rg-digest {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 100%;
+}
+
+.rg-digest__text {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  background: rgb(var(--color-surface-alt));
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rg-digest__copy {
+  flex: none;
+}
+
+/* === SEARCH === */
+
+.rg-search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.rg-search__input,
+.rg-search__field-select,
+.rg-search__operator {
+  padding: var(--space-2) var(--space-3);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  color: rgb(var(--color-text));
+  background: rgb(var(--color-background));
+  border: var(--border-width) solid rgb(var(--color-border-strong));
+  border-radius: var(--radius-md);
+}
+
+.rg-search__input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* === PAGINATION === */
+
+.rg-pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1);
+  list-style: none;
+}
+
+.rg-pagination__page,
+.rg-pagination__nav {
+  min-width: var(--space-8);
+  padding: var(--space-1) var(--space-2);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  text-align: center;
+  color: rgb(var(--color-text));
+  background: rgb(var(--color-background));
+  border: var(--border-width) solid rgb(var(--color-border));
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.rg-pagination__page:hover:not(:disabled),
+.rg-pagination__nav:hover:not(:disabled) {
+  background: rgb(var(--color-surface));
+}
+
+.rg-pagination__page--current {
+  background: rgb(var(--color-primary));
+  border-color: rgb(var(--color-primary));
+  color: rgb(var(--color-text-inverse));
+}
+
+.rg-pagination__gap {
+  min-width: var(--space-8);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-size-sm);
+  text-align: center;
+  color: rgb(var(--color-text-muted));
+  user-select: none;
+}
+
+.rg-pagination__page:disabled,
+.rg-pagination__nav:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* === STATES === */
+
+.rg-state {
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  text-align: center;
+  color: rgb(var(--color-text-muted));
+}
+
+.rg-state--loading {
+  background: rgb(var(--color-surface));
+}
+
+.rg-state--error {
+  background: rgb(var(--color-danger-surface));
+  color: rgb(var(--color-danger));
+  text-align: left;
+}
+
+.rg-state--empty {
+  background: rgb(var(--color-surface));
+}
+
+.rg-skeleton {
+  display: block;
+  height: var(--skeleton-row-height);
+  border-radius: var(--radius-sm);
+  background: rgb(var(--color-surface-alt));
+  animation: rg-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes rg-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+/* === KEY / VALUE DESCRIPTION LIST === */
+
+.rg-kv {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-1) var(--space-4);
+}
+
+.rg-kv__term {
+  font-weight: var(--font-weight-semibold);
+  color: rgb(var(--color-text-muted));
+  font-size: var(--font-size-sm);
+}
+
+.rg-kv__value {
+  font-size: var(--font-size-sm);
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 768px) {
+  .rg-kv {
+    grid-template-columns: minmax(0, var(--nav-width)) minmax(0, 1fr);
+  }
+}
+
+/* === CODE === */
+
+.rg-code {
+  display: block;
+  padding: var(--space-3);
+  background: rgb(var(--color-surface-alt));
+  border-radius: var(--radius-md);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.rg-code--inline {
+  display: inline;
+  padding: 0 var(--space-1);
+}
+
+/* === BANNER === */
+
+.rg-banner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  border: var(--border-width) solid transparent;
+}
+
+.rg-banner--warning {
+  background: rgb(var(--color-warning-surface));
+  border-color: rgb(var(--color-warning));
+}
+
+.rg-banner--info {
+  background: rgb(var(--color-info-surface));
+  border-color: rgb(var(--color-info));
+}
+
+/* === BUTTON MODIFIERS (management surface) === */
+
+.rg-btn--danger {
+  color: rgb(var(--color-text-inverse));
+  background: rgb(var(--color-danger));
+  border-color: rgb(var(--color-danger));
+}
+
+.rg-btn--danger:hover {
+  background: rgb(var(--color-danger));
+  opacity: 0.9;
+}
+
+/* === FORM FIELDS === */
+
+/*
+ * One row per field: label in a fixed left column, control on the right. The
+ * stacked layout spent three lines of height and none of the width on every
+ * field.
+ *
+ * The field is its own container-query root, so the SAME component collapses
+ * back to stacked inside a narrow modal while staying two-column on a wide
+ * page. A viewport media query cannot tell those two cases apart.
+ *
+ * --field-max-width still means "how wide a control may get"; the label column
+ * is added on top of it, so the inputs did not shrink to pay for the labels.
+ */
+.rg-field {
+  container-type: inline-size;
+  display: grid;
+  grid-template-columns: var(--field-label-width) minmax(0, 1fr);
+  column-gap: var(--space-3);
+  row-gap: var(--space-1);
+  align-items: start;
+  max-width: calc(var(--field-max-width) + var(--field-label-width) + var(--space-3));
+}
+
+/* Right-aligned: labels here run from "Port" to "Subscribe to a server", and
+   only the edge facing the controls can be made straight. */
+.rg-field__label-cell {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: var(--space-1);
+  text-align: right;
+  /* Meet the control's first line of text, not the top of its border box. */
+  padding-top: calc(var(--space-2) + var(--border-width));
+  line-height: 1.25;
+}
+
+.rg-field__label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+.rg-field__required {
+  color: rgb(var(--color-danger));
+}
+
+/* Leads the label rather than trailing it, so a label of any length still ends
+   flush against the control. */
+.rg-field__help {
+  order: -1;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-5);
+  height: var(--space-5);
+  padding: 0;
+  font-family: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  color: rgb(var(--color-text-muted));
+  background: rgb(var(--color-background));
+  border: var(--border-width) solid rgb(var(--color-border-strong));
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.rg-field__help:hover,
+.rg-field__help[aria-expanded='true'] {
+  color: rgb(var(--color-text-inverse));
+  background: rgb(var(--color-text-muted));
+  border-color: rgb(var(--color-text-muted));
+}
+
+.rg-field__control {
+  min-width: 0;
+}
+
+.rg-field__input {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  color: rgb(var(--color-text));
+  background: rgb(var(--color-background));
+  border: var(--border-width) solid rgb(var(--color-border-strong));
+  border-radius: var(--radius-md);
+}
+
+.rg-field__input:disabled {
+  background: rgb(var(--color-surface));
+  cursor: not-allowed;
+}
+
+.rg-field__input--mono {
+  font-family: var(--font-family-mono);
+}
+
+.rg-field--invalid .rg-field__input {
+  border-color: rgb(var(--color-danger));
+}
+
+/* Both sit under the control, in its column. `.sr-only` takes the hint out of
+   flow while collapsed, so a closed hint costs no row. */
+.rg-field__hint,
+.rg-field__error {
+  grid-column: 2;
+}
+
+.rg-field__hint {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: rgb(var(--color-text-muted));
+}
+
+.rg-field__error {
+  font-size: var(--font-size-xs);
+  color: rgb(var(--color-danger));
+}
+
+/*
+ * Narrow container: label back above the control. Every cell spans the whole
+ * track set, which retires the fixed label column without the field having to
+ * query its own width.
+ *
+ * The prelude is in `em` because a container query cannot read a custom
+ * property — the same reason the style guard exempts @media preludes from the
+ * raw-length ban — and `em` at least follows the user's font size.
+ */
+@container (max-width: 30em) {
+  .rg-field__label-cell,
+  .rg-field__control,
+  .rg-field__hint,
+  .rg-field__error {
+    grid-column: 1 / -1;
+  }
+
+  .rg-field__label-cell {
+    justify-content: flex-start;
+    text-align: left;
+    padding-top: 0;
+  }
+
+  .rg-field__help {
+    order: 0;
+  }
+}
+
+/*
+ * Opt out of the two-column row where a label column would be wrong: a compact
+ * filter bar whose labels are shorter than the gutter they would sit in, and a
+ * confirmation prompt whose "label" is a whole sentence.
+ */
+.rg-field--stacked {
+  container-type: normal;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-width: var(--field-max-width);
+}
+
+.rg-check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.rg-check--inline {
+  display: inline-flex;
+  align-items: center;
+}
+
+/* A checkbox with a "?" beside it and its explainer on the line below. The
+   toggle cannot sit inside the <label> -- clicking it would tick the box --
+   so the row is the flex parent instead, and the hint takes a full row of its
+   own so expanding it does not shove the toggle sideways. */
+.rg-check-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.rg-check-row .rg-field__hint {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.rg-form-actions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.rg-registry-preview {
+  font-size: var(--font-size-sm);
+}
+
+/*
+ * The build form's two halves. Genome and recipe are the choices; everything
+ * below -- parameters, input files, input assets, what gets registered, how it
+ * is handled afterwards -- follows from the recipe. The rule and the indent say
+ * that without spending a sentence on it.
+ *
+ * The indent is deliberately small: `.rg-field` is a container-query root at
+ * 30em, and a wide gutter here would flip fields to their stacked layout at a
+ * viewport where they still fit two-column.
+ */
+.rg-build-branch {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-left: var(--space-4);
+  border-left: var(--border-width) solid rgb(var(--color-border));
+}
+
+.rg-build-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/*
+ * A shaded band, not a heading row. These are still <h2>s -- the landmark a
+ * screen reader jumps between is unchanged -- but "Parameters" set at heading
+ * size and leading spent a whole row each in a form that already scrolls.
+ */
+.rg-build-group__caption {
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgb(var(--color-text-muted));
+  background: rgb(var(--color-surface-alt));
+  border-radius: var(--radius-sm);
+}
+
+.rg-list {
+  margin: 0;
+  padding-left: var(--space-5);
+  font-size: var(--font-size-sm);
+  list-style: disc;
+}
+
+.rg-danger-zone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: var(--border-width) solid rgb(var(--color-danger));
+  border-radius: var(--radius-md);
+  background: rgb(var(--color-danger-surface));
+}
+
+/* === STATUS PILL === */
+
+.rg-status-pill {
+  display: inline-block;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  background: rgb(var(--color-surface-alt));
+  color: rgb(var(--color-text-muted));
+  white-space: nowrap;
+}
+
+.rg-status-pill--running {
+  background: rgb(var(--color-info-surface));
+  color: rgb(var(--color-text));
+}
+
+.rg-status-pill--succeeded {
+  background: rgb(var(--color-success-surface));
+  color: rgb(var(--color-success));
+}
+
+.rg-status-pill--failed {
+  background: rgb(var(--color-danger-surface));
+  color: rgb(var(--color-danger));
+}
+
+.rg-status-pill--cancelled {
+  background: rgb(var(--color-warning-surface));
+  color: rgb(var(--color-text));
+}
+
+/* === PROGRESS === */
+
+.rg-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+}
+
+.rg-progress__bar {
+  display: block;
+  width: 100%;
+  height: var(--progress-height);
+  appearance: none;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: rgb(var(--color-surface-alt));
+  overflow: hidden;
+}
+
+.rg-progress__bar::-webkit-progress-bar {
+  background: rgb(var(--color-surface-alt));
+  border-radius: var(--radius-full);
+}
+
+.rg-progress__bar::-webkit-progress-value {
+  background: rgb(var(--color-accent));
+  border-radius: var(--radius-full);
+}
+
+.rg-progress__bar::-moz-progress-bar {
+  background: rgb(var(--color-accent));
+  border-radius: var(--radius-full);
+}
+
+.rg-progress__bar--indeterminate {
+  position: relative;
+}
+
+.rg-progress__pulse {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 35%;
+  border-radius: var(--radius-full);
+  background: rgb(var(--color-accent));
+  animation: rg-progress-slide 1.6s ease-in-out infinite;
+}
+
+@keyframes rg-progress-slide {
+  0% {
+    left: 0;
+  }
+  50% {
+    left: 65%;
+  }
+  100% {
+    left: 0;
+  }
+}
+
+/*
+ * An indeterminate bar exists to say "something is happening"; a static striped
+ * fill says the same thing without the motion.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .rg-progress__pulse {
+    animation: none;
+    width: 100%;
+    opacity: 0.4;
+  }
+}
+
+.rg-progress--compact .rg-progress__bar {
+  height: var(--progress-height-compact);
+}
+
+.rg-progress__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+}
+
+.rg-progress__phase {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.rg-progress__bytes {
+  font-variant-numeric: tabular-nums;
+  color: rgb(var(--color-text-muted));
+}
+
+.rg-progress__note,
+.rg-progress__message {
+  font-size: var(--font-size-xs);
+}
+
+/* === LOG TAIL === */
+
+.rg-log-tail {
+  display: flex;
+  flex-direction: column;
+  max-height: var(--log-tail-height);
+  padding: var(--space-2);
+  overflow-y: auto;
+  overflow-x: auto;
+  background: rgb(var(--color-surface-alt));
+  border-radius: var(--radius-sm);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+}
+
+.rg-log-tail__line {
+  white-space: pre;
+}
+
+.rg-log-tail__line--pipeline {
+  color: rgb(var(--color-text-muted));
+}
+
+.rg-log-tail__empty {
+  font-size: var(--font-size-xs);
+}
+
+/* === JOB CARD === */
+
+.rg-job-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: var(--border-width) solid rgb(var(--color-border));
+  border-radius: var(--radius-md);
+  background: rgb(var(--color-background));
+}
+
+.rg-job-card--queued {
+  background: rgb(var(--color-surface));
+}
+
+.rg-job-card--failed {
+  border-color: rgb(var(--color-danger));
+}
+
+.rg-job-card--focused {
+  border-color: rgb(var(--color-accent));
+  box-shadow: var(--shadow-md);
+}
+
+.rg-job-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.rg-job-card__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  overflow-wrap: anywhere;
+}
+
+.rg-job-card__elapsed {
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.rg-job-card__queued,
+.rg-job-card__note {
+  font-size: var(--font-size-sm);
+  color: rgb(var(--color-text-muted));
+}
+
+.rg-job-card__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* === JOB ERROR === */
+
+.rg-job-error {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: var(--border-width) solid transparent;
+  font-size: var(--font-size-sm);
+}
+
+.rg-job-error--error {
+  background: rgb(var(--color-danger-surface));
+  border-color: rgb(var(--color-danger));
+}
+
+.rg-job-error--warning {
+  background: rgb(var(--color-warning-surface));
+  border-color: rgb(var(--color-warning));
+}
+
+.rg-job-error--info {
+  background: rgb(var(--color-info-surface));
+  border-color: rgb(var(--color-info));
+}
+
+.rg-job-error--neutral {
+  background: rgb(var(--color-surface-alt));
+  border-color: rgb(var(--color-border));
+}
+
+.rg-job-error__headline {
+  font-weight: var(--font-weight-semibold);
+}
+
+.rg-job-error__note {
+  color: rgb(var(--color-text-muted));
+}
+
+.rg-job-error__message {
+  overflow-wrap: anywhere;
+}
+
+.rg-job-error__details > summary {
+  cursor: pointer;
+  color: rgb(var(--color-text-muted));
+}
+
+.rg-job-error__log {
+  max-height: var(--log-tail-height);
+  overflow: auto;
+  white-space: pre;
+}
+
+.rg-job-error__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.rg-job-detail__log {
+  max-height: var(--log-detail-height);
+  overflow: auto;
+  white-space: pre;
+}
+
+/* === JOB CONSOLE DOCK === */
+
+.rg-job-console {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--console-z);
+  background: rgb(var(--color-background));
+  border-top: var(--border-width) solid rgb(var(--color-border));
+  box-shadow: var(--shadow-lg);
+}
+
+.rg-job-console__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding: var(--space-2) var(--space-4);
+  background: rgb(var(--color-surface));
+  border-bottom: var(--border-width) solid rgb(var(--color-border));
+}
+
+.rg-job-console--collapsed .rg-job-console__header {
+  border-bottom: 0;
+}
+
+.rg-job-console__toggle {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+}
+
+.rg-job-console__badge {
+  font-size: var(--font-size-sm);
+  color: rgb(var(--color-text-muted));
+}
+
+.rg-job-console__status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-xs);
+  color: rgb(var(--color-text-muted));
+}
+
+.rg-job-console__dot {
+  display: inline-block;
+  width: var(--space-2);
+  height: var(--space-2);
+  border-radius: var(--radius-full);
+  background: rgb(var(--color-border-strong));
+}
+
+.rg-job-console__status--open .rg-job-console__dot {
+  background: rgb(var(--color-success));
+}
+
+.rg-job-console__status--polling .rg-job-console__dot {
+  background: rgb(var(--color-warning));
+}
+
+.rg-job-console__status--offline .rg-job-console__dot {
+  background: rgb(var(--color-danger));
+}
+
+.rg-job-console__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: var(--console-max-height);
+  overflow-y: auto;
+  padding: var(--space-3) var(--space-4);
+}
+
+/* === PULL BUTTON === */
+
+.rg-pull-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.rg-pull-button--active {
+  min-width: var(--menu-min-width);
+}
+
+.rg-pull-button__phase {
+  font-size: var(--font-size-xs);
+}
+
+.rg-pull-button__menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  z-index: var(--console-z);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: var(--menu-min-width);
+  padding: var(--space-2);
+  background: rgb(var(--color-background));
+  border: var(--border-width) solid rgb(var(--color-border));
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+/* === TOASTS === */
+
+.rg-toast-region {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: var(--toast-z);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: var(--toast-width);
+  max-width: 100%;
+  pointer-events: none;
+}
+
+.rg-toast {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: var(--border-width) solid rgb(var(--color-border));
+  background: rgb(var(--color-background));
+  box-shadow: var(--shadow-md);
+  font-size: var(--font-size-sm);
+  pointer-events: auto;
+}
+
+.rg-toast--success {
+  background: rgb(var(--color-success-surface));
+  border-color: rgb(var(--color-success));
+}
+
+.rg-toast--error {
+  background: rgb(var(--color-danger-surface));
+  border-color: rgb(var(--color-danger));
+}
+
+.rg-toast--info {
+  background: rgb(var(--color-info-surface));
+  border-color: rgb(var(--color-info));
+}
+
+.rg-toast__message {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.rg-toast__close {
+  padding: 0 var(--space-1);
+  border: 0;
+  background: none;
+  font-size: var(--font-size-lg);
+  line-height: 1;
+  cursor: pointer;
+}
+
+/*
+ * The console is fixed to the viewport bottom, so the scroll container needs
+ * room underneath it or the last row of every page hides behind the dock.
+ */
+.rg-layout--docked .rg-layout__content {
+  padding-bottom: var(--console-max-height);
+}
+
+/* === PAGE MINI-HERO ===
+
+   The landing hero at inner-page scale: the same stack (breadcrumb, title,
+   lede), one step down in every dimension, no logo and no search.
+
+   A tinted band, as in Echelon: the gradient runs across the full width of the
+   content column and settles into the page background, so the header reads as
+   one surface rather than as floating text.
+
+   It bleeds horizontally. .rg-layout__content supplies the inset, so this block
+   cancels it with a negative inline margin and re-applies the same value as
+   padding -- the text stays on the body's left edge while the tint runs edge to
+   edge. Change --space-4 here only together with .rg-layout__content.
+*/
+
+.rg-minihero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-block: var(--space-6);
+  background: linear-gradient(
+    135deg,
+    rgb(var(--color-surface-alt)) 0%,
+    rgb(var(--color-background)) 100%
+  );
+  border-bottom: var(--border-width) solid rgb(var(--color-border));
+}
+
+/* A banner spanning the viewport rather than sitting inside the content
+   column: square corners, and only the edge that faces the page. */
+.rg-banner--strip {
+  border-radius: 0;
+  border-inline: 0;
+  border-top: 0;
+}
+
+/* === FULL-BLEED PAGE HEADS ===
+
+   Both heads span the viewport edge to edge while their text stays on the
+   content column's left edge, and both sit flush under the nav.
+
+   .rg-layout__content is centered and inset, so a head escapes it with a
+   negative inline margin and re-applies the inset as padding. The `max()`
+   keeps the text on the column once the viewport is wider than
+   --layout-max-width; below that it falls back to the plain inset. The top
+   margin cancels the column's top padding.
+
+   Change --space-4 or --space-6 here only together with .rg-layout__content.
+*/
+.rg-hero,
+.rg-minihero {
+  margin-top: calc(var(--space-6) * -1);
+  margin-inline: calc(50% - 50vw);
+  padding-inline: max(
+    var(--space-4),
+    calc(50vw - var(--layout-max-width) / 2 + var(--space-4))
+  );
+}
+
+/* Title and actions share one optical line and wrap independently: a long
+   genome label must not squeeze the buttons into a column. */
+.rg-minihero__bar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.rg-minihero__title {
+  margin: 0;
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.15;
+}
+
+.rg-minihero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.rg-minihero__lede {
+  max-width: var(--minihero-measure);
+  color: rgb(var(--color-text-muted));
+}
+
+@media (max-width: 768px) {
+  .rg-minihero__title {
+    font-size: var(--font-size-2xl);
+  }
+}
+
+/* === LANDING === */
+
+/* The same band as .rg-minihero, at full scale. Inline padding and the flush
+   top come from the shared full-bleed rule above. */
+.rg-hero {
+  padding-block: var(--space-12);
+  background: linear-gradient(
+    135deg,
+    rgb(var(--color-surface-alt)) 0%,
+    rgb(var(--color-background)) 100%
+  );
+  border-bottom: var(--border-width) solid rgb(var(--color-border));
+}
+
+.rg-hero__logo {
+  /* Fixed height only: this is the full wordmark, much wider than tall, so
+     a matching fixed width would distort it. Width follows its own ratio. */
+  width: auto;
+  height: var(--hero-logo-size);
+}
+
+.rg-hero__lede {
+  max-width: var(--hero-measure);
+}
+
+.rg-hero__search {
+  max-width: var(--hero-search-width);
+}
+
+.rg-stat {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border: var(--border-width) solid rgb(var(--color-border));
+  border-radius: var(--radius-lg);
+  background: rgb(var(--color-surface));
+  text-align: center;
+}
+
+.rg-stat:hover {
+  border-color: rgb(var(--color-border-strong));
+}
+
+.rg-stat__value {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1.1;
+}
+
+.rg-stat__label {
+  color: rgb(var(--color-text-muted));
+  font-size: var(--font-size-sm);
+}
+
+/* Layout comes from utilities; the block owns the card surface. */
+.rg-step {
+  padding: var(--space-4);
+  border: var(--border-width) solid rgb(var(--color-border));
+  border-radius: var(--radius-md);
+  background: rgb(var(--color-surface));
+}
+
+.rg-step__index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-6);
+  height: var(--space-6);
+  border-radius: var(--radius-full);
+  background: rgb(var(--color-primary));
+  color: rgb(var(--color-text-inverse));
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.rg-command {
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid rgb(var(--color-border));
+  border-radius: var(--radius-md);
+  background: rgb(var(--color-surface));
+}
+
+/* === TREE EXPLORER === */
+
+/* The canvas fills whatever box its parent gives it. Nothing here knows the
+   sidebar exists -- that coupling is what this port removes. */
+.rg-tree__canvas {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.rg-tree__canvas > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.rg-tree__canvas--pan {
+  cursor: grab;
+}
+
+.rg-tree__canvas--pan:active {
+  cursor: grabbing;
+}
+
+/* d3 sets opacity and stroke-width inline; the easing belongs here. */
+.rg-tree__link,
+.rg-tree__species-label,
+.rg-tree__group-label {
+  transition: var(--transition-fast);
+}
+
+.rg-tree__filter {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: var(--field-max-width);
+}
+
+/* Always visible above the canvas. Layout comes from utilities; the block
+   owns the surface, and the trailing control is pushed to the far edge. */
+.rg-tree__toolbar {
+  padding-block: var(--space-1);
+}
+
+.rg-tree__toolbar-end {
+  margin-left: auto;
+}
+
+.rg-tree__toolbar--fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: calc(var(--tree-fullscreen-z) + 1);
+  padding: var(--space-2);
+  border-bottom: var(--border-width) solid rgb(var(--color-border));
+  background: rgb(var(--color-background));
+}
+
+/* A panel in the page flow, not a full-bleed backdrop. */
+.rg-tree__panel {
+  position: relative;
+  height: clamp(
+    var(--tree-panel-height-min),
+    var(--tree-panel-height),
+    var(--tree-panel-height-max)
+  );
+  border: var(--border-width) solid rgb(var(--color-border));
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+/* Opt-in, driven by the toolbar button and Esc. Covers the sidebar
+   deliberately; the exit control is pinned inside. */
+.rg-tree__panel--fullscreen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: var(--tree-fullscreen-z);
+  border: 0;
+  border-radius: 0;
+  background: rgb(var(--color-background));
+}
+
+.rg-tree__detail {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  width: var(--tree-detail-width);
+  box-shadow: var(--shadow-md);
+}
+
+@media (max-width: 1023px) {
+  .rg-tree__panel {
+    height: var(--tree-panel-height-compact);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rg-tree__link,
+  .rg-tree__species-label,
+  .rg-tree__group-label {
+    transition: none;
+  }
+}

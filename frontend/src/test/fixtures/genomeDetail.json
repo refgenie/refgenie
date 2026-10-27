@@ -1,0 +1,31 @@
+{
+  "digest": "5cb5b9d2d1e2b5e5e2f0a3c4d5e6f708",
+  "description": "Human GRCh38 reference assembly",
+  "species_name": "Homo sapiens",
+  "common_name": "human",
+  "taxon_id": 9606,
+  "assembly_source": "NCBI",
+  "assembly_accession": "GCA_000001405.15",
+  "assembly_level": "chromosome",
+  "remote_url": null,
+  "taxon_uri": "https://identifiers.org/taxonomy:9606",
+  "fhr": {
+    "version": "p14",
+    "dateCreated": "2022-02-03",
+    "license": "CC0-1.0",
+    "scholarlyArticle": "https://doi.org/10.1038/nature11632",
+    "funding": "NHGRI",
+    "relatedLink": ["https://www.ncbi.nlm.nih.gov/assembly/GCF_000001405.40"],
+    "metadataAuthor": [{ "name": "Nathan Sheffield" }],
+    "assemblyAuthor": [{ "name": "Genome Reference Consortium" }],
+    "vitalStats": {
+      "N50": 67794873,
+      "L50": 16,
+      "L90": 44,
+      "totalBasePairs": 3099706404,
+      "numberContigs": 195,
+      "numberScaffolds": 195,
+      "readTechnology": "Sanger"
+    }
+  }
+}

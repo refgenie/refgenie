@@ -1,0 +1,9 @@
+name: nested_seek_key
+version: 0.1.0
+description: Asset class whose only path seek key is nested below the asset directory
+serving_modes: [file]
+seek_keys:
+  index:
+    value: "sub/inner"
+    description: Index directory nested two levels below the asset directory
+    type: directory

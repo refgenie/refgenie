@@ -1,0 +1,22 @@
+{
+  "asset_digest": "2222222222222222222222222222222222222222222222222222222222222222",
+  "parents": [
+    {
+      "digest": "1111111111111111111111111111111111111111111111111111111111111111",
+      "name": "default",
+      "description": "Genomic sequence in FASTA format",
+      "recipe_id": 7,
+      "asset_group_id": 3,
+      "size": 3273481150,
+      "serving_modes_override": null,
+      "colocate": null,
+      "serving_modes": ["archive"],
+      "asset_class_name": "fasta",
+      "asset_group_name": "fasta",
+      "genome_digest": "5cb5b9d2d1e2b5e5e2f0a3c4d5e6f708",
+      "names": ["default"],
+      "seek_keys": []
+    }
+  ],
+  "children": []
+}

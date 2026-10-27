@@ -1,0 +1,23 @@
+name: test
+version: 0.1.0
+description: Test asset
+serving_modes: [file]
+seek_keys:
+  extension:
+    value: "{genome}.extension"
+    description: File with extension
+    type: file
+  extension1:
+    value: "{genome}.extension1"
+    description: File with extension1
+    type: file
+  extension2:
+    value: "{genome}.extension2"
+    description: File with extension2
+    type: file
+  test_version:
+    description: Test version string
+    type: string
+  test_metadata:
+    description: Test JSON metadata blob
+    type: json

@@ -1,0 +1,46 @@
+# Site-level pages of docs.refgenie.org. This spoke is mounted at the site root
+# (spoke "site", mount = "/" in doc-hubs hubs/refgenie/spokes.toml): index.mdx
+# is the home page, legacy/ is /legacy/ (the frozen pre-1.0 docs), and
+# SKILL.md is served as a file at /SKILL.md. The nav below is the hub's
+# "Legacy" sidebar topic. The current refgenie docs are the sibling spoke in
+# docs/refgenie/.
+site_name: Legacy
+assets:
+  - SKILL.md
+nav:
+  - Refgenie (pre-1.0):
+      - Introduction: legacy/index.md
+      - Demo videos: legacy/demo_videos.md
+      - Overview: legacy/overview.md
+      - Install and configure: legacy/install.md
+      - Basic tutorial: legacy/notebooks/tutorial.md
+      - Citing refgenie: legacy/manuscripts.md
+      - Refer to assets: legacy/asset_registry_paths.md
+      - Download pre-built assets: legacy/pull.md
+      - Build assets: legacy/build.md
+      - Add custom assets: legacy/custom_assets.md
+      - Retrieve paths to assets: legacy/seek.md
+      - Use asset tags: legacy/tag.md
+      - Use aliases: legacy/notebooks/aliases.md
+      - Populate refgenie paths: legacy/populate.md
+      - Compare genomes: legacy/compare.md
+      - Run my own asset server: legacy/run_own_server.md
+      - Use refgenie from Python: legacy/refgenconf.md
+      - Use refgenie in your pipeline: legacy/code_snippets.md
+      - Use refgenie on the cloud: legacy/remote.md
+      - Use refgenie with iGenomes: legacy/igenomes.md
+      - Upgrade from config 0.3 to 0.4: legacy/notebooks/config_upgrade_03_to_04.md
+      - Studies using refgenie: legacy/uses_refgenie.md
+      - Genome configuration file: legacy/genome_config.md
+      - Recipe specification: legacy/recipe_specification.md
+      - Asset class specification: legacy/asset_class_specification.md
+      - Glossary: legacy/glossary.md
+      - Buildable assets: legacy/available_assets.md
+      - Usage: legacy/usage.md
+      - Refgenconf usage: legacy/notebooks/refgenconf_usage.md
+      - FAQ: legacy/faq.md
+      - Support: https://github.com/databio/refgenie/issues
+      - Contributing: legacy/contributing.md
+      - Changelog: legacy/changelog.md
+  - Refgenie server (pre-1.0):
+      - Intro: legacy/refgenieserver/index.md

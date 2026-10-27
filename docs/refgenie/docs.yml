@@ -1,0 +1,62 @@
+# Nav and renderers for this repo's docs on https://docs.refgenie.org/refgenie/
+# (built by databio/doc-hubs, hubs/refgenie). Pages not listed here are
+# still published, just not in the sidebar.
+site_name: Refgenie
+nav:
+  - Getting started:
+      - Introduction: README.md
+      - "What's new in v1": whats_new.md
+      - Overview: overview.md
+      - Install: install.md
+      - Upgrade from legacy: upgrade.md
+      - Configure: configuration.md
+      - CLI tutorial: cli_tutorial.md
+      - Genome initialization: genome_tutorial.md
+      - Citing refgenie: manuscripts.md
+  - How-to guides:
+      - Refer to assets: asset_registry_paths.md
+      - Download pre-built assets: pull.md
+      - Use refgenie from Python: notebooks/refgenie.ipynb
+      - Use refgenie from Python (API): refgenie_object.md
+      - Use data channels: data_channels.md
+      - Build assets: build.md
+      - Stage assets for serving: staging.md
+      - Configure remote storage: remotes.md
+      - Building and serving tutorial: building_tutorial.md
+      - Retrieve paths to assets: seek.md
+      - Compare genomes: compare.md
+      - Add custom assets: custom_assets.md
+      - Manage aliases: alias.md
+      - Managing asset groups and naming: naming_assets.md
+      - Populate refgenie paths: populate.md
+      - Set up your own data channel: set_up_data_channel.md
+      - Run a server: server_tutorial.md
+      - Use the dashboard: dash.md
+      - Connect the web UI to your local refgenie: bridge.md
+      - Use refgenie with AI: use_with_ai.md
+      - Connect AI assistants (MCP): mcp.md
+      - Write a plugin: plugins.md
+  - Server:
+      - Intro: server/README.md
+      - Serving modes: serving_modes.md
+      - Public servers: servers.md
+      - Data channels: server/data_channels.md
+      - Remotes: server/remotes.md
+      - Persisting download stats: server/endpoint_hits_collector.md
+      - Pagination and search: server/pagination_and_search.md
+  - Reference:
+      - CLI reference: refgenie-cli.md
+      - Glossary: glossary.md
+      - Database backends: database.md
+      - Flexible asset types: flexible_asset_types.md
+      - Studies using refgenie: uses_refgenie.md
+      - Recipe specification: recipe_specification.md
+      - Asset class specification: asset_class_specification.md
+      - Migration details (0.x to 1.0): migration-from-legacy.md
+      - FAQ: faq.md
+      - Contributing: contributing.md
+      - Development setup: development.md
+renderers:
+  - hub-notebooks:
+      include: [notebooks/refgenie.ipynb]
+      execute: false

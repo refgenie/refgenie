@@ -1,0 +1,25 @@
+name: Notify refgenie docs (site)
+
+# Tells databio/doc-hubs that this repo's site pages changed, so
+# docs.refgenie.org rebuilds. All the logic is in the reusable workflow; this
+# file only names which site and which spoke. See databio/doc-hubs README,
+# "Add a spoke".
+
+on:
+  push:
+    # Must equal this spoke's `ref` in hubs/refgenie/spokes.toml: the hub builds
+    # that ref, so notifying from any other branch would rebuild the same bytes.
+    branches: [master]
+    paths:
+      - 'docs/site/**'                            # the spoke's docs tree, docs.yml included
+      - '.github/workflows/notify-docs-site.yml'  # so a notifier fix proves itself
+  workflow_dispatch:
+
+jobs:
+  notify:
+    uses: databio/actions/.github/workflows/notify-doc-hub.yml@master
+    with:
+      site: refgenie
+      spoke: site
+    secrets:
+      DOCS_DISPATCH_TOKEN: ${{ secrets.DOCS_DISPATCH_TOKEN }}

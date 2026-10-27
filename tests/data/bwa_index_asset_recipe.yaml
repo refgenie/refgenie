@@ -1,0 +1,19 @@
+name: bwa_index
+version: 0.0.1
+output_asset_class: bwa_index
+description: Genome index for Burrows-Wheeler Alignment Tool, produced with bwa index
+input_files: null
+input_params: null
+input_assets:
+  fasta:
+    asset_class: fasta
+    description: fasta asset for genome
+    default: fasta
+    colocate:
+      - source_key: fasta
+docker_image: databio/refgenie
+command_templates:
+  - bwa index {{values.output_folder}}/{{values.genome_digest}}.fa
+custom_seek_keys:
+  bwa_version: "bwa 2>&1 | awk 'NR==3{print $2}' | awk -F- '{print $1}'"
+default_asset: "{{values.custom_seek_keys.bwa_version}}"
