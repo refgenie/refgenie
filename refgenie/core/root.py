@@ -171,12 +171,11 @@ class Refgenie:
     def store_router(self) -> RefgetStoreRouter:
         """The federated store router.
 
-        Built lazily (after migrations) from the mode: one on-disk store in
-        local mode, or every enabled ``Store`` row in server mode. On-disk
-        stores load collection metadata only -- sequence bytes are fetched on
-        demand in ``rgc.sequence.get()``. Remote stores open with their
-        collection index alone; each genome's collection and FHR sidecar are
-        fetched on first use (see ``RefgetStoreRouter.store_for_genome``).
+        Built on first access (after migrations) from the mode: one editable
+        on-disk store in local mode, holding collection metadata only (sequence
+        bytes are fetched on demand in ``rgc.sequence.get()``). In server mode,
+        every enabled ``Store`` row, each loaded in full (collections and FHR)
+        and frozen read-only; the server builds it at startup.
         """
         if self._store_router is None:
             with self._store_router_lock:

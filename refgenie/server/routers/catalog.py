@@ -198,9 +198,8 @@ def get_genome(
     The FHR blob is read from the RefgetStore exactly as ``get_alias`` does, so
     the UI detail page gets the whole metadata long tail in one request.
 
-    The database session is closed before the store lookup: the first lookup of
-    a genome in a remote store fetches it over the network, and a connection
-    held idle across that fetch can be dropped by Postgres or the network.
+    The database session is closed before the store lookup, so no connection
+    is held while the store is read.
     """
     genome = session.exec(select(Genome).where(Genome.digest == digest)).unique().one_or_none()
     if genome is not None:

@@ -50,12 +50,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Server mode loads remote store collections and FHR metadata per genome, on
-  first use, instead of all of them at startup. Opening a remote store now
-  fetches only its collection index (seconds, not minutes), so the first visit
-  to a genome page no longer times out. `store sync` pulls alias sidecars
-  itself. The genome page shows an error with a Retry button instead of
-  loading forever when the request fails.
+- The server now loads each store once, at startup (every collection and FHR
+  sidecar), freezes it read-only, and shares that one copy with the seqcol
+  service. Store memory is halved, no request ever fetches from a store, and
+  the freeze about five minutes after each deploy is gone: the seqcol
+  freshness reload is off, so store updates are picked up by redeploying. A
+  store that fails to load stops the server from starting. `store sync` pulls
+  alias sidecars itself. The genome page shows an error with a Retry button
+  instead of loading forever when the request fails.
 - Module moves, with no aliases kept: pulling lives in one package,
   `refgenie.managers.transfer` (`manager.py` for `TransferManager`, `puller.py`
   for `AssetPuller`, which moved from `refgenie.managers.asset.puller`, plus the
@@ -300,6 +302,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Name-qualified seqcol mounts (for example `/seqcol/vgp`) answered 404:
+  the default `/seqcol` mount was registered first and caught their requests.
+  They are now mounted before it.
 - `refgenie build --push-to <name>` records push intent again. It matched the
   remote's prefix, not its name, so a name logged "Remote not found" and the
   asset was silently never queued for push.

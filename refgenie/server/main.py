@@ -260,32 +260,6 @@ def create_app(
         except Exception:
             logger.exception(f"Publish-catalog import from {REFGENIE_CATALOG_URL} failed")
 
-    def _warm_store_router():
-        """Build the store router on a daemon thread so no request pays for it.
-
-        Opening the remote stores (their collection indexes) takes a few
-        seconds. Startup does not wait for it: health checks hit
-        ``/ping`` meanwhile. A failure is only logged; the lazy
-        ``rg.store_router`` property still builds the router on first use.
-        """
-        import threading
-        import time
-
-        def _warm():
-            start = time.monotonic()
-            logger.info("Warming store router in the background")
-            try:
-                names = rg.store_router.names
-            except Exception:
-                logger.exception("Warming the store router failed; it will build on first use")
-                return
-            logger.info(
-                f"Store router ready ({', '.join(names) or 'no stores'}) "
-                f"in {time.monotonic() - start:.1f}s"
-            )
-
-        threading.Thread(target=_warm, name="warm-store-router", daemon=True).start()
-
     @asynccontextmanager
     async def local_lifespan(app: FastAPI):
         """Local mode: make sure the user's database exists, and nothing else.
@@ -313,40 +287,34 @@ def create_app(
 
     @asynccontextmanager
     async def server_lifespan(app: FastAPI):
+        """Server mode: tables, catalog import, stores, seqcol, scheduler, MCP.
+
+        The store router is built here, before serving: each store is loaded
+        in full and frozen read-only, and each seqcol mount is bound to the
+        router's store for its dataset, so one copy per dataset serves both.
+        """
         # apscheduler is a `server`-extra dependency and is imported here, not
         # at module scope: `refgenie dash` imports this module on an install
         # that has only the `dash` extra.
         from apscheduler.schedulers.background import BackgroundScheduler
 
+        import time
+
+        startup = time.monotonic()
         print("Creating database and tables")
         rg.database.create_tables()
         if REFGENIE_CATALOG_URL:
             _import_catalog()
         if store_rows:
-            _warm_store_router()
+            # Load every store in full now (about a minute in-region), so no
+            # request ever loads anything. A store that fails to load stops
+            # the server from starting.
+            logger.info(f"Store router ready ({', '.join(rg.store_router.names)})")
         if seqcol_mounts:
-            # Give each seqcol mount its own readonly snapshot of its store.
-            #
-            # Each must be a *second* store instance, not one from rg's router:
-            # gtars' into_readonly() consumes its receiver, so converting a
-            # shared instance would leave the v4 router and managers holding an
-            # empty store, and rg's stores also get mutated elsewhere
-            # (_import_remote_collection, SequenceManager._fetch_remote), which a
-            # readonly snapshot cannot support.
-            import tempfile
-
-            from refget.seqcolapi import prepare_store
-
+            # Both the refgenie API and seqcol read the router's one read-only
+            # store per dataset.
             for store_row, sc_app, _mount_path in seqcol_mounts:
-                cache_dir = tempfile.mkdtemp(prefix="refgenie_seqcol_cache_")
-                setup_backend(
-                    sc_app,
-                    store=prepare_store(
-                        store_row.url,
-                        remote=store_row.type == StoreType.remote,
-                        cache_dir=cache_dir,
-                    ),
-                )
+                setup_backend(sc_app, store=rg.store_router.get_store(store_row.name))
         else:
             setup_backend(app, engine=rg.database_engine)
         app.state.endpoint_hits_collector = EndpointCollector()
@@ -365,6 +333,7 @@ def create_app(
                 seconds=CATALOG_IMPORT_INTERVAL_SECONDS,
             )
         scheduler.start()
+        logger.info(f"Server startup finished in {time.monotonic() - startup:.1f}s")
         # Start the MCP StreamableHTTP session manager's task group. The /mcp
         # streamable app is mounted as a sub-application (below), and mounted
         # sub-apps do not receive lifespan events -- same reason the seqcol
@@ -468,12 +437,12 @@ def create_app(
     # --- Sequence collections (seqcol) --- (server mode only)
     #
     # Store mode mounts refget's shared store-backed seqcol app, which brings
-    # the readonly-store contract, freshness reloading, the seqcol JSON schema
-    # and a complete GA4GH service-info. It is *mounted*, not wired into this
-    # app: refget's setup_backend binds to app.state.backend, so a router
-    # included twice at two prefixes would still serve one store. A mounted
-    # sub-app owns its own backend, which is what would make serving several
-    # stores possible later. Only one store is served today.
+    # the seqcol JSON schema and a complete GA4GH service-info. It is
+    # *mounted*, not wired into this app: refget's setup_backend binds to
+    # app.state.backend, so a router included twice at two prefixes would
+    # still serve one store. Each mounted sub-app owns its own backend, one
+    # per store. The backend is the router's own read-only store for that
+    # dataset (bound in the lifespan), so each dataset is held in memory once.
     #
     # DB mode has no store, so it keeps the plain router plus a minimal
     # service-info that reports refget_store.enabled: false.
@@ -502,13 +471,17 @@ def create_app(
                     organization=SERVICE_ORGANIZATION,
                     contact_url=SERVICE_CONTACT_URL,
                     documentation_url=SERVICE_DOCUMENTATION_URL,
-                    freshness=True,
+                    # Store updates are picked up by redeploying, not reloaded.
+                    freshness=False,
                     cors=False,  # the host app's CORS middleware does not reach a mount
-                    # Routes now, store on startup -- see the lifespan above.
+                    # Routes now; the lifespan binds the router's store.
                     defer_backend=True,
                 )
-                app.mount(mount_path, sc_app)
                 seqcol_mounts.append((store_row, sc_app, mount_path))
+            # Mount the name-qualified paths first: Starlette matches mounts in
+            # order, and /seqcol would otherwise swallow /seqcol/<name>/...
+            for _store_row, sc_app, mount_path in reversed(seqcol_mounts):
+                app.mount(mount_path, sc_app)
         else:
             app.include_router(
                 create_refget_router(

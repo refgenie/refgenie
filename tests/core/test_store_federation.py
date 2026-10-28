@@ -467,3 +467,95 @@ class TestServingALocalBuild:
             )
         assert pulled is not None
         assert client.alias.resolve("rCRSd") == built.alias.resolve("rCRSd")
+
+
+# ---------------------------------------------------------------------------
+# Server mode: one read-only store per dataset, shared with seqcol
+# ---------------------------------------------------------------------------
+
+
+class TestSharedReadonlyStores:
+    """The router's frozen stores are the very objects the seqcol mounts serve."""
+
+    requires_server()
+
+    FHR = {
+        "genome": "Homo sapiens",
+        "taxon": {"name": "Homo sapiens", "uri": "https://identifiers.org/taxonomy:9606"},
+    }
+
+    def _served(self, tmp_path, fixtures_path):
+        from refget.store import RefgetStore
+
+        from refgenie.cli.commands.store import _sync_one_store
+        from refgenie.managers.genome import GenomeManager
+
+        human = _build_on_disk_store(tmp_path / "jungle", fixtures_path / "rCRSd.fa", "rCRSd")
+        phage = _build_on_disk_store(tmp_path / "vgp", fixtures_path / "t7.fa", "t7")
+        RefgetStore.on_disk(str(tmp_path / "jungle")).set_fhr_metadata(
+            human, GenomeManager._fhr_metadata_from_dict(self.FHR)
+        )
+        rg = _server_rgc()
+        rg.store.add("jungle", str(tmp_path / "jungle"), StoreType.on_disk, priority=10)
+        rg.store.add("vgp", str(tmp_path / "vgp"), StoreType.on_disk, priority=20)
+        priorities = {"jungle": 10, "vgp": 20}
+        for srow in rg.store.enabled_stores():
+            _sync_one_store(rg, srow, priorities, 100)
+        return rg, human, phage
+
+    @staticmethod
+    def _mounts(app):
+        from starlette.routing import Mount
+
+        return {r.path: r.app for r in app.routes if isinstance(r, Mount)}
+
+    def test_seqcol_mounts_share_the_routers_readonly_stores(
+        self, tmp_path, fixtures_path, monkeypatch
+    ):
+        from refget.middleware import StoreFreshnessMiddleware
+        from refget.store import ReadonlyRefgetStore
+
+        from tests.helpers import make_server_client
+
+        rg, human, phage = self._served(tmp_path, fixtures_path)
+        # Not raising: the endpoint-hit middleware reads the host app's state
+        # from scope["app"], which a mount replaces, so it errors after every
+        # /seqcol response has been sent. The responses themselves are fine.
+        with make_server_client(rg, raise_server_exceptions=False) as client:
+            mounts = self._mounts(client.app)
+            router = rg.store_router
+            for path, name in (("/seqcol", "jungle"), ("/seqcol/vgp", "vgp")):
+                store = router.get_store(name)
+                assert isinstance(store, ReadonlyRefgetStore)
+                assert mounts[path].state.backend._store is store
+                assert not any(
+                    m.cls is StoreFreshnessMiddleware for m in mounts[path].user_middleware
+                )
+            # Exactly one store object per dataset.
+            assert len({id(s) for _, s in router.iter_stores()}) == len(router.names) == 2
+
+            # Nothing opens or loads a store once startup is done.
+            def _no_io(*a, **k):
+                raise AssertionError("store opened or loaded after startup")
+
+            monkeypatch.setattr("refgenie.core.store_router.make_store", _no_io)
+            monkeypatch.setattr("refget.store.RefgetStore.on_disk", _no_io)
+            monkeypatch.setattr("refget.store.RefgetStore.open_remote", _no_io)
+            monkeypatch.setattr("refget.seqcolapi.app.prepare_store", _no_io)
+
+            detail = client.get(f"/v4/genomes/{human}")
+            assert detail.status_code == 200
+            assert detail.json()["fhr"]["genome"] == "Homo sapiens"
+            alias = client.get("/v4/aliases/rCRSd")
+            assert alias.status_code == 200
+            assert alias.json()["fhr"]["genome"] == "Homo sapiens"
+            assert client.get(f"/v4/genomes/{phage}").json()["fhr"] is None
+
+            coll = client.get(f"/seqcol/collection/{human}?level=2")
+            assert coll.status_code == 200
+            assert coll.json()["names"]
+            coll = client.get(f"/seqcol/vgp/collection/{phage}?level=2")
+            assert coll.status_code == 200
+            cmp = client.get(f"/seqcol/comparison/{human}/{human}")
+            assert cmp.status_code == 200
+            assert cmp.json()["digests"]["a"] == human

@@ -169,7 +169,7 @@ def _sync_one_store(refgenie, store_row, priorities, page_size) -> tuple[int, in
     sql_alias = AliasManager(refgenie.database_engine)
 
     cache_dir = Path(tempfile.mkdtemp(prefix=f"refgenie_sync_{store_row.name}_"))
-    store = make_store(store_row, cache_dir)
+    store = make_store(store_row, cache_dir, readonly=False)
     if store_row.type != StoreType.on_disk:
         # make_store opens a remote store with collection stubs only; sync is
         # the one reader of its alias sidecars.

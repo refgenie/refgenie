@@ -122,8 +122,7 @@ class GenomeManager(ResourceManager):
             servers_getter: Returns the ServerManager, for genomes created from servers.
             events: Where genome changes are recorded for plugins.
             store_router_getter: Returns the store router. Genome reads go
-                through it, so each genome is read from the store that owns it
-                (and a remote store loads it on first use).
+                through it, so each genome is read from the store that owns it.
         """
         super().__init__(database_engine)
         self._refget_store_getter = refget_store_getter

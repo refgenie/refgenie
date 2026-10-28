@@ -35,7 +35,7 @@ class TestRemoteStore:
     """Federated store router wiring (local on-disk vs server remote)."""
 
     def test_router_opens_remote_store(self, engine):
-        """An enabled remote Store row opens via RefgetStore.open_remote."""
+        """Server mode opens a remote Store row, loads it fully, and freezes it."""
         from refgenie.db.tables import StoreType
 
         r = Refgenie(database_engine=engine, suppress_migrations=True, server_mode=True)
@@ -49,7 +49,10 @@ class TestRemoteStore:
 
         MockRefgetStore.open_remote.assert_called_once()
         assert str(MockRefgetStore.open_remote.call_args[0][1]) == "https://store.example.com"
-        assert store is mock_store
+        # Server mode loads everything once and serves the frozen copy.
+        mock_store.load_all_collections.assert_called_once_with()
+        mock_store.pull_fhr.assert_called_once_with()
+        assert store is mock_store.into_readonly.return_value
 
     def test_router_opens_on_disk_store_local_mode(self, engine, tmp_path):
         """Local mode's single store opens via RefgetStore.on_disk."""

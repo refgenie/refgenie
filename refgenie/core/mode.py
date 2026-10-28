@@ -74,7 +74,7 @@ class RefgenieMode(ABC):
 
 
 class LocalMode(RefgenieMode):
-    """Local client mode. Owns a single on-disk RefgetStore.
+    """Local client mode. Owns a single editable on-disk RefgetStore.
 
     Aliases for the genomes this node built live in that store. Aliases for the
     genomes it federates over live in the SQL ``alias`` table, so its alias
@@ -90,7 +90,9 @@ class LocalMode(RefgenieMode):
         # on_disk stores never touch the cache dir; a genome-folder-local path
         # keeps any stray cache out of the system temp area.
         return RefgetStoreRouter(
-            [_local_store_row(genome_folder)], genome_folder / ".refget_store_cache"
+            [_local_store_row(genome_folder)],
+            genome_folder / ".refget_store_cache",
+            readonly=False,
         )
 
     def create_alias_manager(
@@ -110,7 +112,10 @@ class LocalMode(RefgenieMode):
 
 
 class ServerMode(RefgenieMode):
-    """Server mode. Federated RefgetStores, SQL aliases, no sequence ingestion.
+    """Server mode. Federated read-only stores, SQL aliases, no sequence ingestion.
+
+    Every store is loaded in full when the router is built and frozen with
+    ``into_readonly()``; the server's seqcol mounts share those same objects.
 
     The stores come from the registry table. A served database that was built
     on this node also has its own ``.refget_store``, which holds the collections
@@ -144,7 +149,8 @@ class ServerMode(RefgenieMode):
             # one, because that is the store the alias manager reads.
             top = min((s.priority for s in stores), default=1)
             stores = [_local_store_row(genome_folder, priority=top - 1), *stores]
-        return RefgetStoreRouter(stores, self._cache_dir)
+        # Server mode never writes to a store: load each in full, once, frozen.
+        return RefgetStoreRouter(stores, self._cache_dir, readonly=True)
 
     def create_alias_manager(
         self,
