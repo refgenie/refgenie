@@ -14,6 +14,7 @@ Refgenie exposes its functionality through *managers*, accessed as properties on
 
 ```python
 from refgenie import GenomeAlias, Refgenie
+
 r = Refgenie()
 ```
 

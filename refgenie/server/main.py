@@ -260,6 +260,32 @@ def create_app(
         except Exception:
             logger.exception(f"Publish-catalog import from {REFGENIE_CATALOG_URL} failed")
 
+    def _warm_store_router():
+        """Build the store router on a daemon thread so no request pays for it.
+
+        Opening the remote stores (their collection indexes) takes a few
+        seconds. Startup does not wait for it: health checks hit
+        ``/ping`` meanwhile. A failure is only logged; the lazy
+        ``rg.store_router`` property still builds the router on first use.
+        """
+        import threading
+        import time
+
+        def _warm():
+            start = time.monotonic()
+            logger.info("Warming store router in the background")
+            try:
+                names = rg.store_router.names
+            except Exception:
+                logger.exception("Warming the store router failed; it will build on first use")
+                return
+            logger.info(
+                f"Store router ready ({', '.join(names) or 'no stores'}) "
+                f"in {time.monotonic() - start:.1f}s"
+            )
+
+        threading.Thread(target=_warm, name="warm-store-router", daemon=True).start()
+
     @asynccontextmanager
     async def local_lifespan(app: FastAPI):
         """Local mode: make sure the user's database exists, and nothing else.
@@ -296,6 +322,8 @@ def create_app(
         rg.database.create_tables()
         if REFGENIE_CATALOG_URL:
             _import_catalog()
+        if store_rows:
+            _warm_store_router()
         if seqcol_mounts:
             # Give each seqcol mount its own readonly snapshot of its store.
             #

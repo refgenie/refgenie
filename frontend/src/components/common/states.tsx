@@ -86,7 +86,7 @@ export function ErrorState({ error, subject, apiBase, onRetry }: ErrorStateProps
     <div className="rg-state rg-state--error" role="alert">
       <p className="font-semibold mb-1">Request failed{api ? ` (${api.status})` : ''}</p>
       <div className="text-sm">{body}</div>
-      {onRetry && api && api.status >= 500 && (
+      {onRetry && api && (api.status >= 500 || api.isNetworkError) && (
         <button type="button" className="rg-btn rg-btn--sm mt-4" onClick={onRetry}>
           Retry
         </button>

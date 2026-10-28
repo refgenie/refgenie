@@ -159,6 +159,7 @@ def handle_store_conflicts(cmd, refgenie) -> None:
 def _sync_one_store(refgenie, store_row, priorities, page_size) -> tuple[int, int]:
     """Ingest one store's collections + aliases. Returns (genomes, failures)."""
     from refgenie.core.store_router import make_store
+    from refgenie.db.tables import StoreType
     from refgenie.managers.alias import AliasManager
     import tempfile
     from pathlib import Path
@@ -169,6 +170,13 @@ def _sync_one_store(refgenie, store_row, priorities, page_size) -> tuple[int, in
 
     cache_dir = Path(tempfile.mkdtemp(prefix=f"refgenie_sync_{store_row.name}_"))
     store = make_store(store_row, cache_dir)
+    if store_row.type != StoreType.on_disk:
+        # make_store opens a remote store with collection stubs only; sync is
+        # the one reader of its alias sidecars.
+        try:
+            store.pull_aliases()
+        except Exception as e:  # noqa: BLE001 - a store with no aliases is tolerated
+            logger.debug(f"pull_aliases failed for store '{store_row.name}': {e}")
 
     registered = 0
     failures = 0
@@ -198,7 +206,7 @@ def _sync_one_store(refgenie, store_row, priorities, page_size) -> tuple[int, in
             try:
                 _upsert_genome_owner(refgenie, digest, description or "", store_row, priorities)
                 registered += _ingest_aliases(sql_alias, store, digest, store_row, priorities)
-                _ingest_fhr(refgenie, store, digest)
+                _ingest_fhr(refgenie, store, digest, store_row)
             except Exception as e:  # noqa: BLE001
                 logger.error(f"Failed to sync collection {digest} from '{store_row.name}': {e}")
                 failures += 1
@@ -262,8 +270,19 @@ def _ingest_aliases(sql_alias, store, digest, store_row, priorities) -> int:
     return inserted
 
 
-def _ingest_fhr(refgenie, store, digest) -> None:
-    """Write the queryable FHR columns from the store's sidecar, if any."""
+def _ingest_fhr(refgenie, store, digest, store_row) -> None:
+    """Write the queryable FHR columns from the store's sidecar, if any.
+
+    A remote store opens without its FHR sidecars (see ``make_store``), so
+    pull this genome's one first.
+    """
+    from refgenie.db.tables import StoreType
+
+    if store_row.type != StoreType.on_disk:
+        try:
+            store.pull_fhr(digest)
+        except Exception as e:  # noqa: BLE001 - a genome with no FHR is normal
+            logger.debug(f"pull_fhr({digest}) failed on store '{store_row.name}': {e}")
     fhr = store.get_fhr_metadata(digest)
     if fhr is not None:
         refgenie.genome.apply_fhr_columns(digest, fhr.to_dict())

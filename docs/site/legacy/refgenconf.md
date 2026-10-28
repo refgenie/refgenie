@@ -13,6 +13,7 @@ As a general rule, the CLI functions are available from within Python under the 
 
 ```python
 import refgenconf
+
 rgc = refgenconf.RefGenConf("genome_config.yaml")
 ```
 

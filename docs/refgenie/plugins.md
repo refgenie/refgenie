@@ -7,8 +7,7 @@ A plugin is a small Python package that refgenie calls when something happens: a
 Your package registers a function in an entry-point group named `refgenie.hooks.<hook>`. When that hook fires, refgenie calls the function with two arguments:
 
 ```python
-def my_hook(rg, event):
-    ...
+def my_hook(rg, event): ...
 ```
 
 - `rg` is the `Refgenie` instance that fired the hook. Use it to read paths and settings.
@@ -66,7 +65,7 @@ def on_update(rg, event: HookEvent) -> None:
 
 ```python
 paths = rg.paths()
-for genome in paths:            # genome aliases
+for genome in paths:  # genome aliases
     for group in paths[genome]:  # asset groups that have a default asset
         for seek_key, path in paths[genome][group].items():
             print(genome, group, seek_key, path)
@@ -77,9 +76,7 @@ To get one path, use `rg.asset.seek_components` with a registry path:
 ```python
 from refgenie.models import AssetRegistryPathComponents
 
-path = rg.asset.seek_components(
-    AssetRegistryPathComponents(genome="hg38", asset_group="fasta")
-)
+path = rg.asset.seek_components(AssetRegistryPathComponents(genome="hg38", asset_group="fasta"))
 ```
 
 ## Settings

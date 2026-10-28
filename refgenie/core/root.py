@@ -2,6 +2,7 @@
 Refgenie is a SQLModel backed reference genome manager.
 """
 
+import threading
 from pathlib import Path
 
 from refget.store import RefgetStore
@@ -131,6 +132,9 @@ class Refgenie:
         # holds a store, and the genome folder is only known after migrations.
         self._alias_manager: AliasBackend | None = None
         self._store_router: RefgetStoreRouter | None = None  # Lazy, built by mode
+        # Server startup warms the router on a background thread while requests
+        # may already be asking for it; build it once.
+        self._store_router_lock = threading.Lock()
 
         self.genome = GenomeManager(
             self.database_engine,
@@ -138,6 +142,7 @@ class Refgenie:
             alias_manager_getter=lambda: self.alias,
             servers_getter=lambda: self.servers,
             events=self._events,
+            store_router_getter=lambda: self.store_router,
         )
         #: Sequence retrieval through the store router.
         self.sequence = SequenceManager(
@@ -167,12 +172,16 @@ class Refgenie:
         """The federated store router.
 
         Built lazily (after migrations) from the mode: one on-disk store in
-        local mode, or every enabled ``Store`` row in server mode. Each backend
-        loads collection/alias metadata only -- sequence bytes are fetched on
-        demand in ``rgc.sequence.get()``.
+        local mode, or every enabled ``Store`` row in server mode. On-disk
+        stores load collection metadata only -- sequence bytes are fetched on
+        demand in ``rgc.sequence.get()``. Remote stores open with their
+        collection index alone; each genome's collection and FHR sidecar are
+        fetched on first use (see ``RefgetStoreRouter.store_for_genome``).
         """
         if self._store_router is None:
-            self._store_router = self._mode.create_store_router(self.store)
+            with self._store_router_lock:
+                if self._store_router is None:
+                    self._store_router = self._mode.create_store_router(self.store)
         return self._store_router
 
     def reload_store_router(self) -> RefgetStoreRouter:

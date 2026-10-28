@@ -44,8 +44,9 @@ os.environ["REFGENIE_GENOME_STAGE_FOLDER"] = archive_tmp_dir
 tmp_dir = TemporaryDirectory(prefix="refgenie_demo_").name
 os.environ["REFGENIE_GENOME_FOLDER"] = tmp_dir
 # set the REFGENIE_DB_CONFIG_PATH to a sqlite config file in the refgenie package
-os.environ["REFGENIE_DB_CONFIG_PATH"] = (REFGENIE_CODE_PATH / "config" / "sqlite_config.yaml").as_posix()
-
+os.environ["REFGENIE_DB_CONFIG_PATH"] = (
+    REFGENIE_CODE_PATH / "config" / "sqlite_config.yaml"
+).as_posix()
 ```
 
 Let's inspect the refgenie configuration object.
@@ -8494,7 +8495,6 @@ Let's remove the `bowtie2_index` asset for the `dm6` genome.
 ```python
 t7 = refgenie.alias.resolve(GenomeAlias("t7"))
 refgenie.asset.remove("bowtie2_index", "2.3.5", genome_digest=t7)
-
 ```
 
 
@@ -8593,8 +8593,6 @@ for recipe in refgenie.sources.iter_recipes("refgenie-recipes"):
         refgenie.recipe.add(recipe)
     except Exception as e:
         print(e)
-        
-
 ```
 
 
@@ -9773,9 +9771,7 @@ from gtars.refget import RefgetStore
 
 store = RefgetStore.in_memory()
 store.set_quiet(True)
-d1, _ = store.add_sequence_collection_from_fasta(
-    REFGENIE_CODE_PATH.parent / "tests/data/rCRSd.fa"
-)
+d1, _ = store.add_sequence_collection_from_fasta(REFGENIE_CODE_PATH.parent / "tests/data/rCRSd.fa")
 d2, _ = store.add_sequence_collection_from_fasta(
     REFGENIE_CODE_PATH.parent / "tests/data/rCRSd-extra.fa"
 )

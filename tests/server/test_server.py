@@ -234,6 +234,33 @@ class TestGenomesEndpoint:
         assert TEST_DIGEST in [i["digest"] for i in found["items"]]
         assert client.get("/v4/genomes?q=zzzznomatch&search_fields=aliases").json()["items"] == []
 
+    def test_get_genome_releases_db_connection_before_store_lookup(
+        self, client_with_alias, rgc_with_alias
+    ):
+        """GET /v4/genomes/{digest} closes its session before the FHR lookup.
+
+        The first lookup of a genome in a remote store is a network fetch; a
+        database connection held idle across it can be dropped underneath.
+        """
+        from sqlalchemy import event
+
+        engine = rgc_with_alias.database_engine
+        outstanding = Counter()
+        event.listen(engine, "checkout", lambda *a: outstanding.update(["open"]))
+        event.listen(engine, "checkin", lambda *a: outstanding.subtract(["open"]))
+        seen = []
+
+        class _Router:
+            def get_fhr_metadata(self, digest, store_name=None):
+                seen.append(outstanding["open"])
+                return None
+
+        rgc_with_alias._store_router = _Router()
+        response = client_with_alias.get(f"/v4/genomes/{TEST_DIGEST}")
+        assert response.status_code == 200
+        assert response.json()["digest"] == TEST_DIGEST
+        assert seen == [0]
+
     def test_genome_without_alias_appears(self, client_no_alias):
         """A genome with zero aliases must still be listed, with aliases == []."""
         data = client_no_alias.get("/v4/genomes").json()

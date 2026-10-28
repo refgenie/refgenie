@@ -50,6 +50,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Server mode loads remote store collections and FHR metadata per genome, on
+  first use, instead of all of them at startup. Opening a remote store now
+  fetches only its collection index (seconds, not minutes), so the first visit
+  to a genome page no longer times out. `store sync` pulls alias sidecars
+  itself. The genome page shows an error with a Retry button instead of
+  loading forever when the request fails.
 - Module moves, with no aliases kept: pulling lives in one package,
   `refgenie.managers.transfer` (`manager.py` for `TransferManager`, `puller.py`
   for `AssetPuller`, which moved from `refgenie.managers.asset.puller`, plus the

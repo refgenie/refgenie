@@ -27,3 +27,18 @@ describe('ErrorState on a 404', () => {
     expect(screen.getByText('Not found:')).toBeInTheDocument();
   });
 });
+
+describe('ErrorState retry action', () => {
+  const noop = () => {};
+
+  it('offers Retry on a network failure, such as a client-side timeout', () => {
+    const error = new ApiError({ status: 0, detail: 'aborted', url: '/v4/genomes/abc' });
+    render(<ErrorState error={error} onRetry={noop} />);
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+  });
+
+  it('does not offer Retry on a 404', () => {
+    render(<ErrorState error={notFound('not_found', 'gone')} onRetry={noop} />);
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
+  });
+});

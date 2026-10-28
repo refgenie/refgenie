@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { Route, Routes } from 'react-router-dom';
 import { GenomePage } from './GenomePage';
@@ -74,5 +75,26 @@ describe('GenomePage', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Genome');
     expect(screen.getByRole('link', { name: 'Genomes' })).toHaveAttribute('href', '/genomes');
     expect(document.title).toBe('refgenie local dashboard');
+  });
+
+  // A slow remote-store load used to time out at the gateway and leave the page
+  // on "Loading genome…". The error must show, with a way to try again.
+  it('shows an error with a retry action on a 504', async () => {
+    let calls = 0;
+    server.use(
+      http.get(`${API}/genomes/:digest`, () => {
+        calls += 1;
+        return calls === 1
+          ? HttpResponse.text('Gateway Time-out', { status: 504 })
+          : HttpResponse.json({ detail: 'Genome not found' }, { status: 404 });
+      }),
+    );
+    renderGenome();
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('504');
+    expect(screen.queryByText(/Loading genome/)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(await screen.findByText(/Not found/)).toBeInTheDocument();
+    expect(calls).toBe(2);
   });
 });

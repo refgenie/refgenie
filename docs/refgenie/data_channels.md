@@ -95,6 +95,7 @@ You can also interact with data channels from Python:
 
 ```python
 from refgenie import Refgenie
+
 refgenie = Refgenie()
 
 # Add a data channel
@@ -102,7 +103,7 @@ refgenie.sources.add_channel(
     name="my-channel",
     type="http",
     index_address="https://refgenie.github.io/recipes/index.yaml",
-    description="Community recipes"
+    description="Community recipes",
 )
 
 # List asset classes and recipes from the channel

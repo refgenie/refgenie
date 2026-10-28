@@ -222,8 +222,8 @@ The `Refgenie` object mirrors the CLI against the configured database:
 from refgenie import Refgenie
 
 rgc = Refgenie()
-digest = rgc.alias.resolve("hg38")          # seek takes a genome digest, not an alias
-rgc.asset.seek(digest, "bowtie2_index")     # local path to an asset
+digest = rgc.alias.resolve("hg38")  # seek takes a genome digest, not an alias
+rgc.asset.seek(digest, "bowtie2_index")  # local path to an asset
 ```
 
 ---

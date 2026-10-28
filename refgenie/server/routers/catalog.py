@@ -197,14 +197,24 @@ def get_genome(
 
     The FHR blob is read from the RefgetStore exactly as ``get_alias`` does, so
     the UI detail page gets the whole metadata long tail in one request.
+
+    The database session is closed before the store lookup: the first lookup of
+    a genome in a remote store fetches it over the network, and a connection
+    held idle across that fetch can be dropped by Postgres or the network.
     """
     genome = session.exec(select(Genome).where(Genome.digest == digest)).unique().one_or_none()
-    if not genome:
+    if genome is not None:
+        detail = GenomeDetailResponse.model_validate(genome, from_attributes=True)
+        store_name = genome.store_name
+        taxon_id = genome.taxon_id
+    # Returns the connection to the pool now; the dependency's own close at
+    # the end of the request is then a no-op.
+    session.close()
+    if genome is None:
         raise _genome_not_found(digest, rgc)
 
-    detail = GenomeDetailResponse.model_validate(genome, from_attributes=True)
-    detail.taxon_uri = _taxon_uri(genome.taxon_id)
-    fhr = rgc.store_router.get_fhr_metadata(digest, store_name=genome.store_name)
+    detail.taxon_uri = _taxon_uri(taxon_id)
+    fhr = rgc.store_router.get_fhr_metadata(digest, store_name=store_name)
     detail.fhr = fhr.to_dict() if fhr is not None else None
     return detail
 

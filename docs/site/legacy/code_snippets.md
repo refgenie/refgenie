@@ -73,9 +73,8 @@ assert_refgenie_asset_exists(){
 ```python
 from refgenconf import RefGenConf
 
-def assert_refgenie_asset_exists(
-    genome, asset, tag=None, seek_key=None, refgenie_config=None
-):
+
+def assert_refgenie_asset_exists(genome, asset, tag=None, seek_key=None, refgenie_config=None):
     # instantiate RefGenConf object
     rgc = RefGenConf(filepath=refgenie_config)
 

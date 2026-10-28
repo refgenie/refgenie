@@ -14,6 +14,7 @@ Or from within Python:
 
 ```python
 from refgenconf import upgrade_config
+
 upgrade_config(target_version="0.4", filepath="/path/to/old/cfg.yml")
 ```
 

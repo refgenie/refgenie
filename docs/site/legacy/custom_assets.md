@@ -38,6 +38,7 @@ The refgenie-compatible genome digest can be determined this way:
 
 ```python
 from refgenconf.seqcol import SeqColClient
+
 digest, _ = SeqColClient({}).load_fasta("path/hg38.fa")
 # digest -> 511fb1178275e7d529560d53b949dba40815f195623bce8e
 ```

@@ -196,19 +196,10 @@ This is a dict-like representation of an example namespaces object available to 
 namespaces = {
     "genome_digest": "6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905",
     "asset_group_name": "my_asset1",
-    "assets": {
-        "fasta": "/path/to/genomes/fasta.fa.gz"
-    },
-    "params": {
-        "cores": "2"
-    },
-    "files": {
-        "html": "/path/to/my_asset1.html"
-    },
-    "custom_properties": {
-        "version": "0.0.1",
-        "settings": "a=1, b=2"
-    }
+    "assets": {"fasta": "/path/to/genomes/fasta.fa.gz"},
+    "params": {"cores": "2"},
+    "files": {"html": "/path/to/my_asset1.html"},
+    "custom_properties": {"version": "0.0.1", "settings": "a=1, b=2"},
 }
 ```
 

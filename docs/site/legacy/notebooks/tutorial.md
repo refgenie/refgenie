@@ -107,6 +107,7 @@ Now let's enter python and do some stuff.
 
 ```python
 import refgenconf
+
 rgc = refgenconf.RefGenConf(filepath="refgenie.yaml")
 ```
 
@@ -662,7 +663,8 @@ We can get the unique digest for any asset with `refgenie id`:
 
 
 ```python
-from platform import python_version 
+from platform import python_version
+
 python_version()
 ```
 

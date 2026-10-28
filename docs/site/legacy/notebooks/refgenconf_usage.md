@@ -18,6 +18,7 @@ First, let's set the `$REFGENIE` environmet variable. It should be set by a pipe
 
 ```python
 import os
+
 os.environ["REFGENIE"] = "./refgenie.yaml"
 user_provided_cfg_path = None
 user_provided_genome = "rCRSd"
@@ -27,7 +28,13 @@ Next, let's import components of `refgenconf` that we'll use
 
 
 ```python
-from refgenconf import RefGenConf, select_genome_config, RefgenconfError, CFG_ENV_VARS, CFG_FOLDER_KEY
+from refgenconf import (
+    RefGenConf,
+    select_genome_config,
+    RefgenconfError,
+    CFG_ENV_VARS,
+    CFG_FOLDER_KEY,
+)
 from yacman import UndefinedAliasError
 ```
 
@@ -43,8 +50,10 @@ The function returns `None` if none of the above point to a valid path. That's w
 
 ```python
 if not refgenie_cfg_path:
-    raise OSError(f"Could not determine path to a refgenie genome configuration file."
-                  f"Use --rfg-config argument or set '{CFG_ENV_VARS}' environment variable to provide it")
+    raise OSError(
+        f"Could not determine path to a refgenie genome configuration file."
+        f"Use --rfg-config argument or set '{CFG_ENV_VARS}' environment variable to provide it"
+    )
 ```
 
 Otherwise it returns a determined path (`str`). So, we check if it exists and read the object if it does. If it does not, we can initialize the config file
@@ -55,10 +64,14 @@ if isinstance(refgenie_cfg_path, str) and os.path.exists(refgenie_cfg_path):
     print(f"Reading refgenie genome configuration file from file: {refgenie_cfg_path}")
     rgc = RefGenConf(filepath=refgenie_cfg_path)
 else:
-    print(f"File '{refgenie_cfg_path}' does not exist. Initializing refgenie genome configuration file.")
+    print(
+        f"File '{refgenie_cfg_path}' does not exist. Initializing refgenie genome configuration file."
+    )
     rgc = RefGenConf(entries={CFG_FOLDER_KEY: os.path.dirname(refgenie_cfg_path)})
     rgc.initialize_config_file(filepath=refgenie_cfg_path)
-    rgc.subscribe(urls="http://rg.databio.org:82", reset=True) # subscribe to the desired server, if needed
+    rgc.subscribe(
+        urls="http://rg.databio.org:82", reset=True
+    )  # subscribe to the desired server, if needed
 ```
 
     File '/Users/mstolarczyk/code/refgenie/docs_jupyter/refgenie.yaml' does not exist. Initializing refgenie genome configuration file.
@@ -69,13 +82,15 @@ Finally, we try to retrieve the path to out asset of interest and pull from `ref
 
 ```python
 try:
-    fasta = rgc.seek(genome_name=user_provided_genome, asset_name="fasta", tag_name="default",
-                                seek_key="fasta")
+    fasta = rgc.seek(
+        genome_name=user_provided_genome, asset_name="fasta", tag_name="default", seek_key="fasta"
+    )
 except (RefgenconfError, UndefinedAliasError):
     print("Could not determine path to chrom.sizes asset, pulling")
     rgc.pull(genome=user_provided_genome, asset="fasta", tag="default")
-    fasta = rgc.seek(genome_name=user_provided_genome, asset_name="fasta", tag_name="default",
-                                seek_key="fasta")
+    fasta = rgc.seek(
+        genome_name=user_provided_genome, asset_name="fasta", tag_name="default", seek_key="fasta"
+    )
 print(f"Determined path to fasta asset: {fasta}")
 ```
 

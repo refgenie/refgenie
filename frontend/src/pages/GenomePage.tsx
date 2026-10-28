@@ -72,7 +72,12 @@ export function GenomePage() {
 
       {genome.isPending && <LoadingState label="Loading genome" />}
       {genome.error && (
-        <ErrorState error={genome.error} subject={digest} apiBase={config.api_base} />
+        <ErrorState
+          error={genome.error}
+          subject={digest}
+          apiBase={config.api_base}
+          onRetry={() => genome.refetch()}
+        />
       )}
 
       {record && (

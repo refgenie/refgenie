@@ -5,7 +5,7 @@ GenomeManager - handles genome CRUD operations.
 from dataclasses import dataclass
 from pathlib import Path
 from collections.abc import Callable, Iterable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Protocol
 
 from rich.table import Table
 from sqlalchemy import ColumnElement
@@ -86,6 +86,16 @@ def _compare_level2(level2_a: dict, level2_b: dict, digest_a: str, digest_b: str
     }
 
 
+class GenomeStoreRouter(Protocol):
+    """What genome reads need from the root's store router.
+
+    ``refgenie.core.store_router.RefgetStoreRouter`` satisfies it. Described
+    structurally so this manager does not import up into ``refgenie.core``.
+    """
+
+    def store_for_genome(self, genome_digest: str, store_name: str | None = None) -> Any: ...
+
+
 class GenomeManager(ResourceManager):
     """Manager for genome operations."""
 
@@ -96,6 +106,8 @@ class GenomeManager(ResourceManager):
         alias_manager_getter: "Callable[[], AliasBackend]",
         servers_getter: "Callable[[], ServerManager]",
         events: EventSink | None = None,
+        *,
+        store_router_getter: Callable[[], GenomeStoreRouter],
     ):
         """
         Initialize the GenomeManager.
@@ -109,9 +121,13 @@ class GenomeManager(ResourceManager):
             alias_manager_getter: Returns the alias manager.
             servers_getter: Returns the ServerManager, for genomes created from servers.
             events: Where genome changes are recorded for plugins.
+            store_router_getter: Returns the store router. Genome reads go
+                through it, so each genome is read from the store that owns it
+                (and a remote store loads it on first use).
         """
         super().__init__(database_engine)
         self._refget_store_getter = refget_store_getter
+        self._store_router_getter = store_router_getter
         self._alias_manager_getter = alias_manager_getter
         self._servers_getter = servers_getter
         #: Where genome changes are recorded for plugins. Every genome is
@@ -425,11 +441,14 @@ class GenomeManager(ResourceManager):
             "Genomes", ["Digest", "Aliases", "Source", "Species", "Description"], rows
         )
 
+    def _owning_store(self, genome: Genome):
+        """The store that owns ``genome``, with its collection loaded."""
+        return self._store_router_getter().store_for_genome(genome.digest, genome.store_name)
+
     def get_metadata(self, digest: GenomeDigest) -> dict:
-        """Get metadata for a genome from the RefgetStore."""
+        """Get metadata for a genome from the RefgetStore that owns it."""
         genome = self.get(digest)
-        store = self._refget_store_getter()
-        level2 = store.get_collection_level2(digest)
+        level2 = self._owning_store(genome).get_collection_level2(digest)
 
         if level2 is None:
             raise ValueError(f"No collection metadata found for {digest}")
@@ -456,23 +475,30 @@ class GenomeManager(ResourceManager):
 
         if genome_a.remote_url or genome_b.remote_url:
             return self._compare_with_remote(genome_a, genome_b)
-        else:
-            store = self._refget_store_getter()
-            return store.compare(digest_a, digest_b)
+        # Each genome may live in a different store of the router; the store's
+        # own compare needs both collections in the same store.
+        store_a = self._owning_store(genome_a)
+        store_b = self._owning_store(genome_b)
+        if store_a is store_b:
+            return store_a.compare(digest_a, digest_b)
+        return _compare_level2(
+            store_a.get_collection_level2(digest_a),
+            store_b.get_collection_level2(digest_b),
+            digest_a,
+            digest_b,
+        )
 
     def _compare_with_remote(self, genome_a: Genome, genome_b: Genome) -> dict:
         """Compare genomes where at least one is remote."""
-        store = self._refget_store_getter()
-
         if genome_a.remote_url:
             level2_a = self._get_remote_level2(genome_a.remote_url, genome_a.digest)
         else:
-            level2_a = store.get_collection_level2(genome_a.digest)
+            level2_a = self._owning_store(genome_a).get_collection_level2(genome_a.digest)
 
         if genome_b.remote_url:
             level2_b = self._get_remote_level2(genome_b.remote_url, genome_b.digest)
         else:
-            level2_b = store.get_collection_level2(genome_b.digest)
+            level2_b = self._owning_store(genome_b).get_collection_level2(genome_b.digest)
 
         if (
             genome_a.remote_url

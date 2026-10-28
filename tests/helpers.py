@@ -358,7 +358,9 @@ def stub_rgc():
     # reading aliases from the stub alias manager above.
     from refgenie.managers.genome import GenomeManager
 
-    real_genome = GenomeManager(None, lambda: None, lambda: rgc.alias, lambda: None)
+    real_genome = GenomeManager(
+        None, lambda: None, lambda: rgc.alias, lambda: None, store_router_getter=lambda: None
+    )
     rgc.genome.search_condition.side_effect = real_genome.search_condition
     return rgc
 

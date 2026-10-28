@@ -79,6 +79,7 @@ assert_refgenie_asset_exists(){
 from refgenie import GenomeAlias, Refgenie
 from refgenie.exceptions import MissingAliasError
 
+
 def assert_refgenie_asset_exists(
     genome, asset_group, asset=None, seek_key=None, refgenie_config=None
 ):
