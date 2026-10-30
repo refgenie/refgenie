@@ -209,6 +209,55 @@ class TestJobsIntegration:
         assert record.error.code == ErrorCode.ASSET_EXISTS
 
 
+class TestJobsPullParents:
+    """A pull job on a fresh install: the asset class comes from the server and
+    a missing parent is pulled first, through the same job. A parent that
+    cannot be pulled fails the job with a message that names it."""
+
+    pytestmark = pytest.mark.component
+
+    @pytest.fixture
+    def world(self, bare_client_world):
+        client_rg, server_rg, url, parent, child = bare_client_world
+        manager = JobManager(client_rg)
+        yield manager, client_rg, server_rg, url, parent, child
+        manager.shutdown(wait=False)
+
+    @staticmethod
+    def _submit(manager, url):
+        ref = manager.submit_pull(
+            PullJobParams(
+                server_url=url,
+                genome_name=GENOME,
+                asset_group_name="child_index",
+                asset_name="v1",
+            )
+        )
+        return manager.wait(ref.job_id, timeout=120)
+
+    def test_a_child_pull_job_pulls_its_parent(self, world):
+        manager, client_rg, server_rg, url, parent, child = world
+        for asset in (parent, child):
+            server_rg.stage.create(asset, server_rg.genome_folder, server_rg.genome_stage_folder)
+
+        record = self._submit(manager, url)
+
+        assert record.status == JobStatus.SUCCEEDED, record.error
+        assert record.result.asset_digest == child.digest
+        assert client_rg.asset.get_by_digest(parent.digest) is not None
+
+    def test_a_failed_parent_is_named_in_the_job_error(self, world):
+        manager, _, server_rg, url, parent, child = world
+        server_rg.stage.create(child, server_rg.genome_folder, server_rg.genome_stage_folder)
+
+        record = self._submit(manager, url)
+
+        assert record.status == JobStatus.FAILED
+        assert record.error.code == ErrorCode.PULL_FAILED
+        assert "parent" in record.error.message
+        assert parent.digest in record.error.message
+
+
 class TestLocalModeSmoke:
     """The assembled ``refgenie dash`` app, boot to job, over HTTP. The deep
     coverage lives above; this asserts that ``create_app(mode="local")`` wires

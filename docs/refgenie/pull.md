@@ -22,6 +22,19 @@ Where `GENOME` refers to a genome key (*e.g.* hg38) and `ASSET` refers to one or
 refgenie pull hg38/bowtie2_index
 ```
 
+## What a pull sets up for you
+
+A pull needs nothing set up beyond `refgenie init`. You do not need to add a data channel first.
+
+- **Asset classes.** Every asset belongs to an asset class (such as `fasta` or `bwa_index`). If you do not have the asset's class yet, refgenie downloads its definition from the server you are pulling from and registers it. You only need a [data channel](data_channels.md) to *build* assets yourself.
+- **Parent assets.** Some assets are made from others. A `bwa_index` is built from a `fasta`, so the `fasta` is its parent. If a parent is missing, refgenie pulls it first, from the same server, and then pulls the asset you asked for. The log says so:
+
+    ```
+    Pulling parent fasta:default (digest a0e94e...) required by bwa_index:0.7.19
+    ```
+
+    Parents of parents are pulled the same way. The size flags below (`--large`, `--skip-large`, `--size-cutoff`, `--batch`) apply to parent pulls too. A parent that was pulled stays, even if the asset you asked for then fails.
+
 ## Pull multiple assets
 
 You can pull several assets in one command by listing them as positional arguments:
@@ -96,6 +109,8 @@ Common issues:
 - **"No server subscriptions found"**: Your configuration subscribes to no server (it was created with `--no-default-server`, or you unsubscribed). Run `refgenie subscribe -s https://api.refgenie.org`, or use the **Servers** page of `refgenie dash`.
 - **Server unreachable**: Verify your server subscription with `refgenie config get` and check your network connection.
 - **Asset not found**: Use `refgenie listr` to verify the asset exists on the server.
+- **"Could not pull parent ..."**: The asset needs a parent that you do not have, and the parent could not be pulled. The message names the parent (genome digest, asset group, asset name and digest) and says why its pull failed.
+- **"Asset class '...' not found"**: You do not have the asset's class, and the server could not send it (older servers may not). Add and sync a data channel to get it: `refgenie data-channel add refgenie https https://refgenie.github.io/refgenie-registry/index.yaml && refgenie data-channel sync refgenie --exists-ok`.
 
 To see more details, consult the usage docs by running `refgenie pull --help`.
 

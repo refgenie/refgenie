@@ -25,6 +25,7 @@ __all__ = [
     "MissingStoreError",
     "NoArchiveError",
     "NoSubscriptionsError",
+    "ParentPullError",
     "PullFailedError",
     "PullSkipped",
     "RecipeExistsError",
@@ -273,6 +274,14 @@ class PullFailedError(RefgenieError):
     def __init__(self, message: str = "", reasons: dict[str, str] | None = None):
         super().__init__(message)
         self.reasons: dict[str, str] = dict(reasons or {})
+
+
+class ParentPullError(PullFailedError):
+    """An asset needs a parent that is not here, and the parent could not be pulled.
+
+    The message names the parent (genome, asset group, asset name, digest),
+    the asset that needs it, and why the parent's pull failed.
+    """
 
 
 class NoSubscriptionsError(PullFailedError):

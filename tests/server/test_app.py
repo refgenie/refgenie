@@ -476,6 +476,8 @@ EXPECTED_PROPERTIES = {
     },
     "SeekKeyResponse": {"name", "value", "description", "type", "size"},
     "AssetClassPublic": {"id", "name", "version", "description", "serving_modes"},
+    "AssetClassResponse": {"id", "name", "version", "description", "serving_modes", "seek_keys"},
+    "AssetClassSeekKeyResponse": {"name", "value", "description", "type"},
     "RecipePublic": {
         "id",
         "name",

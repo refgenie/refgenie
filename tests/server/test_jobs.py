@@ -55,6 +55,7 @@ from refgenie.exceptions import (  # noqa: E402
     MissingRecipeError,
     NoArchiveError,
     NoSubscriptionsError,
+    ParentPullError,
     PullFailedError,
     PullSkipped,
 )
@@ -485,6 +486,7 @@ class TestPullErrors:
                 ErrorCode.NO_ARCHIVE,
             ),
             (PullFailedError("Server refused"), JobStatus.FAILED, ErrorCode.PULL_FAILED),
+            (ParentPullError("parent failed"), JobStatus.FAILED, ErrorCode.PULL_FAILED),
             (PullSkipped("Skipping pull of x"), JobStatus.CANCELLED, ErrorCode.PULL_SKIPPED),
             (RuntimeError("something unexpected"), JobStatus.FAILED, ErrorCode.INTERNAL_ERROR),
         ],
@@ -508,6 +510,10 @@ class TestPullErrors:
         [
             (NoArchiveError("No archive found for asset digest abc123"), "no archive found"),
             (PullFailedError("No server subscriptions found"), "no server subscriptions"),
+            (
+                ParentPullError("Could not pull parent g1/fasta:default (digest abc) ..."),
+                "could not pull parent g1/fasta:default",
+            ),
         ],
     )
     def test_the_actual_message_survives(self, run_job, exc, fragment):

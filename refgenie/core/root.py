@@ -306,6 +306,7 @@ class Refgenie:
                     alias_manager=self.alias,
                     genome_manager=self.genome,
                     events=self._events,
+                    asset_class=self.asset_class,
                 ),
                 events=self._events,
             )

@@ -17,7 +17,7 @@ from sqlmodel import SQLModel
 
 from refgenie import IndexFile
 from refgenie.const import HTTP_HEADERS
-from refgenie.db.tables import AssetPublic, GenomePublic, SeekKeyType
+from refgenie.db.tables import AssetClassPublic, AssetPublic, GenomePublic, SeekKeyType
 
 # v4 JSON API models
 
@@ -105,6 +105,29 @@ class SeekKeyResponse(BaseModel):
     description: str | None = None
     type: SeekKeyType
     size: int | None = None
+
+
+class AssetClassSeekKeyResponse(BaseModel):
+    """One seek key an asset class declares: a file pattern, or a typed value."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    name: str
+    value: str | None = None
+    description: str | None = None
+    type: SeekKeyType
+
+
+class AssetClassResponse(AssetClassPublic):
+    """
+    One asset class with the seek keys it declares.
+
+    A client that pulls an asset of a class it has never seen registers the
+    class from this response, so it must carry everything the class YAML does
+    that the client needs: the seek keys, not just the name and version.
+    """
+
+    seek_keys: list[AssetClassSeekKeyResponse] = []
 
 
 class AssetNameResponse(BaseModel):

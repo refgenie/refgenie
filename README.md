@@ -145,6 +145,9 @@ Refgenie ships with no recipes or asset classes. A **data channel** is an index
 of them that you register and sync; the canonical one is published by
 [refgenie-registry](https://github.com/refgenie/refgenie-registry).
 
+You need a data channel to *build* assets. You do not need one to *pull* them:
+`refgenie pull` takes each asset's class from the server it pulls from.
+
 ```bash
 # Add a data channel: <name> <type> <index url>
 refgenie data-channel add refgenie https https://refgenie.github.io/refgenie-registry/index.yaml

@@ -272,6 +272,33 @@ Subscribing stays a same-origin action. The bridge can read the list
 is a link to the local dash's `/servers?subscribe=<url>`, which fills the form
 and waits for a click.
 
+## A pull brings its asset class and its parents
+
+A fresh install has no asset classes, and a derived asset (`bwa_index`) links
+to a parent (`fasta`) the client may not have. Both used to fail the pull with
+advice to sync a data channel or to pull the parent by hand. Now the puller
+fixes both from the server it is pulling from, before downloading anything:
+
+- **The class** is looked up by the server's `asset_class_name` (older servers:
+  the group name) and, if no version of it is registered, fetched from
+  `GET /v4/asset_classes/{id}` using the group's `asset_class_id`. That
+  response carries the class's seek keys so the class can also be used for a
+  local build. An older server sends no seek keys; the class is registered
+  anyway with a warning, since the pulled asset carries its own seek keys
+  from the server. A class registered this way is not rolled back if the pull
+  fails: it is a definition, not data.
+- **Missing parents** (by digest) are pulled first with `force=False` from the
+  same server, each as a full pull of its own, so recursion and hooks come for
+  free. `required_by` carries the chain of digests to stop a cycle. A parent
+  that fails raises `ParentPullError` (a `PullFailedError`, so jobs report
+  `pull_failed`) naming the parent and the reason. A parent that arrives is a
+  complete asset and stays even if the child then fails; the child's
+  transaction releases the parent's genome (`PullTransaction.release_genome`)
+  so its rollback cannot remove the genome, and the parent with it.
+
+In a bulk pull, an entry that is already present (often a parent an earlier
+entry pulled) is logged and skipped rather than counted as a failure.
+
 ## Server mode and the node's own store
 
 `refgenie serve` always opens its database in server mode (`ServerMode` in

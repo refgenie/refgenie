@@ -198,6 +198,9 @@ From `conftest.py`:
 - **`refgenie_session`** - Session-scoped Refgenie with built FASTA (read-only tests)
 - **`server_client_world`** - `(client_rg, server_rg, url)`: a real server app
   served in-process and registered on the client's source manager
+- **`bare_client_world`** - `(client_rg, server_rg, url, parent, child)`: like
+  `server_client_world`, but the client has no asset classes (a fresh install)
+  and the server holds an unstaged fasta plus an unstaged child linked to it
 - **`fake_subprocess`** / **`failing_subprocess`** - `subprocess.run` patched to
   succeed silently, or (factory) to raise
 - Autouse: `_isolated_default_genome_folder`, `reset_source_cache`

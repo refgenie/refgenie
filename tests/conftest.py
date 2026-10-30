@@ -355,6 +355,53 @@ def server_client_world(engine, tmp_path, fixtures_path):
 
 
 @pytest.fixture
+def bare_client_world(engine, tmp_path, fixtures_path):
+    """Like ``server_client_world``, but the client has no asset classes at all.
+
+    That is a fresh install. The server has the rCRSd fasta built, not yet
+    staged, plus a child asset (group ``child_index``, class
+    ``nested_seek_key``) that links to the fasta as its parent, also not
+    staged. Yields ``(client_rg, server_rg, url, parent, child)``; each test
+    stages what it wants pullable.
+    """
+    from tests.helpers import (
+        GENOME,
+        MOCK_SERVER_URL,
+        add_asset_from_files,
+        make_server_client_world,
+        serve_refgenie,
+    )
+
+    server_rg, client_rg = make_server_client_world(
+        engine, tmp_path, fixtures_path, stage=False, register_client_fasta=False
+    )
+    genome_digest = server_rg.alias.resolve(GENOME)
+    server_rg.asset_class.add(fixtures_path / "nested_seek_key_asset_class.yaml")
+    parent = server_rg.asset.get(
+        genome_digest=genome_digest, asset_group_name="fasta", asset_name="default"
+    )
+    # The group name differs from the class name on purpose: the client must
+    # take the class from the server, not guess it from the group.
+    child = add_asset_from_files(
+        server_rg,
+        rel_dir="child_staging",
+        files=["sub/inner/index.txt"],
+        asset_class_name="nested_seek_key",
+        asset_group_name="child_index",
+        asset_name="v1",
+    )
+    server_rg.asset.links.set_parents(
+        genome_digest=genome_digest,
+        asset_group_name="child_index",
+        asset_name="v1",
+        parent_asset_digests=[parent.digest],
+    )
+    assert list(client_rg.asset_class.list_all()) == [], "the client must start bare"
+    with serve_refgenie(client_rg, server_rg, MOCK_SERVER_URL):
+        yield client_rg, server_rg, MOCK_SERVER_URL, parent, child
+
+
+@pytest.fixture
 def fake_subprocess():
     """``subprocess.run`` patched to succeed silently; yields the mock."""
     from unittest.mock import MagicMock, patch

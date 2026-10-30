@@ -17,6 +17,7 @@ from refgenie.logger import logger
 from refgenie.utils.console import RICH_PROGRESS_COLUMNS
 from refgenie.utils.http import make_client
 from refgenie.managers.sources.api_ids import (
+    API_ID_ASSET_CLASS,
     API_ID_ASSET_FILE_DOWNLOAD,
     API_ID_ASSET_FILES,
     API_ID_STAGED_ASSETS,
@@ -99,6 +100,10 @@ class ServerClient(Protocol):
 
     def get_all_staged_assets(self, params: dict | None = None) -> list[dict]:
         """Get all staged assets using pagination."""
+        ...
+
+    def get_asset_class(self, asset_class_id: int) -> dict:
+        """Get one asset class, with its seek keys if the server sends them."""
         ...
 
     def get_asset_file_list(self, asset_digest: str) -> list[str]:
@@ -567,6 +572,28 @@ class RefgenieserverClient:
         """Get one page of staged assets, unwrapping the paginated response envelope."""
         response = self.get(API_ID_STAGED_ASSETS, params)
         return response["items"]
+
+    def get_asset_class(self, asset_class_id: int) -> dict:
+        """Get one asset class by the server's id for it.
+
+        Servers that predate seek keys in this response send the class without
+        a ``seek_keys`` field.
+
+        Args:
+            asset_class_id: The server's id of the asset class, as an asset
+                group's ``asset_class_id`` gives it.
+
+        Returns:
+            dict: The asset class (``name``, ``version``, ``description``,
+            ``serving_modes`` and, when sent, ``seek_keys``).
+        """
+        response = self.get(
+            operation_id=API_ID_ASSET_CLASS,
+            url_format_params={"id": str(asset_class_id)},
+        )
+        if not isinstance(response, dict):
+            raise ValueError(f"Unexpected asset class response from {self.server_url}")
+        return response
 
     def get_asset_file_list(self, asset_digest: str) -> list[str]:
         """Get the list of files available for a file-mode asset.

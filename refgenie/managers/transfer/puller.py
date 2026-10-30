@@ -26,9 +26,11 @@ from refgenie.db.tables import SeekKeyType
 from refgenie.exceptions import (
     AssetExistsError,
     MissingAliasError,
+    MissingAssetClassError,
     MissingAssetGroupError,
     NoArchiveError,
     NoSubscriptionsError,
+    ParentPullError,
     PullFailedError,
     PullSkipped,
     ServerCannotServe,
@@ -51,6 +53,7 @@ if TYPE_CHECKING:
     from refgenie.db.tables import Asset
     from refgenie.managers.alias import AliasManager
     from refgenie.managers.asset.manager import AssetManager
+    from refgenie.managers.asset_class import AssetClassManager
     from refgenie.managers.genome import GenomeManager
     from refgenie.managers.sources.client import ServerClient
     from refgenie.managers.sources.servers import ServerManager
@@ -173,6 +176,8 @@ class PullTransaction:
     _created_genomes: list = field(default_factory=list)
     _created_aliases: list = field(default_factory=list)
     _created_dirs: list = field(default_factory=list)
+    #: The genome each created alias names, so ``release_genome`` can find them.
+    _alias_genomes: dict = field(default_factory=dict)
 
     def __enter__(self):
         return self
@@ -214,8 +219,21 @@ class PullTransaction:
         """
         if result.created_alias and result.alias_name:
             self._created_aliases.append(result.alias_name)
+            self._alias_genomes[result.alias_name] = result.genome_digest
         if result.created_genome and result.genome_digest:
             self._created_genomes.append(result.genome_digest)
+
+    def release_genome(self, genome_digest: str) -> None:
+        """Stop owning a genome (and the aliases created for it) for rollback.
+
+        Called once a parent asset has been pulled into the genome: the genome
+        now holds a complete asset of its own, so a failure later in this pull
+        must not remove it, and with it that parent.
+        """
+        self._created_genomes = [g for g in self._created_genomes if g != genome_digest]
+        self._created_aliases = [
+            a for a in self._created_aliases if self._alias_genomes.get(a) != genome_digest
+        ]
 
     def track_directory(self, path: Path):
         """Track a created directory for potential rollback."""
@@ -238,6 +256,7 @@ class AssetPuller(ResourceManager):
         alias_manager: "AliasManager",
         genome_manager: "GenomeManager",
         events: EventSink | None = None,
+        asset_class: "AssetClassManager | None" = None,
     ):
         """
         Initialize the AssetPuller.
@@ -251,8 +270,16 @@ class AssetPuller(ResourceManager):
             alias_manager: The AliasManager for alias operations.
             genome_manager: The GenomeManager, which creates missing genomes.
             events: Where ``pre_pull`` / ``post_pull`` are emitted for plugins.
+            asset_class: Where an asset class the server sends is registered
+                when the client does not have it yet. Defaults to one over
+                ``database_engine``.
         """
         super().__init__(database_engine)
+        if asset_class is None:
+            from refgenie.managers.asset_class import AssetClassManager
+
+            asset_class = AssetClassManager(database_engine)
+        self._asset_class = asset_class
         self._events = events or NULL_EVENTS
         self._asset = asset
         self._servers = servers
@@ -351,6 +378,12 @@ class AssetPuller(ResourceManager):
                     successful.append(result)
                 else:
                     failed.append(asset_info)
+            except AssetExistsError:
+                # Already here: often a parent that an earlier entry in this
+                # batch pulled first. Nothing to do, and nothing failed.
+                logger.info(
+                    f"Already present: {genome_digest}/{asset_group_name}:{asset_name or 'default'}"
+                )
             except Exception as e:
                 logger.error(f"Failed to pull {genome_digest}/{asset_group_name}:{asset_name}: {e}")
                 failed.append(asset_info)
@@ -376,9 +409,15 @@ class AssetPuller(ResourceManager):
         size_cutoff: int | float | None = None,
         sigint_handler: Callable | None = None,
         confirm: Confirmer | None = None,
+        *,
+        required_by: tuple[str, ...] = (),
     ):
         """
         Download and register one asset, firing ``pre_pull`` and ``post_pull``.
+
+        ``required_by`` is internal: the digests of the assets whose pulls are
+        waiting on this one because it is their parent. It stops a parent
+        cycle on the server from recursing forever.
 
         ``post_pull`` fires on every outcome: ``succeeded`` is True when an
         asset came back or was already present, and False when the pull
@@ -411,6 +450,7 @@ class AssetPuller(ResourceManager):
                 size_cutoff=size_cutoff,
                 sigint_handler=sigint_handler,
                 confirm=confirm,
+                required_by=required_by,
             )
             succeeded = result is not None
             return result
@@ -439,6 +479,7 @@ class AssetPuller(ResourceManager):
         size_cutoff: int | float | None = None,
         sigint_handler: Callable | None = None,
         confirm: Confirmer | None = None,
+        required_by: tuple[str, ...] = (),
     ):
         """
         Download and register one asset from the first subscribed server that
@@ -497,6 +538,7 @@ class AssetPuller(ResourceManager):
                     size_cutoff=size_cutoff,
                     sigint_handler=sigint_handler,
                     confirm=confirm,
+                    required_by=required_by,
                 )
             except ServerCannotServe as exc:
                 # The transaction has already rolled back whatever this attempt
@@ -540,6 +582,7 @@ class AssetPuller(ResourceManager):
         size_cutoff: int | float | None,
         sigint_handler: Callable | None,
         confirm: Confirmer | None,
+        required_by: tuple[str, ...] = (),
     ) -> "Asset | None":
         """
         One pull attempt against one server, inside its own transaction.
@@ -549,6 +592,10 @@ class AssetPuller(ResourceManager):
                 transaction has rolled back and the caller may try the next one.
             PullSkipped: The user or ``force=False`` declined to replace
                 existing content.
+            MissingAssetClassError: The asset's class is not registered here
+                and this server could not provide it.
+            ParentPullError: A parent the asset needs is not here and could
+                not be pulled; the message names the parent and why.
         """
         # Use PullTransaction for atomic rollback on failure
         with PullTransaction(self._alias_manager, self._genome_manager) as txn:
@@ -608,9 +655,24 @@ class AssetPuller(ResourceManager):
             # adopt it for everything downstream.
             asset_name = meta.asset_name
             asset_digest = meta.asset_digest
-            asset_parents = meta.asset_parents
 
             bundle_name = f"{alias_name}/{asset_group_name}:{asset_name}"
+
+            # Before anything is downloaded or replaced: the class the asset is
+            # registered under, and every parent it links to, must be here.
+            meta.asset_class_name = self._ensure_asset_class(client, server_url, meta)
+            self._pull_missing_parents(
+                parents=meta.asset_parents,
+                server_url=server_url,
+                child_label=f"{asset_group_name}:{asset_name}",
+                child_digest=asset_digest,
+                required_by=required_by,
+                txn=txn,
+                force_large=force_large,
+                size_cutoff=size_cutoff,
+                sigint_handler=sigint_handler,
+                confirm=confirm,
+            )
 
             # Content is addressed by digest, both here and on the server, so
             # the download directory is the digest directory. The archive's
@@ -631,14 +693,6 @@ class AssetPuller(ResourceManager):
                     asset_group_name=asset_group_name,
                     asset_name=asset_name,
                 )
-
-            if asset_parents:
-                # Check if parent digests exist locally
-                if not self._asset.links.parent_digests_exist(
-                    asset_parents,
-                    lambda digest: self._asset.get_by_digest(digest) is not None,
-                ):
-                    raise PullFailedError("Parent assets not available locally")
 
             self._download_staged(
                 client=client,
@@ -668,6 +722,147 @@ class AssetPuller(ResourceManager):
                 asset_dir=asset_dir,
                 meta=meta,
             )
+
+    def _ensure_asset_class(
+        self, client: "ServerClient", server_url: str, meta: PulledAssetMetadata
+    ) -> str:
+        """
+        The local name of the asset's class, registering it from the server if needed.
+
+        A fresh install has no asset classes. Rather than send the user off to
+        sync a data channel, take the class definition from the server the
+        asset comes from: the asset group names its ``asset_class_id``.
+
+        Returns:
+            str: The asset class name to register the pulled asset under.
+
+        Raises:
+            MissingAssetClassError: The class is not registered here and the
+                server could not provide it.
+        """
+        name = meta.asset_class_name
+        if self._asset_class.exists_any_version(name):
+            return name
+        class_id = meta.asset_group_metadata.get("asset_class_id")
+        if class_id is None:
+            raise MissingAssetClassError(name)
+        try:
+            remote = client.get_asset_class(class_id)
+        except Exception as e:
+            logger.warning(f"Could not fetch asset class '{name}' from {server_url}: {e}")
+            raise MissingAssetClassError(name) from e
+        name = remote["name"]
+        if self._asset_class.exists_any_version(name):
+            return name
+        seek_keys = remote.get("seek_keys")
+        definition = {
+            "name": name,
+            "version": remote["version"],
+            "description": remote.get("description"),
+            "serving_modes": remote.get("serving_modes") or ["file"],
+            "seek_keys": {
+                sk["name"]: {
+                    "value": sk.get("value"),
+                    "description": sk.get("description"),
+                    "type": sk["type"],
+                }
+                for sk in seek_keys or []
+            },
+        }
+        self._asset_class.add_from_dict(definition)
+        logger.info(f"Registered asset class '{name}' v{remote['version']} from {server_url}")
+        if seek_keys is None:
+            # An older server: its asset class response has no seek keys. The
+            # pulled asset still carries its own seek keys from the server, so
+            # seek works; only a local build of this class would lack them.
+            logger.warning(
+                f"{server_url} did not send the seek keys of asset class '{name}'. "
+                f"Pulled assets are unaffected; to build '{name}' locally, sync the "
+                f"class from a data channel with --exists-overwrite."
+            )
+        return name
+
+    def _pull_missing_parents(
+        self,
+        parents: list[dict],
+        server_url: str,
+        child_label: str,
+        child_digest: str,
+        required_by: tuple[str, ...],
+        txn: PullTransaction,
+        force_large: bool | None,
+        size_cutoff: int | float | None,
+        sigint_handler: Callable | None,
+        confirm: Confirmer | None,
+    ) -> None:
+        """
+        Pull, from the same server, every parent of an asset that is not here yet.
+
+        Each parent is a full pull of its own (with its own transaction and its
+        own parents), so a parent that arrives stays even if the child then
+        fails: it is a complete asset, not debris. A parent is addressed by its
+        genome digest, asset group and the name the server gave it, and must
+        arrive with the digest the child links to.
+
+        Raises:
+            ParentPullError: A parent could not be pulled. The message names it
+                (genome, asset group, asset name, digest) and gives the reason.
+        """
+        chain = (*required_by, child_digest)
+        for parent in parents or []:
+            digest = parent["digest"]
+            if self._asset.get_by_digest(digest) is not None:
+                continue
+            genome_digest = parent.get("genome_digest")
+            group = parent.get("asset_group_name")
+            name = parent.get("name")
+            label = f"{genome_digest}/{group}:{name} (digest {digest})"
+            if digest in chain:
+                raise ParentPullError(
+                    f"Cannot pull parent {label} required by {child_label}: the server "
+                    f"reports a parent cycle."
+                )
+            if not genome_digest or not group:
+                raise ParentPullError(
+                    f"Cannot pull parent {label} required by {child_label}: the server "
+                    f"did not say which genome and asset group it belongs to."
+                )
+            logger.info(
+                f"Pulling parent {group}:{name} (digest {digest}) required by {child_label}"
+            )
+            try:
+                pulled = self.pull(
+                    asset_group_name=group,
+                    genome=GenomeDigest(genome_digest),
+                    asset_name=name,
+                    # Never replace local content to make room for a parent.
+                    force=False,
+                    force_large=force_large,
+                    force_server_urls=[server_url],
+                    size_cutoff=size_cutoff,
+                    sigint_handler=sigint_handler,
+                    confirm=confirm,
+                    required_by=chain,
+                )
+            except ParentPullError:
+                raise  # already names the parent that failed, deeper down
+            except Exception as e:
+                raise ParentPullError(
+                    f"Could not pull parent {label} required by {child_label}: {e}"
+                ) from e
+            if pulled is None:
+                raise ParentPullError(
+                    f"Could not pull parent {label} required by {child_label}: the pull "
+                    f"was skipped."
+                )
+            if self._asset.get_by_digest(digest) is None:
+                raise ParentPullError(
+                    f"Could not pull parent {label} required by {child_label}: the pulled "
+                    f"asset has digest {pulled.digest}, not {digest}."
+                )
+            # The genome now holds a complete asset; it is no longer this
+            # pull's to roll back.
+            txn.release_genome(genome_digest)
 
     def _clear_existing_content(
         self,
@@ -960,7 +1155,10 @@ class AssetPuller(ResourceManager):
             ) from e
         asset_parents = relationship_metadata["parents"]
         asset_name = str(asset_metadata["name"])
-        asset_class_name = asset_group_metadata["name"]
+        # The server says which class the asset is. Older servers do not; for
+        # those, fall back to the group name (`_ensure_asset_class` can still
+        # ask the server by the group's `asset_class_id`).
+        asset_class_name = asset_metadata.get("asset_class_name") or asset_group_metadata["name"]
         # Every name the server knows this content by, each with the build
         # provenance behind it (AssetNameResponse).
         asset_names = asset_metadata["names"]

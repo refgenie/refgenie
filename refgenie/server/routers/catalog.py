@@ -44,6 +44,7 @@ from refgenie.utils.search import name_matches_operator
 
 from refgenie.server.schemas import (
     AliasResponse,
+    AssetClassResponse,
     AssetResponse,
     GenomeDetailResponse,
     GenomeResponse,
@@ -407,9 +408,23 @@ def list_asset_classes(
     return paginate_query(session, query, pagination)
 
 
-@router.get("/asset_classes/{id}", response_model=AssetClassPublic)
+@router.get("/asset_classes/{id}", response_model=AssetClassResponse)
 def get_asset_class(id: DbId, session: Session = Depends(get_db_session)):
-    asset_class = session.exec(select(AssetClass).where(AssetClass.id == id)).unique().one_or_none()
+    """
+    One asset class, with its seek keys.
+
+    A client pulling an asset whose class it lacks registers the class from
+    this response, so the seek keys are included.
+    """
+    asset_class = (
+        session.exec(
+            select(AssetClass)
+            .where(AssetClass.id == id)
+            .options(selectinload(AssetClass.seek_keys))
+        )
+        .unique()
+        .one_or_none()
+    )
     if not asset_class:
         raise HTTPException(status_code=404, detail=f"Asset class {id} not found")
     return asset_class

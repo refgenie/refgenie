@@ -1020,6 +1020,11 @@ def mocked_puller(
             )
             ns.ensure = ensure
             stack.enter_context(patch.object(puller._asset, "exists", return_value=False))
+        # The mock client serves no asset classes; treat the asset's class as
+        # registered so these tests reach the download they are about.
+        stack.enter_context(
+            patch.object(puller._asset_class, "exists_any_version", return_value=True)
+        )
         if mock_download_modes:
             ns.archive = stack.enter_context(patch.object(puller, "_pull_archive_mode"))
             ns.file = stack.enter_context(patch.object(puller, "_pull_file_mode"))

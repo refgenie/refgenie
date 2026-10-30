@@ -165,6 +165,19 @@ export interface AssetClassPublic {
   serving_modes: string[];
 }
 
+/** One seek key an asset class declares (`AssetClassSeekKeyResponse`). */
+export interface AssetClassSeekKeyResponse {
+  name: string;
+  value: string | null;
+  description: string | null;
+  type: SeekKeyType;
+}
+
+/** `GET /asset_classes/{id}`: one asset class with its seek keys. */
+export interface AssetClassResponse extends AssetClassPublic {
+  seek_keys: AssetClassSeekKeyResponse[];
+}
+
 export interface RecipePublic {
   id: number | null;
   name: string;

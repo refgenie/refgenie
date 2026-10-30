@@ -4,6 +4,8 @@ Organized by behavior:
 
 * TestPullFromServer          -- full rgc.transfer.pull() against the REAL server app
                                  (create_app) served in-process via serve_refgenie
+* TestPullOnAFreshInstall     -- no local asset classes or parents: the class comes
+                                 from the server, missing parents are pulled first
 * TestPullFileMode            -- the _pull_file_mode file-by-file download helper
 * TestPullDownloadModeSelect  -- archive/file/none serving-mode dispatch in pull()
 * TestPullFailures            -- pull() raises (never returns a silent None) on
@@ -261,8 +263,7 @@ class TestPullFromServer:
         Regression: the client re-derived seek keys from its local asset class,
         so a declared non-path key failed the pull (it needs a recipe value the
         client lacks) and undeclared extras, like a recipe's ``version``, were
-        dropped. Group name matches class name because the client takes the
-        class from the server's group name.
+        dropped.
         """
         import json
 
@@ -303,6 +304,108 @@ class TestPullFromServer:
             ), f"pulled seek key {name!r} must carry the server's value"
         local = client_rg.asset.seek(genome_digest, "test", "default", seek_key_name="extension")
         assert Path(local).is_file()
+
+
+def _stage(server_rg, asset):
+    server_rg.stage.create(asset, server_rg.genome_folder, server_rg.genome_stage_folder)
+
+
+class TestPullOnAFreshInstall:
+    """A client with no asset classes and no parents pulls straight from a server.
+
+    The class definition comes from the server being pulled from, and missing
+    parents are pulled first, from the same server. Real server app, no HTTP
+    mocking.
+    """
+
+    pytestmark = pytest.mark.component
+    requires_server()
+
+    def test_the_asset_class_is_registered_from_the_server(self, bare_client_world):
+        client_rg, server_rg, url, parent, _ = bare_client_world
+        _stage(server_rg, parent)
+
+        pulled = client_rg.transfer.pull(
+            genome=GenomeAlias(GENOME), asset_group_name="fasta", force_server_urls=[url]
+        )
+
+        assert pulled is not None and pulled.digest == parent.digest
+        local, remote = client_rg.asset_class.get("fasta"), server_rg.asset_class.get("fasta")
+        assert local.version == remote.version
+        assert local.serving_modes == remote.serving_modes
+        assert {(k.name, k.value, k.type) for k in local.seek_keys} == {
+            (k.name, k.value, k.type) for k in remote.seek_keys
+        }, "the class must arrive with its seek keys, so it can build locally too"
+        assert Path(client_rg.asset.seek(parent.genome_digest, "fasta", "default")).is_file()
+
+    def test_a_missing_parent_is_pulled_first(self, bare_client_world):
+        client_rg, server_rg, url, parent, child = bare_client_world
+        _stage(server_rg, parent)
+        _stage(server_rg, child)
+        genome_digest = server_rg.alias.resolve(GENOME)
+
+        pulled = client_rg.transfer.pull(
+            genome=GenomeAlias(GENOME),
+            asset_group_name="child_index",
+            asset_name="v1",
+            force_server_urls=[url],
+        )
+
+        assert pulled is not None and pulled.digest == child.digest
+        assert client_rg.asset.get_by_digest(parent.digest) is not None, "parent not pulled"
+        parents = client_rg.asset.links.parents(
+            genome_digest=genome_digest, asset_group_name="child_index", asset_name="v1"
+        )
+        assert [p.digest for p in parents] == [parent.digest]
+        assert client_rg.asset_class.get("nested_seek_key").name == "nested_seek_key"
+        assert client_rg.asset_class.get("fasta").name == "fasta"
+
+    def test_a_parent_that_cannot_be_pulled_is_named(self, bare_client_world):
+        from refgenie.exceptions import ParentPullError
+
+        client_rg, server_rg, url, parent, child = bare_client_world
+        _stage(server_rg, child)  # the parent is never staged: it cannot be served
+        genome_digest = server_rg.alias.resolve(GENOME)
+
+        with pytest.raises(ParentPullError) as excinfo:
+            client_rg.transfer.pull(
+                genome=GenomeAlias(GENOME),
+                asset_group_name="child_index",
+                asset_name="v1",
+                force_server_urls=[url],
+            )
+
+        message = str(excinfo.value)
+        for part in (genome_digest, "fasta", "default", parent.digest, "child_index:v1"):
+            assert part in message, f"{part!r} missing from: {message}"
+        assert "No archive found" in message, f"the reason is missing from: {message}"
+        # Rollback removed only what this pull created: the genome and alias it
+        # registered, and nothing of the child.
+        assert client_rg.asset.get_by_digest(child.digest) is None
+        assert not client_rg.genome.exists(genome_digest)
+        assert not client_rg.alias.exists(GENOME)
+
+    def test_a_pulled_parent_survives_a_failed_child(self, bare_client_world):
+        from refgenie.exceptions import PullFailedError
+
+        client_rg, server_rg, url, parent, child = bare_client_world
+        _stage(server_rg, parent)  # the child is never staged: it cannot be served
+        genome_digest = server_rg.alias.resolve(GENOME)
+
+        with pytest.raises(PullFailedError):
+            client_rg.transfer.pull(
+                genome=GenomeAlias(GENOME),
+                asset_group_name="child_index",
+                asset_name="v1",
+                force_server_urls=[url],
+            )
+
+        # The parent is a complete asset of its own, so the child's rollback
+        # must not take it, or the genome it lives in, away.
+        assert client_rg.asset.get_by_digest(parent.digest) is not None
+        assert client_rg.genome.exists(genome_digest)
+        assert client_rg.alias.resolve(GENOME) == genome_digest
+        assert client_rg.asset.get_by_digest(child.digest) is None
 
 
 # ===========================================================================
@@ -569,6 +672,7 @@ def mock_puller(tmp_path):
         servers=servers,
         alias_manager=alias_manager,
         genome_manager=genome_manager,
+        asset_class=MagicMock(),
     )
     servers.subscriptions.return_value = ["http://test-server:5000"]
     alias_manager.resolve.return_value = "abc123digest"

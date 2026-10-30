@@ -42,8 +42,22 @@ class AssetClassManager(ResourceManager):
             AssetClass: The registered asset class.
         """
         logger.debug(f"Loading asset_class from {asset_class_source}")
-        asset_class_dict = read_yaml(asset_class_source)
+        return self.add_from_dict(read_yaml(asset_class_source), exists_overwrite=exists_overwrite)
 
+    def add_from_dict(self, asset_class_dict: dict, exists_overwrite: bool = False) -> AssetClass:
+        """
+        Register an asset class from its definition, in the asset class YAML shape.
+
+        Args:
+            asset_class_dict: The definition: ``name``, ``version``,
+                ``description``, ``serving_modes`` and ``seek_keys`` (a mapping
+                of seek key name to ``value``/``description``/``type``).
+            exists_overwrite: Replace an existing class of the same name and
+                version instead of raising.
+
+        Returns:
+            AssetClass: The registered asset class.
+        """
         # Detect if the user accidentally passed a recipe YAML instead of an
         # asset class YAML.  Recipes contain fields like 'command_templates'
         # and 'output_asset_class' that asset classes never have.
@@ -125,6 +139,16 @@ class AssetClassManager(ResourceManager):
                 statement.options(selectinload(AssetClass.seek_keys)),
                 MissingAssetClassError(label),
                 unique=True,
+            )
+
+    def exists_any_version(self, asset_class_name: str) -> bool:
+        """Whether any version of the named asset class is registered."""
+        with self._database_session as session:
+            return (
+                session.exec(
+                    select(AssetClass.id).where(AssetClass.name == asset_class_name)
+                ).first()
+                is not None
             )
 
     def exists(self, asset_class_name: str, asset_class_version: str) -> bool:

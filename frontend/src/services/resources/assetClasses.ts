@@ -1,5 +1,5 @@
 import type { ApiClient, RequestInitLite } from '../http';
-import type { AssetClassPublic } from '../../types/api';
+import type { AssetClassPublic, AssetClassResponse } from '../../types/api';
 import type { ListParams, Paginated } from '../../types/pagination';
 
 export const ASSET_CLASS_SEARCH_FIELDS = ['name', 'version', 'description'] as const;
@@ -29,7 +29,7 @@ export const listAssetClasses = (
   );
 
 export const getAssetClass = (c: ApiClient, id: number, init?: RequestInitLite) =>
-  c.get<AssetClassPublic>(`/asset_classes/${id}`, undefined, init);
+  c.get<AssetClassResponse>(`/asset_classes/${id}`, undefined, init);
 
 /** The whole asset class table in one request; the server caps at 1000. */
 export const ASSET_CLASS_INDEX_LIMIT = 1000;
