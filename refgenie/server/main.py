@@ -335,10 +335,9 @@ def create_app(
         scheduler.start()
         logger.info(f"Server startup finished in {time.monotonic() - startup:.1f}s")
         # Start the MCP StreamableHTTP session manager's task group. The /mcp
-        # streamable app is mounted as a sub-application (below), and mounted
-        # sub-apps do not receive lifespan events -- same reason the seqcol
-        # backend is bound from this lifespan. Use the per-app instance captured
-        # at mount time: the module-level MCP server is a singleton, and every
+        # route comes from a separate Starlette app (below), whose lifespan never
+        # runs here -- same reason the seqcol backend is bound from this lifespan. Use the per-app instance captured
+        # at setup time: the module-level MCP server is a singleton, and every
         # streamable_http_app() call overwrites its .session_manager, so reading
         # it here would race across app instances; .run() is also once-per-manager.
         # Without this, every /mcp request fails with "Task group is not initialized".
@@ -629,7 +628,9 @@ def create_app(
         # module-singleton server; capture it now, before another create_app() call
         # can overwrite the singleton's reference.
         app.state.mcp_session_manager = mcp_server.session_manager
-        app.mount("/mcp", mcp_app)
+        # Add the sub-app's route (at its default path, /mcp) to this app directly.
+        # Mounting the sub-app at /mcp would serve the endpoint at /mcp/mcp.
+        app.router.routes.extend(mcp_app.routes)
 
     # LAST: the catch-all that serves the SPA and deep-links its client routes.
     mount_spa(app, web_dist)
