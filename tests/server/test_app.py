@@ -190,6 +190,26 @@ class TestModeSurfaces:
             response = client.get("/ping", headers={"host": "evil.example.com"})
         assert response.status_code == 200
 
+    def test_mcp_endpoint_is_at_slash_mcp(self):
+        """MCP clients connect to /mcp itself, not a nested /mcp/mcp."""
+        initialize = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {
+                "protocolVersion": "2025-06-18",
+                "capabilities": {},
+                "clientInfo": {"name": "test", "version": "0"},
+            },
+        }
+        headers = {"accept": "application/json, text/event-stream"}
+        with make_server_client(stub_rgc()) as client:
+            response = client.post("/mcp", json=initialize, headers=headers)
+            nested = client.post("/mcp/mcp", json=initialize, headers=headers)
+        assert response.status_code == 200
+        assert '"serverInfo"' in response.text
+        assert nested.status_code != 200
+
 
 class TestRootNamespaceIsReservedForTheSpa:
     """The JSON API lives at /v4 and /v1 -- never at the root, where a second
