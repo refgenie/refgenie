@@ -6,7 +6,7 @@ from sqlmodel import Session, select
 from refgenie.server.dependencies import DbId, get_db_session, get_refgenie
 from refgenie.server.errors import ErrorCode
 from refgenie.server.routers import helpers
-from refgenie.exceptions import MissingAliasError
+from refgenie.exceptions import MissingAliasError, MissingGenomeError
 from refgenie.models import GenomeAlias
 from refgenie.core import Refgenie
 from refgenie.db.tables import (
@@ -166,11 +166,14 @@ def _genome_not_found(digest: str, rgc: Refgenie) -> HTTPException:
     alias to its genome, so that drift arrives here as a bare "not found" that
     tells the user nothing about which of their two halves is wrong.
 
-    Unreachable in server mode by construction: ``rgc.alias`` there is the SQL
-    manager, whose ``get_for_genome`` joins ``Genome`` and so cannot return a
-    name for a digest with no row.
+    Unreachable in server mode: ``rgc.alias`` there is the SQL manager, whose
+    ``get_for_genome`` raises for a digest with no row instead of returning a
+    stale name, so that raise means a plain 404.
     """
-    stale = rgc.alias.get_for_genome(digest)
+    try:
+        stale = rgc.alias.get_for_genome(digest)
+    except MissingGenomeError:
+        stale = []
     if not stale:
         return HTTPException(status_code=404, detail=f"Genome {digest} not found")
     names = ", ".join(sorted(stale))

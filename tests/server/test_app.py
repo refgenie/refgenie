@@ -22,6 +22,7 @@ from tests.helpers import (
     assert_no_duplicate_routes,
     assert_unique_operation_ids,
     fake_digest,
+    make_engine,
     make_local_app,
     make_server_app,
     make_server_client,
@@ -105,6 +106,20 @@ class TestSharedSurface:
         response = client.get("/v4/genomes")
         assert response.status_code == 200
         assert [g["digest"] for g in response.json()["items"]] == [WEB_DIGEST]
+
+    @pytest.mark.parametrize("key", [fake_digest("unknown"), "rCRSd"])
+    def test_v4_genome_detail_404s_in_server_mode(self, key, tmp_path):
+        """An unknown digest or an alias is a 404, not a 500.
+
+        Needs a real server-mode Refgenie: with no store of its own, its alias
+        manager is the SQL one, which raises for a digest with no genome row.
+        """
+        from refgenie import Refgenie
+
+        rgc = Refgenie(database_engine=make_engine(), suppress_migrations=True, server_mode=True)
+        rgc.database.init(genome_folder=tmp_path / "genomes")
+        with TestClient(make_server_app(rgc)) as client:
+            assert client.get(f"/v4/genomes/{key}").status_code == 404
 
 
 class TestServiceInfoBootstrap:
