@@ -600,7 +600,9 @@ class AssetPuller(ResourceManager):
         # Use PullTransaction for atomic rollback on failure
         with PullTransaction(self._alias_manager, self._genome_manager) as txn:
             client = self._servers.client(server_url)
-            alias_name, genome_digest = self._resolve_pull_genome(genome, client, server_url, txn)
+            alias_name, genome_digest, genome_attrs = self._resolve_pull_genome(
+                genome, client, server_url, txn
+            )
             try:
                 asset_name = str(
                     asset_name
@@ -714,13 +716,13 @@ class AssetPuller(ResourceManager):
             # Post-download registration; must stay inside the transaction
             # so rollback covers it.
             return self._finalize_pulled_asset(
-                client=client,
                 alias_name=alias_name,
                 genome_digest=genome_digest,
                 asset_group_name=asset_group_name,
                 asset_name=asset_name,
                 asset_dir=asset_dir,
                 meta=meta,
+                genome_attrs=genome_attrs,
             )
 
     def _ensure_asset_class(
@@ -985,9 +987,9 @@ class AssetPuller(ResourceManager):
         client: "ServerClient",
         server_url: str,
         txn: PullTransaction,
-    ) -> tuple[GenomeAlias, GenomeDigest]:
+    ) -> tuple[GenomeAlias, GenomeDigest, dict]:
         """
-        The alias and the digest a pull of ``genome`` is addressed to.
+        The alias, the digest and the server's genome record for a pull of ``genome``.
 
         A pull needs an alias as well as a digest, because the alias tree it
         renders is keyed by one. The type of ``genome`` says which one the
@@ -1001,25 +1003,37 @@ class AssetPuller(ResourceManager):
           alias).
 
         Everything registered here is tracked on ``txn``, so a failed pull
-        rolls it back.
+        rolls it back. The server's genome record (species, taxon, assembly,
+        FHR) is fetched once and copied onto the local genome wherever the
+        local value is unset, whether the genome was created here or not.
 
         Raises:
             ServerCannotServe: If this server cannot identify the genome.
             PullFailedError: If the server's alias listing fails.
         """
         if isinstance(genome, GenomeAlias):
-            return self._resolve_pull_alias(genome, server_url, txn)
-        return self._resolve_pull_digest(genome, client, server_url, txn)
+            alias_name, genome_digest, attrs = self._resolve_pull_alias(genome, server_url, txn)
+        else:
+            alias_name, genome_digest, attrs = self._resolve_pull_digest(
+                genome, client, server_url, txn
+            )
+        if attrs is None:
+            attrs = self._servers.genome_attrs(genome_digest, [server_url])
+        self._genome_manager.fill_from_server(genome_digest, attrs)
+        return alias_name, genome_digest, attrs
 
     def _resolve_pull_alias(
         self,
         genome_alias: GenomeAlias,
         server_url: str,
         txn: PullTransaction,
-    ) -> tuple[GenomeAlias, GenomeDigest]:
-        """The pull target for an alias: a local one, else one the server knows."""
+    ) -> tuple[GenomeAlias, GenomeDigest, dict | None]:
+        """The pull target for an alias: a local one, else one the server knows.
+
+        The third item is the server's genome record, if it was fetched here.
+        """
         try:
-            return genome_alias, self._alias_manager.resolve(genome_alias)
+            return genome_alias, self._alias_manager.resolve(genome_alias), None
         except MissingAliasError:
             pass
         logger.warning(
@@ -1034,7 +1048,7 @@ class AssetPuller(ResourceManager):
                 f"Could not resolve genome alias '{genome_alias}' via server {server_url}."
             )
         txn.track_creation(result)
-        return genome_alias, self._alias_manager.resolve(genome_alias)
+        return genome_alias, self._alias_manager.resolve(genome_alias), result.genome_attrs
 
     def _resolve_pull_digest(
         self,
@@ -1042,8 +1056,11 @@ class AssetPuller(ResourceManager):
         client: "ServerClient",
         server_url: str,
         txn: PullTransaction,
-    ) -> tuple[GenomeAlias, GenomeDigest]:
-        """The pull target for a digest: the server's aliases for it, else a local one."""
+    ) -> tuple[GenomeAlias, GenomeDigest, dict]:
+        """The pull target for a digest: the server's aliases for it, else a local one.
+
+        The third item is the server's genome record.
+        """
         known_digest = self._genome_manager.exists(genome_digest)
         try:
             # Use get_all_aliases method (required by ServerClient protocol)
@@ -1054,20 +1071,22 @@ class AssetPuller(ResourceManager):
                     f"Could not resolve genome digest '{genome_digest}' via server {server_url}."
                 ) from e
             raise PullFailedError(f"Failed to fetch aliases metadata from {server_url}: {e}") from e
+        attrs = self._servers.genome_attrs(genome_digest, [server_url])
         for alias_metadata in aliases_metadata:
             result = self._genome_manager.ensure_from_remote(
                 alias_name=GenomeAlias(str(alias_metadata["name"])),
                 genome_digest=GenomeDigest(alias_metadata["genome_digest"]),
                 genome_description=alias_metadata.get("genome_description"),
+                genome_attrs=attrs,
             )
             txn.track_creation(result)
         if aliases_metadata:
             # Address the pull to the first alias, not whichever entry happened
             # to be listed last.
-            return GenomeAlias(str(aliases_metadata[0]["name"])), genome_digest
+            return GenomeAlias(str(aliases_metadata[0]["name"])), genome_digest, attrs
         local_aliases = self._alias_manager.get_for_genome(genome_digest) if known_digest else []
         if local_aliases:
-            return GenomeAlias(local_aliases[0]), genome_digest
+            return GenomeAlias(local_aliases[0]), genome_digest, attrs
         raise ServerCannotServe(
             f"Could not resolve genome digest '{genome_digest}' via server {server_url}."
         )
@@ -1176,13 +1195,13 @@ class AssetPuller(ResourceManager):
 
     def _finalize_pulled_asset(
         self,
-        client: "ServerClient",
         alias_name: GenomeAlias,
         genome_digest: GenomeDigest,
         asset_group_name: str,
         asset_name: str,
         asset_dir: Path,
         meta: PulledAssetMetadata,
+        genome_attrs: dict,
     ):
         """
         Register a downloaded asset: colocation symlinks, fasta genome
@@ -1217,7 +1236,7 @@ class AssetPuller(ResourceManager):
                 fasta_file_path=asset_dir / f"{genome_digest}.fa",
                 # Used when the genome is (re)created here, e.g. after a forced
                 # re-pull removed the old fasta and, with it, the genome.
-                description=self._servers.genome_description(genome_digest, [client.server_url]),
+                description=genome_attrs.get("description") or "",
                 alias_names=[alias_name],
                 use_existing=True,
             )
@@ -1231,6 +1250,9 @@ class AssetPuller(ResourceManager):
                     f"  refgenie remove {alias_name}/fasta -f\n"
                     f"  refgenie pull {alias_name}/fasta"
                 )
+            # The genome may have been (re)created just now, and the fasta
+            # brings the collection the FHR sidecar needs; fill both in.
+            self._genome_manager.fill_from_server(genome_digest, genome_attrs)
 
         # Add the downloaded asset under the server's digest rather than
         # recomputing it. The building recipe's `inherent` set

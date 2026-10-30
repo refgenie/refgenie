@@ -306,6 +306,19 @@ class TestPullFromServer:
         assert Path(local).is_file()
 
 
+#: An FHR record for the server's genome (only the fields refgenie promotes).
+_WORM_FHR = {
+    "schema": "https://raw.githubusercontent.com/FAIR-bioHeaders/FHR-Specification/main/fhr.json",
+    "schemaVersion": 1,
+    "genome": "Caenorhabditis elegans",
+    "commonName": "roundworm",
+    "taxon": {"name": "Caenorhabditis elegans", "uri": "https://identifiers.org/taxonomy:6239"},
+    "assemblySource": "Ensembl",
+    "accessionID": {"name": "GCA_000002985.3", "url": "https://www.ncbi.nlm.nih.gov/"},
+    "documentation": "worm assembly",
+}
+
+
 def _stage(server_rg, asset):
     server_rg.stage.create(asset, server_rg.genome_folder, server_rg.genome_stage_folder)
 
@@ -406,6 +419,62 @@ class TestPullOnAFreshInstall:
         assert client_rg.genome.exists(genome_digest)
         assert client_rg.alias.resolve(GENOME) == genome_digest
         assert client_rg.asset.get_by_digest(child.digest) is None
+
+    def test_the_servers_genome_record_is_copied(self, bare_client_world):
+        """A pull that creates the genome copies the server's species, taxon
+        and assembly fields, and its FHR record, not just the description."""
+        client_rg, server_rg, url, parent, child = bare_client_world
+        _stage(server_rg, parent)
+        _stage(server_rg, child)
+        digest = server_rg.alias.resolve(GENOME)
+        server_rg.genome.apply_fhr(digest, _WORM_FHR)
+
+        # A non-fasta asset first: the genome is created by the pull's genome
+        # resolution and the fasta arrives as an auto-pulled parent.
+        client_rg.transfer.pull(
+            genome=GenomeAlias(GENOME),
+            asset_group_name="child_index",
+            asset_name="v1",
+            force_server_urls=[url],
+        )
+
+        local = client_rg.genome.get(digest)
+        assert local.species_name == "Caenorhabditis elegans"
+        assert local.common_name == "roundworm"
+        assert local.taxon_id == 6239
+        assert local.assembly_source == "Ensembl"
+        assert local.assembly_accession == "GCA_000002985.3"
+        assert local.description == "worm assembly"
+        fhr = client_rg.refget_store.get_fhr_metadata(digest)
+        assert fhr is not None and fhr.to_dict()["genome"] == "Caenorhabditis elegans"
+
+    def test_local_genome_values_are_not_overwritten(self, bare_client_world):
+        """Fields the user set locally survive a pull; unset ones are filled."""
+        client_rg, server_rg, url, parent, child = bare_client_world
+        _stage(server_rg, parent)
+        _stage(server_rg, child)
+        digest = server_rg.alias.resolve(GENOME)
+        server_rg.genome.apply_fhr_columns(digest, {"genome": "Caenorhabditis elegans"})
+
+        client_rg.transfer.pull(
+            genome=GenomeAlias(GENOME), asset_group_name="fasta", force_server_urls=[url]
+        )
+        assert client_rg.genome.get(digest).species_name == "Caenorhabditis elegans"
+        assert client_rg.genome.get(digest).common_name is None
+
+        client_rg.genome.apply_fhr_columns(digest, {"genome": "my worm"})
+        server_rg.genome.apply_fhr_columns(digest, _WORM_FHR)
+        client_rg.transfer.pull(
+            genome=GenomeAlias(GENOME),
+            asset_group_name="child_index",
+            asset_name="v1",
+            force_server_urls=[url],
+        )
+
+        local = client_rg.genome.get(digest)
+        assert local.species_name == "my worm", "a local value was overwritten"
+        assert local.common_name == "roundworm", "an unset local value was not filled"
+        assert local.taxon_id == 6239
 
 
 # ===========================================================================
@@ -540,13 +609,13 @@ class TestFinalizePulledAssetRendersOnce:
 
         with patch.object(r.asset.tree, "render", wraps=r.asset.tree.render) as render:
             added = r.transfer._puller._finalize_pulled_asset(
-                client=MagicMock(),
                 alias_name=GENOME,
                 genome_digest=digest,
                 asset_group_name="nested_group",
                 asset_name="pulled",
                 asset_dir=asset_dir,
                 meta=meta,
+                genome_attrs={},
             )
 
         assert added is not None
@@ -694,7 +763,9 @@ class TestResolvePullGenome:
 
         client = puller._servers.client("http://test-server:5000")
         with PullTransaction(puller._alias_manager, puller._genome_manager) as txn:
-            return puller._resolve_pull_genome(genome, client, "http://test-server:5000", txn)
+            # The third item is the server's genome record; these tests
+            # check only the alias and digest the pull is addressed to.
+            return puller._resolve_pull_genome(genome, client, "http://test-server:5000", txn)[:2]
 
     def test_a_local_alias_is_used_as_given(self, mock_puller):
         assert self._resolve(mock_puller, GenomeAlias("hg38")) == ("hg38", "abc123digest")

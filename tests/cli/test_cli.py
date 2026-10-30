@@ -999,7 +999,7 @@ class TestPullExitCode:
             patch.object(
                 AssetPuller,
                 "_resolve_pull_genome",
-                return_value=(GenomeAlias("hg38"), GenomeDigest(digest)),
+                return_value=(GenomeAlias("hg38"), GenomeDigest(digest), {}),
             ),
             patch.object(ServerManager, "client", return_value=client),
             caplog.at_level("INFO"),

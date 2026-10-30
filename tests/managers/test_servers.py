@@ -99,24 +99,29 @@ class TestClients:
             )
 
 
-class TestGenomeDescription:
-    """The first server that describes a genome wins (unit tier)."""
+class TestGenomeAttrs:
+    """The first server that has a record of a genome wins (unit tier)."""
 
     def test_skips_failing_and_empty_servers(self, refgenie_minimal):
         clients = {
             "http://down.example.com": MagicMock(get=MagicMock(side_effect=OSError("down"))),
-            "http://empty.example.com": MagicMock(get=MagicMock(return_value={"description": ""})),
-            "http://good.example.com": MagicMock(get=MagicMock(return_value={"description": "hg"})),
+            "http://empty.example.com": MagicMock(get=MagicMock(return_value={})),
+            "http://good.example.com": MagicMock(
+                get=MagicMock(return_value={"description": "hg", "species_name": "Homo sapiens"})
+            ),
         }
         servers = refgenie_minimal.servers
         with patch.object(servers, "client", side_effect=clients.__getitem__):
-            assert servers.genome_description("abc", list(clients)) == "hg"
+            assert servers.genome_attrs("abc", list(clients)) == {
+                "description": "hg",
+                "species_name": "Homo sapiens",
+            }
 
-    def test_empty_when_no_server_describes_it(self, refgenie_minimal):
+    def test_empty_when_no_server_has_it(self, refgenie_minimal):
         servers = refgenie_minimal.servers
         client = MagicMock(get=MagicMock(return_value={}))
         with patch.object(servers, "client", return_value=client):
-            assert servers.genome_description("abc", ["http://a.example.com"]) == ""
+            assert servers.genome_attrs("abc", ["http://a.example.com"]) == {}
 
 
 class TestEstimatePullSize:

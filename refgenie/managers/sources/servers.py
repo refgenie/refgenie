@@ -278,18 +278,19 @@ class ServerManager(ResourceManager):
                 logger.debug(f"Failed to create source for {server_url}: {exc}")
         return None
 
-    def genome_description(
+    def genome_attrs(
         self, genome_digest: GenomeDigest, server_urls: list[str] | None = None
-    ) -> str:
+    ) -> dict:
         """
-        The first description a server gives for a genome.
+        The first server's record of a genome: description, species, FHR, etc.
 
         Args:
-            genome_digest: The genome to describe.
+            genome_digest: The genome to look up.
             server_urls: Servers to ask, in order. Defaults to the subscriptions.
 
         Returns:
-            The description, or an empty string if no server has one.
+            The server's genome attributes (the ``/genomes/{digest}`` body), or
+            an empty dict if no server has the genome.
         """
         for server_url in server_urls or self.subscriptions():
             try:
@@ -298,11 +299,11 @@ class ServerManager(ResourceManager):
                     url_format_params={"digest": genome_digest},
                 )
             except Exception as exc:
-                logger.debug(f"No genome description from {server_url}: {exc}")
+                logger.debug(f"No genome attributes from {server_url}: {exc}")
                 continue
-            if isinstance(attrs, dict) and attrs.get("description"):
-                return attrs["description"]
-        return ""
+            if isinstance(attrs, dict) and attrs:
+                return attrs
+        return {}
 
     # =========================================================================
     # Catalog: what a server has

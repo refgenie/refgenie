@@ -43,6 +43,28 @@ GENOME_SEARCH_FIELDS: tuple[str, ...] = (
 )
 
 
+#: Genome columns a pull copies from the server's record when unset locally.
+SERVER_GENOME_COLUMNS = (
+    "description",
+    "species_name",
+    "common_name",
+    "taxon_id",
+    "assembly_source",
+    "assembly_accession",
+    "assembly_level",
+)
+
+#: The placeholder description a genome gets when none was known at creation.
+NO_DESCRIPTION = "No description provided"
+
+
+def _is_unset(value, column: str) -> bool:
+    """Whether a local genome column holds no user-set value."""
+    if value is None or value == "":
+        return True
+    return column == "description" and value == NO_DESCRIPTION
+
+
 @dataclass
 class GenomeCreationResult:
     """What :meth:`GenomeManager.ensure_from_remote` did, so a pull can undo it."""
@@ -52,6 +74,9 @@ class GenomeCreationResult:
     alias_name: GenomeAlias | None = None
     created_genome: bool = False
     created_alias: bool = False
+    #: The server's record of the genome, if this call fetched it, so the
+    #: caller need not ask the server again.
+    genome_attrs: dict | None = None
 
 
 def _compare_level2(level2_a: dict, level2_b: dict, digest_a: str, digest_b: str) -> dict:
@@ -235,6 +260,58 @@ class GenomeManager(ResourceManager):
                 setattr(genome, column, value)
             session.add(genome)
             session.commit()
+
+    @update_scope
+    def fill_from_server(self, digest: str, attrs: dict) -> None:
+        """Copy a server's genome record onto the local genome, where it is unset.
+
+        Fills ``description``, ``species_name``, ``common_name``, ``taxon_id``,
+        ``assembly_source``, ``assembly_accession`` and ``assembly_level`` from
+        ``attrs`` (the server's ``/genomes/{digest}`` body), and stores the
+        server's FHR record as the local FHR sidecar once the collection is in
+        the local store. A value the user already set locally is never
+        overwritten, and neither is an existing sidecar.
+
+        Args:
+            digest: The local genome to fill. It must already exist.
+            attrs: The server's genome attributes; may be empty.
+        """
+        if not attrs:
+            return
+        with self._database_session as session:
+            genome = one_or_raise(
+                session,
+                select(Genome).where(Genome.digest == digest),
+                MissingGenomeError(genome=digest),
+            )
+            changed = False
+            for column in SERVER_GENOME_COLUMNS:
+                value = attrs.get(column)
+                if value in (None, "") or not _is_unset(getattr(genome, column), column):
+                    continue
+                setattr(genome, column, value)
+                changed = True
+            if changed:
+                session.add(genome)
+                session.commit()
+
+        fhr = attrs.get("fhr")
+        if not isinstance(fhr, dict) or not fhr:
+            return
+        store = self._refget_store_getter()
+        try:
+            store.get_collection_metadata(digest)
+        except Exception:  # noqa: BLE001 - not in the local store yet
+            # The sidecar hangs off the collection; a pull that brings the
+            # fasta adds the collection and calls this again.
+            logger.debug(f"Collection {digest} not in the local store; FHR record not stored")
+            return
+        try:
+            if store.get_fhr_metadata(digest) is not None:
+                return
+            store.set_fhr_metadata(digest, self._fhr_metadata_from_dict(fhr))
+        except Exception as exc:  # noqa: BLE001 - the sidecar is best-effort
+            logger.warning(f"Could not store the server's FHR record for {digest}: {exc}")
 
     def set_store_name(self, digest: str, store_name: str | None) -> None:
         """Set the owning store of a genome (federation)."""
@@ -751,6 +828,7 @@ class GenomeManager(ResourceManager):
         genome_digest: GenomeDigest | None = None,
         genome_description: str | None = None,
         server_urls: list[str] | None = None,
+        genome_attrs: dict | None = None,
     ) -> GenomeCreationResult:
         """
         Make a genome and its alias exist locally, asking the servers if needed.
@@ -763,15 +841,20 @@ class GenomeManager(ResourceManager):
 
         The genome is created through a ``RemoteGenomeSource`` where possible,
         so ``remote_url`` is set on the row and sequences can be fetched lazily.
+        A genome created here gets the server's record (species, taxon,
+        assembly, FHR) via :meth:`fill_from_server`.
 
         Args:
             alias_name: The name of the alias.
             genome_digest: The digest of the genome, if already known.
             genome_description: The description of the genome.
             server_urls: Servers to ask. Defaults to the subscriptions.
+            genome_attrs: The server's genome record, if the caller already
+                has it. Fetched here when needed and not given.
 
         Returns:
-            GenomeCreationResult: Success flag and what this call created.
+            GenomeCreationResult: Success flag, what this call created, and
+            the server's genome record if it was fetched or given.
         """
         servers = self._servers_getter()
         alias_manager = self._alias_manager_getter()
@@ -781,10 +864,6 @@ class GenomeManager(ResourceManager):
             if genome_digest is None:
                 return GenomeCreationResult(success=False)
             logger.info(f"Determined digest for {alias_name}: {genome_digest}")
-            if not genome_description:
-                genome_description = self._servers_getter().genome_description(
-                    genome_digest, server_urls
-                )
 
         # Record what already exists BEFORE any writes: the result must report
         # only rows this call actually created, so a pull rollback never
@@ -793,42 +872,48 @@ class GenomeManager(ResourceManager):
         genome_existed = self.exists(genome_digest)
         alias_existed = alias_manager.exists(alias_name)
 
-        if not genome_existed:
-            if genome_description is None:
-                genome_description = "No description provided"
+        if genome_existed:
+            alias_manager.add(alias_name, genome_digest)
+            return GenomeCreationResult(
+                success=True,
+                genome_digest=genome_digest,
+                alias_name=alias_name,
+                created_genome=False,
+                created_alias=not alias_existed,
+                genome_attrs=genome_attrs,
+            )
 
-            # Try to initialize via RemoteGenomeSource for remote_url support
-            source = servers.genome_source(server_urls)
-            if source is not None:
-                try:
-                    _digest, created = self.initialize_genome(
-                        source=source,
-                        digest=genome_digest,
-                        description=genome_description,
-                        alias_names=[alias_name],
-                        use_existing=True,
-                    )
-                    return GenomeCreationResult(
-                        success=True,
-                        genome_digest=genome_digest,
-                        alias_name=alias_name,
-                        created_genome=created,
-                        created_alias=not alias_existed,
-                    )
-                except Exception as exc:
-                    logger.debug(f"Source-based genome init failed, falling back: {exc}")
+        if genome_attrs is None:
+            genome_attrs = servers.genome_attrs(genome_digest, server_urls)
+        genome_description = genome_description or genome_attrs.get("description") or NO_DESCRIPTION
 
+        created = True
+        # Try to initialize via RemoteGenomeSource for remote_url support
+        source = servers.genome_source(server_urls)
+        initialized = False
+        if source is not None:
+            try:
+                _digest, created = self.initialize_genome(
+                    source=source,
+                    digest=genome_digest,
+                    description=genome_description,
+                    alias_names=[alias_name],
+                    use_existing=True,
+                )
+                initialized = True
+            except Exception as exc:
+                logger.debug(f"Source-based genome init failed, falling back: {exc}")
+        if not initialized:
             # Fallback: direct add without remote_url
             self.add(genome_digest, genome_description, [alias_name])
-        else:
-            # Genome exists, add alias to it
-            alias_manager.add(alias_name, genome_digest)
+        self.fill_from_server(genome_digest, genome_attrs)
         return GenomeCreationResult(
             success=True,
             genome_digest=genome_digest,
             alias_name=alias_name,
-            created_genome=not genome_existed,
+            created_genome=created,
             created_alias=not alias_existed,
+            genome_attrs=genome_attrs,
         )
 
     @update_scope
