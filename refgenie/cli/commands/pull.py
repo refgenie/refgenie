@@ -231,7 +231,14 @@ def handle_pull(cmd, refgenie) -> None:
                 logger.error(f"{e}. Use --force to overwrite.")
                 return EXIT_GENERAL_ERROR
             except PullFailedError as e:
-                logger.error(str(e))
+                if e.reasons:
+                    logger.error(
+                        f"Pull failed: no server could serve '{genome}/{parsed.asset_group}'."
+                    )
+                    for url, reason in e.reasons.items():
+                        logger.error(f"  {url}: {reason}")
+                else:
+                    logger.error(str(e))
                 return EXIT_NOT_FOUND
             except (MissingAssetClassError, MissingRecipeError) as e:
                 logger.error(str(e))
@@ -244,11 +251,12 @@ def handle_pull(cmd, refgenie) -> None:
                     logger.info(data_channel_hint(retry))
                 return EXIT_NOT_FOUND
             if pulled is None:
-                # transfer.pull signals failure by RETURNING None (no server could
-                # serve the asset, or the pull was skipped), not only by raising.
-                # Checking only for exceptions reports a failed pull as a success.
+                # None means the pull was skipped: existing content was kept
+                # (the user declined to replace it). Nothing was retrieved, so
+                # it is not a success.
                 logger.error(
-                    f"Pull failed: no asset was retrieved for '{genome}/{parsed.asset_group}'."
+                    f"Pull skipped: no asset was retrieved for '{genome}/{parsed.asset_group}'. "
+                    f"Use --force to replace existing content."
                 )
                 return EXIT_NOT_FOUND
             return EXIT_OK

@@ -27,7 +27,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { createAppResourceCache } from '../../app/resourceCache';
 import { ResourceCacheContext } from '../../services/resourceCacheContext';
 import { AppContext } from '../../services/clients';
@@ -52,8 +52,14 @@ const LOCAL_NAV: ReadonlyArray<{ to: string; label: string }> = [
   { to: '/local/asset-classes', label: 'Asset classes' },
   { to: '/local/recipes', label: 'Recipes' },
   { to: '/local/aliases', label: 'Aliases' },
+  { to: '/local/servers', label: 'Servers' },
   { to: '/local/jobs', label: 'Jobs' },
 ];
+
+/** Bare `/local` renders the genomes list, so its nav entry is the current one. */
+function isCurrent(to: string, pathname: string, isActive: boolean): boolean {
+  return isActive || (to === '/local/genomes' && /^\/local\/?$/.test(pathname));
+}
 
 export interface LocalScopeProps {
   children: ReactNode;
@@ -61,6 +67,7 @@ export interface LocalScopeProps {
 
 export function LocalScope({ children }: LocalScopeProps) {
   const bridge = useBridge();
+  const { pathname } = useLocation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const baseUrl = bridge.baseUrl;
   const ping = bridge.ping;
@@ -157,7 +164,10 @@ export function LocalScope({ children }: LocalScopeProps) {
                     <NavLink
                       to={entry.to}
                       className={({ isActive }) =>
-                        cn('rg-nav__item', isActive && 'rg-nav__item--active')
+                        cn(
+                          'rg-nav__item',
+                          isCurrent(entry.to, pathname, isActive) && 'rg-nav__item--active',
+                        )
                       }
                     >
                       {entry.label}

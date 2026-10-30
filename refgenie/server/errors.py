@@ -9,10 +9,10 @@ in exactly one place so the two can never drift.
 Imports nothing from `refgenie.server`, so both consumers can import it without
 a cycle.
 
-Ordering matters. `AssetExistsError` and `NoArchiveError` both subclass
-`PullFailedError`, so `classify_exception` scans an **ordered** list with
+Ordering matters. `AssetExistsError`, `NoArchiveError` and
+`NoSubscriptionsError` all subclass `PullFailedError`, so `classify_exception` scans an **ordered** list with
 `isinstance`, most specific first. A type-keyed dict or a mis-ordered
-`except` chain silently collapses the three into one, which is the exact
+`except` chain silently collapses them into one, which is the exact
 differentiation the pull UI exists to show. `tests/db/test_db.py` pins the
 ordering.
 """
@@ -34,6 +34,7 @@ from refgenie.exceptions import (
     MissingGenomeError,
     MissingRecipeError,
     NoArchiveError,
+    NoSubscriptionsError,
     PullFailedError,
     PullSkipped,
     RecipeExistsError,
@@ -136,10 +137,9 @@ class ErrorCode(StrEnum):
 class WebError(Exception):
     """A failure the web layer synthesizes rather than catches.
 
-    Some outcomes are not exceptions in the library. `rgc.transfer.pull` returns
-    `None` when nothing is subscribed and `build.run` returns `None` when the
-    pipeline failed -- correct for a CLI that prints and exits, useless for a
-    job record that must say what went wrong. Raising one of these carries the
+    Some outcomes are not exceptions in the library. `build.run` returns
+    `None` when the pipeline failed -- correct for a CLI that prints and
+    exits, useless for a job record that must say what went wrong. Raising one of these carries the
     right code through the same classifier as everything else, instead of
     growing a second mapping for "things that were not exceptions".
     """
@@ -175,13 +175,14 @@ _MESSAGE_OVERRIDES: dict[ErrorCode, str] = {
 
 #: (exception type, HTTP status, code), scanned in order with isinstance.
 #:
-#: MOST SPECIFIC FIRST. AssetExistsError and NoArchiveError subclass
+#: MOST SPECIFIC FIRST. AssetExistsError, NoArchiveError and NoSubscriptionsError subclass
 #: PullFailedError; MissingAliasError and the rest subclass RefgenieError.
 #: Reordering this list changes behavior -- it is not a stylistic list.
 _CLASSIFICATION: tuple[tuple[type[BaseException], int, ErrorCode], ...] = (
     # PullFailedError subclasses, before PullFailedError itself
     (AssetExistsError, 409, ErrorCode.ASSET_EXISTS),
     (NoArchiveError, 404, ErrorCode.NO_ARCHIVE),
+    (NoSubscriptionsError, 409, ErrorCode.NO_SUBSCRIPTIONS),
     (PullFailedError, 502, ErrorCode.PULL_FAILED),
     (PullSkipped, 409, ErrorCode.PULL_SKIPPED),
     (ServerCannotServe, 502, ErrorCode.SERVER_CANNOT_SERVE),

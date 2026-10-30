@@ -32,6 +32,7 @@ from tests.helpers import (
     MOCK_MIRROR_URL,
     MOCK_SERVER_URL,
     MockRemoteSource,
+    add_asset_from_files,
     fake_digest,
     make_engine,
     mock_server_client,
@@ -206,6 +207,102 @@ class TestPullFromServer:
             asset_group_name="fasta",
             asset_name="default",
         )
+
+    def test_pull_child_asset_records_its_parent(self, server_client_world, fixtures_path):
+        """Pulling an asset that has a parent succeeds and links the parent locally.
+
+        Regression: ``GET /v4/relationships/{digest}?expand=true`` returned 500
+        for any asset whose parents or children carry seek keys, so every pull
+        of such an asset failed. Both assets here have seek keys, and the
+        relationships call goes through the real server app.
+        """
+        client_rg, server_rg, url = server_client_world
+        genome_digest = server_rg.alias.resolve(GENOME)
+        server_rg.asset_class.add(fixtures_path / "nested_seek_key_asset_class.yaml")
+        client_rg.asset_class.add(fixtures_path / "nested_seek_key_asset_class.yaml")
+
+        parent = server_rg.asset.get(
+            genome_digest=genome_digest, asset_group_name="fasta", asset_name="default"
+        )
+        child = add_asset_from_files(
+            server_rg,
+            rel_dir="child_staging",
+            files=["sub/inner/index.txt"],
+            asset_class_name="nested_seek_key",
+            asset_group_name="nested_seek_key",
+            asset_name="default",
+        )
+        for group in ("fasta", "nested_seek_key"):
+            assert server_rg.asset.seek_key.list_all(genome_digest, group, "default"), (
+                f"the {group} asset must carry seek keys"
+            )
+        server_rg.asset.links.set_parents(
+            genome_digest=genome_digest,
+            asset_group_name="nested_seek_key",
+            asset_name="default",
+            parent_asset_digests=[parent.digest],
+        )
+        server_rg.stage.create(child, server_rg.genome_folder, server_rg.genome_stage_folder)
+
+        common = dict(
+            genome=GenomeAlias(GENOME), force=True, force_large=True, force_server_urls=[url]
+        )
+        assert client_rg.transfer.pull(asset_group_name="fasta", **common) is not None
+        assert client_rg.transfer.pull(asset_group_name="nested_seek_key", **common) is not None
+
+        parents = client_rg.asset.links.parents(
+            genome_digest=genome_digest, asset_group_name="nested_seek_key", asset_name="default"
+        )
+        assert [p.digest for p in parents] == [parent.digest]
+
+    def test_pull_carries_server_non_path_seek_key_values(self, server_client_world, fixtures_path):
+        """A pulled asset keeps the server's string, json and extra seek key values.
+
+        Regression: the client re-derived seek keys from its local asset class,
+        so a declared non-path key failed the pull (it needs a recipe value the
+        client lacks) and undeclared extras, like a recipe's ``version``, were
+        dropped. Group name matches class name because the client takes the
+        class from the server's group name.
+        """
+        import json
+
+        client_rg, server_rg, url = server_client_world
+        genome_digest = server_rg.alias.resolve(GENOME)
+        server_rg.asset_class.add(fixtures_path / "test_asset_class.yaml")
+        client_rg.asset_class.add(fixtures_path / "test_asset_class.yaml")
+        server_values = {
+            "test_version": "1.2.3",
+            "test_metadata": json.dumps({"tool": "bwa", "threads": 4}),
+            "version": "0.7.17",
+        }
+        asset = add_asset_from_files(
+            server_rg,
+            rel_dir="test_staging",
+            files=["{genome}.extension", "{genome}.extension1", "{genome}.extension2"],
+            asset_class_name="test",
+            asset_group_name="test",
+            asset_name="default",
+            custom_seek_keys=server_values,
+        )
+        server_rg.stage.create(asset, server_rg.genome_folder, server_rg.genome_stage_folder)
+
+        assert (
+            client_rg.transfer.pull(
+                genome=GenomeAlias(GENOME),
+                asset_group_name="test",
+                force=True,
+                force_large=True,
+                force_server_urls=[url],
+            )
+            is not None
+        )
+
+        for name, value in server_values.items():
+            assert client_rg.asset.seek(genome_digest, "test", "default", seek_key_name=name) == (
+                value
+            ), f"pulled seek key {name!r} must carry the server's value"
+        local = client_rg.asset.seek(genome_digest, "test", "default", seek_key_name="extension")
+        assert Path(local).is_file()
 
 
 # ===========================================================================
@@ -558,20 +655,29 @@ class TestPullFailures:
         [ValueError("Missing operation ID"), ConnectionError("Connection refused")],
         ids=["value_error", "connection_error"],
     )
-    def test_unreachable_asset_groups_logs_and_returns_none(self, mock_puller, caplog, exc):
+    def test_unreachable_asset_groups_raises_with_reason(self, mock_puller, caplog, exc):
         """When get_asset_groups raises, the single server is exhausted; pull logs
-        the failure and returns None (no other server to fall through to)."""
+        the failure and raises PullFailedError naming that server's reason."""
+        from refgenie.exceptions import NoSubscriptionsError, PullFailedError
+
         client = MagicMock()
         client.get_asset_groups.side_effect = exc
         mock_puller._servers.client.return_value = client
 
-        result = mock_puller.pull(genome=GenomeAlias("testgenome"), asset_group_name="fasta")
-        assert result is None
+        with pytest.raises(PullFailedError) as info:
+            mock_puller.pull(genome=GenomeAlias("testgenome"), asset_group_name="fasta")
+        assert not isinstance(info.value, NoSubscriptionsError)
+        reason = info.value.reasons["http://test-server:5000"]
+        assert "Failed to query asset groups from http://test-server:5000" in reason
+        assert str(exc) in str(info.value)
         assert "Failed to query asset groups from http://test-server:5000" in caplog.text
 
-    def test_unreachable_relationships_logs_and_returns_none(self, mock_puller, caplog):
-        """When the relationships query raises, the server is skipped like any
-        other unreachable query instead of aborting the pull."""
+    def test_unreachable_relationships_raises_with_reason(self, mock_puller, caplog):
+        """When the relationships query raises (a 500 from the server, say), the
+        server is skipped like any other unreachable query, and the failure the
+        caller sees says so rather than blaming the subscriptions."""
+        from refgenie.exceptions import NoSubscriptionsError, PullFailedError
+
         client = MagicMock()
         client.get_asset_groups.return_value = [
             {"id": "group1", "name": "fasta", "genome_digest": "abc123digest"}
@@ -579,12 +685,30 @@ class TestPullFailures:
         client.get_assets.return_value = [
             {"id": "asset1", "name": "default", "digest": "d1", "serving_modes": []}
         ]
-        client.get.side_effect = ConnectionError("Connection refused")
+        client.get.side_effect = RuntimeError("500 Server Error: Internal Server Error")
         mock_puller._servers.client.return_value = client
 
-        result = mock_puller.pull(genome=GenomeAlias("testgenome"), asset_group_name="fasta")
-        assert result is None
+        with pytest.raises(PullFailedError) as info:
+            mock_puller.pull(genome=GenomeAlias("testgenome"), asset_group_name="fasta")
+        assert not isinstance(info.value, NoSubscriptionsError)
+        assert list(info.value.reasons) == ["http://test-server:5000"]
+        assert "Failed to query asset relationships" in str(info.value)
+        assert "500 Server Error" in str(info.value)
         assert "Failed to query asset relationships from http://test-server:5000" in caplog.text
+
+    def test_every_server_reason_is_collected(self, mock_puller):
+        """With two servers failing, both reasons are carried, in order."""
+        from refgenie.exceptions import PullFailedError
+
+        mock_puller._servers.subscriptions.return_value = ["http://a", "http://b"]
+        client = MagicMock()
+        client.get_asset_groups.side_effect = ConnectionError("Connection refused")
+        mock_puller._servers.client.return_value = client
+
+        with pytest.raises(PullFailedError) as info:
+            mock_puller.pull(genome=GenomeAlias("testgenome"), asset_group_name="fasta")
+        assert list(info.value.reasons) == ["http://a", "http://b"]
+        assert "http://a" in str(info.value) and "http://b" in str(info.value)
 
     def test_zero_asset_groups_raises(self, mock_puller):
         """Zero asset groups returned raises PullFailedError."""
@@ -625,18 +749,20 @@ class TestPullFailures:
         mock_puller._genome_manager.ensure_from_remote.return_value = GenomeCreationResult(
             success=False
         )
-        result = mock_puller.pull(genome=GenomeAlias("testgenome"), asset_group_name="fasta")
+        from refgenie.exceptions import PullFailedError
 
-        assert result is None
+        with pytest.raises(PullFailedError, match="Could not resolve genome alias 'testgenome'"):
+            mock_puller.pull(genome=GenomeAlias("testgenome"), asset_group_name="fasta")
+
         assert "Could not resolve genome alias 'testgenome' via server" in caplog.text
         assert "http://test-server:5000" in caplog.text
 
     def test_no_servers_raises(self, mock_puller):
-        """No server subscriptions raises PullFailedError."""
-        from refgenie.exceptions import PullFailedError
+        """No server subscriptions raises NoSubscriptionsError, a PullFailedError."""
+        from refgenie.exceptions import NoSubscriptionsError
 
         mock_puller._servers.subscriptions.return_value = []
-        with pytest.raises(PullFailedError, match="No server subscriptions found"):
+        with pytest.raises(NoSubscriptionsError, match="No server subscriptions found"):
             mock_puller.pull(genome=GenomeAlias("testgenome"), asset_group_name="fasta")
 
 

@@ -24,6 +24,7 @@ __all__ = [
     "MissingStagedAssetError",
     "MissingStoreError",
     "NoArchiveError",
+    "NoSubscriptionsError",
     "PullFailedError",
     "PullSkipped",
     "RecipeExistsError",
@@ -262,9 +263,29 @@ class RemoteDigestMismatchError(RefgenieError):
 
 
 class PullFailedError(RefgenieError):
-    """Pull operation failed."""
+    """Pull operation failed.
 
-    pass
+    ``reasons`` maps each server that was tried to why it could not serve the
+    asset. It is filled in when the puller has run out of servers, and empty
+    for a failure that is not about any one server.
+    """
+
+    def __init__(self, message: str = "", reasons: dict[str, str] | None = None):
+        super().__init__(message)
+        self.reasons: dict[str, str] = dict(reasons or {})
+
+
+class NoSubscriptionsError(PullFailedError):
+    """There is no server to pull from: nothing is subscribed."""
+
+    def __init__(
+        self,
+        message: str = (
+            "No server subscriptions found. Subscribe to a server first "
+            "(refgenie subscribe -s <url>)."
+        ),
+    ):
+        super().__init__(message)
 
 
 class AssetExistsError(PullFailedError):

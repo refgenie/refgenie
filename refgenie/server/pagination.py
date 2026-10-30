@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import Select
 from sqlmodel import Session, SQLModel, func, select
 
-from refgenie.const import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
+from refgenie.const import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE, SQL_BIGINT_MAX
 
 T = TypeVar("T", bound=SQLModel)
 
@@ -36,7 +36,7 @@ class PaginationParams(BaseModel):
     Query parameters for pagination.
     """
 
-    offset: int = Field(default=0, ge=0, description="Number of items to skip")
+    offset: int = Field(default=0, ge=0, le=SQL_BIGINT_MAX, description="Number of items to skip")
     limit: int = Field(
         default=DEFAULT_PAGE_SIZE,
         ge=1,
@@ -111,7 +111,7 @@ def paginate_list(
 
 
 def get_pagination_params(
-    offset: int = Query(0, ge=0, description="Number of items to skip"),
+    offset: int = Query(0, ge=0, le=SQL_BIGINT_MAX, description="Number of items to skip"),
     limit: int = Query(
         DEFAULT_PAGE_SIZE,
         ge=1,

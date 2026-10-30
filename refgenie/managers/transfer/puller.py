@@ -22,11 +22,13 @@ from ubiquerg import untar  # type: ignore
 
 from refgenie import progress
 from refgenie.const import DEFAULT_PULL_SIZE_CUTOFF_GB
+from refgenie.db.tables import SeekKeyType
 from refgenie.exceptions import (
     AssetExistsError,
     MissingAliasError,
     MissingAssetGroupError,
     NoArchiveError,
+    NoSubscriptionsError,
     PullFailedError,
     PullSkipped,
     ServerCannotServe,
@@ -79,6 +81,19 @@ def _provenance_from_server(asset_names: list[dict], name: str) -> "BuildProvena
         # the server's numbering says nothing about the client's.
         recipe_id=None,
     )
+
+
+def _seek_keys_from_server(seek_keys: list[dict] | None) -> dict[str, tuple[str, SeekKeyType]]:
+    """
+    The server's seek key values for an asset, in ``custom_seek_keys`` form.
+
+    A pulled asset must carry what the server recorded rather than re-derive it.
+    Non-path values (``string``, ``json``) came from the building recipe's
+    ``custom_seek_keys``, which the client never sees, and keys the asset class
+    does not declare (a recipe's ``version``) exist only in this list. Path-typed
+    keys the class declares are still matched against the downloaded files.
+    """
+    return {sk["name"]: (sk["value"], SeekKeyType(sk["type"])) for sk in seek_keys or []}
 
 
 def handle_sigint_pull(filepath: Path):
@@ -444,15 +459,27 @@ class AssetPuller(ResourceManager):
             sigint_handler: Signal handler for interrupts during download.
 
         Returns:
-            Asset or None: The added asset, or None if pull failed.
+            Asset or None: The added asset, or None if the pull was
+            deliberately skipped (the user, or ``force=False``, declined to
+            replace existing content).
+
+        Raises:
+            NoSubscriptionsError: There is no server to try.
+            PullFailedError: Every server was tried and none could serve the
+                asset. ``reasons`` holds each server's answer. (A
+                ``NoArchiveError`` when a server said it has no archive.)
         """
         added_asset = None
         last_error = None
+        # Why each server could not serve the asset, in the order tried. A
+        # failed pull reports these: "nothing worked" alone sends the user
+        # looking at their subscriptions when the server said something else.
+        reasons: dict[str, str] = {}
 
         # The caller (TransferManager.pull) handles the subscribe prompt.
         server_urls = force_server_urls or self._servers.subscriptions()
         if not server_urls:
-            raise PullFailedError("No server subscriptions found")
+            raise NoSubscriptionsError()
 
         for server_url in server_urls:
             # Each attempt starts from the caller's request: the attempt's
@@ -475,6 +502,7 @@ class AssetPuller(ResourceManager):
                 # The transaction has already rolled back whatever this attempt
                 # created; move on to the next server.
                 logger.warning(f"Server {server_url} cannot serve this asset: {exc}")
+                reasons[server_url] = str(exc)
                 if exc.final_error is not None:
                     last_error = exc.final_error
                 continue
@@ -488,8 +516,17 @@ class AssetPuller(ResourceManager):
             # for a pull that just succeeded.
             break
 
-        if added_asset is None and last_error:
-            raise last_error
+        if added_asset is None:
+            if last_error is not None:
+                if isinstance(last_error, PullFailedError):
+                    last_error.reasons = reasons
+                raise last_error
+            target = f"{genome}/{asset_group_name}" + (f":{asset_name}" if asset_name else "")
+            raise PullFailedError(
+                f"Could not pull '{target}': no server could serve it. "
+                + " ".join(f"[{url}] {reason}" for url, reason in reasons.items()),
+                reasons=reasons,
+            )
         return added_asset
 
     def _pull_from_server(
@@ -1016,6 +1053,7 @@ class AssetPuller(ResourceManager):
             asset_name=asset_name,
             colocate=colocate_metadata,
             digest=asset_digest,
+            custom_seek_keys=_seek_keys_from_server(asset_metadata.get("seek_keys")),
             build_provenance=_provenance_from_server(asset_names, asset_name),
         )
 

@@ -143,11 +143,12 @@ All paths are relative to the origin. `{braces}` are path parameters.
 | `GET /v4/assets/{asset_digest}/files/{file_path}` | `downloads` | one file, **or a 307 to cloud storage** |
 | `GET /v4/summary` | — | `{genomes, asset_groups, assets}` |
 | `GET /v4/species/summary` | — | per-species `{genomes, asset_classes, assets}` |
-| `GET /v4/ga4gh/drs/service-info` | `drs` | GA4GH DRS service info |
-| `GET /v4/ga4gh/drs/objects/{object_id}` | `drs` | a DRS object |
-| `GET /v4/ga4gh/drs/objects/{object_id}/access/{access_id}` | `drs` | a DRS access URL |
+| `GET /ga4gh/drs/v1/service-info` | `drs` | GA4GH DRS service info |
+| `GET /ga4gh/drs/v1/objects/{object_id}` | `drs` | a DRS object |
+| `GET /ga4gh/drs/v1/objects/{object_id}/access/{access_id}` | `drs` | a DRS access URL |
 
-The DRS routes are also mounted unprefixed at `/ga4gh/drs/...`. The GA4GH
+The DRS routes live at the GA4GH spec path `/ga4gh/drs/v1/...`, not under
+`/v4`. The GA4GH
 sequence-collections service is mounted at `/seqcol` and carries its own
 `/seqcol/service-info`. Neither the seqcol service nor the MCP endpoint appears
 in `/openapi.json`, because both are mounted sub-applications.
@@ -304,13 +305,12 @@ tools. It never modifies anything.
 nothing to install:
 
 ```
-https://api.refgenie.org/mcp/mcp
+https://api.refgenie.org/mcp
 ```
 
-Note the doubled segment: the MCP sub-application is mounted at `/mcp` and
-registers its own `/mcp` route inside itself, so `/mcp/mcp` is the working URL.
-`POST /mcp` answers `405`. **A local `refgenie dash` does not mount MCP at
-all** — check `"mode": "server"` in `/service-info` first.
+Use `/mcp` exactly, with no trailing slash: `/mcp/` and `/mcp/mcp` do not
+work. **A local `refgenie dash` does not mount MCP at all** — check
+`"mode": "server"` in `/service-info` first.
 
 **Over stdio, against the user's own database** — this needs the refgenie
 Python package and the `refgenie-mcp` command it installs:

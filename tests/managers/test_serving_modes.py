@@ -456,7 +456,7 @@ class TestDrsMetadataArchiveMode:
     def test_archive_mode_local_only(self, drs_client_with_assets):
         """Archive asset returns simple object with access_id 'archive', no contents."""
         digest = drs_client_with_assets.digests["archive"]
-        response = drs_client_with_assets.get(f"/ga4gh/drs/objects/{digest}")
+        response = drs_client_with_assets.get(f"/ga4gh/drs/v1/objects/{digest}")
         assert response.status_code == 200
         data = response.json()
 
@@ -479,7 +479,7 @@ class TestDrsMetadataFileMode:
     def test_file_mode_local_only(self, drs_client_with_assets):
         """File asset returns bundle with contents listing files, access_id 'file'."""
         digest = drs_client_with_assets.digests["file"]
-        response = drs_client_with_assets.get(f"/ga4gh/drs/objects/{digest}")
+        response = drs_client_with_assets.get(f"/ga4gh/drs/v1/objects/{digest}")
         assert response.status_code == 200
         data = response.json()
 
@@ -508,7 +508,7 @@ class TestDrsMetadataComboMode:
     def test_combo_mode(self, drs_client_with_assets):
         """Combo asset returns bundle with contents AND both access methods."""
         digest = drs_client_with_assets.digests["combo"]
-        response = drs_client_with_assets.get(f"/ga4gh/drs/objects/{digest}")
+        response = drs_client_with_assets.get(f"/ga4gh/drs/v1/objects/{digest}")
         assert response.status_code == 200
         data = response.json()
 
@@ -530,7 +530,7 @@ class TestDrsMetadataNoneMode:
     def test_none_mode(self, drs_client_with_assets):
         """None asset returns simple object, empty access_methods, null contents."""
         digest = drs_client_with_assets.digests["none"]
-        response = drs_client_with_assets.get(f"/ga4gh/drs/objects/{digest}")
+        response = drs_client_with_assets.get(f"/ga4gh/drs/v1/objects/{digest}")
         assert response.status_code == 200
         data = response.json()
 
@@ -549,7 +549,7 @@ class TestDrsMetadataFileLevel:
         """File-level request returns simple object with file-mode access methods only."""
         digest = drs_client_with_assets.digests["file"]
         object_id = f"{digest}:test.fa"
-        response = drs_client_with_assets.get(f"/ga4gh/drs/objects/{object_id}")
+        response = drs_client_with_assets.get(f"/ga4gh/drs/v1/objects/{object_id}")
         assert response.status_code == 200
         data = response.json()
 
@@ -566,21 +566,21 @@ class TestDrsMetadataFileLevel:
         """File not in StagedAsset.directory_contents returns 404."""
         digest = drs_client_with_assets.digests["file"]
         object_id = f"{digest}:nonexistent.txt"
-        response = drs_client_with_assets.get(f"/ga4gh/drs/objects/{object_id}")
+        response = drs_client_with_assets.get(f"/ga4gh/drs/v1/objects/{object_id}")
         assert response.status_code == 404
 
     def test_file_level_wrong_mode(self, drs_client_with_assets):
         """File-level request on archive-only asset returns 404."""
         digest = drs_client_with_assets.digests["archive"]
         object_id = f"{digest}:archive_file.dat"
-        response = drs_client_with_assets.get(f"/ga4gh/drs/objects/{object_id}")
+        response = drs_client_with_assets.get(f"/ga4gh/drs/v1/objects/{object_id}")
         assert response.status_code == 404
 
     def test_file_level_combo_asset(self, drs_client_with_assets):
         """File-level request on combo asset works (combo supports file mode)."""
         digest = drs_client_with_assets.digests["combo"]
         object_id = f"{digest}:data.bin"
-        response = drs_client_with_assets.get(f"/ga4gh/drs/objects/{object_id}")
+        response = drs_client_with_assets.get(f"/ga4gh/drs/v1/objects/{object_id}")
         assert response.status_code == 200
         data = response.json()
         assert data["name"] == "data.bin"
@@ -598,7 +598,7 @@ class TestDrsChecksumSourcing:
     def test_combo_checksum_is_tarball_digest(self, drs_client_with_assets):
         """Combo bundle advertises the archive tarball digest (its downloadable bytes)."""
         digest = drs_client_with_assets.digests["combo"]
-        response = drs_client_with_assets.get(f"/ga4gh/drs/objects/{digest}")
+        response = drs_client_with_assets.get(f"/ga4gh/drs/v1/objects/{digest}")
         data = response.json()
         assert data["checksums"] == [{"checksum": TARBALL_DIGEST, "type": "sha-256"}]
         assert data["checksums"][0]["checksum"] != digest
@@ -606,7 +606,7 @@ class TestDrsChecksumSourcing:
     def test_file_only_checksum_omitted(self, drs_client_with_assets):
         """File-only asset has no tarball digest -> no checksum advertised."""
         digest = drs_client_with_assets.digests["file"]
-        response = drs_client_with_assets.get(f"/ga4gh/drs/objects/{digest}")
+        response = drs_client_with_assets.get(f"/ga4gh/drs/v1/objects/{digest}")
         data = response.json()
         assert data["checksums"] == []
 
@@ -614,7 +614,7 @@ class TestDrsChecksumSourcing:
         """File-level object (single file) has no per-file byte digest -> omitted."""
         digest = drs_client_with_assets.digests["file"]
         object_id = f"{digest}:test.fa"
-        response = drs_client_with_assets.get(f"/ga4gh/drs/objects/{object_id}")
+        response = drs_client_with_assets.get(f"/ga4gh/drs/v1/objects/{object_id}")
         data = response.json()
         assert data["checksums"] == []
 
@@ -629,7 +629,7 @@ class TestDrsAccessUrl:
     def test_local_archive(self, drs_client_with_assets):
         """/access/archive returns URL ending in /bytes."""
         digest = drs_client_with_assets.digests["archive"]
-        response = drs_client_with_assets.get(f"/ga4gh/drs/objects/{digest}/access/archive")
+        response = drs_client_with_assets.get(f"/ga4gh/drs/v1/objects/{digest}/access/archive")
         assert response.status_code == 200
         data = response.json()
         assert data["url"].endswith("/bytes")
@@ -639,7 +639,7 @@ class TestDrsAccessUrl:
         """/access/file for file-level ID returns URL ending in /bytes."""
         digest = drs_client_with_assets.digests["file"]
         object_id = f"{digest}:test.fa"
-        response = drs_client_with_assets.get(f"/ga4gh/drs/objects/{object_id}/access/file")
+        response = drs_client_with_assets.get(f"/ga4gh/drs/v1/objects/{object_id}/access/file")
         assert response.status_code == 200
         data = response.json()
         assert data["url"].endswith("/bytes")
@@ -647,19 +647,19 @@ class TestDrsAccessUrl:
     def test_remote_no_remote_configured(self, drs_client_with_assets):
         """Remote access_id with no matching remote returns 404."""
         digest = drs_client_with_assets.digests["archive"]
-        response = drs_client_with_assets.get(f"/ga4gh/drs/objects/{digest}/access/s3:1:archive")
+        response = drs_client_with_assets.get(f"/ga4gh/drs/v1/objects/{digest}/access/s3:1:archive")
         assert response.status_code == 404
 
     def test_malformed_access_id(self, drs_client_with_assets):
         """Malformed remote access_id returns 400."""
         digest = drs_client_with_assets.digests["archive"]
-        response = drs_client_with_assets.get(f"/ga4gh/drs/objects/{digest}/access/s3:bad")
+        response = drs_client_with_assets.get(f"/ga4gh/drs/v1/objects/{digest}/access/s3:bad")
         assert response.status_code == 400
 
     def test_unknown_access_id(self, drs_client_with_assets):
         """Completely unknown access_id returns 404."""
         digest = drs_client_with_assets.digests["archive"]
-        response = drs_client_with_assets.get(f"/ga4gh/drs/objects/{digest}/access/bogus")
+        response = drs_client_with_assets.get(f"/ga4gh/drs/v1/objects/{digest}/access/bogus")
         assert response.status_code == 404
 
 
@@ -693,7 +693,7 @@ class TestRemoteRedirects:
 
     def test_drs_lists_one_method_per_pushed_https_link(self, pushed_combo_client):
         c = pushed_combo_client
-        methods = c.get(f"/ga4gh/drs/objects/{c.digest}").json()["access_methods"]
+        methods = c.get(f"/ga4gh/drs/v1/objects/{c.digest}").json()["access_methods"]
         remote = {m["access_id"]: m["access_url"]["url"] for m in methods if ":" in m["access_id"]}
         assert set(remote) == {f"https:{c.https.id}:archive", f"https:{c.https.id}:file"}
         assert remote[f"https:{c.https.id}:archive"] == (
@@ -703,7 +703,7 @@ class TestRemoteRedirects:
 
     def test_drs_access_url_for_remote(self, pushed_combo_client):
         c = pushed_combo_client
-        base = f"/ga4gh/drs/objects/{c.digest}/access"
+        base = f"/ga4gh/drs/v1/objects/{c.digest}/access"
         resp = c.get(f"{base}/https:{c.https.id}:archive")
         assert resp.status_code == 200
         assert resp.json()["url"] == f"{CDN}/{GENOME_DIGEST}/combo_asset/{c.digest}.tgz"
@@ -735,7 +735,9 @@ class TestDrsBytes:
     def test_archive_bytes(self, drs_client_with_assets):
         """/access/archive/bytes returns tarball."""
         digest = drs_client_with_assets.digests["archive"]
-        response = drs_client_with_assets.get(f"/ga4gh/drs/objects/{digest}/access/archive/bytes")
+        response = drs_client_with_assets.get(
+            f"/ga4gh/drs/v1/objects/{digest}/access/archive/bytes"
+        )
         assert response.status_code == 200
         assert response.headers.get("content-type") in (
             "application/gzip",
@@ -747,7 +749,7 @@ class TestDrsBytes:
         digest = drs_client_with_assets.digests["file"]
         object_id = f"{digest}:test.fa"
         response = drs_client_with_assets.get(
-            f"/ga4gh/drs/objects/{object_id}/access/file/bytes",
+            f"/ga4gh/drs/v1/objects/{object_id}/access/file/bytes",
             follow_redirects=False,
         )
         assert response.status_code == 307
@@ -756,14 +758,14 @@ class TestDrsBytes:
     def test_file_bytes_requires_filename(self, drs_client_with_assets):
         """/access/file/bytes without file_path in object_id returns 400."""
         digest = drs_client_with_assets.digests["file"]
-        response = drs_client_with_assets.get(f"/ga4gh/drs/objects/{digest}/access/file/bytes")
+        response = drs_client_with_assets.get(f"/ga4gh/drs/v1/objects/{digest}/access/file/bytes")
         assert response.status_code == 400
 
     def test_rejects_remote_access_id(self, drs_client_with_assets):
         """/access/s3:1:archive/bytes returns 400."""
         digest = drs_client_with_assets.digests["archive"]
         response = drs_client_with_assets.get(
-            f"/ga4gh/drs/objects/{digest}/access/s3:1:archive/bytes"
+            f"/ga4gh/drs/v1/objects/{digest}/access/s3:1:archive/bytes"
         )
         assert response.status_code == 400
 
@@ -844,19 +846,19 @@ class TestDrsPublicationGate:
     """Every DRS byte-serving/access-URL route, and the v4 siblings they
     redirect or delegate to, refuse to serve a mode with no StagedAsset row."""
 
-    @pytest.mark.parametrize("prefix", ["/ga4gh/drs", "/v4/ga4gh/drs"])
+    @pytest.mark.parametrize("prefix", ["/ga4gh/drs/v1"])
     def test_orphan_archive_access_url_404(self, drs_client_publication, prefix):
         c = drs_client_publication
         digest = c.digests["orphan"]
         assert c.get(f"{prefix}/objects/{digest}/access/archive").status_code == 404
 
-    @pytest.mark.parametrize("prefix", ["/ga4gh/drs", "/v4/ga4gh/drs"])
+    @pytest.mark.parametrize("prefix", ["/ga4gh/drs/v1"])
     def test_orphan_archive_bytes_404(self, drs_client_publication, prefix):
         c = drs_client_publication
         digest = c.digests["orphan"]
         assert c.get(f"{prefix}/objects/{digest}/access/archive/bytes").status_code == 404
 
-    @pytest.mark.parametrize("prefix", ["/ga4gh/drs", "/v4/ga4gh/drs"])
+    @pytest.mark.parametrize("prefix", ["/ga4gh/drs/v1"])
     def test_orphan_remote_access_url_404(self, drs_client_publication, prefix):
         """A pushed remote link for an unpublished mode is not honored either."""
         c = drs_client_publication
@@ -864,7 +866,7 @@ class TestDrsPublicationGate:
         url = f"{prefix}/objects/{digest}/access/https:{c.remote.id}:archive"
         assert c.get(url).status_code == 404
 
-    @pytest.mark.parametrize("prefix", ["/ga4gh/drs", "/v4/ga4gh/drs"])
+    @pytest.mark.parametrize("prefix", ["/ga4gh/drs/v1"])
     def test_orphan_metadata_lists_no_access_methods(self, drs_client_publication, prefix):
         c = drs_client_publication
         digest = c.digests["orphan"]
@@ -876,13 +878,13 @@ class TestDrsPublicationGate:
         digest = c.digests["orphan"]
         assert c.get(f"/v4/archives/{digest}/download").status_code == 404
 
-    @pytest.mark.parametrize("prefix", ["/ga4gh/drs", "/v4/ga4gh/drs"])
+    @pytest.mark.parametrize("prefix", ["/ga4gh/drs/v1"])
     def test_metadata_only_archive_url_404(self, drs_client_publication, prefix):
         c = drs_client_publication
         digest = c.digests["none"]
         assert c.get(f"{prefix}/objects/{digest}/access/archive").status_code == 404
 
-    @pytest.mark.parametrize("prefix", ["/ga4gh/drs", "/v4/ga4gh/drs"])
+    @pytest.mark.parametrize("prefix", ["/ga4gh/drs/v1"])
     def test_metadata_only_file_url_404(self, drs_client_publication, prefix):
         """File-level id so the 400 (missing file_path) rule doesn't shadow
         the 404 (mode not served) rule."""
@@ -890,31 +892,31 @@ class TestDrsPublicationGate:
         object_id = f"{c.digests['none']}:metadata.txt"
         assert c.get(f"{prefix}/objects/{object_id}/access/file").status_code == 404
 
-    @pytest.mark.parametrize("prefix", ["/ga4gh/drs", "/v4/ga4gh/drs"])
+    @pytest.mark.parametrize("prefix", ["/ga4gh/drs/v1"])
     def test_metadata_only_archive_bytes_404(self, drs_client_publication, prefix):
         c = drs_client_publication
         digest = c.digests["none"]
         assert c.get(f"{prefix}/objects/{digest}/access/archive/bytes").status_code == 404
 
-    @pytest.mark.parametrize("prefix", ["/ga4gh/drs", "/v4/ga4gh/drs"])
+    @pytest.mark.parametrize("prefix", ["/ga4gh/drs/v1"])
     def test_metadata_only_file_bytes_404(self, drs_client_publication, prefix):
         c = drs_client_publication
         object_id = f"{c.digests['none']}:metadata.txt"
         assert c.get(f"{prefix}/objects/{object_id}/access/file/bytes").status_code == 404
 
-    @pytest.mark.parametrize("prefix", ["/ga4gh/drs", "/v4/ga4gh/drs"])
+    @pytest.mark.parametrize("prefix", ["/ga4gh/drs/v1"])
     def test_file_only_archive_url_404(self, drs_client_publication, prefix):
         c = drs_client_publication
         digest = c.digests["file"]
         assert c.get(f"{prefix}/objects/{digest}/access/archive").status_code == 404
 
-    @pytest.mark.parametrize("prefix", ["/ga4gh/drs", "/v4/ga4gh/drs"])
+    @pytest.mark.parametrize("prefix", ["/ga4gh/drs/v1"])
     def test_file_only_archive_bytes_404(self, drs_client_publication, prefix):
         c = drs_client_publication
         digest = c.digests["file"]
         assert c.get(f"{prefix}/objects/{digest}/access/archive/bytes").status_code == 404
 
-    @pytest.mark.parametrize("prefix", ["/ga4gh/drs", "/v4/ga4gh/drs"])
+    @pytest.mark.parametrize("prefix", ["/ga4gh/drs/v1"])
     def test_file_only_file_url_200(self, drs_client_publication, prefix):
         c = drs_client_publication
         object_id = f"{c.digests['file']}:test.fa"
@@ -922,20 +924,20 @@ class TestDrsPublicationGate:
         assert response.status_code == 200
         assert response.json()["url"].endswith("/bytes")
 
-    @pytest.mark.parametrize("prefix", ["/ga4gh/drs", "/v4/ga4gh/drs"])
+    @pytest.mark.parametrize("prefix", ["/ga4gh/drs/v1"])
     def test_file_only_missing_file_404(self, drs_client_publication, prefix):
         c = drs_client_publication
         object_id = f"{c.digests['file']}:missing.txt"
         assert c.get(f"{prefix}/objects/{object_id}/access/file").status_code == 404
         assert c.get(f"{prefix}/objects/{object_id}/access/file/bytes").status_code == 404
 
-    @pytest.mark.parametrize("prefix", ["/ga4gh/drs", "/v4/ga4gh/drs"])
+    @pytest.mark.parametrize("prefix", ["/ga4gh/drs/v1"])
     def test_file_only_no_file_path_400(self, drs_client_publication, prefix):
         c = drs_client_publication
         digest = c.digests["file"]
         assert c.get(f"{prefix}/objects/{digest}/access/file").status_code == 400
 
-    @pytest.mark.parametrize("prefix", ["/ga4gh/drs", "/v4/ga4gh/drs"])
+    @pytest.mark.parametrize("prefix", ["/ga4gh/drs/v1"])
     def test_valid_archive_url_200(self, drs_client_publication, prefix):
         c = drs_client_publication
         digest = c.digests["archive"]
@@ -943,7 +945,7 @@ class TestDrsPublicationGate:
         assert response.status_code == 200
         assert response.json()["url"].endswith("/bytes")
 
-    @pytest.mark.parametrize("prefix", ["/ga4gh/drs", "/v4/ga4gh/drs"])
+    @pytest.mark.parametrize("prefix", ["/ga4gh/drs/v1"])
     def test_valid_archive_bytes_200(self, drs_client_publication, prefix):
         c = drs_client_publication
         digest = c.digests["archive"]
@@ -951,7 +953,7 @@ class TestDrsPublicationGate:
         assert response.status_code == 200
         assert response.content == TARBALL_BYTES
 
-    @pytest.mark.parametrize("prefix", ["/ga4gh/drs", "/v4/ga4gh/drs"])
+    @pytest.mark.parametrize("prefix", ["/ga4gh/drs/v1"])
     def test_valid_archive_file_url_404(self, drs_client_publication, prefix):
         """File-level id so the 400 (missing file_path) rule doesn't shadow
         the 404 (mode not served) rule -- this asset serves archive only."""
@@ -959,7 +961,7 @@ class TestDrsPublicationGate:
         object_id = f"{c.digests['archive']}:whatever"
         assert c.get(f"{prefix}/objects/{object_id}/access/file").status_code == 404
 
-    @pytest.mark.parametrize("prefix", ["/ga4gh/drs", "/v4/ga4gh/drs"])
+    @pytest.mark.parametrize("prefix", ["/ga4gh/drs/v1"])
     def test_stale_archive_bytes_404(self, drs_client_publication, prefix):
         """StagedAsset(archive) row exists, but the class serves file only."""
         c = drs_client_publication
@@ -973,13 +975,13 @@ class TestDrsPublicationGate:
         assert c.digests["stale"] not in listed
         assert c.digests["orphan"] not in listed
 
-    @pytest.mark.parametrize("prefix", ["/ga4gh/drs", "/v4/ga4gh/drs"])
+    @pytest.mark.parametrize("prefix", ["/ga4gh/drs/v1"])
     def test_metadata_only_file_object_metadata_404(self, drs_client_publication, prefix):
         c = drs_client_publication
         object_id = f"{c.digests['none']}:metadata.txt"
         assert c.get(f"{prefix}/objects/{object_id}").status_code == 404
 
-    @pytest.mark.parametrize("prefix", ["/ga4gh/drs", "/v4/ga4gh/drs"])
+    @pytest.mark.parametrize("prefix", ["/ga4gh/drs/v1"])
     def test_remote_file_access_url_points_at_file(self, drs_client_publication, prefix):
         c = drs_client_publication
         object_id = f"{c.digests['file']}:test.fa"
@@ -987,7 +989,7 @@ class TestDrsPublicationGate:
         assert resp.status_code == 200
         assert resp.json()["url"].endswith("/test.fa")
 
-    @pytest.mark.parametrize("prefix", ["/ga4gh/drs", "/v4/ga4gh/drs"])
+    @pytest.mark.parametrize("prefix", ["/ga4gh/drs/v1"])
     def test_file_object_remote_method_points_at_file(self, drs_client_publication, prefix):
         c = drs_client_publication
         object_id = f"{c.digests['file']}:test.fa"
@@ -1001,19 +1003,19 @@ class TestDrsPublicationGate:
         digest = c.digests["stale"]
         assert c.get(f"/v4/archives/{digest}/download").status_code == 404
 
-    @pytest.mark.parametrize("prefix", ["/ga4gh/drs", "/v4/ga4gh/drs"])
+    @pytest.mark.parametrize("prefix", ["/ga4gh/drs/v1"])
     def test_bad_remote_mode_400(self, drs_client_publication, prefix):
         c = drs_client_publication
         digest = c.digests["archive"]
         assert c.get(f"{prefix}/objects/{digest}/access/https:1:bogus").status_code == 400
 
-    @pytest.mark.parametrize("prefix", ["/ga4gh/drs", "/v4/ga4gh/drs"])
+    @pytest.mark.parametrize("prefix", ["/ga4gh/drs/v1"])
     def test_remote_mode_none_400(self, drs_client_publication, prefix):
         c = drs_client_publication
         digest = c.digests["archive"]
         assert c.get(f"{prefix}/objects/{digest}/access/https:1:none").status_code == 400
 
-    @pytest.mark.parametrize("prefix", ["/ga4gh/drs", "/v4/ga4gh/drs"])
+    @pytest.mark.parametrize("prefix", ["/ga4gh/drs/v1"])
     def test_remote_bad_id_400(self, drs_client_publication, prefix):
         c = drs_client_publication
         digest = c.digests["archive"]
@@ -1031,6 +1033,6 @@ class TestDrsSpecCompliance:
     def test_self_uri_uses_drs_scheme(self, drs_client_with_assets):
         """self_uri uses drs:// scheme."""
         digest = drs_client_with_assets.digests["archive"]
-        response = drs_client_with_assets.get(f"/ga4gh/drs/objects/{digest}")
+        response = drs_client_with_assets.get(f"/ga4gh/drs/v1/objects/{digest}")
         data = response.json()
         assert data["self_uri"].startswith("drs://")

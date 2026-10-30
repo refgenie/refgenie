@@ -626,6 +626,7 @@ refgenie init
 | `-f, --genome-folder` | Absolute path to the parent folder for refgenie-managed assets. |
 | `-a, --genome-stage-folder` | Absolute path to the parent stage folder for refgenie-managed assets; used by refgenieserver. |
 | `-v, --config-version` | Config version to initialize the config file with. |
+| `--no-default-server` | Start with no server subscriptions. Without it, a new configuration subscribes to `https://api.refgenie.org` (no network access at init). `REFGENIE_SUBSCRIBE_DEFAULT_SERVER=false` does the same. |
 
 #### `purge`
 

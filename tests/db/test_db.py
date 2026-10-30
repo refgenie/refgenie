@@ -38,6 +38,7 @@ from refgenie.exceptions import (
     MissingGenomeError,
     MissingRecipeError,
     NoArchiveError,
+    NoSubscriptionsError,
     PullFailedError,
     PullSkipped,
     RefgenieError,
@@ -386,10 +387,10 @@ class TestSubscribe:
 # ---------------------------------------------------------------------------
 # The one exception classifier: `refgenie.server.errors.classify_exception`
 #
-# The trap this section pins: `AssetExistsError` and `NoArchiveError` both
-# subclass `PullFailedError`, so the classifier's isinstance scan must be
-# ordered most specific first. A type-keyed dict or a mis-ordered `except`
-# chain silently collapses the three into one code, destroying exactly the
+# The trap this section pins: `AssetExistsError`, `NoArchiveError` and
+# `NoSubscriptionsError` all subclass `PullFailedError`, so the classifier's
+# isinstance scan must be ordered most specific first. A type-keyed dict or a mis-ordered `except`
+# chain silently collapses them into one code, destroying exactly the
 # differentiation the pull UI exists to show.
 # ---------------------------------------------------------------------------
 
@@ -404,6 +405,11 @@ class TestClassificationOrdering:
     def test_no_archive_is_not_collapsed_into_pull_failed(self):
         status, code, _ = classify_exception(NoArchiveError("no archive on server"))
         assert (status, code) == (404, ErrorCode.NO_ARCHIVE)
+
+    def test_no_subscriptions_is_not_collapsed_into_pull_failed(self):
+        status, code, message = classify_exception(NoSubscriptionsError())
+        assert (status, code) == (409, ErrorCode.NO_SUBSCRIPTIONS)
+        assert "subscribe" in message.lower()
 
     def test_plain_pull_failure_is_pull_failed(self):
         status, code, _ = classify_exception(PullFailedError("download died"))

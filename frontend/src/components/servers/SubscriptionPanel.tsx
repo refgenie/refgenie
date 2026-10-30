@@ -1,5 +1,5 @@
 /**
- * Server subscriptions.
+ * Server subscriptions: the body of the Servers page.
  *
  * The list and the reachability badge both come from `/v1/remote/servers`,
  * which the browse UI already probes — probing again from here would double the
@@ -7,7 +7,8 @@
  *
  * The add and remove affordances themselves live in `components/actions`,
  * because the Remote page's server picker offers the same two operations right
- * next to the list it is already showing.
+ * next to the list it is already showing. Both self-gate on `subscriptions`, so
+ * inside the bridge's read-only `/local` scope this renders the list alone.
  */
 
 import { useRemoteServers } from '../../hooks/queries/useRemote';
@@ -20,7 +21,12 @@ import { EmptyState } from '../common/states';
 import type { Column } from '../common/DataTable';
 import type { RemoteServer } from '../../types/api';
 
-export function SubscriptionPanel() {
+export interface SubscriptionPanelProps {
+  /** Prefill the subscribe form, from the page's `?subscribe=` parameter. */
+  prefillUrl?: string;
+}
+
+export function SubscriptionPanel({ prefillUrl }: SubscriptionPanelProps) {
   const canWrite = useCapability('subscriptions');
   const servers = useRemoteServers();
 
@@ -70,7 +76,15 @@ export function SubscriptionPanel() {
         empty={<EmptyState message="No servers subscribed. Remote browse and pull need one." />}
       />
 
-      <SubscribeForm knownUrls={rows.map((server) => server.url)} allowReset />
+      <SubscribeForm
+        // Keyed on the prefill so following a second "subscribe" link while on
+        // this page replaces the field instead of keeping the first URL.
+        key={prefillUrl ?? ''}
+        knownUrls={rows.map((server) => server.url)}
+        allowReset
+        initialUrl={prefillUrl}
+        autoFocus={!!prefillUrl}
+      />
     </section>
   );
 }

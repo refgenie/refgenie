@@ -16,13 +16,14 @@ from refgenie.config.db import (
     dump_db_config,
     load_db_config,
 )
-from refgenie.const import TARGET_ALEMBIC_VERSION
+from refgenie.const import DEFAULT_SERVER_URL, TARGET_ALEMBIC_VERSION
 from refgenie.db.migrations.utils import run_sql_migrations
 from refgenie.db.tables import AlembicVersion, Configuration
 from refgenie.exceptions import DatabaseMigrationError
 from refgenie.logger import logger
 from refgenie.managers.base import ResourceManager
 from refgenie.managers.configuration import ConfigurationManager
+from refgenie.managers.sources.genomes import normalize_server_url
 from refgenie.utils.prompt import Confirmer, resolve_confirmer
 
 
@@ -117,14 +118,24 @@ class DatabaseManager(ResourceManager):
         genome_folder: Path | None = None,
         genome_stage_folder: Path | None = None,
         config_version: int | None = None,
+        subscribe_default_server: bool | None = None,
     ) -> bool:
         """
         Initialize refgenie backend and configuration.
+
+        A new configuration is subscribed to ``DEFAULT_SERVER_URL`` so the
+        first pull works without a separate ``refgenie subscribe``. Only the
+        URL is recorded; nothing is fetched. An already-initialized backend
+        keeps its subscriptions untouched.
 
         Args:
             genome_folder: The path to the genome folder, where the assets files are stored.
             genome_stage_folder: The path to the stage folder, where the genome staged assets are stored.
             config_version: Configuration row version (defaults to 1).
+            subscribe_default_server: Subscribe a new configuration to
+                ``DEFAULT_SERVER_URL``. None defers to
+                ``config.subscribe_default_server``
+                (``REFGENIE_SUBSCRIBE_DEFAULT_SERVER``, default true).
 
         Returns:
             bool: True if the backend is initialized, False if the Configuration
@@ -154,10 +165,14 @@ class DatabaseManager(ResourceManager):
             if session.exec(select(Configuration)).first() is not None:
                 logger.debug("refgenie backend already initialized; skipping Configuration insert")
                 return True
+            if subscribe_default_server is None:
+                subscribe_default_server = config.subscribe_default_server
+            servers = [normalize_server_url(DEFAULT_SERVER_URL)] if subscribe_default_server else []
             session.add(
                 Configuration(
                     genome_folder=resolved_genome_folder.as_posix(),
                     version=config_version or 1,
+                    servers=servers,
                     genome_stage_folder=(
                         resolved_stage_folder.as_posix() if resolved_stage_folder else None
                     ),
@@ -173,6 +188,8 @@ class DatabaseManager(ResourceManager):
                 logger.debug(e)
                 session.rollback()
                 return False
+        if servers:
+            logger.info(f"Subscribed to the default server: {servers[0]}")
         return True
 
     def _current_alembic_revision(self) -> str | None:

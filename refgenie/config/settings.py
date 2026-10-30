@@ -34,3 +34,6 @@ class RefgenieConfig(BaseModel):
     disable_plugins: str = ""
     #: `REFGENIE_SERVER_PLUGINS`: run plugins in server mode too.
     server_plugins: bool = False
+    #: `REFGENIE_SUBSCRIBE_DEFAULT_SERVER`: subscribe a newly created
+    #: configuration to the default server (https://api.refgenie.org).
+    subscribe_default_server: bool = True

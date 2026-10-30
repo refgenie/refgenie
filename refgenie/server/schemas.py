@@ -89,7 +89,16 @@ class SeekKeyResponse(BaseModel):
 
     ``value`` is the path relative to the asset directory for path-typed seek
     keys, and the literal value for ``string`` / ``json`` types.
+
+    ``from_attributes`` is required because this model is filled from ``SeekKey``
+    ORM rows nested in ``AssetResponse``. SQLModel sets it on ``AssetResponse``
+    itself, but a model's config does not reach a plain-``BaseModel`` field: a
+    bare ``AssetResponse.model_validate(asset)`` rejects the rows without it.
+    FastAPI's ``response_model`` path passes ``from_attributes=True`` per call,
+    which is why only a direct ``model_validate`` exposed the gap.
     """
+
+    model_config = ConfigDict(from_attributes=True)
 
     name: str
     value: str
@@ -105,10 +114,10 @@ class AssetNameResponse(BaseModel):
     content and share one ``Asset``, and each gets its own name row. All-null
     provenance means the name records no build.
 
-    ``from_attributes`` is required here and not on ``SeekKeyResponse``:
-    ``Asset.names`` is a plain property, so it validates through pydantic's
-    generic path rather than SQLModel's relationship handling, which supplies
-    the setting itself.
+    ``from_attributes`` is required for the same reason as on
+    ``SeekKeyResponse``: this model is filled from ``AssetName`` ORM rows (via
+    the ``Asset.names`` property), and the setting on the enclosing SQLModel
+    does not reach it.
     """
 
     model_config = ConfigDict(from_attributes=True)

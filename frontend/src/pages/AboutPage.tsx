@@ -84,11 +84,11 @@ export function AboutPage() {
     });
   }
   if (config.capabilities.drs) {
-    // Mounted at /ga4gh/drs (and /v4/ga4gh/drs) in refgenie/server/main.py.
-    // There is no /v1 segment: /ga4gh/drs/v1/service-info is a 404.
+    // Mounted only at /ga4gh/drs/v1 in refgenie/server/main.py, the path the
+    // GA4GH DRS spec requires.
     endpoints.push({
       label: 'GA4GH DRS service info',
-      path: '/ga4gh/drs/service-info',
+      path: '/ga4gh/drs/v1/service-info',
       kind: 'json',
     });
   }

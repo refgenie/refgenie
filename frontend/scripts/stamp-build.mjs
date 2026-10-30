@@ -38,18 +38,29 @@ function run(cmd) {
   }
 }
 
+// The Docker build has no .git in its context, so deploy-api.yml passes the
+// commit in as a build arg, which the Dockerfile exposes as this env var.
+const BUILD_COMMIT = process.env.REFGENIE_BUILD_COMMIT || null;
+
 function readCommit() {
-  // CI sets GITHUB_SHA; a local build falls back to git, and finally to
-  // 'unknown' rather than failing the build over provenance metadata.
-  return process.env.GITHUB_SHA ?? run('git rev-parse HEAD') ?? 'unknown';
+  // CI sets GITHUB_SHA; a Docker build sets REFGENIE_BUILD_COMMIT; a local
+  // build falls back to git, and finally to 'unknown' rather than failing the
+  // build over provenance metadata.
+  return (
+    BUILD_COMMIT ?? process.env.GITHUB_SHA ?? run('git rev-parse HEAD') ?? 'unknown'
+  );
 }
 
 function readDirty() {
-  // No git available (e.g. a source tarball with no .git) reads as dirty:
-  // provenance cannot be verified, so --require-fresh must reject it, not
-  // silently pass it.
   const status = run('git status --porcelain frontend');
-  return status === null || status.length > 0;
+  if (status === null) {
+    // No git available. A Docker build given REFGENIE_BUILD_COMMIT built a
+    // plain checkout of that commit, so it is clean. Anything else (e.g. a
+    // source tarball with no .git) reads as dirty: provenance cannot be
+    // verified, so --require-fresh must reject it, not silently pass it.
+    return BUILD_COMMIT === null;
+  }
+  return status.length > 0;
 }
 
 function main() {

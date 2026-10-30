@@ -518,10 +518,9 @@ class TestSharedReadonlyStores:
         from tests.helpers import make_server_client
 
         rg, human, phage = self._served(tmp_path, fixtures_path)
-        # Not raising: the endpoint-hit middleware reads the host app's state
-        # from scope["app"], which a mount replaces, so it errors after every
-        # /seqcol response has been sent. The responses themselves are fine.
-        with make_server_client(rg, raise_server_exceptions=False) as client:
+        # Raising (the default): the endpoint-hit middleware runs after every
+        # /seqcol response, and must not error inside a mounted sub-app.
+        with make_server_client(rg) as client:
             mounts = self._mounts(client.app)
             router = rg.store_router
             for path, name in (("/seqcol", "jungle"), ("/seqcol/vgp", "vgp")):
@@ -559,3 +558,8 @@ class TestSharedReadonlyStores:
             cmp = client.get(f"/seqcol/comparison/{human}/{human}")
             assert cmp.status_code == 200
             assert cmp.json()["digests"]["a"] == human
+
+            # Mounted seqcol hits are counted under the host app's collector.
+            collector = client.app.state.endpoint_hits_collector
+            assert collector.get_total_hits("collection") == 2
+            assert collector.get_total_hits("compare_2_digests") == 1

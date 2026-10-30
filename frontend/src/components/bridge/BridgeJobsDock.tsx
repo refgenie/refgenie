@@ -14,7 +14,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ExternalLink } from '../common/ExternalLink';
 import { Icon } from '../common/Icon';
+import { DEFAULT_SERVER_URL, localServersUrl } from '../servers/links';
 import { JobProgress } from '../jobs/JobProgress';
 import { JobStatusPill } from '../jobs/JobStatusPill';
 import { cn } from '../../utils/cn';
@@ -23,7 +25,10 @@ import { useBridgeJobEntries, useBridgeJobPolling } from '../../hooks/useBridgeJ
 import { isActiveEntry, useBridgeJobStore } from '../../stores/bridgeJobStore';
 import type { BridgeJobEntry } from '../../stores/bridgeJobStore';
 
-function BridgeJobCard({ entry }: { entry: BridgeJobEntry }) {
+/** Failures fixed by subscribing, which only the local dash itself may do. */
+const SUBSCRIPTION_ERRORS = new Set(['no_subscriptions', 'server_not_subscribed']);
+
+function BridgeJobCard({ entry, localBaseUrl }: { entry: BridgeJobEntry; localBaseUrl: string | null }) {
   const dismiss = useBridgeJobStore((state) => state.dismiss);
   const job = entry.job;
   const status = job?.status ?? 'queued';
@@ -65,7 +70,19 @@ function BridgeJobCard({ entry }: { entry: BridgeJobEntry }) {
           )}
         </p>
       ) : status === 'failed' ? (
-        <p className="rg-job-card__note">{job?.error?.message ?? 'The pull failed.'}</p>
+        <p className="rg-job-card__note">
+          {job?.error?.message ?? 'The pull failed.'}
+          {localBaseUrl && job?.error?.code && SUBSCRIPTION_ERRORS.has(job.error.code) && (
+            <>
+              {' '}
+              <ExternalLink
+                href={localServersUrl(localBaseUrl, entry.serverUrl ?? DEFAULT_SERVER_URL)}
+              >
+                Subscribe on your local refgenie
+              </ExternalLink>
+            </>
+          )}
+        </p>
       ) : (
         <p className="rg-job-card__note">The pull was cancelled.</p>
       )}
@@ -149,7 +166,7 @@ export function BridgeJobsDock() {
       {!collapsed && (
         <div className="rg-job-console__body">
           {entries.map((entry) => (
-            <BridgeJobCard key={entry.id} entry={entry} />
+            <BridgeJobCard key={entry.id} entry={entry} localBaseUrl={bridge.baseUrl} />
           ))}
         </div>
       )}

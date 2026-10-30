@@ -93,6 +93,7 @@ If a pull fails (e.g., network error, asset not found on server), refgenie logs 
 Common issues:
 
 - **"No local digest for genome alias"**: The genome alias is not yet known locally. Refgenie will attempt to resolve it with the server automatically, or you can use `--init`.
+- **"No server subscriptions found"**: Your configuration subscribes to no server (it was created with `--no-default-server`, or you unsubscribed). Run `refgenie subscribe -s https://api.refgenie.org`, or use the **Servers** page of `refgenie dash`.
 - **Server unreachable**: Verify your server subscription with `refgenie config get` and check your network connection.
 - **Asset not found**: Use `refgenie listr` to verify the asset exists on the server.
 

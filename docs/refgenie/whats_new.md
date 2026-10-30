@@ -26,7 +26,7 @@ See [Serving modes](serving_modes.md) and [Configure remote storage](remotes.md)
 
 ### Upgraded genome identifiers
 
-Legacy refgenie tracked genomes by arbitrary names, so the same assembly could go by different labels and its contents were never verified. Genomes and sequences are now identified by their GA4GH content digest, with human-readable aliases like `hg38` layered on top. Identity is reproducible, and identical sequences are stored only once. The alias system supports both local (RefgetStore-based) and server-side (SQL) backends, so aliases resolve consistently across environments.
+Early legacy refgenie identified genomes by user-chosen names. Version 0.10 switched to sequence-derived genome digests with aliases mapped to them, but those digests came from a pre-standard sequence-collection scheme that no other tool computes. Genomes and sequences are now identified by their standard GA4GH sequence collection (seqcol) and refget digests, with human-readable aliases like `hg38` layered on top. Identity is reproducible, and identical sequences are stored only once. The alias system supports both local (RefgetStore-based) and server-side (SQL) backends, so aliases resolve consistently across environments.
 
 See [Manage aliases](alias.md).
 

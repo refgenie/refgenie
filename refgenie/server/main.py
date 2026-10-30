@@ -1,7 +1,7 @@
 try:
     # the following imports are only included in extras 'dash'
     import uvicorn
-    from fastapi import FastAPI
+    from fastapi import Depends, FastAPI
     from fastapi.middleware.cors import CORSMiddleware
 except ImportError as e:
     raise ImportError(
@@ -12,6 +12,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from refgenie.server.dependencies import get_refgenie as _get_refgenie
+from refgenie.server.dependencies import reject_nul_bytes
 from refgenie.server.routers.catalog import router as refgenie_core_router
 from refgenie.core import Refgenie
 from refget.router import create_refget_router, setup_backend
@@ -335,9 +336,10 @@ def create_app(
         scheduler.start()
         logger.info(f"Server startup finished in {time.monotonic() - startup:.1f}s")
         # Start the MCP StreamableHTTP session manager's task group. The /mcp
-        # route comes from a separate Starlette app (below), whose lifespan never
-        # runs here -- same reason the seqcol backend is bound from this lifespan. Use the per-app instance captured
-        # at setup time: the module-level MCP server is a singleton, and every
+        # streamable app is mounted as a sub-application (below), and mounted
+        # sub-apps do not receive lifespan events -- same reason the seqcol
+        # backend is bound from this lifespan. Use the per-app instance captured
+        # at mount time: the module-level MCP server is a singleton, and every
         # streamable_http_app() call overwrites its .session_manager, so reading
         # it here would race across app instances; .run() is also once-per-manager.
         # Without this, every /mcp request fails with "Task group is not initialized".
@@ -357,6 +359,7 @@ def create_app(
         openapi_tags=LOCAL_TAGS_METADATA if is_local else SERVER_TAGS_METADATA,
         swagger_ui_parameters={"docExpansion": "none", "defaultModelsExpandDepth": 0},
         root_path=root_path,
+        dependencies=[Depends(reject_nul_bytes)],
     )
     app.state.mode = mode
 
@@ -425,8 +428,7 @@ def create_app(
 
         from refgenie.server.routers.ga4gh_drs import router as ga4gh_drs
 
-        app.include_router(ga4gh_drs, prefix="/v4/ga4gh/drs", tags=["GA4GH DRS"])
-        app.include_router(ga4gh_drs, prefix="/ga4gh/drs", tags=["GA4GH DRS"])
+        app.include_router(ga4gh_drs, prefix="/ga4gh/drs/v1", tags=["GA4GH DRS"])
 
         from refgenie.server.routers.data_channel import router as data_channel
 
@@ -628,9 +630,7 @@ def create_app(
         # module-singleton server; capture it now, before another create_app() call
         # can overwrite the singleton's reference.
         app.state.mcp_session_manager = mcp_server.session_manager
-        # Add the sub-app's route (at its default path, /mcp) to this app directly.
-        # Mounting the sub-app at /mcp would serve the endpoint at /mcp/mcp.
-        app.router.routes.extend(mcp_app.routes)
+        app.mount("/mcp", mcp_app)
 
     # LAST: the catch-all that serves the SPA and deep-links its client routes.
     mount_spa(app, web_dist)

@@ -36,10 +36,11 @@ AppMode = Literal["server", "local"]
 #   http://localhost:{port}/genomes/{digest}
 #   http://localhost:{port}/genomes/{digest}/{assetDigest}
 #   http://localhost:{port}/pull?server={remoteApiBase}&genome={digest}&asset_group={name}
+#   http://localhost:{port}/servers?subscribe={serverUrl}
 #
-# The /pull entry lands on a prefilled, UNSUBMITTED pull confirmation. It must
-# never auto-execute from a URL: that would recreate the CSRF hole the
-# X-Refgenie-Action header closes.
+# The /pull and /servers entries land on a prefilled, UNSUBMITTED form (a pull
+# confirmation; a subscribe form). Neither may ever auto-execute from a URL:
+# that would recreate the CSRF hole the X-Refgenie-Action header closes.
 SPA_CLIENT_ROUTES: tuple[str, ...] = (
     "genomes",
     "species",
@@ -56,6 +57,7 @@ SPA_CLIENT_ROUTES: tuple[str, ...] = (
     "local",
     "remote",
     "manage",
+    "servers",
     "jobs",
     "build",
     "pull",

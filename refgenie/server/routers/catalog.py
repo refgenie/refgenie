@@ -3,7 +3,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import selectinload
 from sqlmodel import Session, select
 
-from refgenie.server.dependencies import get_db_session, get_refgenie
+from refgenie.server.dependencies import DbId, get_db_session, get_refgenie
 from refgenie.server.errors import ErrorCode
 from refgenie.server.routers import helpers
 from refgenie.exceptions import MissingAliasError
@@ -223,7 +223,7 @@ def list_asset_groups(
     genome_digest: str | None = Query(None, description="The genome digest"),
     asset_class: str | None = Query(None, description="The asset class"),
     asset_group_name: str | None = Query(None, description="The asset group name"),
-    asset_group_id: int | None = Query(None, description="The asset group ID"),
+    asset_group_id: DbId | None = Query(None, description="The asset group ID"),
     search: SearchParams = Depends(get_search_params),
     pagination: PaginationParams = Depends(get_pagination_params),
     session: Session = Depends(get_db_session),
@@ -260,7 +260,7 @@ def list_asset_groups(
 
 
 @router.get("/asset_groups/{id}", response_model=AssetGroupPublic)
-def get_asset_group(id: int, session: Session = Depends(get_db_session)):
+def get_asset_group(id: DbId, session: Session = Depends(get_db_session)):
     asset_group = session.exec(select(AssetGroup).where(AssetGroup.id == id)).unique().one_or_none()
     if not asset_group:
         raise HTTPException(status_code=404, detail=f"Asset group {id} not found")
@@ -298,7 +298,7 @@ def list_assets(
     recipe_name: str | None = Query(
         None, description="The recipe name that was used to create the asset"
     ),
-    asset_group_id: int | None = Query(None, description="The asset group ID to filter assets by"),
+    asset_group_id: DbId | None = Query(None, description="The asset group ID to filter assets by"),
     search: SearchParams = Depends(get_search_params),
     pagination: PaginationParams = Depends(get_pagination_params),
     session: Session = Depends(get_db_session),
@@ -331,18 +331,26 @@ def list_assets(
     # Apply exact-match filters first. Names live in the assetname table, so a
     # ``name`` filter resolves through it -- this is what lets a client pull by
     # a non-canonical name.
+    #
+    # Every join names its ON clause, and assetgroup is joined at most once.
+    # asset_group_id, asset_group_name and genome_digest all filter through
+    # assetgroup: joining it once per filter put the table in FROM twice
+    # ("ambiguous column name"), and a bare join(Recipe) after assetname is in
+    # the FROM has two foreign-key paths to pick from. Both were 500s.
     if name:
         query = query.join(AssetName, AssetName.asset_digest == Asset.digest).where(
             AssetName.name == name
         )
+    if asset_group_id or asset_group_name or genome_digest:
+        query = query.join(AssetGroup, AssetGroup.id == Asset.asset_group_id)
     if asset_group_id:
-        query = query.join(AssetGroup).where(AssetGroup.id == asset_group_id)
+        query = query.where(AssetGroup.id == asset_group_id)
     if asset_group_name:
-        query = query.join(AssetGroup).where(AssetGroup.name == asset_group_name)
+        query = query.where(AssetGroup.name == asset_group_name)
     if genome_digest:
-        query = query.join(AssetGroup).join(Genome).where(Genome.digest == genome_digest)
+        query = query.where(AssetGroup.genome_digest == genome_digest)
     if recipe_name:
-        query = query.join(Recipe).where(Recipe.name == recipe_name)
+        query = query.join(Recipe, Recipe.id == Asset.recipe_id).where(Recipe.name == recipe_name)
 
     # Apply search functionality
     searchable_columns = ["name", "digest", "path"]
@@ -400,7 +408,7 @@ def list_asset_classes(
 
 
 @router.get("/asset_classes/{id}", response_model=AssetClassPublic)
-def get_asset_class(id: int, session: Session = Depends(get_db_session)):
+def get_asset_class(id: DbId, session: Session = Depends(get_db_session)):
     asset_class = session.exec(select(AssetClass).where(AssetClass.id == id)).unique().one_or_none()
     if not asset_class:
         raise HTTPException(status_code=404, detail=f"Asset class {id} not found")
@@ -445,7 +453,7 @@ def list_recipes(
 
 
 @router.get("/recipes/{id}", response_model=RecipePublic)
-def get_recipe(id: int, session: Session = Depends(get_db_session)):
+def get_recipe(id: DbId, session: Session = Depends(get_db_session)):
     query = select(Recipe).where(Recipe.id == id)
     recipe = session.exec(query).unique().one_or_none()
     if not recipe:
@@ -462,7 +470,7 @@ def list_configurations(
 
 
 @router.get("/configurations/{id}", response_model=ConfigurationPublic)
-def get_configuration(id: int, session: Session = Depends(get_db_session)):
+def get_configuration(id: DbId, session: Session = Depends(get_db_session)):
     configuration = (
         session.exec(select(Configuration).where(Configuration.id == id)).unique().one_or_none()
     )
@@ -499,7 +507,7 @@ def list_staged_assets(
 
 
 @router.get("/staged_assets/{id}", response_model=StagedAssetPublic)
-def get_staged_asset(id: int, session: Session = Depends(get_db_session)):
+def get_staged_asset(id: DbId, session: Session = Depends(get_db_session)):
     staged = session.get(StagedAsset, id)
     if not staged:
         raise HTTPException(status_code=404, detail=f"Staged asset {id} not found")
@@ -526,10 +534,20 @@ def get_asset_relationships(
         session.exec(
             select(Asset)
             .options(
-                selectinload(Asset.parents).selectinload(Asset.asset_group),
-                selectinload(Asset.children).selectinload(Asset.asset_group),
-                selectinload(Asset.parents).selectinload(Asset.asset_names),
-                selectinload(Asset.children).selectinload(Asset.asset_names),
+                # Everything AssetResponse reads off a relative when expand=true:
+                # asset_group -> asset_class (serving_modes, asset_class_name),
+                # asset_names (names, is_default) and seek_keys.
+                *(
+                    option
+                    for rel in (Asset.parents, Asset.children)
+                    for option in (
+                        selectinload(rel)
+                        .selectinload(Asset.asset_group)
+                        .selectinload(AssetGroup.asset_class),
+                        selectinload(rel).selectinload(Asset.asset_names),
+                        selectinload(rel).selectinload(Asset.seek_keys),
+                    )
+                )
             )
             .where(Asset.digest == asset_digest)
         )
@@ -544,8 +562,13 @@ def get_asset_relationships(
         # AssetResponse (not AssetPublic) is the wire shape for an asset: it
         # carries the resolved serving_modes, the asset class name and the
         # asset's other names, which a client needs to decide how to pull it.
-        parents = [AssetResponse.model_validate(parent) for parent in asset.parents]
-        children = [AssetResponse.model_validate(child) for child in asset.children]
+        # from_attributes=True matches what FastAPI's response_model path does.
+        parents = [
+            AssetResponse.model_validate(parent, from_attributes=True) for parent in asset.parents
+        ]
+        children = [
+            AssetResponse.model_validate(child, from_attributes=True) for child in asset.children
+        ]
     else:
         # For non-expanded, just return digests
         parents = (

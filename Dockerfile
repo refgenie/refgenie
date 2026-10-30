@@ -10,6 +10,11 @@ COPY frontend/package.json frontend/package-lock.json ./frontend/
 RUN cd frontend && npm ci
 COPY frontend ./frontend
 COPY pyproject.toml ./
+# The build context has no .git, so the commit comes in as a build arg
+# (deploy-api.yml passes github.sha) for the build-info.json stamp. Left
+# unset, the stamp reports commit "unknown" and dirty true.
+ARG REFGENIE_BUILD_COMMIT=""
+ENV REFGENIE_BUILD_COMMIT=${REFGENIE_BUILD_COMMIT}
 # Writes /build/refgenie/server/webui/ (index.html, hashed _app/*, build-info.json).
 RUN cd frontend && npm run build
 

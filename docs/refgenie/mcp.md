@@ -6,13 +6,19 @@ The MCP server is read-only -- it can query genomes, assets, recipes, and sequen
 
 !!! info "Prerequisites"
 
-    - You have refgenie installed (`pip install refgenie`)
+    - You have refgenie installed with the `mcp` extra, which provides the `mcp` package that `refgenie-mcp` needs (`pip install --pre "refgenie[mcp]"`; the `server` extra also includes it)
     - You have a refgenie database initialized with at least one genome
     - You have an MCP-compatible AI client (Claude Desktop, Claude Code, etc.)
 
 ## Configure your AI client
 
 The MCP server runs as a local process using stdio transport. You point your AI client at the `refgenie-mcp` command, and it handles the rest.
+
+The `refgenie-mcp` command is installed with every refgenie install, but it only runs if the `mcp` extra is installed. Without it, `refgenie-mcp` exits with an import error. Install the extra first:
+
+```console
+pip install --pre "refgenie[mcp]"
+```
 
 ### Claude Code
 

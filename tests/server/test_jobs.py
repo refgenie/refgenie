@@ -54,6 +54,7 @@ from refgenie.exceptions import (  # noqa: E402
     MissingBuildInputError,
     MissingRecipeError,
     NoArchiveError,
+    NoSubscriptionsError,
     PullFailedError,
     PullSkipped,
 )
@@ -515,15 +516,43 @@ class TestPullErrors:
         record = run_job("pull", RUNNER_PULL, rgc)
         assert fragment in record.error.message.lower()
 
-    def test_returning_none_is_no_subscriptions(self, run_job):
-        """``pull`` returns None when nothing is subscribed and the subscribe
-        prompt was declined -- which, from a job, it always is."""
+    def test_no_subscriptions_is_no_subscriptions(self, run_job):
+        """Nothing subscribed (and, from a job, the subscribe offer is always
+        declined): the puller raises NoSubscriptionsError."""
         rgc = MagicMock()
-        rgc.transfer.pull.return_value = None
+        rgc.transfer.pull.side_effect = NoSubscriptionsError()
         record = run_job("pull", RUNNER_PULL, rgc)
         assert record.status == JobStatus.FAILED
         assert record.error.code == ErrorCode.NO_SUBSCRIPTIONS
         assert "subscribe" in record.error.message.lower()
+
+    def test_server_errors_are_pull_failed_with_the_reasons(self, run_job):
+        """Subscribed, but every server failed: PULL_FAILED, never
+        NO_SUBSCRIPTIONS, and each server's reason reaches the record."""
+        reason = (
+            "Failed to query asset relationships from http://mock-server: "
+            "500 Server Error: Internal Server Error"
+        )
+        rgc = MagicMock()
+        rgc.transfer.pull.side_effect = PullFailedError(
+            f"Could not pull 'test_genome/fasta': no server could serve it. "
+            f"[http://mock-server] {reason}",
+            reasons={"http://mock-server": reason},
+        )
+        record = run_job("pull", RUNNER_PULL, rgc)
+        assert record.status == JobStatus.FAILED
+        assert record.error.code == ErrorCode.PULL_FAILED
+        assert "500 Server Error" in record.error.message
+        assert "http://mock-server" in record.error.message
+
+    def test_returning_none_is_a_skip(self, run_job):
+        """``pull`` returns None only when the pull was deliberately skipped;
+        that is a cancellation, not a missing subscription."""
+        rgc = MagicMock()
+        rgc.transfer.pull.return_value = None
+        record = run_job("pull", RUNNER_PULL, rgc)
+        assert record.status == JobStatus.CANCELLED
+        assert record.error.code == ErrorCode.PULL_SKIPPED
 
 
 class TestPullSuccess:

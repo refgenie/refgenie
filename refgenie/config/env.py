@@ -35,6 +35,10 @@ REFGENIE_SERVER_PLUGINS = os.environ.get("REFGENIE_SERVER_PLUGINS", "false").low
     "true",
     "yes",
 )
+# Whether a newly created configuration subscribes to the default server.
+REFGENIE_SUBSCRIBE_DEFAULT_SERVER = os.environ.get(
+    "REFGENIE_SUBSCRIBE_DEFAULT_SERVER", "true"
+).lower() not in ("0", "false", "no")
 
 config = RefgenieConfig(
     log_level=REFGENIE_LOG_LEVEL,
@@ -43,6 +47,7 @@ config = RefgenieConfig(
     database_config_path=REFGENIE_DB_CONFIG_PATH,
     disable_plugins=REFGENIE_DISABLE_PLUGINS,
     server_plugins=REFGENIE_SERVER_PLUGINS,
+    subscribe_default_server=REFGENIE_SUBSCRIBE_DEFAULT_SERVER,
 )
 
 # Legacy env-var migration warning.

@@ -182,8 +182,8 @@ class TestStoreBackedServing:
         assert "array_elements" in data
 
     def test_drs_service_info(self, store_backed_server):
-        """GET /ga4gh/drs/service-info responds in store-backed mode."""
-        resp = httpx.get(f"{store_backed_server['url']}/ga4gh/drs/service-info", timeout=30)
+        """GET /ga4gh/drs/v1/service-info responds in store-backed mode."""
+        resp = httpx.get(f"{store_backed_server['url']}/ga4gh/drs/v1/service-info", timeout=30)
         assert resp.status_code == 200
         data = resp.json()
         assert data["type"]["artifact"] == "drs"

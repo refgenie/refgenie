@@ -9,7 +9,6 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCapability } from '../hooks/useCapability';
 import { MiniHero } from '../components/layout/MiniHero';
-import { SubscriptionPanel } from '../components/manage/SubscriptionPanel';
 import { DataChannelPanel } from '../components/manage/DataChannelPanel';
 import { AliasPanel } from '../components/manage/AliasPanel';
 import { AssetClassPanel, RecipePanel } from '../components/manage/RecipePanel';
@@ -44,9 +43,14 @@ export function ManagePage() {
         title="Manage"
         lede={
           <>
-            Settings for this refgenie install: which servers it pulls from, which names point
-            at which genomes, and which recipes and asset classes it has registered. Registering
-            a new recipe or asset class is still a command-line operation.
+            Settings for this refgenie install: its data channels, which names point at which
+            genomes, and which recipes and asset classes it has registered. Registering a new
+            recipe or asset class is still a command-line operation. The servers it pulls from
+            are on the{' '}
+            <Link className="rg-link" to="/servers">
+              Servers
+            </Link>{' '}
+            page.
           </>
         }
         actions={
@@ -70,7 +74,6 @@ export function ManagePage() {
       />
 
       <div className="flex flex-col gap-8 max-w-screen-lg mx-auto w-full">
-        <SubscriptionPanel />
         <DataChannelPanel />
         <AliasPanel />
         <RecipePanel />

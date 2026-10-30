@@ -4,7 +4,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from refgenie.const import DEFAULT_SERVER_URL
-from refgenie.exceptions import MissingAliasError
+from refgenie.exceptions import MissingAliasError, NoSubscriptionsError
 from refgenie.logger import logger
 from refgenie.managers.sources.servers import estimate_pull_size
 from refgenie.models import GenomeAlias, GenomeDigest
@@ -109,14 +109,20 @@ class TransferManager:
                 has enabled interactive prompts; see `refgenie.utils.prompt`.
 
         Returns:
-            Asset or None: The added asset, or None if pull failed.
+            Asset or None: The added asset, or None if the pull was
+            deliberately skipped (existing content and no ``force``).
+
+        Raises:
+            NoSubscriptionsError: Nothing is subscribed and the offer to
+                subscribe to the default server was declined.
+            PullFailedError: No server could serve the asset; ``reasons``
+                says why, per server.
         """
         # Check for subscriptions before pulling (subscribe prompt lives here, not in AssetPuller)
         if not force_server_urls and not self._servers.subscriptions():
             logger.error("No server subscriptions found")
             if not resolve_confirmer(confirm)("Would you like to subscribe to the default server?"):
-                logger.info("Skipping pull")
-                return None
+                raise NoSubscriptionsError()
             self._servers.subscribe([DEFAULT_SERVER_URL])
 
         return self._puller.pull(

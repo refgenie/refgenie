@@ -24,6 +24,8 @@ refgenie init
 
 This will create a default configuration in your home directory under `.refgenie/` and set up a local SQLite database. You can override the default locations and database settings using environment variables (see below).
 
+A new configuration is subscribed to the default server, `https://api.refgenie.org`, so your first `refgenie pull` (or a pull from `refgenie dash`) works right away. Init only records the address; it does not contact the server. To start with no subscriptions, run `refgenie init --no-default-server`, or set `REFGENIE_SUBSCRIBE_DEFAULT_SERVER=false`. Running `refgenie init` again on an existing configuration never changes its subscriptions.
+
 ## Environment Variables
 
 Refgenie supports the following environment variables for configuration:
@@ -35,6 +37,7 @@ Refgenie supports the following environment variables for configuration:
 | `REFGENIE_GENOME_FOLDER`      | `$REFGENIE_HOME_PATH/genomes`           | Directory for genome assets                                  |
 | `REFGENIE_GENOME_ARCHIVE_FOLDER` | `$REFGENIE_HOME_PATH/archives`        | Directory for asset archives                                 |
 | `REFGENIE_DB_CONFIG_PATH`     | `$REFGENIE_HOME_PATH/refgenie_db_config.yaml` | Path to the database config YAML file (see next section to learn more about the schema) |
+| `REFGENIE_SUBSCRIBE_DEFAULT_SERVER` | `true`                            | Subscribe a newly created configuration to `https://api.refgenie.org`. Set to `false` to start with no subscriptions. |
 
 You can set these variables in your shell before running refgenie, for example:
 
@@ -103,7 +106,7 @@ For most individual users or small labs, SQLite is sufficient. For production, c
 ## Local and Remote Configuration
 
 - **Local mode**: All assets and metadata are managed on your local machine using the configured database and folders.
-- **Remote mode**: You can subscribe to remote refgenie servers to pull assets or use remote seek functionality. Use the CLI or Python API to add server subscriptions:
+- **Remote mode**: You can subscribe to remote refgenie servers to pull assets or use remote seek functionality. A new configuration already subscribes to `https://api.refgenie.org`. Use the CLI, the Python API, or the **Servers** page of `refgenie dash` to add or remove server subscriptions:
 
 ```bash
 refgenie subscribe http://refgenomes.databio.org

@@ -27,6 +27,12 @@ describe('JOB_ERROR_PRESENTATION', () => {
     expect(presentation.note).toBeTruthy();
   });
 
+  it('sends both subscription failures to the subscribe form', () => {
+    for (const code of ['no_subscriptions', 'server_not_subscribed']) {
+      expect(presentJobError({ code, message: 'x' }).action?.id, code).toBe('subscribe_server');
+    }
+  });
+
   it('falls through to the message plus a disclosure for an unknown code', () => {
     const presentation = presentJobError({ code: 'brand_new_code', message: 'Boom' });
     expect(presentation.headline).toBe('Boom');

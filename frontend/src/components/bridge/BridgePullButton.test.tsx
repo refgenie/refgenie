@@ -221,5 +221,11 @@ describe('BridgePullButton', () => {
       `${BRIDGE_ORIGIN}/pull?server=${encodeURIComponent('https://api.refgenie.org')}` +
         `&genome=${GENOME}&asset_group=fasta&asset=default`,
     );
+    // Subscribing stays on the local origin: a link to its prefilled form.
+    const subscribe = screen.getByRole('link', { name: /subscribe to this server locally/i });
+    expect(subscribe).toHaveAttribute(
+      'href',
+      `${BRIDGE_ORIGIN}/servers?subscribe=${encodeURIComponent('https://api.refgenie.org')}`,
+    );
   });
 });

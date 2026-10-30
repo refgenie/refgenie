@@ -1,10 +1,14 @@
 /**
  * Subscribe to a refgenie server.
  *
- * It lives in `actions/` because two surfaces need it: the Manage page's
+ * It lives in `actions/` because two surfaces need it: the Servers page's
  * subscription panel, and the Remote page's server picker — where a user with
  * no subscriptions actually lands, and where a form beats a sentence naming a
  * CLI command.
+ *
+ * `initialUrl` prefills the field without submitting: the Servers page passes
+ * the `?subscribe=` URL that a failed pull links to. A URL never subscribes on
+ * its own; the user still clicks Subscribe.
  *
  * `subscribe` writes the config, it does not probe: an unreachable URL still
  * subscribes, and the reachability badge on the list is what tells the truth
@@ -33,6 +37,10 @@ export interface SubscribeFormProps {
   label?: string;
   /** The URL that was just subscribed to, for a caller that selects it. */
   onSubscribed?: (url: string) => void;
+  /** Prefill the field (never submitted on its own). */
+  initialUrl?: string;
+  /** Focus the field on mount: set when the user arrived to subscribe. */
+  autoFocus?: boolean;
 }
 
 function isValidUrl(value: string): boolean {
@@ -49,6 +57,8 @@ export function SubscribeForm({
   allowReset = false,
   label = 'Subscribe to a server',
   onSubscribed,
+  initialUrl = '',
+  autoFocus = false,
 }: SubscribeFormProps) {
   const canSubscribe = useCapability('subscriptions');
   const client = useLocalApiClient();
@@ -56,7 +66,7 @@ export function SubscribeForm({
   const inputId = useId();
   const resetId = useId();
 
-  const [url, setUrl] = useState('');
+  const [url, setUrl] = useState(initialUrl);
   const [reset, setReset] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -109,6 +119,7 @@ export function SubscribeForm({
           type="url"
           value={url}
           placeholder="https://refgenomes.databio.org"
+          autoFocus={autoFocus}
           onChange={(event) => {
             setUrl(event.target.value);
             setError(null);

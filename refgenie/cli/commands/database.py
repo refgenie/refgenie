@@ -22,6 +22,11 @@ class InitModel(BaseModel):
         description="Config version to initialize the config file with.",
         validation_alias=AliasChoices("v", "config-version"),
     )
+    default_server: bool = Field(
+        default=True,
+        description="Subscribe a new configuration to the default server "
+        "(https://api.refgenie.org). Use --no-default-server to start with no subscriptions.",
+    )
 
 
 class PurgeModel(BaseModel):
@@ -39,6 +44,8 @@ def handle_init(cmd, refgenie) -> None:
         genome_folder=cmd.genome_folder,
         genome_stage_folder=cmd.genome_stage_folder,
         config_version=cmd.config_version or CURRENT_CONFIG_VERSION,
+        # The flag only opts out; otherwise REFGENIE_SUBSCRIBE_DEFAULT_SERVER decides.
+        subscribe_default_server=None if cmd.default_server else False,
     )
 
 

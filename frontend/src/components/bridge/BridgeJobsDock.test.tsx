@@ -110,6 +110,51 @@ describe('BridgeJobsDock', () => {
     expect(screen.getByText('Failed')).toBeInTheDocument();
   });
 
+  it('links a not-subscribed failure to the local prefilled subscribe form', async () => {
+    useBridgeStore.getState().setConnected(ping, 8080, BRIDGE_ORIGIN);
+    useBridgeJobStore.getState().track({
+      id: 'job-1',
+      instanceId: 'instance-1',
+      label: 'fasta/default',
+      genomeDigest: 'g1',
+      assetGroupName: 'fasta',
+      assetName: 'default',
+      serverUrl: 'https://example.org',
+      submittedAt: '2026-10-27T00:00:00Z',
+    });
+    server.use(
+      http.get(`${BRIDGE_ORIGIN}/v1/jobs/job-1`, () =>
+        HttpResponse.json(
+          makeJob({
+            id: 'job-1',
+            status: 'failed',
+            error: {
+              code: 'server_not_subscribed',
+              message: 'not subscribed',
+              detail: null,
+              field: null,
+            },
+          }),
+        ),
+      ),
+    );
+    renderWithProviders(<BridgeJobsDock />, { config: serverConfig });
+    const link = await screen.findByRole('link', { name: /subscribe on your local refgenie/i });
+    expect(link).toHaveAttribute(
+      'href',
+      `${BRIDGE_ORIGIN}/servers?subscribe=${encodeURIComponent('https://example.org')}`,
+    );
+  });
+
+  it('offers no subscribe link for other failures', async () => {
+    useBridgeStore.getState().setConnected(ping, 8080, BRIDGE_ORIGIN);
+    track('job-1');
+    serveJob('job-1', ['failed']);
+    renderWithProviders(<BridgeJobsDock />, { config: serverConfig });
+    expect((await screen.findAllByText('disk full')).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('link', { name: /subscribe on your local refgenie/i })).toBeNull();
+  });
+
   it('marks a job the local refgenie no longer knows as lost and stops polling it', async () => {
     useBridgeStore.getState().setConnected(ping, 8080, BRIDGE_ORIGIN);
     track('job-1');

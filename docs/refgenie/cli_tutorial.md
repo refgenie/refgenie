@@ -71,7 +71,7 @@ database_config_path: /home/user/.refgenie/refgenie_db_config.yaml
 
 ## Step 4: Subscribe to a Server
 
-To download pre-built assets, subscribe to a remote refgenie server:
+To download pre-built assets, you need to subscribe to a remote refgenie server. `refgenie init` already subscribed you to the default server, `https://api.refgenie.org`, so you can skip this step unless you want another server. To add one:
 
 ```bash
 refgenie subscribe http://refgenomes.databio.org

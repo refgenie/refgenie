@@ -10,7 +10,9 @@
  * never auto-executes, here or anywhere. The same deep link is offered when
  * the local side refuses the pull with `server_not_subscribed`: a bridge page
  * may only pull from servers the user subscribed to, so any other server has
- * to be confirmed on the local origin.
+ * to be confirmed on the local origin. Alongside it goes a link to the local
+ * dash's Servers page with that server prefilled, for a user who would rather
+ * subscribe once than confirm every pull.
  *
  * The job runs on a machine `jobStore` does not manage, so it is deliberately
  * not registered there and `usePullAction` is not reused. It is registered in
@@ -30,6 +32,7 @@ import { useToast } from '../../hooks/useToast';
 import { absoluteServerRoot } from '../../services/instanceLinks';
 import { createBridgeClients } from '../../services/bridge/client';
 import { pullAsset } from '../../services/actions';
+import { localServersUrl } from '../servers/links';
 import { ApiError } from '../../services/http';
 import { isActiveEntry, useBridgeJobStore } from '../../stores/bridgeJobStore';
 
@@ -120,6 +123,7 @@ export function BridgePullButton({
         genomeDigest,
         assetGroupName,
         assetName: assetName ?? null,
+        serverUrl: remoteBase,
         submittedAt: new Date().toISOString(),
       });
     } catch (error) {
@@ -174,6 +178,17 @@ export function BridgePullButton({
           title="Opens your local refgenie with this pull prefilled (nothing runs until you confirm there)."
         >
           {compact ? 'Open locally' : 'Open in local refgenie'}
+        </ExternalLink>
+      )}
+      {needsLocalConfirm && (
+        // Subscribing is same-origin only, so this is a link to the local
+        // dash's prefilled form, never a request from this page.
+        <ExternalLink
+          className="rg-btn rg-btn--sm"
+          href={localServersUrl(baseUrl, remoteBase)}
+          title="Opens your local refgenie's Servers page with this server filled in (nothing changes until you click Subscribe there)."
+        >
+          {compact ? 'Subscribe locally' : 'Subscribe to this server locally'}
         </ExternalLink>
       )}
     </span>

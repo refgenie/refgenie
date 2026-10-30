@@ -177,8 +177,8 @@ refgenie-mcp
 With the server running, interactive API docs are at `/docs` and the OpenAPI
 document is at `/openapi.json`. `/SKILL.md` is the same API written for an AI
 assistant; it ships in the web UI bundle (`frontend/public/SKILL.md`), so both
-modes serve it. The HTTP MCP endpoint is at `/mcp/mcp` — the sub-application is
-mounted at `/mcp` and registers its own `/mcp` route inside itself.
+modes serve it. The HTTP MCP endpoint (Streamable HTTP transport) is at `/mcp`.
+Only `refgenie serve` mounts it; `refgenie dash` does not.
 
 `refgenie dash` and `refgenie serve` are the same application in two modes: the
 same JSON API under `/v4`, the same web UI, and a local-only command surface

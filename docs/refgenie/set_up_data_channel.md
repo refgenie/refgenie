@@ -84,9 +84,9 @@ docker_image: docker.io/myorg/my-indexer:latest
 command_templates:
   - my-indexer build {{values.files["fasta"]}} -o {{values.output_folder}}/{{values.genome_digest}}.idx
   - my-indexer meta {{values.output_folder}}/{{values.genome_digest}}.idx > {{values.output_folder}}/{{values.genome_digest}}.meta
-custom_properties:
+custom_seek_keys:
   version: "my-indexer --version | head -1"
-default_asset: "my-indexer-{{values.custom_properties.version}}"
+default_asset: "my-indexer-{{values.custom_seek_keys.version}}"
 ```
 
 For more details, see [Recipe specification](recipe_specification.md).

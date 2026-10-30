@@ -32,6 +32,7 @@ import { PullPage } from '../pages/PullPage';
 import { AboutPage } from '../pages/AboutPage';
 import { BuildPage } from '../pages/BuildPage';
 import { ManagePage } from '../pages/ManagePage';
+import { ServersPage } from '../pages/ServersPage';
 import { JobsPage } from '../pages/JobsPage';
 import { LoadingState } from '../components/common/states';
 import { LocalScope } from '../components/bridge/LocalScope';
@@ -123,6 +124,9 @@ function localRoutes(config: UiConfig): RouteObject[] {
       errorElement: <RouteErrorPage />,
     },
     { path: 'local/aliases', element: scoped(<AliasesPage />), errorElement: <RouteErrorPage /> },
+    // The subscription list (GET /v1/remote/servers) is bridge-readable;
+    // subscribing is not, so the page links to the local dash for that.
+    { path: 'local/servers', element: scoped(<ServersPage />), errorElement: <RouteErrorPage /> },
     // Job history is a read of GET /v1/jobs; cancel stays masked off.
     { path: 'local/jobs', element: scoped(<JobsPage />), errorElement: <RouteErrorPage /> },
   ];
@@ -132,6 +136,9 @@ function managedRoutes(capabilities: Partial<Capabilities>): RouteObject[] {
   const routes: RouteObject[] = [];
   if (capabilities.build) {
     routes.push({ path: 'build', element: <BuildPage />, errorElement: <RouteErrorPage /> });
+  }
+  if (capabilities.subscriptions || capabilities.remote_browse) {
+    routes.push({ path: 'servers', element: <ServersPage />, errorElement: <RouteErrorPage /> });
   }
   if (
     capabilities.subscriptions ||
@@ -215,6 +222,7 @@ export const SPA_CLIENT_ROUTES = [
   '/local',
   '/remote',
   '/manage',
+  '/servers',
   '/jobs',
   '/build',
   '/pull',

@@ -34,9 +34,11 @@ a **Browse local** link to your local genomes, and a **Disconnect** button
 that forgets the connection.
 
 Your local data is browsable under **Browse local** (or the card on the home
-page): genomes, species, asset classes, recipes, aliases, and the history of
-jobs your local refgenie has run. These views are read-only and always carry
-a "local refgenie" banner.
+page): genomes, species, asset classes, recipes, aliases, the servers your
+local refgenie subscribes to, and the history of jobs it has run. These views
+are read-only and always carry a "local refgenie" banner. To subscribe to a
+server, the **Servers** view links to the same page on your local dashboard,
+where you confirm it.
 
 A pull you start with **Pull to my refgenie** is tracked in a small
 **Pulls to your local refgenie** panel at the bottom of the page. It keeps
@@ -64,7 +66,10 @@ or persistently with the environment variable `REFGENIE_BRIDGE_MODE`.
 
 Even under `full`, only pull is available cross-origin, and only from a
 server your refgenie subscribes to. For any other server, the page offers
-"Open in local refgenie" so you can confirm the pull there. Deleting assets,
+"Open in local refgenie" so you can confirm the pull there, and a link to
+your local dashboard's **Servers** page with that server filled in, so you
+can subscribe to it once. Subscribing itself is never available
+cross-origin. Deleting assets,
 managing aliases, building, and every other state change can only be done
 from the local dashboard itself (`http://localhost:8080`) — the remote page
 links you there instead.

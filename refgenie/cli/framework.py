@@ -100,8 +100,9 @@ class CleanHelpCliSource(CliSettingsSource):
 
     # Boolean fields whose auto-generated `--no-<leaf>` negation is a documented,
     # user-facing flag and must NOT be hidden from help. (e.g. `genome init`
-    # builds the fasta asset by default; `--no-build` opts out.)
-    _KEEP_NEGATION_LEAVES = frozenset({"build"})
+    # builds the fasta asset by default; `--no-build` opts out. `init` subscribes
+    # to the default server; `--no-default-server` opts out.)
+    _KEEP_NEGATION_LEAVES = frozenset({"build", "default-server"})
 
     def _hide_negation_flags(self, parser):
         # Hide auto-generated `--no-<dest>` negation flags. pydantic-settings

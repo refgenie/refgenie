@@ -55,6 +55,12 @@ If your goal is to *answer questions* about a user's genomes and assets (not
 change anything), use the built-in **read-only MCP server** instead of shelling
 out. It never modifies data.
 
+It needs the `mcp` extra (the `server` extra also includes it):
+
+```bash
+pip install --pre "refgenie[mcp]"
+```
+
 Register it once (Claude Code):
 
 ```bash
@@ -115,6 +121,7 @@ below.
 refgenie init
 
 # 2. Subscribe to a server that hosts pre-built assets
+#    (init already subscribed to https://api.refgenie.org; add others like this)
 refgenie subscribe -s https://api.refgenie.org
 
 # 3. Browse what's available (filter with -g GENOME)

@@ -279,6 +279,15 @@ def _refuse_stdin(*args, **kwargs):
     raise AssertionError("library code read stdin")
 
 
+def _pull_declining_subscribe(r):
+    """A pull with nothing subscribed: the subscribe offer is declined without
+    a prompt, and the pull says why it stopped."""
+    from refgenie.exceptions import NoSubscriptionsError
+
+    with pytest.raises(NoSubscriptionsError):
+        r.transfer.pull(asset_group_name="fasta", genome=GenomeAlias("x"))
+
+
 class TestConfirmationPrompts:
     """Confirmation prompts never block on stdin and honour injected confirmers.
 
@@ -342,10 +351,7 @@ class TestConfirmationPrompts:
         "call",
         [
             pytest.param(lambda r: r.database.purge(), id="purge"),
-            pytest.param(
-                lambda r: r.transfer.pull(asset_group_name="fasta", genome=GenomeAlias("x")),
-                id="pull",
-            ),
+            pytest.param(_pull_declining_subscribe, id="pull"),
         ],
     )
     def test_library_never_blocks_on_stdin(self, tmp_path, monkeypatch, call):

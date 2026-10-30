@@ -86,6 +86,14 @@ class EndpointHitCounterMiddleware:
             await self.app(scope, receive, send)
             return
 
+        # Capture the host app before dispatch. A mounted sub-app (seqcol, /mcp)
+        # is itself a Starlette app that overwrites scope["app"] with itself,
+        # and that sub-app has no endpoint_hits_collector. Hits on mounted
+        # routes are counted under the host app's collector. (When this
+        # middleware wraps the app from outside, scope["app"] is not set yet;
+        # the host app then sets it during dispatch.)
+        host_app = scope.get("app")
+
         # Dispatch first: Starlette's router resolves the route and writes
         # `route`/`path_params` into this same scope dict. Reading them after the
         # fact avoids re-implementing route matching here, and works whether
@@ -93,13 +101,12 @@ class EndpointHitCounterMiddleware:
         # a lazy _IncludedRouter (>=0.137).
         await self.app(scope, receive, send)
 
-        app = scope.get("app")
+        app = host_app or scope.get("app")
+        collector = getattr(app.state, "endpoint_hits_collector", None) if app else None
         route = scope.get("route")
         path_params = scope.get("path_params")
-        if app is not None and route is not None and path_params is not None:
-            app.state.endpoint_hits_collector.record_hit(
-                path_params=path_params, route_name=route.name
-            )
+        if collector is not None and route is not None and path_params is not None:
+            collector.record_hit(path_params=path_params, route_name=route.name)
 
 
 HandlerFun = Callable[[EndpointCollector, Refgenie], None]

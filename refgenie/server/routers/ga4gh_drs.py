@@ -114,7 +114,7 @@ def _build_access_methods(
                 AccessMethod(
                     type="https",
                     access_url=AccessURL(
-                        url=f"{base_uri}/ga4gh/drs/objects/{object_id}/access/archive",
+                        url=f"{base_uri}/ga4gh/drs/v1/objects/{object_id}/access/archive",
                         headers=None,
                     ),
                     access_id="archive",
@@ -126,7 +126,7 @@ def _build_access_methods(
                 AccessMethod(
                     type="https",
                     access_url=AccessURL(
-                        url=f"{base_uri}/ga4gh/drs/objects/{object_id}/access/file",
+                        url=f"{base_uri}/ga4gh/drs/v1/objects/{object_id}/access/file",
                         headers=None,
                     ),
                     access_id="file",
@@ -335,7 +335,7 @@ async def get_access_url(
                 )
             require_published(session, asset_digest, access_id, file_path)
             return AccessURL(
-                url=f"{base_uri}/ga4gh/drs/objects/{object_id}/access/{access_id}/bytes",
+                url=f"{base_uri}/ga4gh/drs/v1/objects/{object_id}/access/{access_id}/bytes",
                 headers=None,
             )
 

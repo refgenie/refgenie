@@ -165,8 +165,9 @@ src/
   components/jobs/        console, card, progress, log tail, error block, detail modal
   components/actions/     pull, delete asset, delete genome, set default, init genome
   components/build/       the recipe-driven build form
-  components/manage/      subscriptions, aliases, recipes, asset classes
-  pages/                  BuildPage, ManagePage, JobsPage
+  components/manage/      data channels, aliases, recipes, asset classes
+  components/servers/     subscriptions, and links to the prefilled subscribe form
+  pages/                  BuildPage, ManagePage, ServersPage, JobsPage
 ```
 
 Rules that are easy to break and expensive to debug:
@@ -395,7 +396,7 @@ uv run refgenie dash            # local mode, port 8080
 cd frontend && npm run dev      # http://localhost:5173
 ```
 
-1. Subscribe to `https://refgenomes.databio.org` on `/manage`.
+1. Subscribe to `https://refgenomes.databio.org` on `/servers`.
 2. Open `/remote`, pick a genome, and pull an asset. The job console should
    appear at the bottom of the window and update live; the header indicator
    should read **live**.

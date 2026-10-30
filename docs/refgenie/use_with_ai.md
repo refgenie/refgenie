@@ -66,7 +66,13 @@ access to your local refgenie database. Once connected, you can ask questions
 in plain language and the assistant answers from your actual data — it can look
 things up, but it never modifies anything.
 
-Connect it in one command with Claude Code:
+The MCP server needs the `mcp` extra, so install refgenie with it first:
+
+```bash
+pip install --pre "refgenie[mcp]"
+```
+
+Then connect it in one command with Claude Code:
 
 ```bash
 claude mcp add refgenie refgenie-mcp

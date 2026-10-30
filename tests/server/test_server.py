@@ -56,7 +56,7 @@ from pydantic import ValidationError  # noqa: E402
 from sqlmodel import Session, SQLModel  # noqa: E402
 
 from refgenie import Refgenie  # noqa: E402
-from refgenie.db.tables import Asset, AssetGroup, AssetName  # noqa: E402
+from refgenie.db.tables import Asset, AssetGroup, AssetName, SeekKey, SeekKeyType  # noqa: E402
 from refgenie.managers.sources.manager import IndexFile, IndexFileSection  # noqa: E402
 from refgenie.server.routers.data_channel import resolve_channel_file_url  # noqa: E402
 from refgenie.server.schemas import DataChannel  # noqa: E402
@@ -319,12 +319,11 @@ class TestServiceInfo:
         assert store_url_from_service_info(doc) is None
 
     def test_drs_service_info_still_works(self, service_info_client):
-        """Adding a root /service-info must not disturb the DRS one at both mounts."""
-        for path in ("/ga4gh/drs/service-info", "/v4/ga4gh/drs/service-info"):
-            response = service_info_client.get(path)
-            assert response.status_code == 200, path
-            assert response.json()["id"] == "org.refgenie.server"
-            assert response.json()["type"]["artifact"] == "drs"
+        """Adding a root /service-info must not disturb the DRS one."""
+        response = service_info_client.get("/ga4gh/drs/v1/service-info")
+        assert response.status_code == 200
+        assert response.json()["id"] == "org.refgenie.server"
+        assert response.json()["type"]["artifact"] == "drs"
 
 
 GENOME_DIGEST = TEST_DIGEST
@@ -536,16 +535,143 @@ class TestAssetServingModesInResponse:
             assert item["genome_digest"] == GENOME_DIGEST
 
 
+class TestListAssetsFilters:
+    """/v4/assets filters combine, and bad input is a 4xx, never a 500.
+
+    Each of asset_group_id, asset_group_name and genome_digest used to join
+    assetgroup on its own, so any two of them together put the table in FROM
+    twice and the query failed (a 500 on api.refgenie.org for
+    ``?asset_group_name=bwa_index&genome_digest=...``).
+    """
+
+    pytestmark = pytest.mark.component
+
+    @pytest.mark.parametrize(
+        "query",
+        [
+            "asset_group_name=fasta&genome_digest={genome}",
+            "asset_group_id={group_id}&genome_digest={genome}",
+            "asset_group_id={group_id}&asset_group_name=fasta",
+            "asset_group_id={group_id}&asset_group_name=fasta&genome_digest={genome}",
+            "name={name}&asset_group_name=fasta&genome_digest={genome}",
+        ],
+    )
+    def test_combined_filters_find_the_asset(self, core_client_with_asset, query):
+        client, digests = core_client_with_asset
+        asset = client.get(f"/v4/assets/{digests['asset']}").json()
+        query = query.format(
+            genome=GENOME_DIGEST, group_id=asset["asset_group_id"], name=asset["name"]
+        )
+        response = client.get(f"/v4/assets?{query}")
+        assert response.status_code == 200, response.text
+        assert [item["digest"] for item in response.json()["items"]] == [digests["asset"]]
+
+    def test_recipe_filter_combines_with_name_and_genome(self, core_client_with_asset):
+        """A bare join(Recipe) after assetname was ambiguous (two FK paths)."""
+        client, _ = core_client_with_asset
+        response = client.get(
+            f"/v4/assets?name=fasta&recipe_name=fasta&genome_digest={GENOME_DIGEST}"
+        )
+        assert response.status_code == 200, response.text
+
+    @pytest.mark.parametrize(
+        "query",
+        [
+            "asset_group_id=2147483648",
+            "asset_group_id=99999999999999999999",
+            "asset_group_id=-1",
+            "offset=99999999999999999999",
+            "q=%00",
+            "name=%00",
+            "asset_group_name=a%00",
+            "genome_digest=%00",
+            "recipe_name=%00",
+        ],
+    )
+    def test_invalid_input_is_422(self, core_client_with_asset, query):
+        client, _ = core_client_with_asset
+        assert client.get(f"/v4/assets?{query}").status_code == 422
+
+
+_ID_ROUTES = [
+    "/v4/asset_groups/{id}",
+    "/v4/asset_classes/{id}",
+    "/v4/recipes/{id}",
+    "/v4/configurations/{id}",
+    "/v4/staged_assets/{id}",
+    "/v4/asset_groups?asset_group_id={id}",
+    "/v4/assets?asset_group_id={id}",
+]
+
+_NUL_REQUESTS = [
+    "/v4/genomes?digest=%00",
+    "/v4/genomes?alias=%00",
+    "/v4/genomes?q=%00",
+    "/v4/asset_groups?asset_class=%00",
+    "/v4/asset_classes?name=%00",
+    "/v4/asset_classes?version=%00",
+    "/v4/recipes?output_asset_class=%00",
+    "/v4/staged_assets?asset_digest=%00",
+    "/v4/staged_assets?mode=%00",
+    "/v4/aliases?name=%00",
+    "/v4/archives?digest=%00",
+    "/v4/archives?genome_digest=%00",
+    "/v4/assets?name=a%00b",
+    "/v4/genomes/a%00",
+    "/v4/aliases/a%00",
+    "/v4/assets/a%00",
+    "/v4/relationships/a%00",
+    "/v4/archives/a%00/download",
+    "/v4/ga4gh/drs/objects/a%00",
+]
+
+
+class TestBadParamsAreClientErrors:
+    """Values the database cannot hold are a 422 on every route, never a 500.
+
+    On api.refgenie.org an id past PostgreSQL's INTEGER range (every
+    ``/v4/<table>/{id}`` route, and ``asset_group_id``) and a NUL byte in a text
+    parameter (nearly every list filter) reached the database and came back as
+    a 500. Ids are now typed ``DbId`` and the app rejects NUL bytes in any path
+    or query parameter before a handler runs.
+    """
+
+    pytestmark = pytest.mark.component
+
+    @pytest.mark.parametrize("route", _ID_ROUTES)
+    @pytest.mark.parametrize("value", ["2147483648", "-1", "99999999999999999999"])
+    def test_out_of_range_id_is_422(self, server_client_minimal, route, value):
+        client, _ = server_client_minimal
+        assert client.get(route.format(id=value)).status_code == 422
+
+    @pytest.mark.parametrize("route", _ID_ROUTES)
+    def test_largest_id_is_accepted(self, server_client_minimal, route):
+        client, _ = server_client_minimal
+        assert client.get(route.format(id="2147483647")).status_code in (200, 404)
+
+    @pytest.mark.parametrize("request_path", _NUL_REQUESTS)
+    def test_nul_byte_is_422(self, server_client_minimal, request_path):
+        client, _ = server_client_minimal
+        response = client.get(request_path)
+        assert response.status_code == 422, response.text
+        assert "NUL" in response.text
+
+
+def test_local_app_rejects_nul_byte_in_its_error_envelope(local_client):
+    """The local app gets the same check, wrapped in its error envelope."""
+    response = local_client.get("/v4/genomes?q=%00")
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "validation_error"
+
+
 # --- to_public() / expand=true field completeness ----------------------------
 
 
-@pytest.mark.component
-def test_relationships_expand_returns_the_asset_class_and_serving_modes(tmp_path, fixtures_path):
-    """`?expand=true` must return real asset objects, not stripped stubs.
+def _rgc_with_linked_assets(tmp_path, fixtures_path):
+    """A server Refgenie with a ``parent`` -> ``child`` asset link.
 
-    `to_public` built `asset_class_name`, `serving_modes`, `parents` and
-    `children` and then handed them to `AssetPublic`, which declares none of
-    them -- pydantic's `extra="ignore"` dropped all four silently.
+    Both assets carry a seek key, so an expanded relationship has nested ORM
+    rows to serialize. Returns ``(rgc, {"parent": digest, "child": digest})``.
     """
     test_rgc = Refgenie(database_engine=make_engine(), suppress_migrations=True)
     genome_folder = tmp_path / "genomes"
@@ -570,14 +696,23 @@ def test_relationships_expand_returns_the_asset_class_and_serving_modes(tmp_path
             adir.mkdir(parents=True, exist_ok=True)
             (adir / "x.fa").write_text(f">{role}\nACGT\n")
             d = get_dir_digest(adir)
-            session.add(
-                Asset(
-                    digest=d, name=role, description=role, asset_group_id=group.id, path=str(adir)
-                )
+            asset = Asset(
+                digest=d, name=role, description=role, asset_group_id=group.id, path=str(adir)
             )
+            session.add(asset)
             session.add(
                 AssetName(
                     name=role, asset_group_id=group.id, asset_digest=d, is_default=role == "parent"
+                )
+            )
+            # Size is computed from the file on insert.
+            session.add(
+                SeekKey(
+                    name="fasta",
+                    value="x.fa",
+                    description=f"{role} fasta",
+                    type=SeekKeyType.file,
+                    asset=asset,
                 )
             )
             digests[role] = d
@@ -586,6 +721,18 @@ def test_relationships_expand_returns_the_asset_class_and_serving_modes(tmp_path
         child.parents.append(session.get(Asset, digests["parent"]))
         session.add(child)
         session.commit()
+    return test_rgc, digests
+
+
+@pytest.mark.component
+def test_relationships_expand_returns_the_asset_class_and_serving_modes(tmp_path, fixtures_path):
+    """`?expand=true` must return real asset objects, not stripped stubs.
+
+    `to_public` built `asset_class_name`, `serving_modes`, `parents` and
+    `children` and then handed them to `AssetPublic`, which declares none of
+    them -- pydantic's `extra="ignore"` dropped all four silently.
+    """
+    test_rgc, digests = _rgc_with_linked_assets(tmp_path, fixtures_path)
 
     with make_server_client(test_rgc) as client:
         body = client.get(f"/v4/relationships/{digests['child']}?expand=true").json()
@@ -593,6 +740,50 @@ def test_relationships_expand_returns_the_asset_class_and_serving_modes(tmp_path
     assert [p["digest"] for p in body["parents"]] == [digests["parent"]]
     assert body["parents"][0]["asset_class_name"] == "fasta"
     assert body["parents"][0]["serving_modes"]
+
+
+@pytest.mark.component
+def test_relationships_expand_serializes_nested_seek_keys(tmp_path, fixtures_path):
+    """`?expand=true` on an asset whose relatives have seek keys returns 200.
+
+    The handler validated each relative with a bare ``model_validate``, so the
+    nested ``SeekKey`` ORM rows reached ``SeekKeyResponse`` without
+    ``from_attributes`` and the endpoint raised a 500 for any asset with
+    parents. ``refgenie pull`` calls this endpoint with ``expand=true``.
+    """
+    test_rgc, digests = _rgc_with_linked_assets(tmp_path, fixtures_path)
+    expected_seek_keys = lambda role: [  # noqa: E731
+        {
+            "name": "fasta",
+            "value": "x.fa",
+            "description": f"{role} fasta",
+            "type": "file",
+            "size": len(f">{role}\nACGT\n"),
+        }
+    ]
+
+    with make_server_client(test_rgc) as client:
+        up = client.get(f"/v4/relationships/{digests['child']}?expand=true")
+        down = client.get(f"/v4/relationships/{digests['parent']}?expand=true")
+
+    assert up.status_code == 200, up.text
+    assert down.status_code == 200, down.text
+    up, down = up.json(), down.json()
+
+    assert up["asset_digest"] == digests["child"]
+    assert up["children"] == []
+    (parent,) = up["parents"]
+    assert parent["digest"] == digests["parent"]
+    assert parent["seek_keys"] == expected_seek_keys("parent")
+    assert [n["name"] for n in parent["names"]] == ["parent"]
+    assert parent["asset_group_name"] == "fasta"
+    assert parent["genome_digest"] == "d" * 16
+
+    assert down["parents"] == []
+    (child,) = down["children"]
+    assert child["digest"] == digests["child"]
+    assert child["seek_keys"] == expected_seek_keys("child")
+    assert [n["name"] for n in child["names"]] == ["child"]
 
 
 # --- core endpoints ----------------------------------------------------------

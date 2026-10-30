@@ -225,7 +225,8 @@ and it builds two apps:
 | --- | --- | --- |
 | `/v4` | the `catalog` JSON router; plus `version4` (archives, file downloads, summaries) in server mode | both |
 | `/v1` | the local-only surface: `/v1/remote/*`, `/v1/jobs/*`, and `/v1/actions/*` (the state-changing command API; see `refgenie/server/local/`) | local |
-| `/ga4gh/drs`, `/data_channel` | GA4GH and data-channel paths, at their root mount and under `/v4` | server |
+| `/ga4gh/drs/v1` | GA4GH DRS, at the path the DRS spec requires (not under `/v4`) | server |
+| `/data_channel` | data-channel paths, at their root mount and under `/v4` | server |
 | `/seqcol`, `/mcp` | mounted sub-applications | server |
 | `/service-info` | GA4GH discovery, and the web UI's bootstrap document | both |
 | `/` | the React SPA: its assets under `/_app/`, every other path falling back to `index.html` | both |
@@ -250,6 +251,26 @@ path under an API prefix with a JSON 404 rather than an HTML 200.
 `tests/server/test_app.py` asserts the mode isolation, the SPA-route/API
 non-collision guard, and — with `tests/server/test_server.py` — that no route or
 operationId is ever registered twice again.
+
+## New configurations subscribe to the default server
+
+`DatabaseManager.init` writes `DEFAULT_SERVER_URL` into the `servers` list of
+the Configuration row it creates. Before this, nothing subscribed by default
+and only the CLI `pull` prompt offered to, so a first pull from `refgenie dash`
+(or over the bridge, which may only pull from subscribed servers) always
+failed. Init records the URL and never contacts it, so it works offline. It
+happens only when the row is created; re-running init keeps whatever the user
+chose. Opt out with `refgenie init --no-default-server`, the
+`subscribe_default_server=False` argument, or
+`REFGENIE_SUBSCRIBE_DEFAULT_SERVER=false`. `tests/conftest.py` sets that
+variable before importing refgenie, so no test (or CLI subprocess) can reach
+the real server by accident; tests of the default pass the argument
+explicitly.
+
+Subscribing stays a same-origin action. The bridge can read the list
+(`GET /v1/remote/servers`) but every "subscribe" affordance on the public site
+is a link to the local dash's `/servers?subscribe=<url>`, which fills the form
+and waits for a click.
 
 ## Server mode and the node's own store
 

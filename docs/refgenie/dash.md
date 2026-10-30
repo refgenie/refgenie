@@ -40,12 +40,13 @@ The top bar links to each page.
 - **Species**: your genomes grouped by species.
 - **Asset classes** and **Recipes**: the asset types refgenie knows about and the recipes that build them.
 - **Aliases**: the human-readable names that point at each genome.
+- **Servers**: the servers your refgenie pulls from, and whether each one is reachable right now. Subscribe to a new server or unsubscribe from one here. A new install is already subscribed to `https://api.refgenie.org`. If a pull fails because no server (or not that server) is subscribed, the error links straight here with the server filled in; you still click **Subscribe** yourself.
 
 ### Act
 
 - **Remote**: browse assets on the servers you subscribe to, see which ones you already have, and pull the ones you don't.
 - **Build**: pick a genome and a recipe, fill in the inputs, and build an asset.
-- **Manage**: add or remove server subscriptions and data channels, edit aliases, view registered recipes and asset classes, and initialize a new genome. (Registering a new recipe or asset class is still done from the command line.)
+- **Manage**: add or remove data channels, edit aliases, view registered recipes and asset classes, and initialize a new genome. (Registering a new recipe or asset class is still done from the command line.)
 - **Pull**: a confirmation page for a pull handed over from another site, such as the public web UI. It never starts a pull until you click to confirm.
 
 You can also delete a genome or an asset from its detail page.

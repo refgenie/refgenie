@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { useJobStore, selectQueued, selectRecentTerminal, selectRunning } from '../../stores/jobStore';
 import { cn } from '../../utils/cn';
 import { JobCard } from './JobCard';
+import { DEFAULT_SERVER_URL, serversPath } from '../servers/links';
 import type { JobErrorActionId } from './errorPresentation';
 import type { ConnectionState } from '../../stores/jobStore';
 import type { Job } from '../../services/contracts';
@@ -90,8 +91,13 @@ export function JobConsole() {
     // The console is not the place these are fixed; it hands off to the screen
     // that owns the form, rather than growing a second copy of it.
     if (action === 'fix_inputs' || action === 'build_input') navigate('/build');
-    else if (action === 'init_genome' || action === 'manage_recipes' || action === 'pick_server')
-      navigate('/manage');
+    // A pull job carries no server URL, and the one that fails this way named
+    // none (it fell back to the empty subscription list), so the form opens
+    // with the default server a fresh install would have subscribed to.
+    else if (action === 'subscribe_server') navigate(serversPath(DEFAULT_SERVER_URL));
+    // Subscriptions moved from Manage to their own page.
+    else if (action === 'pick_server') navigate(serversPath());
+    else if (action === 'init_genome' || action === 'manage_recipes') navigate('/manage');
     else navigate('/remote');
   };
 

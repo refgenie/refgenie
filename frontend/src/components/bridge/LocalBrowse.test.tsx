@@ -115,6 +115,7 @@ describe('/local browse views', () => {
       '/local/asset-classes',
       '/local/recipes',
       '/local/aliases',
+      '/local/servers',
       '/local/jobs',
     ]);
     expect(within(nav).getByRole('link', { name: 'Recipes' })).toHaveClass(

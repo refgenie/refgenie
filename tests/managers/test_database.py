@@ -94,6 +94,44 @@ def test_initialization_produces_empty_config(engine, tmp_path):
     assert len(r.asset_class.list_all()) == 0
 
 
+def test_init_subscribes_new_config_to_default_server(engine, tmp_path):
+    """A fresh config subscribes to the default server, so the first pull works."""
+    from refgenie.const import DEFAULT_SERVER_URL
+
+    r = Refgenie(database_engine=engine, suppress_migrations=True)
+    r.database.init(genome_folder=tmp_path / "genomes", subscribe_default_server=True)
+    assert r.servers.subscriptions() == [DEFAULT_SERVER_URL]
+
+
+def test_init_default_subscription_follows_config(engine, tmp_path, monkeypatch):
+    """With no explicit argument, ``config.subscribe_default_server`` decides."""
+    from refgenie.config import config
+    from refgenie.const import DEFAULT_SERVER_URL
+
+    monkeypatch.setattr(config, "subscribe_default_server", True)
+    r = Refgenie(database_engine=engine, suppress_migrations=True)
+    r.database.init(genome_folder=tmp_path / "genomes")
+    assert r.servers.subscriptions() == [DEFAULT_SERVER_URL]
+
+
+def test_init_opt_out_leaves_no_subscriptions(engine, tmp_path, monkeypatch):
+    from refgenie.config import config
+
+    monkeypatch.setattr(config, "subscribe_default_server", True)
+    r = Refgenie(database_engine=engine, suppress_migrations=True)
+    r.database.init(genome_folder=tmp_path / "genomes", subscribe_default_server=False)
+    assert r.servers.subscriptions() == []
+
+
+def test_reinit_keeps_existing_subscriptions(engine, tmp_path):
+    """Re-running init on an existing config never re-adds the default server."""
+    r = Refgenie(database_engine=engine, suppress_migrations=True)
+    r.database.init(genome_folder=tmp_path / "genomes", subscribe_default_server=False)
+    r.servers.subscribe(["http://example.org"])
+    r.database.init(genome_folder=tmp_path / "genomes", subscribe_default_server=True)
+    assert r.servers.subscriptions() == ["http://example.org"]
+
+
 def test_bare_init_never_writes_under_home(engine, tmp_path):
     """A bare init() must not resolve into the user's real ~/.refgenie.
 

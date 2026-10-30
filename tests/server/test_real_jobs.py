@@ -237,3 +237,34 @@ class TestLocalModeSmoke:
             over_http = client.get(f"/v1/jobs/{ref['job_id']}").json()
         assert over_http["status"] == "failed"
         assert over_http["error"]["code"] == "no_subscriptions"
+
+    def test_a_subscribed_server_that_errors_is_pull_failed(self, refgenie_fs):
+        """Subscribed, the genome resolves, then the server's relationships
+        endpoint errors: the job says ``pull_failed`` with the server's own
+        reason, not ``no_subscriptions``."""
+        from unittest.mock import MagicMock
+
+        url = "http://broken-server"
+        refgenie_fs.servers.subscribe([url])
+        broken = MagicMock()
+        broken.get_asset_groups.return_value = [{"id": "group1", "name": "fasta"}]
+        broken.get_assets.return_value = [
+            {"id": "asset1", "name": "default", "digest": "d1", "serving_modes": ["archive"]}
+        ]
+        broken.get.side_effect = RuntimeError("500 Server Error: Internal Server Error")
+        refgenie_fs.servers.clients[url] = broken
+
+        with make_local_client(refgenie_fs) as client:
+            response = client.post(
+                "/v1/actions/pull",
+                json={"asset_group": "fasta", "genome": "rCRSd"},
+                headers=ACTION_HEADERS,
+            )
+            assert response.status_code == 202
+            record = client.app.state.job_manager.wait(response.json()["job_id"])
+
+        assert record.status == "failed"
+        assert record.error.code == "pull_failed"
+        assert url in record.error.message
+        assert "Failed to query asset relationships" in record.error.message
+        assert "500 Server Error" in record.error.message

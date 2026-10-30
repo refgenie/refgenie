@@ -145,9 +145,9 @@ The server implements the [GA4GH Data Repository Service (DRS)](https://ga4gh.gi
 
 | Endpoint | Description |
 |----------|-------------|
-| `/ga4gh/drs/service-info` | DRS service information |
-| `/ga4gh/drs/objects/{object_id}` | Get DRS object metadata |
-| `/ga4gh/drs/objects/{object_id}/access/{access_id}` | Get access URL for download |
+| `/ga4gh/drs/v1/service-info` | DRS service information |
+| `/ga4gh/drs/v1/objects/{object_id}` | Get DRS object metadata |
+| `/ga4gh/drs/v1/objects/{object_id}/access/{access_id}` | Get access URL for download |
 
 ### Data Channel Endpoints
 

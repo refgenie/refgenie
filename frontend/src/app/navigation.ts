@@ -26,6 +26,9 @@ export const NAV: NavEntry[] = [
   // registered in both modes.
   { to: '/tree', label: 'Tree of life', capability: 'archives' },
   { to: '/remote', label: 'Remote', capability: 'remote_browse' },
+  // Where a user adds the server a pull needs. Its own entry, not a panel
+  // inside Manage, because a failed first pull has to land somewhere obvious.
+  { to: '/servers', label: 'Servers', capability: 'remote_browse' },
   { to: '/build', label: 'Build', capability: 'build' },
   { to: '/manage', label: 'Manage', capability: 'subscriptions' },
   { to: '/jobs', label: 'Jobs', capability: 'jobs' },

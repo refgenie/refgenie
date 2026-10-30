@@ -3,6 +3,11 @@ from string import ascii_letters, digits
 DEFAULT_PULL_SIZE_CUTOFF_GB = 10
 DEFAULT_PAGE_SIZE = 100
 MAX_PAGE_SIZE = 1000
+# Largest values PostgreSQL accepts for an INTEGER column and for OFFSET (a
+# BIGINT). Integer query params are capped at these so an oversized number is a
+# 422 instead of a database error (a 500).
+SQL_INT_MAX = 2**31 - 1
+SQL_BIGINT_MAX = 2**63 - 1
 
 ASSET_NAME_CHAR_WHITELIST = set(ascii_letters + digits + "-._~")
 ASSET_REGISTRY_PATH_COMPONENT_CHAR_BLACKLIST = {" ", ":", "/"}

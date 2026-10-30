@@ -18,6 +18,7 @@ export type JobErrorTone = 'warning' | 'info' | 'neutral' | 'error';
 export type JobErrorActionId =
   | 'pull_force'
   | 'pick_server'
+  | 'subscribe_server'
   | 'retry'
   | 'view_log'
   | 'fix_inputs'
@@ -64,12 +65,12 @@ export const JOB_ERROR_PRESENTATION: Record<string, JobErrorPresentation> = {
   no_subscriptions: {
     tone: 'info',
     headline: 'No servers are subscribed',
-    action: { id: 'pick_server', label: 'Manage servers' },
+    action: { id: 'subscribe_server', label: 'Subscribe to a server' },
   },
   server_not_subscribed: {
     tone: 'info',
     headline: 'This refgenie is not subscribed to that server',
-    action: { id: 'pick_server', label: 'Manage servers' },
+    action: { id: 'subscribe_server', label: 'Subscribe to this server' },
   },
   remote_unavailable: {
     tone: 'error',

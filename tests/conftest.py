@@ -55,6 +55,12 @@ if os.environ["REFGENIE_HOME_PATH"] == str(_TEST_HOME):
 else:
     shutil.rmtree(_TEST_HOME, ignore_errors=True)
 
+# A new configuration subscribes to https://api.refgenie.org by default. Tests
+# must never depend on that server, so every test (and every CLI subprocess,
+# which inherits this) starts with no subscriptions. Tests of the default
+# itself pass ``subscribe_default_server=True`` explicitly.
+os.environ["REFGENIE_SUBSCRIBE_DEFAULT_SERVER"] = "false"
+
 from refgenie import Refgenie  # noqa: E402  (must follow the home redirect above)
 
 from tests.helpers import (  # noqa: E402  (must follow the home redirect above)

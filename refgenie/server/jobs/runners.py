@@ -14,6 +14,7 @@ record. Runners raise; the manager catches and classifies.
 from pathlib import Path
 
 from refgenie.db.tables import Asset
+from refgenie.exceptions import PullSkipped
 from refgenie.logger import logger
 from refgenie.models import BuildParams, GenomeAlias, GenomeDigest
 from refgenie.server.errors import ErrorCode, WebError
@@ -91,14 +92,12 @@ def pull_runner(ctx: JobContext) -> JobResult | None:
         force_server_urls=[params.server_url] if params.server_url else None,
         confirm=_no_prompt,
     )
+    # Failures raise and are classified by the job manager: nothing subscribed
+    # is `NoSubscriptionsError` (NO_SUBSCRIPTIONS), and every server refusing
+    # is `PullFailedError` (PULL_FAILED) carrying each server's reason. None
+    # means only that the pull was skipped, not that it failed.
     if asset is None:
-        # transfer.pull() returns None only when there is nothing subscribed and the
-        # subscribe prompt was declined -- which, with `_no_prompt`, is always.
-        raise WebError(
-            "No subscribed servers; subscribe to a server first.",
-            ErrorCode.NO_SUBSCRIPTIONS,
-            409,
-        )
+        raise PullSkipped(f"Skipped pull of {target}: existing content was kept.")
     return _asset_result(ctx, asset)
 
 

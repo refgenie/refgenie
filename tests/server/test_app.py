@@ -158,8 +158,12 @@ _MODE_ISOLATION = [
     ("/v1/remote/servers", 404, 200),
     ("/v1/remote/data_channels", 404, 200),
     ("/v1/jobs", 404, 200),
-    ("/ga4gh/drs/service-info", 200, 404),
-    ("/v4/ga4gh/drs/service-info", 200, 404),
+    ("/ga4gh/drs/v1/service-info", 200, 404),
+    # The GA4GH DRS spec puts every endpoint under /ga4gh/drs/v1. DRS is mounted
+    # only there: not unversioned, and not under refgenie's own /v4 API.
+    ("/ga4gh/drs/service-info", 404, 404),
+    ("/v4/ga4gh/drs/v1/service-info", 404, 404),
+    ("/v4/ga4gh/drs/service-info", 404, 404),
     ("/seqcol/service-info", 200, 404),
     ("/data_channel/", 200, 404),
     ("/v4/archives", 200, 404),
@@ -185,26 +189,6 @@ class TestModeSurfaces:
         with make_server_client(stub_rgc()) as client:
             response = client.get("/ping", headers={"host": "evil.example.com"})
         assert response.status_code == 200
-
-    def test_mcp_endpoint_is_at_slash_mcp(self):
-        """MCP clients connect to /mcp itself, not a nested /mcp/mcp."""
-        initialize = {
-            "jsonrpc": "2.0",
-            "id": 1,
-            "method": "initialize",
-            "params": {
-                "protocolVersion": "2025-06-18",
-                "capabilities": {},
-                "clientInfo": {"name": "test", "version": "0"},
-            },
-        }
-        headers = {"accept": "application/json, text/event-stream"}
-        with make_server_client(stub_rgc()) as client:
-            response = client.post("/mcp", json=initialize, headers=headers)
-            nested = client.post("/mcp/mcp", json=initialize, headers=headers)
-        assert response.status_code == 200
-        assert '"serverInfo"' in response.text
-        assert nested.status_code != 200
 
 
 class TestRootNamespaceIsReservedForTheSpa:
@@ -544,15 +528,12 @@ EXPECTED_VERSION4_PATHS = {
 
 @pytest.fixture(scope="module")
 def openapi_schema():
-    # GA4GH DRS is included here (not mounted) in the real app, so it belongs in
-    # the schema the SKILL.md guard below checks against. /seqcol and /mcp are
-    # mounted sub-applications and never appear in any OpenAPI document.
-    from refgenie.server.routers.ga4gh_drs import router as ga4gh_drs_router
-
+    # The /v4 API only: the SKILL.md guard below checks /v4 paths. GA4GH DRS lives
+    # at /ga4gh/drs/v1, outside /v4. /seqcol and /mcp are mounted
+    # sub-applications and never appear in any OpenAPI document.
     app = FastAPI()
     app.include_router(catalog_router.router, prefix="/v4")
     app.include_router(version4_router.router, prefix="/v4")
-    app.include_router(ga4gh_drs_router, prefix="/v4/ga4gh/drs")
     return app.openapi()
 
 

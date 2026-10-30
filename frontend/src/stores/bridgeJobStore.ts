@@ -30,6 +30,12 @@ export interface BridgeJobEntry {
   genomeDigest: string;
   assetGroupName: string;
   assetName: string | null;
+  /**
+   * The remote server the pull was asked to fetch from, so a "not subscribed"
+   * failure can link to the local subscribe form for it. Optional: entries
+   * persisted before this field existed lack it.
+   */
+  serverUrl?: string;
   submittedAt: string;
   /** The last polled record, or null before the first poll. */
   job: Job | null;

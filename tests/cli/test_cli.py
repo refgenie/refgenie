@@ -790,6 +790,23 @@ class TestEmptyDatabaseCommands:
     def test_init(self, cli, tmp_path):
         assert cli("init", "--genome-folder", str(tmp_path / "genomes")) == 0
 
+    def test_init_subscribes_default_server(self, cli, cli_engine, tmp_path, monkeypatch):
+        from refgenie.config import config
+        from refgenie.const import DEFAULT_SERVER_URL
+
+        monkeypatch.setattr(config, "subscribe_default_server", True)
+        assert cli("init", "--genome-folder", str(tmp_path / "genomes")) == 0
+        rg = Refgenie(database_engine=cli_engine, suppress_migrations=True)
+        assert rg.servers.subscriptions() == [DEFAULT_SERVER_URL]
+
+    def test_init_no_default_server(self, cli, cli_engine, tmp_path, monkeypatch):
+        from refgenie.config import config
+
+        monkeypatch.setattr(config, "subscribe_default_server", True)
+        assert cli("init", "--genome-folder", str(tmp_path / "g"), "--no-default-server") == 0
+        rg = Refgenie(database_engine=cli_engine, suppress_migrations=True)
+        assert rg.servers.subscriptions() == []
+
     def test_list_empty(self, cli, cli_rg, capsys):
         assert cli("list") == 0
         err = capsys.readouterr().err
@@ -954,13 +971,51 @@ class TestPullExitCode:
             assert cli("pull", "nonexistent/asset") != 0
 
     def test_pull_returning_none_exits_nonzero(self, cli, cli_rg):
-        """transfer.pull signals failure by RETURNING None, not only by raising.
-
-        This is the path a real `refgenie pull nonexistent/asset` takes: no
-        server can serve the asset, AssetPuller logs and pull() returns None.
-        """
+        """transfer.pull returns None for a skipped pull; nothing was retrieved,
+        so that is not a success either."""
         with patch.object(TransferManager, "pull", return_value=None):
             assert cli("pull", "nonexistent/asset") != 0
+
+    def test_server_error_after_alias_resolution_exits_nonzero(self, cli, cli_rg, caplog):
+        """The genome resolves, the subscribed server then fails (a 500 from its
+        relationships endpoint): the pull exits non-zero and says what the
+        server said, not "no subscribed servers"."""
+        from refgenie.managers.sources.servers import ServerManager
+        from refgenie.managers.transfer.puller import AssetPuller
+
+        url = "http://broken-server"
+        cli_rg.servers.subscribe([url])
+        digest = fake_digest("g")
+        client = MagicMock()
+        client.get_asset_groups.return_value = [
+            {"id": "group1", "name": "bowtie2_index", "genome_digest": digest}
+        ]
+        client.get_assets.return_value = [
+            {"id": "asset1", "name": "default", "digest": "d1", "serving_modes": ["archive"]}
+        ]
+        client.get.side_effect = RuntimeError("500 Server Error: Internal Server Error")
+
+        with (
+            patch.object(
+                AssetPuller,
+                "_resolve_pull_genome",
+                return_value=(GenomeAlias("hg38"), GenomeDigest(digest)),
+            ),
+            patch.object(ServerManager, "client", return_value=client),
+            caplog.at_level("INFO"),
+        ):
+            assert cli("pull", "hg38/bowtie2_index") == EXIT_NOT_FOUND
+
+        assert "no server could serve 'hg38/bowtie2_index'" in caplog.text
+        assert f"{url}: Failed to query asset relationships" in caplog.text
+        assert "500 Server Error" in caplog.text
+        assert "No server subscriptions" not in caplog.text
+
+    def test_no_subscriptions_exits_nonzero_with_hint(self, cli, cli_rg, caplog):
+        """Nothing subscribed and nobody to say yes to the default server."""
+        with caplog.at_level("INFO"):
+            assert cli("pull", "hg38/fasta") == EXIT_NOT_FOUND
+        assert "refgenie subscribe" in caplog.text
 
     def test_malformed_path_exits_nonzero(self, cli, cli_rg):
         assert cli("pull", "garbage") != 0
