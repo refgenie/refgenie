@@ -126,6 +126,8 @@ refgenie pull hg38/fasta
 
 **The upgrade stopped partway**, for example because the disk filled up. Run it again. It skips assets that are already migrated.
 
+**Pulling a new asset onto a migrated genome fails.** Your migrated FASTA keeps its original bytes. The FASTA on [api.refgenie.org](https://api.refgenie.org) is rebuilt from the genome's sequences: all uppercase and wrapped at 80 bases per line. The sequences and genome digest are the same, but the files differ, so the two FASTA assets have different digests. This affects most legacy genomes, including hg38, hg19 and mm10. Server assets such as `bowtie2_index` list the server's FASTA as their parent, so pulling one stops with an error that names both FASTAs. Either replace your FASTA with the server's (`refgenie pull hg38/fasta --force`, then pull the asset you wanted), or keep your FASTA, for example for its soft-masking, and build the asset locally with `refgenie build`.
+
 **Some things are not migrated.** The tool skips assets stored at absolute paths (symlinked child assets). It recomputes asset digests with SHA-256 instead of keeping the old MD5 digests. Build logs, build recipes, archive and server settings, and download statistics stay in your old config file and genome folder.
 
 ## Clean up
