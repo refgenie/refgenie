@@ -773,6 +773,9 @@ class AssetPuller(ResourceManager):
                     f"Cannot pull parent {label} required by {child_label}: the server "
                     f"did not say which genome and asset group it belongs to."
                 )
+            self._refuse_conflicting_parent(
+                genome_digest, group, name, digest, label, child_label
+            )
             logger.info(
                 f"Pulling parent {group}:{name} (digest {digest}) required by {child_label}"
             )
@@ -803,6 +806,40 @@ class AssetPuller(ResourceManager):
                     f"asset has digest {pulled.digest}, not {digest}."
                 )
             txn.release_genome(genome_digest)
+
+    def _refuse_conflicting_parent(
+        self,
+        genome_digest: str,
+        group: str,
+        name: str | None,
+        digest: str,
+        label: str,
+        child_label: str,
+    ) -> None:
+        """
+        Raise ``ParentPullError`` if a different asset already holds the parent's name.
+
+        The parent pull would only fail with a bare "already exists", because a
+        parent is never pulled over local content. This happens when the local
+        asset has the same name but different bytes than the server's, as with a
+        fasta migrated from legacy refgenie (different masking or line width).
+        """
+        if not name:
+            return
+        genome = GenomeDigest(genome_digest)
+        if not self._asset.exists(genome_digest=genome, asset_group_name=group, asset_name=name):
+            return
+        local = self._asset.get(genome_digest=genome, asset_group_name=group, asset_name=name)
+        aliases = self._alias_manager.get_for_genome(genome)
+        target = f"{aliases[0] if aliases else genome_digest}/{group}:{name}"
+        raise ParentPullError(
+            f"Cannot pull {child_label}: the server built it from parent {label}, but your "
+            f"local '{target}' is a different asset (digest {local.digest}). Their files "
+            f"differ, for example in soft-masking or line width, as is common for assets "
+            f"migrated from legacy refgenie. To use the server's {child_label}, replace your "
+            f"copy with 'refgenie pull {target} --force'. To keep your copy, build "
+            f"{child_label} locally from it with 'refgenie build' instead."
+        )
 
     def _clear_existing_content(
         self,

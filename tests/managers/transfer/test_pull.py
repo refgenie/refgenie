@@ -418,6 +418,48 @@ class TestPullOnAFreshInstall:
         assert not client_rg.genome.exists(genome_digest)
         assert not client_rg.alias.exists(GENOME)
 
+    def test_a_different_local_parent_is_named_not_just_already_exists(
+        self, bare_client_world, fixtures_path
+    ):
+        """A local fasta:default with other bytes (e.g. a soft-masked legacy
+        fasta) blocks the server's parent; the error says so and how to fix it."""
+        from refgenie.exceptions import ParentPullError
+        from tests.support.factories import register_fasta
+
+        client_rg, server_rg, url, parent, child = bare_client_world
+        _stage(server_rg, parent)
+        _stage(server_rg, child)
+        register_fasta(client_rg, fixtures_path)
+        client_rg.genome.initialize_genome(
+            fasta_file_path=fixtures_path / "rCRSd.fa", alias_names=[GENOME], description="legacy"
+        )
+        local = add_asset_from_files(
+            client_rg,
+            rel_dir="legacy_fasta",
+            files=["{genome}.fa", "{genome}.fa.fai", "{genome}.chrom.sizes"],
+            asset_class_name="fasta",
+            asset_group_name="fasta",
+            asset_name="default",
+            contents="soft-masked\n",
+        )
+        assert local.digest != parent.digest
+
+        with pytest.raises(ParentPullError) as excinfo:
+            client_rg.transfer.pull(
+                genome=GenomeAlias(GENOME),
+                asset_group_name="child_index",
+                asset_name="v1",
+                force_server_urls=[url],
+            )
+
+        message = str(excinfo.value)
+        for part in (parent.digest, local.digest, "child_index:v1", f"{GENOME}/fasta:default"):
+            assert part in message, f"{part!r} missing from: {message}"
+        assert "--force" in message
+        assert "already exists" not in message
+        assert client_rg.asset.exists_digest(local.digest), "the local fasta must be kept"
+        assert not client_rg.asset.exists_digest(child.digest)
+
     def test_a_pulled_parent_survives_a_failed_child(self, bare_client_world):
         from refgenie.exceptions import PullFailedError
 
