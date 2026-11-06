@@ -127,7 +127,7 @@ log_info "Built: $(basename "$WHEEL_FILE"), $(basename "$SDIST_FILE")"
 
 # --- Step 3: the wheel-content guard ----------------------------------------
 #
-# No --require-fresh here: that check is for publish.yml, where $GITHUB_SHA
+# No --require-fresh here: that check is for python-publish.yml, where $GITHUB_SHA
 # and a clean checkout are guaranteed. A local build is expected to be dirty.
 log_info "Checking wheel and sdist carry the web UI bundle..."
 python3 tests/scripts/check-wheel-assets.py "$WHEEL_FILE" "$SDIST_FILE"

@@ -2,7 +2,7 @@ name: Build frontend
 
 # Reusable so the frontend is built exactly once per triggering workflow run
 # (npm ci, typecheck, lint and the vitest suite all run here) and every
-# consumer -- package.yml, test.yaml, publish.yml -- downloads the same
+# consumer -- package.yml, test.yaml, python-publish.yml -- downloads the same
 # artifact rather than repeating the build once per matrix leg.
 on:
   workflow_call:

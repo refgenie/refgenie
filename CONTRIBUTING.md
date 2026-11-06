@@ -84,7 +84,7 @@ the models.
 
 ## Publishing a release (maintainers)
 
-Releases are published by `.github/workflows/publish.yml`, which runs when a
+Releases are published by `.github/workflows/python-publish.yml`, which runs when a
 GitHub Release is *published*. Every release, pre-release or full, goes to
 PyPI. A pre-release version such as `1.0.0a1` is skipped by
 `pip install refgenie` unless the user passes `--pre` or pins it. The upload
@@ -93,10 +93,10 @@ uses PyPI Trusted Publishing (OIDC); there are no API tokens in this repository.
 Trusted publishing is scoped to the `refgenie/refgenie` repository, so releases
 are tagged on its `master` branch. The `refgenie` project on pypi.org needs a
 trusted publisher (owner `refgenie`, repository `refgenie`, workflow
-`publish.yml`, environment `pypi`), added once under the project's Publishing
-settings.
+`python-publish.yml`, no environment), set up under the project's Publishing
+settings. The file name must match it exactly.
 
-The web UI is built by CI, not by hand: `publish.yml`'s `build` job runs
+The web UI is built by CI, not by hand: `python-publish.yml`'s `build` job runs
 `.github/workflows/build-frontend.yml` and then
 `tests/scripts/check-wheel-assets.py --require-fresh`, which fails the release
 unless the bundle's `build-info.json` reports the release commit and a clean
