@@ -252,6 +252,8 @@ class TestGenomesEndpoint:
                 seen.append(outstanding["open"])
                 return None
 
+        # Read the store's aliases now; the stub router below has no store.
+        rgc_with_alias.alias.get_for_genome(TEST_DIGEST)
         rgc_with_alias._store_router = _Router()
         response = client_with_alias.get(f"/v4/genomes/{TEST_DIGEST}")
         assert response.status_code == 200

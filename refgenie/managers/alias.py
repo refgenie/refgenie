@@ -440,6 +440,9 @@ class _StoreAliases:
         self._get_store = refget_store_getter
         self._get_genome_folder = genome_folder_getter
         self._cache: dict[str, str] = {}  # name -> digest
+        # resolve() and add() fill single entries, so a non-empty cache does
+        # not mean the full alias list has been read.
+        self._synced = False
 
     @property
     def _store(self) -> RefgetStore:
@@ -448,15 +451,17 @@ class _StoreAliases:
     def invalidate(self) -> None:
         """Drop the cache; call it whenever the RefgetStore instance is swapped out."""
         self._cache.clear()
+        self._synced = False
 
     def _sync_from_store(self):
         """Load aliases from the store into the cache."""
-        if self._cache:
+        if self._synced:
             return
         for alias_name in self._store.list_collection_aliases(NAMESPACE) or []:
             meta = self._store.get_collection_metadata_by_alias(NAMESPACE, alias_name)
             if meta is not None:
                 self._cache[alias_name] = meta.digest
+        self._synced = True
 
     def resolve(self, name: GenomeAlias) -> GenomeDigest:
         if name in self._cache:

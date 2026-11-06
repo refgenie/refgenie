@@ -183,6 +183,41 @@ class TestMultiNameRemoval:
         assert db["asset_names"] == []
 
 
+class TestMultiAliasRemoval:
+    """builds/ is keyed by genome alias; removal must clear it under every alias."""
+
+    def test_remove_via_one_alias_clears_flags_under_every_alias(self, refgenie_built):
+        """
+        A genome with store-side and SQL-side aliases, a flag under each, and a
+        remove that names only one alias, as a fresh `refgenie remove` process
+        does: that resolve is the store half's first lookup. Every flag must go,
+        or snakemake skips the rebuild.
+        """
+        from refgenie.managers.alias import AliasManager
+
+        r = refgenie_built
+        genome_digest = r.alias.resolve(GENOME)
+        r.alias.add("store_other", genome_digest)
+        AliasManager(r.database_engine).add("sql_other", genome_digest)
+        aliases = [GENOME, "store_other", "sql_other"]
+        assert sorted(r.alias.get_for_genome(genome_digest)) == sorted(aliases)
+
+        flags = [build_flag(r, genome=alias) for alias in aliases]
+        for flag in flags:
+            flag.parent.mkdir(parents=True, exist_ok=True)
+            flag.touch()
+
+        r.alias.invalidate()  # a new process starts with a cold alias cache
+        r.asset.remove(
+            genome_digest=r.alias.resolve("store_other"),
+            asset_group_name=GROUP,
+            asset_name=ASSET,
+            keep_asset_group=True,
+        )
+
+        assert [f for f in flags if f.exists()] == []
+
+
 class TestDeleteOrdering:
     """The flush must not destroy content before COMMIT."""
 
