@@ -2206,7 +2206,7 @@ requires-dist = [
     { name = "cryptography", specifier = ">=50.0.1" },
     { name = "fastapi", marker = "extra == 'dash'", specifier = ">=0.141.1" },
     { name = "gtars", specifier = ">=0.11.2" },
-    { name = "httpx", specifier = ">=0.28.1" },
+    { name = "httpx", specifier = ">=0.28.1,<1" },
     { name = "jinja2", specifier = ">=3.1.6" },
     { name = "mcp", extras = ["cli"], marker = "extra == 'mcp'", specifier = ">=2.2.0" },
     { name = "mcp", extras = ["cli"], marker = "extra == 'server'", specifier = ">=2.2.0" },

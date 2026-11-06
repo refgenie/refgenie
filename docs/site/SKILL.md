@@ -34,10 +34,10 @@ HTTP with nothing installed, read <https://api.refgenie.org/SKILL.md>.
 
 ## Install
 
-Refgenie 1.0 is a pre-release, so `pip` needs `--pre`:
+Refgenie 1.0 is a pre-release, so ask for it by version:
 
 ```bash
-pip install --pre refgenie
+pip install "refgenie>=1.0.0a1"
 refgenie --version
 ```
 
@@ -52,7 +52,7 @@ To *answer questions* about a user's genomes and assets, use the read-only MCP
 server instead of shelling out:
 
 ```bash
-pip install --pre "refgenie[mcp]"
+pip install "refgenie[mcp]>=1.0.0a1"
 claude mcp add refgenie refgenie-mcp
 ```
 
@@ -245,7 +245,7 @@ refgenie serve                  # start the HTTP server (REST API, web UI, /mcp)
 refgenie dash                   # start the local dashboard on port 8080
 ```
 
-`serve` needs `pip install --pre "refgenie[server]"`; `dash` needs
+`serve` needs `pip install "refgenie[server]>=1.0.0a1"`; `dash` needs
 `"refgenie[dash]"`. See <https://docs.refgenie.org/refgenie/building_tutorial>
 for the full build, stage, push, and serve steps.
 

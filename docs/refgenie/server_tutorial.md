@@ -7,7 +7,7 @@ This page walks through the steps. For flags, endpoints and environment variable
 ## 1. Install
 
 ```bash
-pip install --pre "refgenie[server]"
+pip install "refgenie[server]>=1.0.0a1"
 ```
 
 ## 2. Build and stage assets
@@ -74,7 +74,7 @@ Point it at the database you built and staged into, or have it import a publishe
 
 ## Troubleshooting
 
-- **The server will not start.** Install the extras with `pip install --pre "refgenie[server]"`, check that the port is free, and check your database config.
+- **The server will not start.** Install the extras with `pip install "refgenie[server]>=1.0.0a1"`, check that the port is free, and check your database config.
 - **Assets do not show up.** Check that they are staged (`refgenie stage list`) and that the server uses the same database and stage folder you staged into.
 - **Downloads fail.** Check that the staged files exist in the stage folder, or that the asset was pushed to the remote. The server log names the missing path.
 

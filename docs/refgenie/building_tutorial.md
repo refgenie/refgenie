@@ -19,10 +19,10 @@ You choose what to build, what to stage, and what to push.
 ## Prerequisites
 
 - Python 3.11 or newer
-- refgenie (`pip install --pre refgenie`; see [Install](install.md))
+- refgenie (`pip install "refgenie>=1.0.0a1"`; see [Install](install.md))
 - Docker or Apptainer, to run each recipe's tools in its container
-- For section 6: `pip install --pre "refgenie[server]"`
-- For section 7: `pip install --pre "refgenie[snakemake]"`
+- For section 6: `pip install "refgenie[server]>=1.0.0a1"`
+- For section 7: `pip install "refgenie[snakemake]>=1.0.0a1"`
 - For section 8: a cloud command-line tool, such as `aws`
 
 ## 1. Set up refgenie

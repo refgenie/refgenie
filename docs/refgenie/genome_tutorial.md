@@ -4,7 +4,7 @@ When you initialize a genome, refgenie loads its sequences into a local **Refget
 
 ## Prerequisites
 
-- refgenie installed (`pip install --pre refgenie`; see [Install](install.md))
+- refgenie installed (`pip install "refgenie>=1.0.0a1"`; see [Install](install.md))
 - refgenie initialized (`refgenie init`)
 - the `fasta` recipe, from a synced [data channel](data_channels.md):
 

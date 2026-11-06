@@ -6,7 +6,7 @@ The MCP server is read-only. It queries genomes, assets, recipes and sequence co
 
 !!! info "Prerequisites"
 
-    - Refgenie installed with the `mcp` extra (`pip install --pre "refgenie[mcp]"`; the `server` extra includes it too)
+    - Refgenie installed with the `mcp` extra (`pip install "refgenie[mcp]>=1.0.0a1"`; the `server` extra includes it too)
     - A refgenie database with at least one genome
     - An MCP client, such as Claude Desktop or Claude Code
 

@@ -1,6 +1,6 @@
 # What's new in refgenie 1.0
 
-Refgenie 1.0 is a rewrite. One package now does the work of the three 0.x packages (refgenie, refgenconf, and refgenieserver). It installs with `pip install --pre refgenie`. You can move an existing 0.x setup to 1.0 without rebuilding your assets; see [Upgrade from legacy](upgrade.md).
+Refgenie 1.0 is a rewrite. One package now does the work of the three 0.x packages (refgenie, refgenconf, and refgenieserver). It installs with `pip install "refgenie>=1.0.0a1"`. You can move an existing 0.x setup to 1.0 without rebuilding your assets; see [Upgrade from legacy](upgrade.md).
 
 ## For users
 
@@ -16,5 +16,5 @@ Refgenie 1.0 is a rewrite. One package now does the work of the three 0.x packag
 
 - **Database instead of a YAML config.** Refgenie keeps its records in SQLite by default, or PostgreSQL for shared and server setups. See [Database backends](database.md).
 - **RefgetStore.** `refgenie genome init` loads a genome's sequences into a content-addressable store, where identical sequences are kept once. This store powers `getseq` and the `fasta` asset.
-- **Built-in server.** `refgenie serve` (from `pip install --pre "refgenie[server]"`) runs the REST API, DRS endpoints, and data channel aggregation. See [Run a server](server/README.md).
+- **Built-in server.** `refgenie serve` (from `pip install "refgenie[server]>=1.0.0a1"`) runs the REST API, DRS endpoints, and data channel aggregation. See [Run a server](server/README.md).
 - **Staging and remotes.** Assets are staged for serving, as symlinks or `.tgz` archives, and can be pushed to remote storage like S3. See [Stage assets for serving](staging.md) and [Configure remote storage](remotes.md).

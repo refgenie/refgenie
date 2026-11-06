@@ -327,7 +327,7 @@ check `"mode": "server"` in `/service-info` first.
 command from the refgenie package:
 
 ```bash
-pip install --pre "refgenie[mcp]"
+pip install "refgenie[mcp]>=1.0.0a1"
 claude mcp add refgenie refgenie-mcp
 ```
 

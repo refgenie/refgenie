@@ -7,7 +7,7 @@ The refgenie dashboard is a local web interface for your own refgenie instance. 
 The dashboard requires the `dash` extras:
 
 ```bash
-pip install --pre "refgenie[dash]"
+pip install "refgenie[dash]>=1.0.0a1"
 ```
 
 ## Launch the dashboard
@@ -68,7 +68,7 @@ The public web UI at <https://refgenie.org> can connect to your running dashboar
 | Purpose | Browse and manage your local refgenie instance | Serve assets to remote clients via API |
 | Audience | You (local use) | Other machines and users |
 | Default port | 8080 | 8000 |
-| Install extra | `pip install --pre "refgenie[dash]"` | `pip install --pre "refgenie[server]"` |
+| Install extra | `pip install "refgenie[dash]>=1.0.0a1"` | `pip install "refgenie[server]>=1.0.0a1"` |
 
 !!! warning
     The dashboard has no login. It listens only on `127.0.0.1`, but anyone with an account on your machine can use it to change your refgenie, so run it only on a computer you do not share.

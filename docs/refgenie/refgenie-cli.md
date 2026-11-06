@@ -6,10 +6,10 @@ then lists every command and flag.
 ## Installation
 
 Install from [PyPI](https://pypi.org/project/refgenie/). Refgenie 1.0 is a
-pre-release, so pass `--pre`:
+pre-release, so ask for it by version:
 
 ```bash
-pip install --pre refgenie
+pip install "refgenie>=1.0.0a1"
 ```
 
 The base install provides the CLI and the Python API. `refgenie dash`,

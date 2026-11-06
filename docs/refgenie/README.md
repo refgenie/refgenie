@@ -32,10 +32,10 @@ Refgenie manages storage, access, and transfer of reference genome resources. It
 
 ### Install
 
-Refgenie is a Python package. Version 1.0 is a pre-release, so install it from [PyPI](https://pypi.org/project/refgenie/) with `--pre`:
+Refgenie is a Python package. Version 1.0 is a pre-release, so install it from [PyPI](https://pypi.org/project/refgenie/) by version:
 
 ```console
-pip install --pre refgenie
+pip install "refgenie>=1.0.0a1"
 ```
 
 ### Initialize

@@ -25,7 +25,7 @@ const COUNT_ONLY = { pageSize: 1 } as const;
 const STEPS = [
   {
     label: 'Install',
-    command: 'pip install refgenie',
+    command: 'pip install "refgenie>=1.0.0a1"',
     note: 'Needs Python 3.11 or newer.',
   },
   {

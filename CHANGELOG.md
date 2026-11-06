@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 First public alpha of refgenie 1.0, a rewrite that replaces the `refgenie` 0.x,
 `refgenconf`, and `refgenieserver` packages with one package. Install it with
-`pip install --pre refgenie`. It does not read 0.x configuration files or genome
+`pip install "refgenie>=1.0.0a1"`. It does not read 0.x configuration files or genome
 folders; the [upgrade guide](./docs/refgenie/upgrade.md) migrates an existing
 install, and [migration details](./docs/refgenie/migration-from-legacy.md) lists
 what changed for pipelines and Python code.
