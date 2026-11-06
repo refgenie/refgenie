@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.0.0a1] - 2026-11-04
+## [1.0.0a1] - 2026-11-06
 
 First public alpha of refgenie 1.0, a rewrite that replaces the `refgenie` 0.x,
 `refgenconf`, and `refgenieserver` packages with one package. Install it with
