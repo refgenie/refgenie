@@ -1,34 +1,37 @@
 """
-Cross-package integration test fixtures for refgenie + refgenconf + refgenieserver.
+Integration test fixtures for Refgenie API.
 
-Uses real `refgenie build` and real `archive()` instead of hand-crafted test data.
-This ensures integration tests catch real bugs in the build pipeline, archive
-creation, server startup, and client interaction.
-
-Uses a real threaded uvicorn server so the refgenconf client exercises its actual
-HTTP code paths (requests.get, urlopen, urlretrieve).
+Uses FastAPI TestClient with PostgreSQL test database.
+All services are started/stopped by ./tests/scripts/test-integration.sh
 
 Prerequisites:
-    pip install -e ../refgenconf
-    pip install -e ../refgenieserver
-    pip install -e .
-
-Or use the runner script:
     ./tests/scripts/test-integration.sh
+
+Or manually:
+    1. Start services: ./tests/scripts/services.sh start
+    2. Run tests: RUN_INTEGRATION_TESTS=true pytest tests/integration/
+    3. Stop services: ./tests/scripts/services.sh stop
 """
 
-from __future__ import annotations
-
-import gzip
+import json
 import os
-import socket
 import subprocess
 import sys
-import threading
-import time
+from pathlib import Path
 
 import pytest
-import yaml
+
+from tests.support.factories import DEMO_FASTA, RCRSD_FASTA, TESTS_DATA_DIR, register_fasta
+from tests.support.processes import find_free_port, popen_cli, wait_for_server
+from tests.support.server import make_server_client, requires_server
+
+from tests.integration.helpers import (
+    TEST_DB_URL,
+    create_client_env,
+    write_db_config,
+)
+
+GENOME_ALIAS = "rCRSd"
 
 # Skip all integration tests unless explicitly enabled
 pytestmark = pytest.mark.skipif(
@@ -36,313 +39,753 @@ pytestmark = pytest.mark.skipif(
     reason="Integration tests disabled. Run ./tests/scripts/test-integration.sh",
 )
 
-# Test genome alias and description
-GENOME_ALIAS = "rCRSd"
-GENOME_DESC = "The revised cambridge reference sequence"
-
-# Path to the test data directory
-TESTS_DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data")
-T7_FASTA_GZ = os.path.join(TESTS_DATA_DIR, "t7.fa.gz")
-RECIPE_PARENT = os.path.join(TESTS_DATA_DIR, "recipe_parent.json")
-
-
-def _read_fasta_content(gz_path):
-    """Read and return the decompressed content of a gzipped FASTA file."""
-    with gzip.open(gz_path, "rt") as f:
-        return f.read()
-
-
-def _find_free_port():
-    """Find a free TCP port on localhost."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(("127.0.0.1", 0))
-        return s.getsockname()[1]
-
-
-# GENOME_DIGEST is deterministic for a given FASTA file. This digest is
-# computed by initialize_genome() from the t7.fa.gz test data and is also
-# confirmed by the CI workflow in test-refgenie-cli.yml.
-GENOME_DIGEST = "6c5f19c9c2850e62cc3f89b04047fa05eee911662bd77905"
-
-# FASTA content read from the test file at import time
-FASTA_CONTENT = _read_fasta_content(T7_FASTA_GZ)
+# Configuration from environment (set by test-integration.sh) or defaults
+DATA_CHANNEL_URL = os.getenv("DATA_CHANNEL_URL", "http://localhost:18765")
 
 
 # =============================================================================
-# Fixtures: real build -> archive -> serve (shared by all test files)
+# CLI Subprocess Helpers
 # =============================================================================
 
 
 @pytest.fixture(scope="session")
-def real_build_config(tmp_path_factory):
-    """Build a real genome asset using `refgenie build` subprocess.
+def cli_home(tmp_path_factory):
+    """Session-scoped temp directory serving as REFGENIE_HOME_PATH for CLI tests."""
+    return tmp_path_factory.mktemp("cli_home")
 
-    Runs `refgenie init` followed by `refgenie build t7/fasta` with the
-    test recipe and test FASTA file. This exercises the full build pipeline
-    including pypiper, recipe resolution, and config writing.
 
-    Returns a dict with config_path, genome_name, genome_digest, temp_dir,
-    and the build result.
+@pytest.fixture(scope="session")
+def cli_env(cli_home):
+    """Environment variables for running refgenie CLI commands.
+
+    Sets up a temp REFGENIE_HOME_PATH with a database config YAML pointing
+    to the test PostgreSQL instance, so the CLI subprocess finds the test DB.
     """
-    base = tmp_path_factory.mktemp("real_build")
-    config_path = str(base / "genome_config.yaml")
+    db_config_path = cli_home / "refgenie_db_config.yaml"
+    write_db_config(db_config_path, TEST_DB_URL)
 
-    # refgenie init
-    result = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "refgenie",
-            "init",
-            "-c",
-            config_path,
-        ],
-        capture_output=True,
-        text=True,
-    )
-    assert result.returncode == 0, f"Init failed: {result.stderr}"
+    genome_folder = cli_home / "genomes"
+    genome_folder.mkdir(exist_ok=True)
 
-    # refgenie build
-    result = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "refgenie",
-            "build",
-            "-c",
-            config_path,
-            f"{GENOME_ALIAS}/fasta",
-            "--files",
-            f"fasta={T7_FASTA_GZ}",
-            "--recipe",
-            RECIPE_PARENT,
-            "--genome-description",
-            GENOME_DESC,
-        ],
-        capture_output=True,
-        text=True,
-    )
-
-    # Get the genome digest dynamically via refgenie id
-    id_result = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "refgenie",
-            "id",
-            "-c",
-            config_path,
-            f"{GENOME_ALIAS}/fasta",
-        ],
-        capture_output=True,
-        text=True,
-    )
-
-    # Compute genome digest from refgenie alias get
-    alias_result = subprocess.run(
-        [
-            sys.executable,
-            "-m",
-            "refgenie",
-            "alias",
-            "get",
-            "-c",
-            config_path,
-            "-a",
-            GENOME_ALIAS,
-        ],
-        capture_output=True,
-        text=True,
-    )
-    genome_digest = alias_result.stdout.strip() if alias_result.returncode == 0 else ""
+    archive_folder = cli_home / "archives"
+    archive_folder.mkdir(exist_ok=True)
 
     return {
-        "config_path": config_path,
+        "REFGENIE_HOME_PATH": str(cli_home),
+        "REFGENIE_DB_CONFIG_PATH": str(db_config_path),
+        "REFGENIE_GENOME_FOLDER": str(genome_folder),
+        "REFGENIE_GENOME_STAGE_FOLDER": str(archive_folder),
+        "RUN_INTEGRATION_TESTS": "true",
+        # Disable Rich formatting in subprocess output
+        "NO_COLOR": "1",
+        "TERM": "dumb",
+        "COLUMNS": "500",
+    }
+
+
+@pytest.fixture(scope="session")
+def cli_build_config(cli_env, tmp_path_factory):
+    """Build a real genome asset via library API for session fixtures.
+
+    Uses the library API (not CLI subprocesses) for setup speed; CLI tests
+    still exercise the CLI in their actual test assertions.
+    """
+    from sqlmodel import create_engine
+    from refgenie import Refgenie
+
+    genome_folder = cli_env["REFGENIE_GENOME_FOLDER"]
+    stage_folder = cli_env["REFGENIE_GENOME_STAGE_FOLDER"]
+
+    engine = create_engine(TEST_DB_URL)
+    rg = Refgenie(database_engine=engine, suppress_migrations=True)
+    rg.database.init(genome_folder=Path(genome_folder), genome_stage_folder=Path(stage_folder))
+    register_fasta(rg, TESTS_DATA_DIR)
+
+    rg.genome.initialize_genome(
+        fasta_file_path=RCRSD_FASTA,
+        alias_names=[GENOME_ALIAS],
+        description="Simple test genome",
+    )
+    rg.build.run(
+        recipe_name="fasta",
+        genome_alias=GENOME_ALIAS,
+        asset_group_name="fasta",
+        asset_name="default",
+    )
+
+    genome_digest = rg.alias.resolve(GENOME_ALIAS)
+    engine.dispose()
+
+    return {
+        "env": cli_env,
+        "genome_folder": genome_folder,
+        "genome_digest": genome_digest,
         "genome_name": GENOME_ALIAS,
-        "genome_digest": genome_digest,
-        "temp_dir": str(base),
-        "build_returncode": result.returncode,
-        "build_stdout": result.stdout,
-        "build_stderr": result.stderr,
-        "asset_digest": id_result.stdout.strip() if id_result.returncode == 0 else "",
     }
 
 
-@pytest.fixture(scope="session")
-def archived_asset_config(real_build_config, tmp_path_factory):
-    """Archive the built asset using refgenieserver archive.
+@pytest.fixture
+def test_engine():
+    """Function-scoped engine for test isolation."""
+    from sqlmodel import create_engine
 
-    Calls the archive() function from refgenieserver.server_builder directly,
-    which exercises the real archiving code path including tar creation,
-    checksum computation, and config updates.
+    engine = create_engine(TEST_DB_URL)
+    yield engine
+    engine.dispose()
 
-    Returns dict with server_config_path, archive_dir, and genome_digest.
+
+@pytest.fixture(autouse=True, scope="session")
+def database_schema():
+    """Create the schema once per session; ``clean_database`` only empties it."""
+    from sqlmodel import SQLModel, create_engine
+
+    engine = create_engine(TEST_DB_URL)
+    SQLModel.metadata.create_all(engine)
+    engine.dispose()
+
+
+@pytest.fixture(autouse=True)
+def clean_database(database_schema, test_engine, request):
     """
-    from refgenconf import RefGenConf
-    from refgenconf.const import CFG_ARCHIVE_KEY
-    from refgenieserver.server_builder import archive
-    from yacman import write_lock
+    Empty every table before each test.
 
-    assert real_build_config["build_returncode"] == 0, (
-        f"Build failed, cannot archive: {real_build_config['build_stderr']}"
+    Uses the 'shared_state' marker to skip cleaning for tests that share
+    fixtures. Apply @pytest.mark.shared_state to test classes that use
+    session-scoped or class-scoped fixtures.
+    """
+    if request.node.get_closest_marker("shared_state"):
+        yield
+        return
+
+    from sqlalchemy import text
+    from sqlmodel import SQLModel
+
+    tables = ", ".join(f'"{t.name}"' for t in SQLModel.metadata.sorted_tables)
+    with test_engine.begin() as conn:
+        conn.execute(text(f"TRUNCATE {tables} RESTART IDENTITY CASCADE"))
+
+    yield
+
+
+@pytest.fixture
+def refgenie_instance(test_engine, tmp_path):
+    """Fresh refgenie instance for each test."""
+    from refgenie import Refgenie
+
+    rg = Refgenie(database_engine=test_engine, suppress_migrations=True)
+    rg.database.init(genome_folder=tmp_path / "genomes")
+    return rg
+
+
+def build_rcrsd_asset(rg, fixtures_path: Path) -> None:
+    """Initialize genome and build the standard rCRSd test asset."""
+    register_fasta(rg, fixtures_path)
+    rg.genome.initialize_genome(
+        fasta_file_path=fixtures_path / "rCRSd.fa",
+        alias_names=["rCRSd"],
+        description="rCRSd genome",
+    )
+    rg.build.run(
+        recipe_name="fasta",
+        genome_alias="rCRSd",
+        asset_group_name="fasta",
+        asset_name="test",
     )
 
-    archive_dir = tmp_path_factory.mktemp("archives")
 
-    # Update the config to include archive folder
-    rgc = RefGenConf.from_yaml_file(real_build_config["config_path"])
-    with write_lock(rgc) as r:
-        r[CFG_ARCHIVE_KEY] = str(archive_dir)
-        r.write()
+@pytest.fixture
+def client(test_engine, tmp_path):
+    """TestClient over the REAL refgenie server app (create_app) with the
+    test database. No hand-rolled routes -- route/schema drift in
+    refgenie/server/ shows up here."""
+    requires_server()
+    from refgenie import Refgenie
 
-    # Run refgenieserver archive
-    rgc = RefGenConf.from_yaml_file(real_build_config["config_path"])
-    archive(
-        rgc=rgc,
-        registry_paths=None,  # archive all
-        force=True,
-        remove=False,
-        cfg_path=real_build_config["config_path"],
-        genomes_desc=None,
-    )
+    rg = Refgenie(database_engine=test_engine, suppress_migrations=True)
+    rg.database.init(genome_folder=tmp_path / "genomes")
+    with make_server_client(rg) as c:
+        yield c
 
-    # Verify the archive was created
-    genome_digest = real_build_config["genome_digest"]
-    tgz_path = os.path.join(str(archive_dir), genome_digest, "fasta__default.tgz")
-    assert os.path.exists(tgz_path), f"Archive not created at {tgz_path}"
 
-    # The server config is written by archive() into the archive dir
-    server_config_path = os.path.join(
-        str(archive_dir), os.path.basename(real_build_config["config_path"])
-    )
-    assert os.path.exists(server_config_path), (
-        f"Server config not found at {server_config_path}"
-    )
+# =============================================================================
+# Multi-genome and serve fixtures for bulk pull tests
+# =============================================================================
+
+
+def start_refgenie_serve(env: dict, port: int) -> subprocess.Popen:
+    """Start `refgenie serve` as a subprocess on the given port.
+
+    Uses the real server code (full OpenAPI spec), so clients can be pointed at
+    it exactly as they would a production server. Raises RuntimeError with the
+    captured subprocess output if the server never comes up.
+    """
+    proc = popen_cli("serve", "-p", str(port), env=env)
+    try:
+        wait_for_server("127.0.0.1", port, timeout=30)
+    except RuntimeError:
+        proc.terminate()
+        stdout, stderr = proc.communicate(timeout=5)
+        raise RuntimeError(
+            f"Server failed to start at 127.0.0.1:{port}\n"
+            f"STDOUT: {stdout.decode()[-500:]}\n"
+            f"STDERR: {stderr.decode()[-500:]}"
+        )
+    return proc
+
+
+def stop_refgenie_serve(proc: subprocess.Popen) -> None:
+    """Terminate a `refgenie serve` subprocess, killing it if it hangs."""
+    proc.terminate()
+    try:
+        proc.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
+
+
+def build_server_env(tmp_dir: Path, genomes: list[dict]) -> dict:
+    """Build a complete server environment with multiple genomes + fasta assets.
+
+    Each genome spec is a dict with keys:
+        - fasta: Path to the FASTA file
+        - alias: str genome alias
+        - override: list[str] | None -- serving_modes_override
+
+    Creates a single SQLite DB, one Refgenie instance, registers fasta once,
+    then loops over each genome spec to init, build, optionally override, and stage.
+
+    Returns dict with "engine" (for teardown), "env" (CLI/subprocess environment
+    variables) and a "genomes" dict keyed by alias containing genome_digest and
+    asset_digest for each genome.
+    """
+    from sqlmodel import Session, SQLModel, create_engine
+
+    from refgenie import Refgenie
+    from refgenie.db.tables import Asset
+
+    db_path = tmp_dir / "refgenie.db"
+    genome_folder = tmp_dir / "genomes"
+    stage_folder = tmp_dir / "archives"
+    genome_folder.mkdir(exist_ok=True)
+    stage_folder.mkdir(exist_ok=True)
+
+    engine = create_engine(f"sqlite:///{db_path}")
+    SQLModel.metadata.create_all(engine)
+
+    rg = Refgenie(database_engine=engine, suppress_migrations=True)
+    rg.database.init(genome_folder=genome_folder, genome_stage_folder=stage_folder)
+    register_fasta(rg, TESTS_DATA_DIR)
+
+    genomes_info = {}
+    for spec in genomes:
+        fasta_path = spec["fasta"]
+        alias = spec["alias"]
+        override = spec.get("override")
+
+        rg.genome.initialize_genome(
+            fasta_file_path=fasta_path,
+            alias_names=[alias],
+            description=f"{alias} test genome",
+        )
+        rg.build.run(
+            recipe_name="fasta",
+            genome_alias=alias,
+            asset_group_name="fasta",
+            asset_name="default",
+        )
+
+        genome_digest = rg.alias.resolve(alias)
+        asset = rg.asset.get(
+            genome_digest=genome_digest,
+            asset_group_name="fasta",
+            asset_name="default",
+        )
+        asset_digest = asset.digest
+
+        if override:
+            from sqlalchemy import update as sa_update
+
+            with Session(engine) as session:
+                session.exec(
+                    sa_update(Asset)
+                    .where(Asset.digest == asset_digest)
+                    .values(serving_modes_override=override)
+                )
+                session.commit()
+            asset.serving_modes_override = override
+
+        rg.stage.create(
+            asset=asset,
+            genome_folder=genome_folder,
+            genome_stage_folder=stage_folder,
+        )
+
+        genomes_info[alias] = {
+            "genome_digest": genome_digest,
+            "asset_digest": asset_digest,
+        }
+
+    # Create env dict for CLI subprocess usage
+    db_config = tmp_dir / "refgenie_db_config.yaml"
+    db_config.write_text(f"type: sqlite\npath: {db_path}\n")
+
+    env = {
+        "REFGENIE_HOME_PATH": str(tmp_dir),
+        "REFGENIE_DB_CONFIG_PATH": str(db_config),
+        "REFGENIE_GENOME_FOLDER": str(genome_folder),
+        "REFGENIE_GENOME_STAGE_FOLDER": str(stage_folder),
+        "NO_COLOR": "1",
+        "TERM": "dumb",
+        "COLUMNS": "500",
+    }
 
     return {
-        "server_config_path": server_config_path,
-        "archive_dir": str(archive_dir),
-        "genome_digest": genome_digest,
+        "engine": engine,
+        "genomes": genomes_info,
+        "env": env,
     }
 
 
 @pytest.fixture(scope="session")
-def build_test_server(archived_asset_config):
-    """Start a real refgenieserver serving the archived assets.
+def multi_remote_servers(tmp_path_factory):
+    """Two real `refgenie serve` subprocesses: A has rCRSd, B has demo.
 
-    Uses create_app() from refgenieserver.app_factory to create
-    a real FastAPI app, then starts it on a random port via uvicorn
-    in a background thread.
-
-    Yields dict with url and genome_digest.
+    Both assets use the default fasta asset class serving modes
+    (``[file, archive]``), so server B doubles as the both-modes fixture.
     """
-    import uvicorn
-    from refgenieserver.app_factory import create_app
+    tmp_a = tmp_path_factory.mktemp("server_a")
+    info_a = build_server_env(tmp_a, [{"fasta": RCRSD_FASTA, "alias": "rCRSd"}])
 
-    app = create_app(
-        archived_asset_config["server_config_path"],
-        archive_base_dir=archived_asset_config["archive_dir"],
-    )
+    tmp_b = tmp_path_factory.mktemp("server_b")
+    info_b = build_server_env(tmp_b, [{"fasta": DEMO_FASTA, "alias": "demo"}])
 
-    port = _find_free_port()
-    server_url = f"http://127.0.0.1:{port}"
+    port_a = find_free_port()
+    port_b = find_free_port()
 
-    config = uvicorn.Config(
-        app,
-        host="127.0.0.1",
-        port=port,
-        log_level="warning",
-    )
-    server = uvicorn.Server(config)
-
-    thread = threading.Thread(target=server.run, daemon=True)
-    thread.start()
-
-    # Wait for server to be ready
-    for _ in range(50):
-        try:
-            with socket.create_connection(("127.0.0.1", port), timeout=0.1):
-                break
-        except (ConnectionRefusedError, OSError):
-            time.sleep(0.1)
-    else:
-        raise RuntimeError(f"Build test server failed to start on port {port}")
+    proc_a = start_refgenie_serve(info_a["env"], port_a)
+    proc_b = start_refgenie_serve(info_b["env"], port_b)
 
     yield {
-        "url": server_url,
-        "genome_digest": archived_asset_config["genome_digest"],
+        "server_a": {**info_a, "url": f"http://127.0.0.1:{port_a}"},
+        "server_b": {**info_b, "url": f"http://127.0.0.1:{port_b}"},
     }
 
-    server.should_exit = True
-    thread.join(timeout=5)
-
-
-# =============================================================================
-# Fixtures for test_server_client.py (thin wrappers around shared fixtures)
-# =============================================================================
+    stop_refgenie_serve(proc_a)
+    stop_refgenie_serve(proc_b)
+    info_a["engine"].dispose()
+    info_b["engine"].dispose()
 
 
 @pytest.fixture(scope="session")
-def test_server_url(build_test_server):
-    """Return the URL of the shared test server."""
-    return build_test_server["url"]
+def file_mode_pull_server(tmp_path_factory):
+    """Real `refgenie serve` subprocess with a file-only (override) fasta asset."""
+    tmp = tmp_path_factory.mktemp("file_pull")
+    info = build_server_env(
+        tmp,
+        [{"fasta": RCRSD_FASTA, "alias": "rCRSd", "override": ["file"]}],
+    )
+
+    port = find_free_port()
+    proc = start_refgenie_serve(info["env"], port)
+
+    yield {**info, "url": f"http://127.0.0.1:{port}"}
+
+    stop_refgenie_serve(proc)
+    info["engine"].dispose()
 
 
 @pytest.fixture(scope="session")
-def server_rgc(archived_asset_config):
-    """Return the RefGenConf object that the server uses (for testing helpers)."""
-    from refgenconf import RefGenConf
+def cli_multi_genome_config(cli_build_config):
+    """Build a second genome (demo) for multi-genome tests via library API.
 
-    return RefGenConf.from_yaml_file(archived_asset_config["server_config_path"])
-
-
-@pytest.fixture
-def client_rgc(test_server_url, tmp_path):
-    """Create a writable RefGenConf client subscribed to the test server.
-
-    This is the main fixture for testing client-server operations.
+    Depends on cli_build_config which already built rCRSd.
     """
-    from refgenconf import RefGenConf
-    from refgenconf.const import CFG_FOLDER_KEY, CFG_SERVERS_KEY, CFG_VERSION_KEY
+    from sqlmodel import create_engine
+    from refgenie import Refgenie
 
-    genome_folder = tmp_path / "client_genomes"
-    genome_folder.mkdir()
-    (genome_folder / "data").mkdir()
-    (genome_folder / "alias").mkdir()
+    engine = create_engine(TEST_DB_URL)
+    rg = Refgenie(database_engine=engine, suppress_migrations=True)
+    rg.database.init(genome_folder=Path(cli_build_config["genome_folder"]))
+    register_fasta(rg, TESTS_DATA_DIR)
 
-    config_path = tmp_path / "refgenie.yaml"
-    config = {
-        CFG_VERSION_KEY: 0.4,
-        CFG_FOLDER_KEY: str(genome_folder),
-        CFG_SERVERS_KEY: [test_server_url],
-        "genomes": {},
+    try:
+        rg.genome.initialize_genome(
+            fasta_file_path=DEMO_FASTA,
+            alias_names=["demo"],
+            description="demo genome",
+        )
+    except ValueError:
+        # Already exists from a previous run
+        pass
+
+    try:
+        rg.build.run(
+            recipe_name="fasta",
+            genome_alias="demo",
+            asset_group_name="fasta",
+            asset_name="default",
+        )
+    except Exception:
+        pass  # Asset may already exist
+
+    engine.dispose()
+
+    return cli_build_config
+
+
+@pytest.fixture(scope="session")
+def cli_archived_config(cli_build_config):
+    """Stage the built asset via library API.
+
+    Session-scoped fixture that creates archives.
+    """
+    from sqlmodel import create_engine
+    from refgenie import Refgenie
+
+    env = cli_build_config["env"]
+    archive_folder = env["REFGENIE_GENOME_STAGE_FOLDER"]
+    genome_folder = Path(cli_build_config["genome_folder"])
+
+    engine = create_engine(TEST_DB_URL)
+    rg = Refgenie(database_engine=engine, suppress_migrations=True)
+    # Configuration already exists with genome_stage_folder from cli_build_config
+
+    asset = rg.asset.get(
+        genome_digest=rg.alias.resolve(GENOME_ALIAS),
+        asset_group_name="fasta",
+        asset_name="default",
+    )
+    rg.stage.create(
+        asset=asset,
+        genome_folder=genome_folder,
+        genome_stage_folder=Path(archive_folder),
+    )
+
+    # Get archive info
+    from sqlmodel import Session, select
+    from sqlalchemy.orm import selectinload
+    from refgenie.db.tables import StagedAsset, Asset as AssetModel, Configuration
+
+    with Session(engine) as session:
+        config = session.exec(select(Configuration)).first()
+        staged = session.exec(
+            select(StagedAsset)
+            .options(selectinload(StagedAsset.asset).selectinload(AssetModel.asset_group))
+            .where(StagedAsset.mode == "archive")
+        ).first()
+        archive_digest = staged.asset_digest if staged else None
+        if staged and config and config.genome_stage_folder:
+            from refgenie.utils.staging import staged_archive_path
+
+            archive_path = str(
+                staged_archive_path(
+                    config.genome_stage_folder,
+                    staged.asset.asset_group.genome_digest,
+                    staged.asset.asset_group.name,
+                    staged.asset.digest,
+                )
+            )
+        else:
+            archive_path = None
+        archive_size = staged.tarball_size if staged else None
+
+    engine.dispose()
+
+    return {
+        **cli_build_config,
+        "archive_digest": archive_digest,
+        "archive_path": archive_path,
+        "archive_size": archive_size,
+        "archive_folder": archive_folder,
     }
 
-    with open(str(config_path), "w") as f:
-        yaml.dump(config, f, default_flow_style=False)
 
-    return RefGenConf.from_yaml_file(str(config_path))
+@pytest.fixture(scope="session")
+def cli_multi_archived_config(cli_archived_config, cli_multi_genome_config):
+    """Archive both genomes via library API.
+
+    cli_archived_config already archived rCRSd.
+    cli_multi_genome_config already built demo.
+    This archives demo too.
+    """
+    from sqlmodel import create_engine, Session, select
+    from refgenie import Refgenie
+    from refgenie.db.tables import StagedAsset
+
+    genome_folder = Path(cli_archived_config["genome_folder"])
+    archive_folder = Path(cli_archived_config["archive_folder"])
+
+    engine = create_engine(TEST_DB_URL)
+    rg = Refgenie(database_engine=engine, suppress_migrations=True)
+    # Configuration already exists with genome_stage_folder from cli_archived_config
+
+    try:
+        asset = rg.asset.get(
+            genome_digest=rg.alias.resolve("demo"),
+            asset_group_name="fasta",
+            asset_name="default",
+        )
+        rg.stage.create(
+            asset=asset,
+            genome_folder=genome_folder,
+            genome_stage_folder=archive_folder,
+        )
+    except Exception:
+        pass  # Staged asset may already exist
+
+    # Verify both archives exist
+    with Session(engine) as session:
+        archive_count = len(
+            session.exec(select(StagedAsset).where(StagedAsset.mode == "archive")).all()
+        )
+    engine.dispose()
+
+    assert archive_count >= 2, (
+        f"Expected at least 2 staged archive records (rCRSd + demo), found {archive_count}"
+    )
+
+    return cli_archived_config
 
 
-@pytest.fixture
-def client_config_path(test_server_url, tmp_path):
-    """Create a client config file and return its path (for CLI tests)."""
-    from refgenconf.const import CFG_FOLDER_KEY, CFG_SERVERS_KEY, CFG_VERSION_KEY
+@pytest.fixture(scope="session")
+def refgenie_serve_subprocess(cli_multi_archived_config):
+    """Start refgenie serve as a real subprocess.
 
-    genome_folder = tmp_path / "cli_genomes"
-    genome_folder.mkdir()
-    (genome_folder / "data").mkdir()
-    (genome_folder / "alias").mkdir()
+    This tests the actual server code, not a mock.
+    Both rCRSd and demo are built and archived.
+    """
+    env = cli_multi_archived_config["env"]
+    port = find_free_port()
+    server_url = f"http://127.0.0.1:{port}"
 
-    config_path = tmp_path / "refgenie.yaml"
-    config = {
-        CFG_VERSION_KEY: 0.4,
-        CFG_FOLDER_KEY: str(genome_folder),
-        CFG_SERVERS_KEY: [test_server_url],
-        "genomes": {},
+    proc = start_refgenie_serve(env, port)
+
+    yield {
+        **cli_multi_archived_config,
+        "url": server_url,
+        "port": port,
+        "process": proc,
     }
 
-    with open(str(config_path), "w") as f:
-        yaml.dump(config, f, default_flow_style=False)
+    stop_refgenie_serve(proc)
 
-    return str(config_path)
+
+# =============================================================================
+# Store-backed serving fixtures
+# =============================================================================
+# A remote RefgetStore served over HTTP, with a refgenie server federating over
+# it (registered on boot from REFGENIE_STORES).
+
+# Small demo collections from the refget package's test FASTA files.
+# Resolved relative to this repo's sibling `refget` source checkout.
+_REFGET_TEST_FASTA_DIR = Path(__file__).resolve().parents[3] / "refget" / "test_fasta"
+STORE_DEMO_FASTAS = ["base.fa", "subset.fa", "different_names.fa"]
+
+
+def _serve_directory_http(directory: Path) -> tuple[subprocess.Popen, str]:
+    """Serve a directory over HTTP via a `python -m http.server` subprocess.
+
+    Returns (process, base_url). A subprocess (not a thread) is required because
+    gtars' open_remote holds the GIL during HTTP requests and would deadlock a
+    Python-thread HTTP server.
+    """
+    port = find_free_port()
+    proc = subprocess.Popen(
+        [sys.executable, "-m", "http.server", str(port), "--directory", str(directory)],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    try:
+        wait_for_server("127.0.0.1", port, timeout=15)
+    except RuntimeError:
+        proc.terminate()
+        raise
+    return proc, f"http://127.0.0.1:{port}"
+
+
+def _build_demo_store(store_dir: Path) -> list[str]:
+    """Build an on-disk RefgetStore from the small refget test FASTAs.
+
+    Returns the list of collection digests (FASTA-add order).
+    """
+    from refget.store import RefgetStore
+
+    if not _REFGET_TEST_FASTA_DIR.is_dir():
+        raise RuntimeError(
+            f"refget test_fasta dir not found at {_REFGET_TEST_FASTA_DIR}; "
+            "store-backed integration tests require the refget source checkout."
+        )
+
+    store = RefgetStore.on_disk(str(store_dir))
+    for fa in STORE_DEMO_FASTAS:
+        store.add_sequence_collection_from_fasta(str(_REFGET_TEST_FASTA_DIR / fa))
+    return [c.digest for c in store.list_collections()["results"]]
+
+
+@pytest.fixture(scope="session")
+def store_backed_server(tmp_path_factory):
+    """Run a refgenie server in store-backed mode against an HTTP-served store.
+
+    Builds a small on-disk RefgetStore (3 collections from refget test FASTAs),
+    serves it over HTTP, then starts `refgenie serve` with REFGENIE_STORES
+    declaring the HTTP store as its one federated store (production path).
+
+    Yields a dict with:
+        - url: refgenie server base URL
+        - store_url: HTTP URL of the served RefgetStore
+        - digests: list of collection digests in the store
+    """
+    tmp = tmp_path_factory.mktemp("store_backed")
+
+    # 1. Build the on-disk store and serve it over HTTP (subprocess).
+    store_dir = tmp / "store"
+    store_dir.mkdir()
+    digests = _build_demo_store(store_dir)
+    store_proc, store_url = _serve_directory_http(store_dir)
+
+    # 2. Start refgenie serve in store-backed mode (subprocess).
+    home = tmp / "home"
+    home.mkdir()
+    db_config = home / "refgenie_db_config.yaml"
+    db_config.write_text(f"type: sqlite\npath: {home / 'db'}\n")
+    genome_folder = home / "genomes"
+    genome_folder.mkdir()
+
+    env = {
+        "REFGENIE_HOME_PATH": str(home),
+        "REFGENIE_DB_CONFIG_PATH": str(db_config),
+        "REFGENIE_GENOME_FOLDER": str(genome_folder),
+        "REFGENIE_STORES": json.dumps([{"name": "demo", "url": store_url, "type": "remote"}]),
+        "NO_COLOR": "1",
+        "TERM": "dumb",
+        "COLUMNS": "500",
+    }
+
+    server_port = find_free_port()
+    # ``None`` unsets: no stale REFGENIE config var leaks into the subprocess.
+    server_env = {**env, "REFGENIE": None}
+
+    proc = popen_cli("serve", "-p", str(server_port), env=server_env)
+
+    try:
+        wait_for_server("127.0.0.1", server_port, timeout=40)
+    except RuntimeError:
+        proc.terminate()
+        store_proc.terminate()
+        stdout, stderr = proc.communicate(timeout=5)
+        raise RuntimeError(
+            f"Store-backed server failed to start at 127.0.0.1:{server_port}\n"
+            f"STDOUT: {stdout.decode()[-1000:]}\n"
+            f"STDERR: {stderr.decode()[-1000:]}"
+        )
+
+    yield {
+        "url": f"http://127.0.0.1:{server_port}",
+        "store_url": store_url,
+        "digests": digests,
+    }
+
+    # Cleanup: refgenie server first, then the HTTP store server.
+    proc.terminate()
+    try:
+        proc.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
+    store_proc.terminate()
+    try:
+        store_proc.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        store_proc.kill()
+        store_proc.wait()
+
+
+@pytest.fixture(scope="session")
+def bulk_pull_client_env(refgenie_serve_subprocess, tmp_path_factory):
+    """Shared client environment for BulkPull tests.
+
+    Created once per session for speed. Tests use --force to avoid conflicts
+    from shared state.
+    """
+    tmp = tmp_path_factory.mktemp("bulk_client")
+    return create_client_env(tmp, refgenie_serve_subprocess["url"])
+
+
+@pytest.fixture(scope="session")
+def data_channel_url():
+    """URL of the HTTP data channel server (started by test-integration.sh)."""
+    return DATA_CHANNEL_URL
+
+
+# =============================================================================
+# Shared fixtures for read-only tests
+# =============================================================================
+# Session-scoped fixtures that build rCRSd ONCE for all read-only tests.
+# Uses a separate SQLite database to avoid conflicting with the session
+# PostgreSQL database used by CLI tests.
+
+
+@pytest.fixture(scope="session")
+def shared_test_engine(tmp_path_factory):
+    """
+    Session-scoped engine for shared read-only tests.
+
+    Uses a separate SQLite database (not the shared PostgreSQL) to avoid
+    conflicting with session CLI fixtures. This means read-only library
+    tests build once per session instead of once per class.
+    """
+    from sqlmodel import create_engine, SQLModel
+
+    db_dir = tmp_path_factory.mktemp("shared_test_db")
+    db_path = db_dir / "shared_test.db"
+    engine = create_engine(f"sqlite:///{db_path}")
+    SQLModel.metadata.create_all(engine)
+    yield engine
+    engine.dispose()
+
+
+@pytest.fixture(scope="session")
+def shared_rcrsd_instance(shared_test_engine, fixtures_path, tmp_path_factory):
+    """
+    Session-scoped refgenie instance with pre-built rCRSd asset.
+
+    Builds the rCRSd FASTA asset ONCE per session and shares it across all
+    read-only tests. Uses a separate SQLite database to avoid conflicting
+    with the session PostgreSQL fixtures.
+    """
+    from refgenie import Refgenie
+
+    tmp_dir = tmp_path_factory.mktemp("shared_genomes")
+
+    rg = Refgenie(database_engine=shared_test_engine, suppress_migrations=True)
+    rg.database.init(genome_folder=tmp_dir / "genomes")
+    register_fasta(rg, fixtures_path)
+
+    # Initialize genome and build the rCRSd asset once
+    rg.genome.initialize_genome(
+        fasta_file_path=fixtures_path / "rCRSd.fa",
+        alias_names=["rCRSd"],
+        description="rCRSd genome",
+    )
+    rg.build.run(
+        recipe_name="fasta",
+        genome_alias="rCRSd",
+        asset_group_name="fasta",
+        asset_name="test",
+    )
+
+    return rg
+
+
+@pytest.fixture(scope="session")
+def shared_client(shared_rcrsd_instance):
+    """
+    Session-scoped TestClient over the REAL server app wrapping
+    shared_rcrsd_instance (same engine, same genome folder). Used by
+    read-only tests that need both a library instance and HTTP endpoints
+    pointing to the same data -- /v4/genomes/{digest} serves the real JSON
+    API over the built asset.
+    """
+    requires_server()
+    with make_server_client(shared_rcrsd_instance) as c:
+        yield c

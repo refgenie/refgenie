@@ -1,0 +1,12 @@
+# refgenie
+
+> refgenie is a catalog of reference genomes and the assets built from them: FASTA files, aligner indexes and annotations. Find a genome by name or species, then download its assets or the command that pulls them.
+
+- [SKILL.md](SKILL.md): how to find a genome and get its files with the HTTP API, step by step
+- [OpenAPI schema](openapi.json): every HTTP endpoint
+- [MCP server](mcp): Streamable HTTP, read-only tools; list tools return 20 rows a page
+
+## Docs
+
+- [Connect an AI assistant](https://docs.refgenie.org/refgenie/mcp/): setting up the MCP server
+- [refgenie documentation](https://docs.refgenie.org/refgenie/)

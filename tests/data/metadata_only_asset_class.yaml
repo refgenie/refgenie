@@ -1,0 +1,11 @@
+name: metadata_only
+version: 0.1.0
+description: Asset class with only non-path seek keys for testing
+serving_modes: [none]
+seek_keys:
+  software_version:
+    description: Version of the software used
+    type: string
+  build_info:
+    description: JSON blob with build information
+    type: json

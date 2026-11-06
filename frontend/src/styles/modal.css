@@ -1,0 +1,139 @@
+/* =============================================================================
+   MODAL STYLES
+   Universal modal styles for the web design system.
+   Import this file in your main.css or copy contents to components.css.
+   ============================================================================= */
+
+/* Overlay - covers the viewport with semi-transparent backdrop */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+/* Modal container */
+.modal {
+  background: rgb(var(--color-background, 255, 255, 255));
+  border-radius: var(--radius-lg, 8px);
+  box-shadow: var(--shadow-xl, 0 20px 25px -5px rgba(0, 0, 0, 0.1));
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Size variants */
+.modal--sm { width: 400px; }
+.modal--md { width: 560px; }
+.modal--lg { width: 720px; }
+
+/* Header */
+.modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-5, 1.25rem) var(--space-6, 1.5rem);
+  border-bottom: 1px solid rgb(var(--color-border, 229, 231, 235));
+  flex-shrink: 0;
+}
+
+.modal__title {
+  font-size: var(--font-size-xl, 1.25rem);
+  font-weight: var(--font-weight-semibold, 600);
+  margin: 0;
+}
+
+.modal__close {
+  background: none;
+  border: none;
+  font-size: var(--font-size-2xl, 1.5rem);
+  cursor: pointer;
+  padding: var(--space-1, 0.25rem);
+  line-height: 1;
+  color: rgb(var(--color-text-muted, 107, 114, 128));
+  border-radius: var(--radius-sm, 4px);
+}
+
+.modal__close:hover {
+  color: rgb(var(--color-text, 17, 24, 39));
+  background: rgb(var(--color-gray-100, 243, 244, 246));
+}
+
+/* Body */
+.modal__body {
+  padding: var(--space-6, 1.5rem);
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* Footer */
+.modal__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3, 0.75rem);
+  padding: var(--space-4, 1rem) var(--space-6, 1.5rem);
+  border-top: 1px solid rgb(var(--color-border, 229, 231, 235));
+  flex-shrink: 0;
+}
+
+/* =============================================================================
+   MOBILE RESPONSIVE
+   ============================================================================= */
+
+@media (max-width: 640px) {
+  /* Full width with safe margins */
+  .modal {
+    margin: var(--space-4, 1rem);
+    /* Account for notched phones (iPhone X+) */
+    margin-top: max(var(--space-4, 1rem), env(safe-area-inset-top));
+    margin-bottom: max(var(--space-4, 1rem), env(safe-area-inset-bottom));
+    max-width: calc(100vw - 2rem);
+    max-height: calc(100vh - 2rem);
+    /* Smaller border radius on mobile */
+    border-radius: var(--radius-md, 6px);
+  }
+
+  .modal--sm,
+  .modal--md,
+  .modal--lg {
+    width: 100%;
+  }
+
+  /* Tighter padding on mobile */
+  .modal__header {
+    padding: var(--space-4, 1rem);
+  }
+
+  .modal__body {
+    padding: var(--space-4, 1rem);
+  }
+
+  .modal__footer {
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+  }
+
+  /* Larger touch target for close button (44px minimum for iOS) */
+  .modal__close {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Very small screens - stack footer buttons */
+@media (max-width: 380px) {
+  .modal__footer {
+    flex-direction: column;
+  }
+
+  .modal__footer > button {
+    width: 100%;
+  }
+}

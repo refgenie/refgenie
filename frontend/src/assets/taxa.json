@@ -1,0 +1,5602 @@
+[
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Cypriniformes",
+    "family": "Leuciscidae",
+    "genus": "Abramis",
+    "species": "Abramis brama"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Acanthisittidae",
+    "genus": "Acanthisitta",
+    "species": "Acanthisitta chloris"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Spariformes",
+    "family": "Sparidae",
+    "genus": "Acanthopagrus",
+    "species": "Acanthopagrus latus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Spariformes",
+    "family": "Sparidae",
+    "genus": "Acanthopagrus",
+    "species": "Acanthopagrus schlegelii"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Acipenseriformes",
+    "family": "Acipenseridae",
+    "genus": "Acipenser",
+    "species": "Acipenser ruthenus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Muridae",
+    "genus": "Acomys",
+    "species": "Acomys minous"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Muridae",
+    "genus": "Acomys",
+    "species": "Acomys russatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Sturnidae",
+    "genus": "Acridotheres",
+    "species": "Acridotheres tristis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Caprimulgiformes",
+    "family": "Aegothelidae",
+    "genus": "Aegotheles",
+    "species": "Aegotheles albertisi"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Icteridae",
+    "genus": "Agelaius",
+    "species": "Agelaius phoeniceus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Charadriiformes",
+    "family": "Alcidae",
+    "genus": "Alca",
+    "species": "Alca torda"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Clupeiformes",
+    "family": "Clupeidae",
+    "genus": "Alosa",
+    "species": "Alosa sapidissima"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Psittaciformes",
+    "family": "Psittacidae",
+    "genus": "Amazona",
+    "species": "Amazona ochrocephala"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Percopsiformes",
+    "family": "Amblyopsidae",
+    "genus": "Amblyopsis",
+    "species": "Amblyopsis spelaea"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Chondrichthyes",
+    "order": "Rajiformes",
+    "family": "Rajidae",
+    "genus": "Amblyraja",
+    "species": "Amblyraja radiata"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Caudata",
+    "family": "Ambystomatidae",
+    "genus": "Ambystoma",
+    "species": "Ambystoma mexicanum"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Amiiformes",
+    "family": "Amiidae",
+    "genus": "Amia",
+    "species": "Amia calva"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Uranoscopiformes",
+    "family": "Ammodytidae",
+    "genus": "Ammodytes",
+    "species": "Ammodytes marinus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Passerellidae",
+    "genus": "Ammospiza",
+    "species": "Ammospiza caudacuta"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Passerellidae",
+    "genus": "Ammospiza",
+    "species": "Ammospiza maritima maritima"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Passerellidae",
+    "genus": "Ammospiza",
+    "species": "Ammospiza nelsoni"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Anabantiformes",
+    "family": "Anabantidae",
+    "genus": "Anabas",
+    "species": "Anabas testudineus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Cyprinodontiformes",
+    "family": "Anablepidae",
+    "genus": "Anableps",
+    "species": "Anableps anableps"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Anseriformes",
+    "family": "Anatidae",
+    "genus": "Anas",
+    "species": "Anas acuta"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Anseriformes",
+    "family": "Anatidae",
+    "genus": "Anas",
+    "species": "Anas platyrhynchos"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Anguilliformes",
+    "family": "Anguillidae",
+    "genus": "Anguilla",
+    "species": "Anguilla anguilla"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Anniellidae",
+    "genus": "Anniella",
+    "species": "Anniella stebbinsi"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Dactyloidae",
+    "genus": "Anolis",
+    "species": "Anolis sagrei"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Aromobatidae",
+    "genus": "Anomaloglossus",
+    "species": "Anomaloglossus baeobatrachus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Anseriformes",
+    "family": "Anatidae",
+    "genus": "Anser",
+    "species": "Anser anser"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Anseriformes",
+    "family": "Anatidae",
+    "genus": "Anser",
+    "species": "Anser brachyrhynchus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Anseriformes",
+    "family": "Anatidae",
+    "genus": "Anser",
+    "species": "Anser cygnoides"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Lophiiformes",
+    "family": "Antennariidae",
+    "genus": "Antennarius",
+    "species": "Antennarius maculatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Vespertilionidae",
+    "genus": "Antrozous",
+    "species": "Antrozous pallidus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Ascidiacea",
+    "order": "Aplousobranchia",
+    "family": "Polyclinidae",
+    "genus": "Aplidium",
+    "species": "Aplidium turbinatum"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Galaxiiformes",
+    "family": "Galaxiidae",
+    "genus": "Aplochiton",
+    "species": "Aplochiton taeniatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Muridae",
+    "genus": "Apodemus",
+    "species": "Apodemus sylvaticus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Apterygiformes",
+    "family": "Apterygidae",
+    "genus": "Apteryx",
+    "species": "Apteryx mantelli"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Apodiformes",
+    "family": "Apodidae",
+    "genus": "Apus",
+    "species": "Apus apus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Accipitriformes",
+    "family": "Accipitridae",
+    "genus": "Aquila",
+    "species": "Aquila chrysaetos chrysaetos"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Psittaciformes",
+    "family": "Psittacidae",
+    "genus": "Ara",
+    "species": "Ara ararauna"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Cichliformes",
+    "family": "Cichlidae",
+    "genus": "Archocentrus",
+    "species": "Archocentrus centrarchus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Argentiniformes",
+    "family": "Argentinidae",
+    "genus": "Argentina",
+    "species": "Argentina silus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Arthropoda",
+    "class": "Insecta",
+    "order": "Lepidoptera",
+    "family": "Lycaenidae",
+    "genus": "Aricia",
+    "species": "Aricia agestis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Scombriformes",
+    "family": "Arripidae",
+    "genus": "Arripis",
+    "species": "Arripis georgiana"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Phyllostomidae",
+    "genus": "Artibeus",
+    "species": "Artibeus intermedius"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Phyllostomidae",
+    "genus": "Artibeus",
+    "species": "Artibeus lituratus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Muridae",
+    "genus": "Arvicanthis",
+    "species": "Arvicanthis niloticus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Cricetidae",
+    "genus": "Arvicola",
+    "species": "Arvicola amphibius"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Ascaphidae",
+    "genus": "Ascaphus",
+    "species": "Ascaphus truei"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Ascidiacea",
+    "order": "Phlebobranchia",
+    "family": "Ascidiidae",
+    "genus": "Ascidia",
+    "species": "Ascidia mentula"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Ascidiacea",
+    "order": "Phlebobranchia",
+    "family": "Ascidiidae",
+    "genus": "Ascidiella",
+    "species": "Ascidiella aspersa"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Hipposideridae",
+    "genus": "Aselliscus",
+    "species": "Aselliscus stoliczkanus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Teiidae",
+    "genus": "Aspidoscelis",
+    "species": "Aspidoscelis tigris stejnegeri"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Cichliformes",
+    "family": "Cichlidae",
+    "genus": "Astatotilapia",
+    "species": "Astatotilapia calliptera"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Echinodermata",
+    "class": "Asteroidea",
+    "order": "Forcipulatida",
+    "family": "Asteriidae",
+    "genus": "Asterias",
+    "species": "Asterias rubens"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Accipitriformes",
+    "family": "Accipitridae",
+    "genus": "Astur",
+    "species": "Astur gentilis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Characiformes",
+    "family": "Acestrorhamphidae",
+    "genus": "Astyanax",
+    "species": "Astyanax mexicanus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Strigiformes",
+    "family": "Strigidae",
+    "genus": "Athene",
+    "species": "Athene noctua"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Cichliformes",
+    "family": "Cichlidae",
+    "genus": "Aulonocara",
+    "species": "Aulonocara stuartgranti"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Syngnathiformes",
+    "family": "Aulostomidae",
+    "genus": "Aulostomus",
+    "species": "Aulostomus maculatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Anseriformes",
+    "family": "Anatidae",
+    "genus": "Aythya",
+    "species": "Aythya ferina"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Anseriformes",
+    "family": "Anatidae",
+    "genus": "Aythya",
+    "species": "Aythya fuligula"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Anseriformes",
+    "family": "Anatidae",
+    "genus": "Aythya",
+    "species": "Aythya marila"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Balaenopteridae",
+    "genus": "Balaenoptera",
+    "species": "Balaenoptera acutorostrata"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Balaenopteridae",
+    "genus": "Balaenoptera",
+    "species": "Balaenoptera borealis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Balaenopteridae",
+    "genus": "Balaenoptera",
+    "species": "Balaenoptera musculus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Balaenopteridae",
+    "genus": "Balaenoptera",
+    "species": "Balaenoptera physalus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Balaenopteridae",
+    "genus": "Balaenoptera",
+    "species": "Balaenoptera ricei"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Gruiformes",
+    "family": "Gruidae",
+    "genus": "Balearica",
+    "species": "Balearica regulorum gibbericeps"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Cypriniformes",
+    "family": "Nemacheilidae",
+    "genus": "Barbatula",
+    "species": "Barbatula barbatula"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Cypriniformes",
+    "family": "Cyprinidae",
+    "genus": "Barbus",
+    "species": "Barbus barbus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Anabantiformes",
+    "family": "Osphronemidae",
+    "genus": "Betta",
+    "species": "Betta splendens"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Blenniiformes",
+    "family": "Blenniidae",
+    "genus": "Blennius",
+    "species": "Blennius ocellaris"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Bombinatoridae",
+    "genus": "Bombina",
+    "species": "Bombina bombina"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Bombinatoridae",
+    "genus": "Bombina",
+    "species": "Bombina variegata"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Stomiiformes",
+    "family": "Stomiidae",
+    "genus": "Borostomias",
+    "species": "Borostomias antarcticus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Bovidae",
+    "genus": "Bos",
+    "species": "Bos indicus x Bos taurus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Chamaeleonidae",
+    "genus": "Bradypodion",
+    "species": "Bradypodion pumilum"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Chamaeleonidae",
+    "genus": "Bradypodion",
+    "species": "Bradypodion ventrale"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Leptocardii",
+    "order": "Amphioxiformes",
+    "family": "Branchiostomatidae",
+    "genus": "Branchiostoma",
+    "species": "Branchiostoma floridae x Branchiostoma belcheri"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Leptocardii",
+    "order": "Amphioxiformes",
+    "family": "Branchiostomatidae",
+    "genus": "Branchiostoma",
+    "species": "Branchiostoma floridae x Branchiostoma japonicum"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Leptocardii",
+    "order": "Amphioxiformes",
+    "family": "Branchiostomatidae",
+    "genus": "Branchiostoma",
+    "species": "Branchiostoma lanceolatum"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Anseriformes",
+    "family": "Anatidae",
+    "genus": "Branta",
+    "species": "Branta canadensis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Anseriformes",
+    "family": "Anatidae",
+    "genus": "Bucephala",
+    "species": "Bucephala clangula"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Bucerotiformes",
+    "family": "Bucorvidae",
+    "genus": "Bucorvus",
+    "species": "Bucorvus abyssinicus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Bufonidae",
+    "genus": "Bufo",
+    "species": "Bufo bufo"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Accipitriformes",
+    "family": "Accipitridae",
+    "genus": "Buteo",
+    "species": "Buteo buteo"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Lutjaniformes",
+    "family": "Lutjanidae",
+    "genus": "Caesio",
+    "species": "Caesio teres"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Primates",
+    "family": "Cebidae",
+    "genus": "Callithrix",
+    "species": "Callithrix jacchus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Sciuridae",
+    "genus": "Callospermophilus",
+    "species": "Callospermophilus lateralis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Columbiformes",
+    "family": "Columbidae",
+    "genus": "Caloenas",
+    "species": "Caloenas nicobarica"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Procellariiformes",
+    "family": "Procellariidae",
+    "genus": "Calonectris",
+    "species": "Calonectris borealis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Apodiformes",
+    "family": "Trochilidae",
+    "genus": "Calypte",
+    "species": "Calypte anna"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Camelidae",
+    "genus": "Camelus",
+    "species": "Camelus dromedarius"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Boidae",
+    "genus": "Candoia",
+    "species": "Candoia aspera"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Carnivora",
+    "family": "Canidae",
+    "genus": "Canis",
+    "species": "Canis lupus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Carnivora",
+    "family": "Canidae",
+    "genus": "Canis",
+    "species": "Canis lupus baileyi"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Carnivora",
+    "family": "Canidae",
+    "genus": "Canis",
+    "species": "Canis lupus familiaris"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Bovidae",
+    "genus": "Capra",
+    "species": "Capra hircus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Caprimulgiformes",
+    "family": "Caprimulgidae",
+    "genus": "Caprimulgus",
+    "species": "Caprimulgus europaeus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Cypriniformes",
+    "family": "Cyprinidae",
+    "genus": "Carassius",
+    "species": "Carassius carassius"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Chondrichthyes",
+    "order": "Lamniformes",
+    "family": "Alopiidae",
+    "genus": "Carcharodon",
+    "species": "Carcharodon carcharias"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Cariamiformes",
+    "family": "Cariamidae",
+    "genus": "Cariama",
+    "species": "Cariama cristata"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Castoridae",
+    "genus": "Castor",
+    "species": "Castor canadensis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Turdidae",
+    "genus": "Catharus",
+    "species": "Catharus ustulatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Beryciformes",
+    "family": "Berycidae",
+    "genus": "Centroberyx",
+    "species": "Centroberyx gerrardi"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Cervidae",
+    "genus": "Cervus",
+    "species": "Cervus elaphus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Chondrichthyes",
+    "order": "Lamniformes",
+    "family": "Alopiidae",
+    "genus": "Cetorhinus",
+    "species": "Cetorhinus maximus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Chaetodontiformes",
+    "family": "Chaetodontidae",
+    "genus": "Chaetodon",
+    "species": "Chaetodon trifascialis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Gonorynchiformes",
+    "family": "Chanidae",
+    "genus": "Chanos",
+    "species": "Chanos chanos"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Chaetodontiformes",
+    "family": "Chaetodontidae",
+    "genus": "Chelmon",
+    "species": "Chelmon rostratus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Mugiliformes",
+    "family": "Mugilidae",
+    "genus": "Chelon",
+    "species": "Chelon labrosus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Cricetidae",
+    "genus": "Chionomys",
+    "species": "Chionomys nivalis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Pipridae",
+    "genus": "Chiroxiphia",
+    "species": "Chiroxiphia lanceolata"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Otidiformes",
+    "family": "Otididae",
+    "genus": "Chlamydotis",
+    "species": "Chlamydotis macqueenii"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Labriformes",
+    "family": "Labridae",
+    "genus": "Choerodon",
+    "species": "Choerodon schoenleinii"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Pilosa",
+    "family": "Megalonychidae",
+    "genus": "Choloepus",
+    "species": "Choloepus didactylus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Charadriiformes",
+    "family": "Laridae",
+    "genus": "Chroicocephalus",
+    "species": "Chroicocephalus ridibundus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Ciconiiformes",
+    "family": "Ciconiidae",
+    "genus": "Ciconia",
+    "species": "Ciconia maguari"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Cinclidae",
+    "genus": "Cinclus",
+    "species": "Cinclus cinclus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Anseriformes",
+    "family": "Anatidae",
+    "genus": "Clangula",
+    "species": "Clangula hyemalis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Siluriformes",
+    "family": "Clariidae",
+    "genus": "Clarias",
+    "species": "Clarias gariepinus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Ascidiacea",
+    "order": "Aplousobranchia",
+    "family": "Clavelinidae",
+    "genus": "Clavelina",
+    "species": "Clavelina lepadiformis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Vespertilionidae",
+    "genus": "Cnephaeus",
+    "species": "Cnephaeus nilssonii"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Clupeiformes",
+    "family": "Engraulidae",
+    "genus": "Coilia",
+    "species": "Coilia mystus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Coliiformes",
+    "family": "Coliidae",
+    "genus": "Colius",
+    "species": "Colius striatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Corvidae",
+    "genus": "Coloeus",
+    "species": "Coloeus monedula"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Columbiformes",
+    "family": "Columbidae",
+    "genus": "Columba",
+    "species": "Columba livia"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Anguilliformes",
+    "family": "Congridae",
+    "genus": "Conger",
+    "species": "Conger conger"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Salmoniformes",
+    "family": "Salmonidae",
+    "genus": "Coregonus",
+    "species": "Coregonus lavaretus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Ascidiacea",
+    "order": "Phlebobranchia",
+    "family": "Corellidae",
+    "genus": "Corella",
+    "species": "Corella eumyota"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Corvidae",
+    "genus": "Corvus",
+    "species": "Corvus hawaiiensis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Corvidae",
+    "genus": "Corvus",
+    "species": "Corvus moneduloides"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Vespertilionidae",
+    "genus": "Corynorhinus",
+    "species": "Corynorhinus townsendii"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Perciformes",
+    "family": "Bovichtidae",
+    "genus": "Cottoperca",
+    "species": "Cottoperca gobio"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Blenniiformes",
+    "family": "Clinidae",
+    "genus": "Cristiceps",
+    "species": "Cristiceps australis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Ctenodactylidae",
+    "genus": "Ctenodactylus",
+    "species": "Ctenodactylus gundi"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Cuculiformes",
+    "family": "Cuculidae",
+    "genus": "Cuculus",
+    "species": "Cuculus canorus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Corvidae",
+    "genus": "Cyanocitta",
+    "species": "Cyanocitta cristata"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Perciformes",
+    "family": "Cyclopteridae",
+    "genus": "Cyclopterus",
+    "species": "Cyclopterus lumpus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Iguanidae",
+    "genus": "Cyclura",
+    "species": "Cyclura pinguis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Anseriformes",
+    "family": "Anatidae",
+    "genus": "Cygnus",
+    "species": "Cygnus columbianus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Anseriformes",
+    "family": "Anatidae",
+    "genus": "Cygnus",
+    "species": "Cygnus olor"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Dermoptera",
+    "family": "Cynocephalidae",
+    "genus": "Cynocephalus",
+    "species": "Cynocephalus volans"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Cypriniformes",
+    "family": "Leuciscidae",
+    "genus": "Cyprinella",
+    "species": "Cyprinella venusta"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Cervidae",
+    "genus": "Dama",
+    "species": "Dama dama"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Cypriniformes",
+    "family": "Danionidae",
+    "genus": "Danio",
+    "species": "Danio rerio"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Cingulata",
+    "family": "Dasypodidae",
+    "genus": "Dasypus",
+    "species": "Dasypus novemcinctus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Dasyuromorphia",
+    "family": "Dasyuridae",
+    "genus": "Dasyurus",
+    "species": "Dasyurus maculatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Delphinidae",
+    "genus": "Delphinus",
+    "species": "Delphinus delphis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Hylidae",
+    "genus": "Dendropsophus",
+    "species": "Dendropsophus ebraccatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Clupeiformes",
+    "family": "Denticipitidae",
+    "genus": "Denticeps",
+    "species": "Denticeps clupeoides"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Phyllostomidae",
+    "genus": "Desmodus",
+    "species": "Desmodus rotundus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Dibamidae",
+    "genus": "Dibamus",
+    "species": "Dibamus cf. smithi"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Perissodactyla",
+    "family": "Rhinocerotidae",
+    "genus": "Diceros",
+    "species": "Diceros bicornis minor"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Trachichthyiformes",
+    "family": "Diretmidae",
+    "genus": "Diretmus",
+    "species": "Diretmus argenteus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Alytidae",
+    "genus": "Discoglossus",
+    "species": "Discoglossus pictus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Hipposideridae",
+    "genus": "Doryrhina",
+    "species": "Doryrhina cyclops"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Casuariiformes",
+    "family": "Dromaiidae",
+    "genus": "Dromaius",
+    "species": "Dromaius novaehollandiae"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Microbiotheria",
+    "family": "Microbiotheriidae",
+    "genus": "Dromiciops",
+    "species": "Dromiciops gliroides"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Piciformes",
+    "family": "Picidae",
+    "genus": "Dryobates",
+    "species": "Dryobates pubescens"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Sirenia",
+    "family": "Dugongidae",
+    "genus": "Dugong",
+    "species": "Dugong dugon"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Carangiformes",
+    "family": "Echeneidae",
+    "genus": "Echeneis",
+    "species": "Echeneis naucrates"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Perciformes",
+    "family": "Trachinidae",
+    "genus": "Echiichthys",
+    "species": "Echiichthys vipera"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Myctophiformes",
+    "family": "Myctophidae",
+    "genus": "Electrona",
+    "species": "Electrona antarctica"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Gymnotiformes",
+    "family": "Gymnotidae",
+    "genus": "Electrophorus",
+    "species": "Electrophorus electricus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Proboscidea",
+    "family": "Elephantidae",
+    "genus": "Elephas",
+    "species": "Elephas maximus indicus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Eleutherodactylidae",
+    "genus": "Eleutherodactylus",
+    "species": "Eleutherodactylus coqui"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Anguidae",
+    "genus": "Elgaria",
+    "species": "Elgaria multicarinata webbii"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Leptodactylidae",
+    "genus": "Engystomops",
+    "species": "Engystomops pustulosus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Centrarchiformes",
+    "family": "Enoplosidae",
+    "genus": "Enoplosus",
+    "species": "Enoplosus armatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Perciformes",
+    "family": "Serranidae",
+    "genus": "Epinephelus",
+    "species": "Epinephelus lanceolatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Perciformes",
+    "family": "Serranidae",
+    "genus": "Epinephelus",
+    "species": "Epinephelus rankini"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Vespertilionidae",
+    "genus": "Eptesicus",
+    "species": "Eptesicus fuscus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Perissodactyla",
+    "family": "Equidae",
+    "genus": "Equus",
+    "species": "Equus caballus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Erethizontidae",
+    "genus": "Erethizon",
+    "species": "Erethizon dorsatum"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Eulipotyphla",
+    "family": "Erinaceidae",
+    "genus": "Erinaceus",
+    "species": "Erinaceus europaeus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Turdidae",
+    "genus": "Erithacus",
+    "species": "Erithacus rubecula"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Cladistia",
+    "order": "Polypteriformes",
+    "family": "Polypteridae",
+    "genus": "Erpetoichthys",
+    "species": "Erpetoichthys calabaricus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Dipsadidae",
+    "genus": "Erythrolamprus",
+    "species": "Erythrolamprus reginae"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Eschrichtiidae",
+    "genus": "Eschrichtius",
+    "species": "Eschrichtius robustus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Esociformes",
+    "family": "Esocidae",
+    "genus": "Esox",
+    "species": "Esox lucius"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Balaenidae",
+    "genus": "Eubalaena",
+    "species": "Eubalaena glacialis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Eublepharidae",
+    "genus": "Eublepharis",
+    "species": "Eublepharis macularius"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Tinamiformes",
+    "family": "Tinamidae",
+    "genus": "Eudromia",
+    "species": "Eudromia elegans"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Sphaerodactylidae",
+    "genus": "Euleptes",
+    "species": "Euleptes europaea"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Perciformes",
+    "family": "Triglidae",
+    "genus": "Eutrigla",
+    "species": "Eutrigla gurnardus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Galliformes",
+    "family": "Phasianidae",
+    "genus": "Excalfactoria",
+    "species": "Excalfactoria chinensis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Falconiformes",
+    "family": "Falconidae",
+    "genus": "Falco",
+    "species": "Falco biarmicus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Falconiformes",
+    "family": "Falconidae",
+    "genus": "Falco",
+    "species": "Falco cherrug"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Falconiformes",
+    "family": "Falconidae",
+    "genus": "Falco",
+    "species": "Falco naumanni"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Falconiformes",
+    "family": "Falconidae",
+    "genus": "Falco",
+    "species": "Falco peregrinus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Falconiformes",
+    "family": "Falconidae",
+    "genus": "Falco",
+    "species": "Falco punctatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Falconiformes",
+    "family": "Falconidae",
+    "genus": "Falco",
+    "species": "Falco rusticolus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Fringillidae",
+    "genus": "Fringilla",
+    "species": "Fringilla coelebs"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Cyprinodontiformes",
+    "family": "Fundulidae",
+    "genus": "Fundulus",
+    "species": "Fundulus diaphanus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Chamaeleonidae",
+    "genus": "Furcifer",
+    "species": "Furcifer pardalis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Gadiformes",
+    "family": "Gadidae",
+    "genus": "Gadus",
+    "species": "Gadus morhua"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Gruiformes",
+    "family": "Rallidae",
+    "genus": "Gallinula",
+    "species": "Gallinula chloropus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Galliformes",
+    "family": "Phasianidae",
+    "genus": "Gallus",
+    "species": "Gallus gallus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Perciformes",
+    "family": "Gasterosteidae",
+    "genus": "Gasterosteus",
+    "species": "Gasterosteus aculeatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Microhylidae",
+    "genus": "Gastrophryne",
+    "species": "Gastrophryne carolinensis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Gaviiformes",
+    "family": "Gaviidae",
+    "genus": "Gavia",
+    "species": "Gavia stellata"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Parulidae",
+    "genus": "Geothlypis",
+    "species": "Geothlypis trichas"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Gymnophiona",
+    "family": "Dermophiidae",
+    "genus": "Geotrypetes",
+    "species": "Geotrypetes seraphini"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Cyprinodontiformes",
+    "family": "Goodeidae",
+    "genus": "Girardinichthys",
+    "species": "Girardinichthys multiradiatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Delphinidae",
+    "genus": "Globicephala",
+    "species": "Globicephala melas"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Phyllostomidae",
+    "genus": "Glossophaga",
+    "species": "Glossophaga mutica"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Cypriniformes",
+    "family": "Gobionidae",
+    "genus": "Gobio",
+    "species": "Gobio gobio"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Gobiiformes",
+    "family": "Gobiidae",
+    "genus": "Gobius",
+    "species": "Gobius niger"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Primates",
+    "family": "Hominidae",
+    "genus": "Gorilla",
+    "species": "Gorilla gorilla gorilla"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Blenniiformes",
+    "family": "Gobiesocidae",
+    "genus": "Gouania",
+    "species": "Gouania willdenowi"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Delphinidae",
+    "genus": "Grampus",
+    "species": "Grampus griseus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Gruiformes",
+    "family": "Gruidae",
+    "genus": "Grus",
+    "species": "Grus americana"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Gruiformes",
+    "family": "Gruidae",
+    "genus": "Grus",
+    "species": "Grus grus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Psittaciformes",
+    "family": "Psittacidae",
+    "genus": "Guaruba",
+    "species": "Guaruba guarouba"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Myctophiformes",
+    "family": "Myctophidae",
+    "genus": "Gymnoscopelus",
+    "species": "Gymnoscopelus braueri"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Myctophiformes",
+    "family": "Myctophidae",
+    "genus": "Gymnoscopelus",
+    "species": "Gymnoscopelus microlampas"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Accipitriformes",
+    "family": "Accipitridae",
+    "genus": "Gypaetus",
+    "species": "Gypaetus barbatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Fringillidae",
+    "genus": "Haemorhous",
+    "species": "Haemorhous mexicanus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Accipitriformes",
+    "family": "Accipitridae",
+    "genus": "Haliaeetus",
+    "species": "Haliaeetus albicilla"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Carnivora",
+    "family": "Phocidae",
+    "genus": "Halichoerus",
+    "species": "Halichoerus grypus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Accipitriformes",
+    "family": "Accipitridae",
+    "genus": "Harpia",
+    "species": "Harpia harpyja"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Apodiformes",
+    "family": "Trochilidae",
+    "genus": "Heliangelus",
+    "species": "Heliangelus exortis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Apodiformes",
+    "family": "Apodidae",
+    "genus": "Hemiprocne",
+    "species": "Hemiprocne comata"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Chondrichthyes",
+    "order": "Orectolobiformes",
+    "family": "Hemiscylliidae",
+    "genus": "Hemiscyllium",
+    "species": "Hemiscyllium ocellatum"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Chondrichthyes",
+    "order": "Hexanchiformes",
+    "family": "Hexanchidae",
+    "genus": "Heptranchias",
+    "species": "Heptranchias perlo"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Chondrichthyes",
+    "order": "Heterodontiformes",
+    "family": "Heterodontidae",
+    "genus": "Heterodontus",
+    "species": "Heterodontus francisci"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Hyracoidea",
+    "family": "Procaviidae",
+    "genus": "Heterohyrax",
+    "species": "Heterohyrax brucei"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Pleuronectiformes",
+    "family": "Pleuronectidae",
+    "genus": "Hippoglossus",
+    "species": "Hippoglossus hippoglossus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Hippopotamidae",
+    "genus": "Hippopotamus",
+    "species": "Hippopotamus amphibius kiboko"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Hipposideridae",
+    "genus": "Hipposideros",
+    "species": "Hipposideros larvatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Hirundinidae",
+    "genus": "Hirundo",
+    "species": "Hirundo rustica"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Primates",
+    "family": "Hominidae",
+    "genus": "Homo",
+    "species": "Homo Sapiens"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Characiformes",
+    "family": "Erythrinidae",
+    "genus": "Hoplias",
+    "species": "Hoplias malabaricus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Chondrichthyes",
+    "order": "Chimaeriformes",
+    "family": "Chimaeridae",
+    "genus": "Hydrolagus",
+    "species": "Hydrolagus colliei"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Hylidae",
+    "genus": "Hyla",
+    "species": "Hyla sarda"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Chondrichthyes",
+    "order": "Myliobatiformes",
+    "family": "Dasyatidae",
+    "genus": "Hypanus",
+    "species": "Hypanus sabinus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Hyperoliidae",
+    "genus": "Hyperolius",
+    "species": "Hyperolius riggenbachi"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Ziphiidae",
+    "genus": "Hyperoodon",
+    "species": "Hyperoodon ampullatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Uranoscopiformes",
+    "family": "Ammodytidae",
+    "genus": "Hyperoplus",
+    "species": "Hyperoplus immaculatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Iniidae",
+    "genus": "Inia",
+    "species": "Inia geoffrensis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Dipodidae",
+    "genus": "Jaculus",
+    "species": "Jaculus jaculus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Physeteridae",
+    "genus": "Kogia",
+    "species": "Kogia breviceps"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Labriformes",
+    "family": "Labridae",
+    "genus": "Labrus",
+    "species": "Labrus bergylta"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Labriformes",
+    "family": "Labridae",
+    "genus": "Labrus",
+    "species": "Labrus mixtus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Lacertidae",
+    "genus": "Lacerta",
+    "species": "Lacerta agilis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Delphinidae",
+    "genus": "Lagenorhynchus",
+    "species": "Lagenorhynchus albirostris"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Galliformes",
+    "family": "Phasianidae",
+    "genus": "Lagopus",
+    "species": "Lagopus muta"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Hyperoartia",
+    "order": "Petromyzontiformes",
+    "family": "Petromyzontidae",
+    "genus": "Lampetra",
+    "species": "Lampetra fluviatilis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Lampriformes",
+    "family": "Lampridae",
+    "genus": "Lampris",
+    "species": "Lampris incognitus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Charadriiformes",
+    "family": "Laridae",
+    "genus": "Larus",
+    "species": "Larus argentatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Charadriiformes",
+    "family": "Laridae",
+    "genus": "Larus",
+    "species": "Larus fuscus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Charadriiformes",
+    "family": "Laridae",
+    "genus": "Larus",
+    "species": "Larus michahellis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Acropomatiformes",
+    "family": "Lateolabracidae",
+    "genus": "Lateolabrax",
+    "species": "Lateolabrax maculatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Psittaciformes",
+    "family": "Psittacidae",
+    "genus": "Lathamus",
+    "species": "Lathamus discolor"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Primates",
+    "family": "Lemuridae",
+    "genus": "Lemur",
+    "species": "Lemur catta"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Semionotiformes",
+    "family": "Lepisosteidae",
+    "genus": "Lepisosteus",
+    "species": "Lepisosteus oculatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Leptodactylidae",
+    "genus": "Leptodactylus",
+    "species": "Leptodactylus fuscus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Coraciiformes",
+    "family": "Leptosomidae",
+    "genus": "Leptosomus",
+    "species": "Leptosomus discolor"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Spariformes",
+    "family": "Lethrinidae",
+    "genus": "Lethrinus",
+    "species": "Lethrinus nebulosus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Cypriniformes",
+    "family": "Leuciscidae",
+    "genus": "Leuciscus",
+    "species": "Leuciscus leuciscus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Delphinidae",
+    "genus": "Leucopleurus",
+    "species": "Leucopleurus acutus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Pythonidae",
+    "genus": "Liasis",
+    "species": "Liasis olivaceus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Pleuronectiformes",
+    "family": "Pleuronectidae",
+    "genus": "Limanda",
+    "species": "Limanda limanda"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Blenniiformes",
+    "family": "Blenniidae",
+    "genus": "Lipophrys",
+    "species": "Lipophrys pholis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Caudata",
+    "family": "Salamandridae",
+    "genus": "Lissotriton",
+    "species": "Lissotriton helveticus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Caudata",
+    "family": "Salamandridae",
+    "genus": "Lissotriton",
+    "species": "Lissotriton vulgaris"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Estrildidae",
+    "genus": "Lonchura",
+    "species": "Lonchura striata"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Proboscidea",
+    "family": "Elephantidae",
+    "genus": "Loxodonta",
+    "species": "Loxodonta africana"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Carnivora",
+    "family": "Mustelidae",
+    "genus": "Lutra",
+    "species": "Lutra lutra"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Carnivora",
+    "family": "Canidae",
+    "genus": "Lycaon",
+    "species": "Lycaon pictus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Paradisaeidae",
+    "genus": "Lycocorax",
+    "species": "Lycocorax pyrrhopterus obiensis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Perciformes",
+    "family": "Zoarcidae",
+    "genus": "Lycodopsis",
+    "species": "Lycodopsis pacificus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Carnivora",
+    "family": "Felidae",
+    "genus": "Lynx",
+    "species": "Lynx canadensis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Primates",
+    "family": "Cercopithecidae",
+    "genus": "Macaca",
+    "species": "Macaca fascicularis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Primates",
+    "family": "Cercopithecidae",
+    "genus": "Macaca",
+    "species": "Macaca nemestrina"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Peramelemorphia",
+    "family": "Peramelidae",
+    "genus": "Macrotis",
+    "species": "Macrotis lagotis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Pholidota",
+    "family": "Manidae",
+    "genus": "Manis",
+    "species": "Manis pentadactyla"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Mantellidae",
+    "genus": "Mantella",
+    "species": "Mantella aurantiaca"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Sciuridae",
+    "genus": "Marmota",
+    "species": "Marmota flaviventris"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Carnivora",
+    "family": "Mustelidae",
+    "genus": "Martes",
+    "species": "Martes martes"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Synbranchiformes",
+    "family": "Mastacembelidae",
+    "genus": "Mastacembelus",
+    "species": "Mastacembelus armatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Megadermatidae",
+    "genus": "Megaderma",
+    "species": "Megaderma spasma"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Elopiformes",
+    "family": "Megalopidae",
+    "genus": "Megalops",
+    "species": "Megalops cyprinoides"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Balaenopteridae",
+    "genus": "Megaptera",
+    "species": "Megaptera novaeangliae"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Perciformes",
+    "family": "Zoarcidae",
+    "genus": "Melanostigma",
+    "species": "Melanostigma gelatinosum"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Atheriniformes",
+    "family": "Melanotaeniidae",
+    "genus": "Melanotaenia",
+    "species": "Melanotaenia boesemani"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Carnivora",
+    "family": "Mustelidae",
+    "genus": "Meles",
+    "species": "Meles meles"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Psittaciformes",
+    "family": "Psittaculidae",
+    "genus": "Melopsittacus",
+    "species": "Melopsittacus undulatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Passerellidae",
+    "genus": "Melospiza",
+    "species": "Melospiza georgiana"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Passerellidae",
+    "genus": "Melospiza",
+    "species": "Melospiza melodia melodia"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Atheriniformes",
+    "family": "Atherinopsidae",
+    "genus": "Menidia",
+    "species": "Menidia menidia"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Anseriformes",
+    "family": "Anatidae",
+    "genus": "Mergus",
+    "species": "Mergus octosetaceus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Coraciiformes",
+    "family": "Meropidae",
+    "genus": "Merops",
+    "species": "Merops nubicus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Ziphiidae",
+    "genus": "Mesoplodon",
+    "species": "Mesoplodon bidens"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Ziphiidae",
+    "genus": "Mesoplodon",
+    "species": "Mesoplodon densirostris"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Ziphiidae",
+    "genus": "Mesoplodon",
+    "species": "Mesoplodon mirus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Gymnophiona",
+    "family": "Siphonopidae",
+    "genus": "Microcaecilia",
+    "species": "Microcaecilia unicolor"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Pleuronectiformes",
+    "family": "Soleidae",
+    "genus": "Microchirus",
+    "species": "Microchirus variegatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Gadiformes",
+    "family": "Gadidae",
+    "genus": "Micromesistius",
+    "species": "Micromesistius poutassou"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Muridae",
+    "genus": "Micromys",
+    "species": "Micromys minutus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Centrarchiformes",
+    "family": "Centrarchidae",
+    "genus": "Micropterus",
+    "species": "Micropterus salmoides"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Pleuronectiformes",
+    "family": "Pleuronectidae",
+    "genus": "Microstomus",
+    "species": "Microstomus kitt"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Cricetidae",
+    "genus": "Microtus",
+    "species": "Microtus pennsylvanicus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Miniopteridae",
+    "genus": "Miniopterus",
+    "species": "Miniopterus schreibersii"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Limnodynastidae",
+    "genus": "Mixophyes",
+    "species": "Mixophyes fleayi"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Chondrichthyes",
+    "order": "Myliobatiformes",
+    "family": "Myliobatidae",
+    "genus": "Mobula",
+    "species": "Mobula birostris"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Molossidae",
+    "genus": "Molossus",
+    "species": "Molossus alvarezi"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Molossidae",
+    "genus": "Molossus",
+    "species": "Molossus molossus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Molossidae",
+    "genus": "Molossus",
+    "species": "Molossus nigricans"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Didelphimorphia",
+    "family": "Didelphidae",
+    "genus": "Monodelphis",
+    "species": "Monodelphis domestica"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Monodontidae",
+    "genus": "Monodon",
+    "species": "Monodon monoceros"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Molossidae",
+    "genus": "Mops",
+    "species": "Mops condylurus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Accipitriformes",
+    "family": "Accipitridae",
+    "genus": "Morphnus",
+    "species": "Morphnus guianensis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Suliformes",
+    "family": "Sulidae",
+    "genus": "Morus",
+    "species": "Morus bassanus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Cervidae",
+    "genus": "Muntiacus",
+    "species": "Muntiacus reevesi"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Gliridae",
+    "genus": "Muscardinus",
+    "species": "Muscardinus avellanarius"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Muridae",
+    "genus": "Mus",
+    "species": "Mus musculus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Muridae",
+    "genus": "Mus",
+    "species": "Mus Musculus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Carnivora",
+    "family": "Mustelidae",
+    "genus": "Mustela",
+    "species": "Mustela erminea"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Carnivora",
+    "family": "Mustelidae",
+    "genus": "Mustela",
+    "species": "Mustela lutreola"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Carnivora",
+    "family": "Mustelidae",
+    "genus": "Mustela",
+    "species": "Mustela nivalis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Chondrichthyes",
+    "order": "Carcharhiniformes",
+    "family": "Triakidae",
+    "genus": "Mustelus",
+    "species": "Mustelus asterias"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Vespertilionidae",
+    "genus": "Myotis",
+    "species": "Myotis daubentonii"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Vespertilionidae",
+    "genus": "Myotis",
+    "species": "Myotis emarginatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Vespertilionidae",
+    "genus": "Myotis",
+    "species": "Myotis myotis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Vespertilionidae",
+    "genus": "Myotis",
+    "species": "Myotis mystacinus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Vespertilionidae",
+    "genus": "Myotis",
+    "species": "Myotis nattereri"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Holocentriformes",
+    "family": "Holocentridae",
+    "genus": "Myripristis",
+    "species": "Myripristis murdjan"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Myxini",
+    "order": "Myxiniformes",
+    "family": "Myxinidae",
+    "genus": "Myxine",
+    "species": "Myxine glutinosa"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Myctophiformes",
+    "family": "Myctophidae",
+    "genus": "Nannobrachium",
+    "species": "Nannobrachium achirus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Argentiniformes",
+    "family": "Microstomatidae",
+    "genus": "Nansenia",
+    "species": "Nansenia antarctica"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Chondrichthyes",
+    "order": "Torpediniformes",
+    "family": "Narcinidae",
+    "genus": "Narcine",
+    "species": "Narcine bancroftii"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Colubridae",
+    "genus": "Natrix",
+    "species": "Natrix helvetica"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Siluriformes",
+    "family": "Ariidae",
+    "genus": "Neoarius",
+    "species": "Neoarius graeffei"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Carnivora",
+    "family": "Felidae",
+    "genus": "Neofelis",
+    "species": "Neofelis nebulosa"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Carnivora",
+    "family": "Mustelidae",
+    "genus": "Neogale",
+    "species": "Neogale vison"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Syngnathiformes",
+    "family": "Callionymidae",
+    "genus": "Neosynchiropus",
+    "species": "Neosynchiropus ocellatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Columbiformes",
+    "family": "Columbidae",
+    "genus": "Nesoenas",
+    "species": "Nesoenas mayeri"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Anseriformes",
+    "family": "Anatidae",
+    "genus": "Netta",
+    "species": "Netta rufina"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Diprotodontia",
+    "family": "Macropodidae",
+    "genus": "Notamacropus",
+    "species": "Notamacropus eugenii"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Labriformes",
+    "family": "Labridae",
+    "genus": "Notolabrus",
+    "species": "Notolabrus celidotus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Aulopiformes",
+    "family": "Paralepididae",
+    "genus": "Notolepis",
+    "species": "Notolepis coatsorum"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Notoryctemorphia",
+    "family": "Notoryctidae",
+    "genus": "Notoryctes",
+    "species": "Notoryctes typhlops"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Perciformes",
+    "family": "Nototheniidae",
+    "genus": "Notothenia",
+    "species": "Notothenia rossii"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Charadriiformes",
+    "family": "Scolopacidae",
+    "genus": "Numenius",
+    "species": "Numenius arquata"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Vespertilionidae",
+    "genus": "Nyctalus",
+    "species": "Nyctalus leisleri"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Caprimulgiformes",
+    "family": "Nyctibiidae",
+    "genus": "Nyctibius",
+    "species": "Nyctibius grandis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Primates",
+    "family": "Lorisidae",
+    "genus": "Nycticebus",
+    "species": "Nycticebus coucang"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Lagomorpha",
+    "family": "Ochotonidae",
+    "genus": "Ochotona",
+    "species": "Ochotona princeps"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Atheriniformes",
+    "family": "Atherinopsidae",
+    "genus": "Odontesthes",
+    "species": "Odontesthes bonariensis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Muscicapidae",
+    "genus": "Oenanthe",
+    "species": "Oenanthe melanoleuca"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Cricetidae",
+    "genus": "Onychomys",
+    "species": "Onychomys torridus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Opisthocomiformes",
+    "family": "Opisthocomidae",
+    "genus": "Opisthocomus",
+    "species": "Opisthocomus hoazin"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Delphinidae",
+    "genus": "Orcinus",
+    "species": "Orcinus orca"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Monotremata",
+    "family": "Ornithorhynchidae",
+    "genus": "Ornithorhynchus",
+    "species": "Ornithorhynchus anatinus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Lagomorpha",
+    "family": "Leporidae",
+    "genus": "Oryctolagus",
+    "species": "Oryctolagus cuniculus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Osmeriformes",
+    "family": "Osmeridae",
+    "genus": "Osmerus",
+    "species": "Osmerus eperlanus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Osmeriformes",
+    "family": "Osmeridae",
+    "genus": "Osmerus",
+    "species": "Osmerus mordax"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Bovidae",
+    "genus": "Ovis",
+    "species": "Ovis aries"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Bovidae",
+    "genus": "Ovis",
+    "species": "Ovis canadensis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Spariformes",
+    "family": "Sparidae",
+    "genus": "Pagrus",
+    "species": "Pagrus pagrus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Siluriformes",
+    "family": "Pangasiidae",
+    "genus": "Pangasianodon",
+    "species": "Pangasianodon hypophthalmus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Primates",
+    "family": "Hominidae",
+    "genus": "Pan",
+    "species": "Pan paniscus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Carnivora",
+    "family": "Felidae",
+    "genus": "Panthera",
+    "species": "Panthera onca"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Primates",
+    "family": "Hominidae",
+    "genus": "Pan",
+    "species": "Pan troglodytes"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Arthropoda",
+    "class": "Insecta",
+    "order": "Lepidoptera",
+    "family": "Nymphalidae",
+    "genus": "Pararge",
+    "species": "Pararge aegeria"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Passerellidae",
+    "genus": "Passerculus",
+    "species": "Passerculus sandwichensis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Passeridae",
+    "genus": "Passer",
+    "species": "Passer domesticus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Columbiformes",
+    "family": "Columbidae",
+    "genus": "Patagioenas",
+    "species": "Patagioenas fasciata"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Mollusca",
+    "class": "Bivalvia",
+    "order": "Pectinida",
+    "family": "Pectinidae",
+    "genus": "Pecten",
+    "species": "Pecten maximus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Pelecaniformes",
+    "family": "Pelecanidae",
+    "genus": "Pelecanus",
+    "species": "Pelecanus crispus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Pelobatidae",
+    "genus": "Pelobates",
+    "species": "Pelobates fuscus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Pelodytidae",
+    "genus": "Pelodytes",
+    "species": "Pelodytes ibericus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Ranidae",
+    "genus": "Pelophylax",
+    "species": "Pelophylax lessonae"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Acropomatiformes",
+    "family": "Pempheridae",
+    "genus": "Pempheris",
+    "species": "Pempheris klunzingeri"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Gobiiformes",
+    "family": "Gobiidae",
+    "genus": "Periophthalmus",
+    "species": "Periophthalmus magnuspinnatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Cricetidae",
+    "genus": "Peromyscus",
+    "species": "Peromyscus maniculatus sonoriensis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Hyperoartia",
+    "order": "Petromyzontiformes",
+    "family": "Petromyzontidae",
+    "genus": "Petromyzon",
+    "species": "Petromyzon marinus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Phaethontiformes",
+    "family": "Phaethontidae",
+    "genus": "Phaethon",
+    "species": "Phaethon aethereus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Apodiformes",
+    "family": "Trochilidae",
+    "genus": "Phaethornis",
+    "species": "Phaethornis superciliosus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Suliformes",
+    "family": "Phalacrocoracidae",
+    "genus": "Phalacrocorax",
+    "species": "Phalacrocorax aristotelis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Suliformes",
+    "family": "Phalacrocoracidae",
+    "genus": "Phalacrocorax",
+    "species": "Phalacrocorax carbo"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Diprotodontia",
+    "family": "Phascolarctidae",
+    "genus": "Phascolarctos",
+    "species": "Phascolarctos cinereus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Phocoenidae",
+    "genus": "Phocoena",
+    "species": "Phocoena phocoena"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Phocoenidae",
+    "genus": "Phocoena",
+    "species": "Phocoena sinus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Phoenicopteriformes",
+    "family": "Phoenicopteridae",
+    "genus": "Phoenicopterus",
+    "species": "Phoenicopterus ruber ruber"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Cichliformes",
+    "family": "Pholidichthyidae",
+    "genus": "Pholidichthys",
+    "species": "Pholidichthys leucotaenia"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Perciformes",
+    "family": "Pholidae",
+    "genus": "Pholis",
+    "species": "Pholis gunnellus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Cypriniformes",
+    "family": "Leuciscidae",
+    "genus": "Phoxinus",
+    "species": "Phoxinus phoxinus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Phyllostomidae",
+    "genus": "Phyllostomus",
+    "species": "Phyllostomus discolor"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Vespertilionidae",
+    "genus": "Pipistrellus",
+    "species": "Pipistrellus hanaki"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Vespertilionidae",
+    "genus": "Pipistrellus",
+    "species": "Pipistrellus kuhlii"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Vespertilionidae",
+    "genus": "Pipistrellus",
+    "species": "Pipistrellus nathusii"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Vespertilionidae",
+    "genus": "Pipistrellus",
+    "species": "Pipistrellus pipistrellus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Vespertilionidae",
+    "genus": "Pipistrellus",
+    "species": "Pipistrellus pygmaeus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Pelecaniformes",
+    "family": "Threskiornithidae",
+    "genus": "Platalea",
+    "species": "Platalea leucorodia"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Pleuronectiformes",
+    "family": "Pleuronectidae",
+    "genus": "Platichthys",
+    "species": "Platichthys flesus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Vespertilionidae",
+    "genus": "Plecotus",
+    "species": "Plecotus auritus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Caudata",
+    "family": "Salamandridae",
+    "genus": "Pleurodeles",
+    "species": "Pleurodeles waltl"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Pleuronectiformes",
+    "family": "Pleuronectidae",
+    "genus": "Pleuronectes",
+    "species": "Pleuronectes platessa"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Charadriiformes",
+    "family": "Charadriidae",
+    "genus": "Pluvialis",
+    "species": "Pluvialis apricaria"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Lacertidae",
+    "genus": "Podarcis",
+    "species": "Podarcis bocagei"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Lacertidae",
+    "genus": "Podarcis",
+    "species": "Podarcis cretensis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Lacertidae",
+    "genus": "Podarcis",
+    "species": "Podarcis erhardii"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Lacertidae",
+    "genus": "Podarcis",
+    "species": "Podarcis filfolensis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Lacertidae",
+    "genus": "Podarcis",
+    "species": "Podarcis gaigeae"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Lacertidae",
+    "genus": "Podarcis",
+    "species": "Podarcis liolepis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Lacertidae",
+    "genus": "Podarcis",
+    "species": "Podarcis melisellensis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Lacertidae",
+    "genus": "Podarcis",
+    "species": "Podarcis muralis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Lacertidae",
+    "genus": "Podarcis",
+    "species": "Podarcis pityusensis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Lacertidae",
+    "genus": "Podarcis",
+    "species": "Podarcis raffonei"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Lacertidae",
+    "genus": "Podarcis",
+    "species": "Podarcis siculus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Lacertidae",
+    "genus": "Podarcis",
+    "species": "Podarcis tiliguerta"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Lacertidae",
+    "genus": "Podarcis",
+    "species": "Podarcis vaucheri"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Caprimulgiformes",
+    "family": "Podargidae",
+    "genus": "Podargus",
+    "species": "Podargus strigoides"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Paridae",
+    "genus": "Poecile",
+    "species": "Poecile atricapillus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Piciformes",
+    "family": "Lybiidae",
+    "genus": "Pogoniulus",
+    "species": "Pogoniulus pusillus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Gadiformes",
+    "family": "Gadidae",
+    "genus": "Pollachius",
+    "species": "Pollachius pollachius"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Polymixiiformes",
+    "family": "Polymixiidae",
+    "genus": "Polymixia",
+    "species": "Polymixia cf. hollisterae"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Polymixiiformes",
+    "family": "Polymixiidae",
+    "genus": "Polymixia",
+    "species": "Polymixia lowei"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Primates",
+    "family": "Hominidae",
+    "genus": "Pongo",
+    "species": "Pongo abelii"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Primates",
+    "family": "Hominidae",
+    "genus": "Pongo",
+    "species": "Pongo pygmaeus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Beryciformes",
+    "family": "Melamphaidae",
+    "genus": "Poromitra",
+    "species": "Poromitra crassiceps"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Gruiformes",
+    "family": "Rallidae",
+    "genus": "Porphyrio",
+    "species": "Porphyrio hochstetteri"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Lutjaniformes",
+    "family": "Lutjanidae",
+    "genus": "Pristipomoides",
+    "species": "Pristipomoides typus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Chondrichthyes",
+    "order": "Rhinopristiformes",
+    "family": "Pristidae",
+    "genus": "Pristis",
+    "species": "Pristis pectinata"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Myctophiformes",
+    "family": "Myctophidae",
+    "genus": "Protomyctophum",
+    "species": "Protomyctophum bolini"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Myctophiformes",
+    "family": "Myctophidae",
+    "genus": "Protomyctophum",
+    "species": "Protomyctophum parallelum"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Myobatrachidae",
+    "genus": "Pseudophryne",
+    "species": "Pseudophryne corroboree"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Pipridae",
+    "genus": "Pseudopipra",
+    "species": "Pseudopipra pipra"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Delphinidae",
+    "genus": "Pseudorca",
+    "species": "Pseudorca crassidens"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Psittaciformes",
+    "family": "Psittacidae",
+    "genus": "Psittacula",
+    "species": "Psittacula echo"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Pterocliformes",
+    "family": "Pteroclidae",
+    "genus": "Pterocles",
+    "species": "Pterocles gutturalis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Perciformes",
+    "family": "Gasterosteidae",
+    "genus": "Pungitius",
+    "species": "Pungitius pungitius"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Characiformes",
+    "family": "Serrasalmidae",
+    "genus": "Pygocentrus",
+    "species": "Pygocentrus nattereri"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Chondrichthyes",
+    "order": "Rajiformes",
+    "family": "Rajidae",
+    "genus": "Raja",
+    "species": "Raja brachyura"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Ranidae",
+    "genus": "Rana",
+    "species": "Rana temporaria"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Dendrobatidae",
+    "genus": "Ranitomeya",
+    "species": "Ranitomeya imitator"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Muridae",
+    "genus": "Rattus",
+    "species": "Rattus norvegicus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Cichliformes",
+    "family": "Cichlidae",
+    "genus": "Rhamphochromis",
+    "species": "Rhamphochromis sp. chilingali"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Rheiformes",
+    "family": "Rheidae",
+    "genus": "Rhea",
+    "species": "Rhea pennata"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Gymnophiona",
+    "family": "Rhinatrematidae",
+    "genus": "Rhinatrema",
+    "species": "Rhinatrema bivittatum"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Rhineuridae",
+    "genus": "Rhineura",
+    "species": "Rhineura floridana"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Cypriniformes",
+    "family": "Gobionidae",
+    "genus": "Rhinogobio",
+    "species": "Rhinogobio nasutus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Rhinolophidae",
+    "genus": "Rhinolophus",
+    "species": "Rhinolophus affinis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Rhinolophidae",
+    "genus": "Rhinolophus",
+    "species": "Rhinolophus ferrumequinum"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Rhinolophidae",
+    "genus": "Rhinolophus",
+    "species": "Rhinolophus hipposideros"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Rhinolophidae",
+    "genus": "Rhinolophus",
+    "species": "Rhinolophus perniger lanosus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Rhinolophidae",
+    "genus": "Rhinolophus",
+    "species": "Rhinolophus trifoliatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Rhinolophidae",
+    "genus": "Rhinolophus",
+    "species": "Rhinolophus yonghoiseni"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Rhinophrynidae",
+    "genus": "Rhinophrynus",
+    "species": "Rhinophrynus dorsalis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Rhinopomatidae",
+    "genus": "Rhinopoma",
+    "species": "Rhinopoma microphyllum"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Macroscelidea",
+    "family": "Macroscelididae",
+    "genus": "Rhynchocyon",
+    "species": "Rhynchocyon petersi"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Emballonuridae",
+    "genus": "Rhynchonycteris",
+    "species": "Rhynchonycteris naso"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Eurypygiformes",
+    "family": "Rhynochetidae",
+    "genus": "Rhynochetos",
+    "species": "Rhynochetos jubatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Charadriiformes",
+    "family": "Laridae",
+    "genus": "Rissa",
+    "species": "Rissa tridactyla"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Pteropodidae",
+    "genus": "Rousettus",
+    "species": "Rousettus aegyptiacus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Cypriniformes",
+    "family": "Leuciscidae",
+    "genus": "Rutilus",
+    "species": "Rutilus rutilus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Emballonuridae",
+    "genus": "Saccopteryx",
+    "species": "Saccopteryx bilineata"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Emballonuridae",
+    "genus": "Saccopteryx",
+    "species": "Saccopteryx leptura"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Primates",
+    "family": "Cebidae",
+    "genus": "Saimiri",
+    "species": "Saimiri boliviensis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Blenniiformes",
+    "family": "Blenniidae",
+    "genus": "Salarias",
+    "species": "Salarias fasciatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Characiformes",
+    "family": "Bryconidae",
+    "genus": "Salminus",
+    "species": "Salminus brasiliensis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Salmoniformes",
+    "family": "Salmonidae",
+    "genus": "Salmo",
+    "species": "Salmo trutta"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Salmoniformes",
+    "family": "Salmonidae",
+    "genus": "Salvelinus",
+    "species": "Salvelinus alpinus oquassa"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Dasyuromorphia",
+    "family": "Dasyuridae",
+    "genus": "Sarcophilus",
+    "species": "Sarcophilus harrisii"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Accipitriformes",
+    "family": "Cathartidae",
+    "genus": "Sarcoramphus",
+    "species": "Sarcoramphus papa"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Clupeiformes",
+    "family": "Clupeidae",
+    "genus": "Sardina",
+    "species": "Sardina pilchardus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Cypriniformes",
+    "family": "Leuciscidae",
+    "genus": "Scardinius",
+    "species": "Scardinius erythrophthalmus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Sciuridae",
+    "genus": "Sciurus",
+    "species": "Sciurus carolinensis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Sciuridae",
+    "genus": "Sciurus",
+    "species": "Sciurus vulgaris"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Osteoglossiformes",
+    "family": "Osteoglossidae",
+    "genus": "Scleropages",
+    "species": "Scleropages formosus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Scombriformes",
+    "family": "Scombridae",
+    "genus": "Scomber",
+    "species": "Scomber japonicus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Scombriformes",
+    "family": "Scombridae",
+    "genus": "Scomber",
+    "species": "Scomber scombrus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Pleuronectiformes",
+    "family": "Scophthalmidae",
+    "genus": "Scophthalmus",
+    "species": "Scophthalmus maximus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Chondrichthyes",
+    "order": "Carcharhiniformes",
+    "family": "Scyliorhinidae",
+    "genus": "Scyliorhinus",
+    "species": "Scyliorhinus canicula"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Perciformes",
+    "family": "Sebastidae",
+    "genus": "Sebastes",
+    "species": "Sebastes fasciatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Perciformes",
+    "family": "Sebastidae",
+    "genus": "Sebastes",
+    "species": "Sebastes umbrosus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Shinisauridae",
+    "genus": "Shinisaurus",
+    "species": "Shinisaurus crocodilurus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Siluriformes",
+    "family": "Siluridae",
+    "genus": "Silurus",
+    "species": "Silurus aristotelis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Dasyuromorphia",
+    "family": "Dasyuridae",
+    "genus": "Sminthopsis",
+    "species": "Sminthopsis crassicaudata"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Pleuronectiformes",
+    "family": "Soleidae",
+    "genus": "Solea",
+    "species": "Solea solea"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Eulipotyphla",
+    "family": "Soricidae",
+    "genus": "Sorex",
+    "species": "Sorex araneus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Spariformes",
+    "family": "Sparidae",
+    "genus": "Sparus",
+    "species": "Sparus aurata"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Pelobatidae",
+    "genus": "Spea",
+    "species": "Spea bombifrons"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Sciuridae",
+    "genus": "Spermophilus",
+    "species": "Spermophilus citellus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Kurtiformes",
+    "family": "Apogonidae",
+    "genus": "Sphaeramia",
+    "species": "Sphaeramia orbicularis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Sphenisciformes",
+    "family": "Spheniscidae",
+    "genus": "Spheniscus",
+    "species": "Spheniscus humboldti"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Perciformes",
+    "family": "Gasterosteidae",
+    "genus": "Spinachia",
+    "species": "Spinachia spinachia"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Clupeiformes",
+    "family": "Clupeidae",
+    "genus": "Sprattus",
+    "species": "Sprattus sprattus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Cypriniformes",
+    "family": "Leuciscidae",
+    "genus": "Squalius",
+    "species": "Squalius cephalus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Chondrichthyes",
+    "order": "Orectolobiformes",
+    "family": "Stegostomatidae",
+    "genus": "Stegostoma",
+    "species": "Stegostoma tigrinum"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Delphinidae",
+    "genus": "Stenella",
+    "species": "Stenella coeruleoalba"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Charadriiformes",
+    "family": "Laridae",
+    "genus": "Sterna",
+    "species": "Sterna hirundo"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Columbiformes",
+    "family": "Columbidae",
+    "genus": "Streptopelia",
+    "species": "Streptopelia decaocto"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Columbiformes",
+    "family": "Columbidae",
+    "genus": "Streptopelia",
+    "species": "Streptopelia turtur"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Psittaciformes",
+    "family": "Psittacidae",
+    "genus": "Strigops",
+    "species": "Strigops habroptila"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Strigiformes",
+    "family": "Strigidae",
+    "genus": "Strix",
+    "species": "Strix aluco"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Struthioniformes",
+    "family": "Struthionidae",
+    "genus": "Struthio",
+    "species": "Struthio camelus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Ascidiacea",
+    "order": "Stolidobranchia",
+    "family": "Styelidae",
+    "genus": "Styela",
+    "species": "Styela clava"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Eulipotyphla",
+    "family": "Soricidae",
+    "genus": "Suncus",
+    "species": "Suncus etruscus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Suidae",
+    "genus": "Sus",
+    "species": "Sus scrofa"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Sylviidae",
+    "genus": "Sylvia",
+    "species": "Sylvia atricapilla"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Sylviidae",
+    "genus": "Sylvia",
+    "species": "Sylvia borin"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Lagomorpha",
+    "family": "Leporidae",
+    "genus": "Sylvilagus",
+    "species": "Sylvilagus floridanus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Primates",
+    "family": "Hylobatidae",
+    "genus": "Symphalangus",
+    "species": "Symphalangus syndactylus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Labriformes",
+    "family": "Labridae",
+    "genus": "Symphodus",
+    "species": "Symphodus melops"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Lutjaniformes",
+    "family": "Lutjanidae",
+    "genus": "Symphorus",
+    "species": "Symphorus nematophorus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Syngnathiformes",
+    "family": "Callionymidae",
+    "genus": "Synchiropus",
+    "species": "Synchiropus picturatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Syngnathiformes",
+    "family": "Syngnathidae",
+    "genus": "Syngnathus",
+    "species": "Syngnathus acus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Syngnathiformes",
+    "family": "Syngnathidae",
+    "genus": "Syngnathus",
+    "species": "Syngnathus typhle"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Monotremata",
+    "family": "Tachyglossidae",
+    "genus": "Tachyglossus",
+    "species": "Tachyglossus aculeatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Molossidae",
+    "genus": "Tadarida",
+    "species": "Tadarida brasiliensis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Estrildidae",
+    "genus": "Taeniopygia",
+    "species": "Taeniopygia guttata"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Tetraodontiformes",
+    "family": "Tetraodontidae",
+    "genus": "Takifugu",
+    "species": "Takifugu rubripes"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Eulipotyphla",
+    "family": "Talpidae",
+    "genus": "Talpa",
+    "species": "Talpa europaea"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Pilosa",
+    "family": "Myrmecophagidae",
+    "genus": "Tamandua",
+    "species": "Tamandua tetradactyla"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Perissodactyla",
+    "family": "Tapiridae",
+    "genus": "Tapirus",
+    "species": "Tapirus indicus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Musophagiformes",
+    "family": "Musophagidae",
+    "genus": "Tauraco",
+    "species": "Tauraco erythrolophus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Perciformes",
+    "family": "Cottidae",
+    "genus": "Taurulus",
+    "species": "Taurulus bubalis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Labriformes",
+    "family": "Labridae",
+    "genus": "Tautogolabrus",
+    "species": "Tautogolabrus adspersus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Atheriniformes",
+    "family": "Telmatherinidae",
+    "genus": "Telmatherina",
+    "species": "Telmatherina bonti"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Galliformes",
+    "family": "Phasianidae",
+    "genus": "Tetrao",
+    "species": "Tetrao urogallus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Batrachoidiformes",
+    "family": "Batrachoididae",
+    "genus": "Thalassophryne",
+    "species": "Thalassophryne amazonica"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Thaliacea",
+    "order": "Salpida",
+    "family": "Salpidae",
+    "genus": "Thalia",
+    "species": "Thalia democratica"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Colubridae",
+    "genus": "Thamnophis",
+    "species": "Thamnophis elegans"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Pelecaniformes",
+    "family": "Threskiornithidae",
+    "genus": "Theristicus",
+    "species": "Theristicus caerulescens"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Geomyidae",
+    "genus": "Thomomys",
+    "species": "Thomomys bottae"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Scombriformes",
+    "family": "Scombridae",
+    "genus": "Thunnus",
+    "species": "Thunnus albacares"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Scombriformes",
+    "family": "Scombridae",
+    "genus": "Thunnus",
+    "species": "Thunnus maccoyii"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Scombriformes",
+    "family": "Scombridae",
+    "genus": "Thunnus",
+    "species": "Thunnus thynnus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Scincidae",
+    "genus": "Tiliqua",
+    "species": "Tiliqua scincoides"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Carangiformes",
+    "family": "Carangidae",
+    "genus": "Trachurus",
+    "species": "Trachurus trachurus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Sirenia",
+    "family": "Trichechidae",
+    "genus": "Trichechus",
+    "species": "Trichechus inunguis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Siluriformes",
+    "family": "Trichomycteridae",
+    "genus": "Trichomycterus",
+    "species": "Trichomycterus rosablanca"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Diprotodontia",
+    "family": "Phalangeridae",
+    "genus": "Trichosurus",
+    "species": "Trichosurus vulpecula"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Ascidiacea",
+    "order": "Aplousobranchia",
+    "family": "Didemnidae",
+    "genus": "Trididemnum",
+    "species": "Trididemnum clinides"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Caudata",
+    "family": "Salamandridae",
+    "genus": "Triturus",
+    "species": "Triturus cristatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Trogoniformes",
+    "family": "Trogonidae",
+    "genus": "Trogon",
+    "species": "Trogon surrucura"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Scandentia",
+    "family": "Tupaiidae",
+    "genus": "Tupaia",
+    "species": "Tupaia tana"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Artiodactyla",
+    "family": "Delphinidae",
+    "genus": "Tursiops",
+    "species": "Tursiops truncatus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Rodentia",
+    "family": "Sciuridae",
+    "genus": "Urocitellus",
+    "species": "Urocitellus parryii"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Charadriiformes",
+    "family": "Charadriidae",
+    "genus": "Vanellus",
+    "species": "Vanellus vanellus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Chiroptera",
+    "family": "Vespertilionidae",
+    "genus": "Vespertilio",
+    "species": "Vespertilio murinus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Estrildidae",
+    "genus": "Vidua",
+    "species": "Vidua chalybeata"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Viperidae",
+    "genus": "Vipera",
+    "species": "Vipera berus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Viperidae",
+    "genus": "Vipera",
+    "species": "Vipera latastei"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Viperidae",
+    "genus": "Vipera",
+    "species": "Vipera ursinii"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Carnivora",
+    "family": "Canidae",
+    "genus": "Vulpes",
+    "species": "Vulpes vulpes"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Thamnophilidae",
+    "genus": "Willisornis",
+    "species": "Willisornis vidua"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Beloniformes",
+    "family": "Belonidae",
+    "genus": "Xenentodon",
+    "species": "Xenentodon cancila"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Amphibia",
+    "order": "Anura",
+    "family": "Pipidae",
+    "genus": "Xenopus",
+    "species": "Xenopus petersii"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Mammalia",
+    "order": "Carnivora",
+    "family": "Otariidae",
+    "genus": "Zalophus",
+    "species": "Zalophus californianus"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Actinopteri",
+    "order": "Zeiformes",
+    "family": "Zeidae",
+    "genus": "Zeus",
+    "species": "Zeus faber"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Passerellidae",
+    "genus": "Zonotrichia",
+    "species": "Zonotrichia albicollis"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Lepidosauria",
+    "order": "Squamata",
+    "family": "Lacertidae",
+    "genus": "Zootoca",
+    "species": "Zootoca vivipara"
+  },
+  {
+    "domain": "Eukaryota",
+    "kingdom": "Metazoa",
+    "phylum": "Chordata",
+    "class": "Aves",
+    "order": "Passeriformes",
+    "family": "Zosteropidae",
+    "genus": "Zosterops",
+    "species": "Zosterops lateralis"
+  }
+]

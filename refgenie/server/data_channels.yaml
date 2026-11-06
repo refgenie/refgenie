@@ -1,0 +1,10 @@
+# Data channels this refgenie server re-serves at /v4/data_channel/<channel>/.
+# The canonical refgenie channel is published by refgenie-registry to GitHub
+# Pages in its native layout; this server mirrors it structure-preservingly, so
+# a client sees the same index and paths whether it points here or at Pages.
+# Override the config path with the DATA_CHANNELS_CONFIG_PATH env var.
+registry:
+  name: registry
+  protocol: https
+  index_url: https://refgenie.github.io/refgenie-registry/index.yaml
+# Add more channels as needed.

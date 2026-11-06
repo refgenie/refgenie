@@ -1,0 +1,16 @@
+{
+  "servers": [
+    {
+      "url": "https://api.refgenie.org",
+      "subscribed": true,
+      "reachable": true,
+      "error": null
+    },
+    {
+      "url": "https://offline.example.org",
+      "subscribed": true,
+      "reachable": false,
+      "error": "Connection refused"
+    }
+  ]
+}

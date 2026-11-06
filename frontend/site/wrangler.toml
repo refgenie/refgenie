@@ -1,0 +1,17 @@
+# refgenie.org: the frontend as a static site on a Cloudflare Worker. The API
+# stays at api.refgenie.org. Deploy with `npm run deploy:site` from frontend/.
+name = "refgenie-ui"
+main = "worker.js"
+compatibility_date = "2025-05-30"
+
+routes = [
+  { pattern = "refgenie.org", custom_domain = true },
+  { pattern = "www.refgenie.org", custom_domain = true },
+  { pattern = "ui.refgenie.org", custom_domain = true },
+]
+
+[assets]
+directory = "../dist"
+binding = "ASSETS"
+run_worker_first = true
+not_found_handling = "single-page-application"

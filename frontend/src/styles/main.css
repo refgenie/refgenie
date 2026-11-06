@@ -1,0 +1,9 @@
+/*
+ * Single stylesheet entry point. Import order is load-bearing:
+ * tokens define the variables, utilities consume them, components override
+ * only where a utility composition cannot express the rule, modal last.
+ */
+@import './tokens.css';
+@import './utilities.css';
+@import './components.css';
+@import './modal.css';

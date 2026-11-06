@@ -1,76 +1,53 @@
-"""
-Constant variables for refgenie package. Ones that are integral to refgenconf
-and/or refgenieserver should be defined in refgenconf.const
-"""
+from string import ascii_letters, digits
 
-from __future__ import annotations
+DEFAULT_PULL_SIZE_CUTOFF_GB = 10
+DEFAULT_PAGE_SIZE = 100
+MAX_PAGE_SIZE = 1000
+# PostgreSQL INTEGER and BIGINT (OFFSET) limits; query params are capped at
+# these so an oversized number is a 422, not a 500.
+SQL_INT_MAX = 2**31 - 1
+SQL_BIGINT_MAX = 2**63 - 1
 
-from refgenconf.const import *
+ASSET_NAME_CHAR_WHITELIST = set(ascii_letters + digits + "-._~")
+ASSET_REGISTRY_PATH_COMPONENT_CHAR_BLACKLIST = {" ", ":", "/"}
 
-PKG_NAME = "refgenie"
+# Tree under genome_folder for per-build records (logs, commands, stats, flags),
+# kept outside the asset directory because they are not asset content.
+BUILDS_DIR = "builds"
 
-BUILD_CMD = "build"
-INIT_CMD = "init"
-PULL_CMD = "pull"
-POPULATE_CMD = "populate"
-POPULATE_REMOTE_CMD = "populater"
-LIST_LOCAL_CMD = "list"
-LIST_REMOTE_CMD = "listr"
-GET_ASSET_CMD = "seek"
-GET_REMOTE_ASSET_CMD = "seekr"
-INSERT_CMD = "add"
-REMOVE_CMD = "remove"
-GETSEQ_CMD = "getseq"
-TAG_CMD = "tag"
-ID_CMD = "id"
-SUBSCRIBE_CMD = "subscribe"
-UNSUBSCRIBE_CMD = "unsubscribe"
-ALIAS_CMD = "alias"
-COMPARE_CMD = "compare"
-UPGRADE_CMD = "upgrade"
+# Top-level tree under genome_folder holding the name-addressed view of the
+# digest-addressed data/ tree: alias/<alias>/<group>/<asset>/ of symlinks.
+ALIAS_DIR = "alias"
 
-GENOME_ONLY_REQUIRED = [REMOVE_CMD, GETSEQ_CMD]
+API_VERSION = "v4"
 
-# For each asset we assume a genome is also required
-ASSET_REQUIRED = [
-    PULL_CMD,
-    GET_ASSET_CMD,
-    GET_REMOTE_ASSET_CMD,
-    BUILD_CMD,
-    INSERT_CMD,
-    TAG_CMD,
-    ID_CMD,
-]
+#: Server offered to a fresh instance with no subscriptions (the v4 API).
+DEFAULT_SERVER_URL = "https://api.refgenie.org"
 
-SUBPARSER_MESSAGES = {
-    INIT_CMD: "Initialize a genome configuration.",
-    LIST_LOCAL_CMD: "List available local assets.",
-    LIST_REMOTE_CMD: "List available remote assets.",
-    PULL_CMD: "Download assets.",
-    BUILD_CMD: "Build genome assets.",
-    GET_ASSET_CMD: "Get the path to a local asset.",
-    GET_REMOTE_ASSET_CMD: "Get the path to a remote asset.",
-    INSERT_CMD: "Add local asset to the config file.",
-    REMOVE_CMD: "Remove a local asset.",
-    GETSEQ_CMD: "Get sequences from a genome.",
-    TAG_CMD: "Tag an asset.",
-    ID_CMD: "Return the asset digest.",
-    SUBSCRIBE_CMD: "Add a refgenieserver URL to the config.",
-    UNSUBSCRIBE_CMD: "Remove a refgenieserver URL from the config.",
-    ALIAS_CMD: "Interact with aliases.",
-    COMPARE_CMD: "Compare two genomes.",
-    UPGRADE_CMD: "Upgrade config. This will alter the files on disk.",
-    POPULATE_CMD: "Populate registry paths with local paths.",
-    POPULATE_REMOTE_CMD: "Populate registry paths with remote paths.",
-}
+# CWE-321: hardcoded key for a local-only DB, where filesystem access already
+# exposes everything. Override with REFGENIE_ENCRYPTION_KEY.
+DEFAULT_ENCRYPTION_KEY = "MkNSaEhqMU9SS2dzSFBIT3g3bkdwcWZ3Y2l0akhqQjFZd2t6RjladEJWZz0="
+
+CURRENT_CONFIG_VERSION = 1
+
+#: Head revision in refgenie/db/migrations/versions. New databases are stamped
+#: with it and old ones migrated to it, so update it with every new migration.
+TARGET_ALEMBIC_VERSION = "05b8e0386023"
 
 
-ALIAS_GET_CMD = "get"
-ALIAS_SET_CMD = "set"
-ALIAS_REMOVE_CMD = "remove"
+def __getattr__(name: str):
+    """Compute version-derived constants lazily, since reading metadata is slow."""
+    if name in ("REFGENIE_VERSION", "USER_AGENT", "HTTP_HEADERS"):
+        from importlib.metadata import version
 
-ALIAS_SUBPARSER_MESSAGES = {
-    ALIAS_REMOVE_CMD: "Remove aliases.",
-    ALIAS_SET_CMD: "Set aliases.",
-    ALIAS_GET_CMD: "Get aliases.",
-}
+        refgenie_version = version("refgenie")
+        # Cloudflare in front of api.refgenie.org blocks default client UAs.
+        user_agent = f"refgenie/{refgenie_version}"
+        values = {
+            "REFGENIE_VERSION": refgenie_version,
+            "USER_AGENT": user_agent,
+            "HTTP_HEADERS": {"User-Agent": user_agent},
+        }
+        globals().update(values)
+        return values[name]
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

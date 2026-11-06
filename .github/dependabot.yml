@@ -1,0 +1,46 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    ignore:
+      # Pinned to 9.16.x; moved by hand in the snakemake 10 upgrade.
+      - dependency-name: "snakemake"
+    groups:
+      all-pip:
+        applies-to: version-updates
+        patterns:
+          - "*"
+      security-fixes:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      all-actions:
+        applies-to: version-updates
+        patterns:
+          - "*"
+      security-fixes:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      all-docker:
+        applies-to: version-updates
+        patterns:
+          - "*"
+      security-fixes:
+        applies-to: security-updates
+        patterns:
+          - "*"
