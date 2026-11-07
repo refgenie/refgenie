@@ -8,6 +8,7 @@ Building and pulling are not here: ``Refgenie`` owns the builder and the
 puller, and both depend on this manager, never the other way round.
 """
 
+import glob
 import shutil
 from pathlib import Path
 from collections.abc import Iterable
@@ -19,7 +20,7 @@ from rich.table import Table
 from refgenie.db.engine import Engine
 from refgenie.db.queries import asset as queries
 from refgenie.db.queries import asset_group as group_queries
-from refgenie.db.tables import Asset, is_path_type
+from refgenie.db.tables import Asset, SeekKeyType, is_path_type
 from refgenie.exceptions import MissingAssetError
 from refgenie.logger import logger
 from refgenie.models import AssetRegistryPathComponents, GenomeAlias, GenomeDigest, Page
@@ -619,6 +620,18 @@ class AssetManager(ResourceManager):
                 / rewritten_value
             ).absolute()
 
-        if force_exists and not seek_key_path.exists():
+        if force_exists and not _seek_path_exists(seek_key_path, seek_key.type):
             raise FileNotFoundError(f"Seek key path not found: {seek_key_path}")
         return str(seek_key_path)
+
+
+def _seek_path_exists(path: Path, seek_key_type: SeekKeyType) -> bool:
+    """Whether a resolved path-type seek key points at something on disk.
+
+    A prefix (e.g. a bowtie2 index ``<dir>/hg38``) names no file itself; it
+    exists when files carrying it as their name prefix do (``hg38.1.bt2``), the
+    same rule used to size prefix seek keys in ``refgenie.db.events``.
+    """
+    if seek_key_type != SeekKeyType.prefix:
+        return path.exists()
+    return any(f.exists() for f in path.parent.glob(f"{glob.escape(path.name)}*"))
