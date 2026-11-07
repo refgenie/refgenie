@@ -83,7 +83,8 @@ docs at `GET $BASE/docs`.
   Each instance keeps its own aliases. **An alias is not a digest.**
 - **Asset group**: a named slot for one kind of asset on one genome, like
   `hg38`'s `bwa_index`. A group holds one or more assets and has a default.
-- **Asset**: one built artifact in a group, with a name (usually `default`)
+- **Asset**: one built artifact in a group, with a name (`default` for
+  `fasta`; the tool version for an index, like `bowtie2_index:2.5.5`)
   and its own asset digest. This is the thing you download.
 - **Asset class**: the type of an asset, which defines its seek keys.
 - **Seek key**: a named file or value inside an asset. The `fasta` class has
@@ -318,6 +319,12 @@ nothing to install):
 
 ```
 https://api.refgenie.org/mcp
+```
+
+To add the public server to Claude Code:
+
+```bash
+claude mcp add --transport http refgenie-public https://api.refgenie.org/mcp
 ```
 
 Use `/mcp` exactly, with no trailing slash. Only server mode has `/mcp`;

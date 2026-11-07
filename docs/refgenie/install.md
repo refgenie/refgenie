@@ -25,7 +25,7 @@ The base install gives you the CLI and the Python API. Add extras for more:
 
 To install from a source checkout for development, see [Development setup](development.md).
 
-Upgrading from refgenie 0.x? See [Upgrade from legacy](upgrade.md).
+Upgrading from refgenie 0.x? Refgenie 1.x ignores the `$REFGENIE` variable and uses `REFGENIE_HOME_PATH` and `REFGENIE_DB_CONFIG_PATH` instead. See [Upgrade from legacy](upgrade.md).
 
 ## Next steps
 

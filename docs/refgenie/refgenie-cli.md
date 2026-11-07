@@ -33,10 +33,11 @@ creates the genome folder and the stage folder.
 
 ```bash
 $ refgenie init
-INFO     Database configuration file created at /home/user/.refgenie/refgenie_db_config.yaml.
+INFO     Database configuration file created at /home/user/.refgenie/refgenie_db_config.yaml. It uses SQLite by default; edit it only to switch to PostgreSQL.
 INFO     Genome folder ready: /home/user/.refgenie/genomes
 INFO     Genome stage folder ready: /home/user/.refgenie/archives
 INFO     Initialized refgenie backend: 'sqlite:////home/user/.refgenie/refgenie'
+INFO     Subscribed to the default server: https://api.refgenie.org
 ```
 
 Asset classes and recipes, including `fasta`, come from a data channel, so

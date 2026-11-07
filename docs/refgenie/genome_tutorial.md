@@ -47,16 +47,17 @@ You can register a genome from a refgenie server or a RefgetStore. First, see wh
 refgenie genome browse --server-url https://api.refgenie.org
 ```
 
-Without `--server-url`, `genome browse` lists genomes on your subscribed servers. Then register one by its digest:
+Without `--server-url`, `genome browse` lists genomes on your subscribed servers. Then register one by its digest. For example, to register hg38:
 
 ```bash
 refgenie genome init \
   --server https://api.refgenie.org \
-  --digest <genome_digest> \
-  --name hg38_remote
+  --digest EiFob05aCWgVU_B_Ae0cypnQut3cxUP1 \
+  --name hg38 \
+  --no-build
 ```
 
-This downloads the genome's sequences to build its fasta asset. Add `--no-build` to register the genome without downloading them; `refgenie getseq` then fetches each sequence when you first ask for it. Use `--store <url>` instead of `--server` to register a genome straight from a RefgetStore. To register every genome on your subscribed servers, run `refgenie genome sync`.
+Without `--no-build`, this downloads the genome's sequences to build its fasta asset. With `--no-build`, refgenie registers the genome without downloading them; `refgenie getseq` then fetches each sequence when you first ask for it. Use `--store <url>` instead of `--server` to register a genome straight from a RefgetStore. To register every genome on your subscribed servers, run `refgenie genome sync`.
 
 ## The fasta asset
 
@@ -80,20 +81,20 @@ To rebuild the asset later, run `refgenie build hg38/fasta`.
 
 ## Retrieve sequences with getseq
 
-`getseq` reads sequences straight from the RefgetStore, so you do not need a FASTA file on disk:
+`getseq` reads sequences straight from the RefgetStore, so you do not need a FASTA file on disk. With hg38 registered as above:
 
 ```bash
 # Whole chromosome
-refgenie getseq -g hg38 -l chr1
+refgenie getseq -g hg38 -l chrM
 
 # Subsequence (0-based, half-open coordinates)
-refgenie getseq -g hg38 -l chr1:0-1000
+refgenie getseq -g hg38 -l chrM:0-60
 
 # From a position to the end of the chromosome
-refgenie getseq -g hg38 -l chr1:50000
+refgenie getseq -g hg38 -l chrM:16500
 ```
 
-Refgenie resolves the alias `hg38` to its genome digest, looks up `chr1` in the sequence collection, and reads that sequence (or just the requested range) from the store.
+Refgenie resolves the alias `hg38` to its genome digest, looks up `chrM` in the sequence collection, and reads that sequence (or just the requested range) from the store. For a genome registered from a server, the first request for a chromosome downloads it, so the first call on a large chromosome like `chr1` takes a while.
 
 ## Putting it all together
 

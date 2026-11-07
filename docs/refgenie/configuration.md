@@ -30,6 +30,8 @@ export REFGENIE_GENOME_FOLDER=~/my_genomes
 export REFGENIE_DB_CONFIG_PATH=~/my_refgenie_db_config.yaml
 ```
 
+Coming from refgenie 0.x? The `$REFGENIE` variable that pointed to the 0.x config file is ignored in 1.x, which uses `REFGENIE_HOME_PATH` and `REFGENIE_DB_CONFIG_PATH` instead. To move an existing setup, see [Upgrade from legacy](upgrade.md).
+
 The [README](https://github.com/refgenie/refgenie#environment-variables) lists the variables for the server, dashboard, and plugins too.
 
 ## Database

@@ -58,8 +58,12 @@ claude mcp add refgenie refgenie-mcp
 
 For other stdio MCP clients, run the command `refgenie-mcp` with no arguments.
 It reads the user's config from `REFGENIE_HOME_PATH` (default `~/.refgenie`).
-The public server also offers the same tools over HTTP at
-`https://api.refgenie.org/mcp`, with nothing installed.
+The public server also offers the same tools over HTTP, with nothing
+installed:
+
+```bash
+claude mcp add --transport http refgenie-public https://api.refgenie.org/mcp
+```
 
 | Tool | Purpose |
 |------|---------|
@@ -94,7 +98,8 @@ To change anything (pull, build, init, alias edits), use the CLI below.
   Each refgenie instance keeps its own aliases. **An alias is not a digest.**
 - **Asset group**: a named slot for one kind of asset on one genome, like
   `hg38`'s `bwa_index`. A group holds one or more assets and has a default.
-- **Asset**: one built artifact in a group, with a name (usually `default`)
+- **Asset**: one built artifact in a group, with a name (`default` for
+  `fasta`; the tool version for an index, like `bowtie2_index:2.5.5`)
   and its own asset digest.
 - **Asset class**: the type of an asset, which defines its seek keys.
 - **Seek key**: a named file or value inside an asset. The `fasta` class has
@@ -125,9 +130,10 @@ refgenie init
 # 2. Optional: subscribe to another server
 refgenie subscribe -s https://my.server.org
 
-# 3. Browse what's available (filter with -g GENOME)
+# 3. Browse what's available. Filter by genome digest (copy it from the
+#    listr table); -g works only for aliases you already have locally.
 refgenie listr
-refgenie listr -g hg38
+refgenie listr --genome-digest jthDpfNIgzM5AGJlOkRtfnky4rXMBIUP
 
 # 4. Download assets (resolves the alias, fetches, extracts, registers)
 refgenie pull hg38/fasta
@@ -187,13 +193,18 @@ refgenie seek mygenome/fasta.chrom_sizes
 half-open**.
 
 ```bash
-refgenie getseq -g hg38 -l chr1              # whole chromosome
-refgenie getseq -g hg38 -l chr1:0-1000       # a subsequence
-refgenie getseq -g hg38 -l chr1:50000        # from a position to the end
+# Register hg38 from the public server without downloading its sequences
+refgenie genome init --server https://api.refgenie.org \
+  --digest EiFob05aCWgVU_B_Ae0cypnQut3cxUP1 --name hg38 --no-build
+
+refgenie getseq -g hg38 -l chrM              # whole chromosome
+refgenie getseq -g hg38 -l chrM:0-60         # a subsequence
+refgenie getseq -g hg38 -l chrM:16500        # from a position to the end
 ```
 
-For a genome initialized from a remote source, `getseq` fetches on demand and
-caches locally.
+For a genome initialized from a remote source, `getseq` downloads each
+chromosome the first time you ask for it and caches it locally, so the first
+call on a large chromosome like `chr1` takes a while.
 
 ---
 
@@ -277,4 +288,5 @@ Every command takes `--help`. Start with `refgenie --help`.
 - Connecting AI assistants (MCP): <https://docs.refgenie.org/refgenie/mcp>
 - Building and serving: <https://docs.refgenie.org/refgenie/building_tutorial>
 - Refget Python package (sequences and seqcol): <https://docs.refgenie.org/refget>
+- Using a refgenie server over HTTP, with nothing installed: <https://api.refgenie.org/SKILL.md>
 - Source: <https://github.com/refgenie/refgenie>
