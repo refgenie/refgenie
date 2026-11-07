@@ -212,9 +212,16 @@ class TransferManager:
         for alias in aliases or []:
             if self._genome.init_from_remote(alias):
                 try:
-                    registered.append(self._alias.resolve(alias))
-                except MissingAliasError:
-                    pass
+                    digest = self._alias.resolve(alias)
+                    # Aliases live in the RefgetStore and only resolve next to their collection.
+                    self._genome.get_metadata(digest)
+                except Exception:  # noqa: BLE001
+                    logger.error(
+                        f"Can't register '{alias}': the server has no sequence collection "
+                        f"for it. Pull an asset instead, e.g. refgenie pull {alias}/fasta"
+                    )
+                    continue
+                registered.append(digest)
 
         logger.info(f"Registered {len(registered)} genome(s)")
         return registered
