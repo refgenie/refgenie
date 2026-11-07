@@ -3,11 +3,8 @@ name: Install check
 # Installs refgenie from PyPI exactly as the docs tell users to, in a clean
 # environment, then runs it against the public server. Unit tests use the
 # locked dependencies, so they cannot see a release that breaks for a fresh
-# install (as when `--pre` pulled a pre-release httpx). The weekly run catches
-# new dependency releases; the release trigger checks each new upload.
+# install (as when `--pre` pulled a pre-release httpx). Runs after each release.
 on:
-  schedule:
-    - cron: "17 6 * * 1"
   workflow_run:
     workflows: ["Publish Python package"]
     types: [completed]
