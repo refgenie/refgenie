@@ -207,3 +207,16 @@ class TestStoreSetChangesAtRuntime:
             assert rg.store_router is router
             assert _served_stores(client) == ["jungle"]
             assert _serves_collection(client, "/seqcol", stores.digest["jungle"])
+
+    def test_an_unreadable_registry_keeps_the_current_stores(self, stores, monkeypatch):
+        rg = _server_rg()
+        stores.register(rg, "jungle")
+        with _client(rg) as client:
+
+            def _fail():
+                raise RuntimeError("database went away")
+
+            monkeypatch.setattr(rg.store, "enabled_stores", _fail)
+            assert client.app.state.seqcol.refresh() is False
+            assert _served_stores(client) == ["jungle"]
+            assert _serves_collection(client, "/seqcol", stores.digest["jungle"])
