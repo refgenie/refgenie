@@ -173,7 +173,7 @@ class TestDataChannelIntegration:
 # --- merged from test_store_backed_serving.py --------------------------------
 # Integration tests for store-backed server mode: refgenie's production serving
 # path, a remote RefgetStore served over HTTP with the refgenie server in
-# store-backed mode (the store declared in REFGENIE_STORES). The `store_backed_server`
+# store-backed mode (the store registered in its store table). The `store_backed_server`
 # fixture (in conftest.py) builds a small on-disk RefgetStore from refget test
 # FASTAs, serves it over HTTP via a `python -m http.server` subprocess, and
 # starts `refgenie serve` as a subprocess pointed at the HTTP store.

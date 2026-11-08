@@ -464,3 +464,16 @@ def make_command_values(**overrides):
     )
     defaults.update(overrides)
     return BuildCommandValues(**defaults)
+
+
+def build_on_disk_store(path, fasta, alias, namespace="name"):
+    """Build (or add to) an on-disk RefgetStore from a FASTA with one curated alias.
+
+    Returns the collection digest.
+    """
+    from refget.store import RefgetStore
+
+    store = RefgetStore.on_disk(str(path))
+    meta, _ = store.add_sequence_collection_from_fasta(str(fasta))
+    store.add_collection_alias(namespace, alias, meta.digest)
+    return meta.digest

@@ -23,7 +23,7 @@ from refgenie.managers.alias import AliasManager
 from refgenie.managers.store import LOCAL_STORE_NAME
 from refgenie.models import GenomeAlias
 
-from tests.support.factories import make_engine, seed_species
+from tests.support.factories import build_on_disk_store, make_engine, seed_species
 from tests.support.server import needs_server
 
 pytestmark = pytest.mark.component
@@ -38,16 +38,6 @@ def _server_rgc():
 def _write_species(store_dir, species):
     """Write a species.json at an on-disk store root."""
     (store_dir / "species.json").write_text(json.dumps({"species": species}))
-
-
-def _build_on_disk_store(path, fasta, alias, namespace="name"):
-    """Build an on-disk RefgetStore from a FASTA with one curated alias."""
-    from refget.store import RefgetStore
-
-    store = RefgetStore.on_disk(str(path))
-    meta, _ = store.add_sequence_collection_from_fasta(str(fasta))
-    store.add_collection_alias(namespace, alias, meta.digest)
-    return meta.digest
 
 
 # ---------------------------------------------------------------------------
@@ -172,10 +162,10 @@ class TestStoreSyncIntegration:
 
         # Two stores share the alias 'shared' for DIFFERENT genomes, and each
         # has one unique genome.
-        jungle_shared = _build_on_disk_store(
+        jungle_shared = build_on_disk_store(
             tmp_path / "jungle", fixtures_path / "rCRSd.fa", "shared"
         )
-        vgp_shared = _build_on_disk_store(tmp_path / "vgp", fixtures_path / "t7.fa", "shared")
+        vgp_shared = build_on_disk_store(tmp_path / "vgp", fixtures_path / "t7.fa", "shared")
 
         rg = _server_rgc()
         rg.store.add("jungle", str(tmp_path / "jungle"), StoreType.on_disk, priority=10)
@@ -205,7 +195,7 @@ class TestStoreSyncIntegration:
         is fetched. Its species.json is read from disk."""
         from refgenie.cli.commands.store import StoreSyncModel, handle_store_sync
 
-        digest = _build_on_disk_store(tmp_path / "jungle", fixtures_path / "rCRSd.fa", "rCRSd")
+        digest = build_on_disk_store(tmp_path / "jungle", fixtures_path / "rCRSd.fa", "rCRSd")
         _write_species(tmp_path / "jungle", [{"taxon_id": 10116, "scientific_name": "Rattus"}])
         rg = _server_rgc()
         rg.store.add("jungle", str(tmp_path / "jungle"), StoreType.on_disk, priority=10)
@@ -225,8 +215,8 @@ class TestStoreSyncIntegration:
     ):
         from refgenie.cli.commands.store import StoreSyncModel, handle_store_sync
 
-        _build_on_disk_store(tmp_path / "jungle", fixtures_path / "rCRSd.fa", "rCRSd")
-        _build_on_disk_store(tmp_path / "vgp", fixtures_path / "t7.fa", "t7")
+        build_on_disk_store(tmp_path / "jungle", fixtures_path / "rCRSd.fa", "rCRSd")
+        build_on_disk_store(tmp_path / "vgp", fixtures_path / "t7.fa", "t7")
         _write_species(
             tmp_path / "jungle",
             [{"taxon_id": 1, "scientific_name": "One", "common_name": "from jungle"}],
@@ -251,8 +241,8 @@ class TestStoreSyncIntegration:
         """The same FASTA in two stores yields one Genome row (digest dedup)."""
         from refgenie.cli.commands.store import _sync_one_store
 
-        digest_a = _build_on_disk_store(tmp_path / "a", fixtures_path / "rCRSd.fa", "rCRSd")
-        digest_b = _build_on_disk_store(tmp_path / "b", fixtures_path / "rCRSd.fa", "rCRSd")
+        digest_a = build_on_disk_store(tmp_path / "a", fixtures_path / "rCRSd.fa", "rCRSd")
+        digest_b = build_on_disk_store(tmp_path / "b", fixtures_path / "rCRSd.fa", "rCRSd")
         assert digest_a == digest_b  # content-addressed: identical
 
         rg = _server_rgc()
@@ -274,7 +264,7 @@ class TestStoreSyncIntegration:
         from refgenie.cli.commands.store import _sync_one_store
         from refgenie.managers.genome import GenomeManager
 
-        digest = _build_on_disk_store(tmp_path / "vgp", fixtures_path / "rCRSd.fa", "rCRSd")
+        digest = build_on_disk_store(tmp_path / "vgp", fixtures_path / "rCRSd.fa", "rCRSd")
         rg = _server_rgc()
         rg.store.add("vgp", str(tmp_path / "vgp"), StoreType.on_disk, priority=10)
         srow = rg.store.get("vgp")
@@ -482,8 +472,8 @@ class TestServingALocalBuild:
         )
         # A federated store names a different genome 'rCRSd', and one 'phage'.
         vgp = tmp_path / "vgp"
-        t7_digest = _build_on_disk_store(vgp, fixtures_path / "t7.fa", "rCRSd")
-        _build_on_disk_store(vgp, fixtures_path / "t7.fa", "phage")
+        t7_digest = build_on_disk_store(vgp, fixtures_path / "t7.fa", "rCRSd")
+        build_on_disk_store(vgp, fixtures_path / "t7.fa", "phage")
         built.store.add("vgp", str(vgp), StoreType.on_disk, priority=10)
         _sync_one_store(built, built.store.get("vgp"), {"vgp": 10}, 100)
 
@@ -551,8 +541,8 @@ class TestSharedReadonlyStores:
         from refgenie.cli.commands.store import _sync_one_store
         from refgenie.managers.genome import GenomeManager
 
-        human = _build_on_disk_store(tmp_path / "jungle", fixtures_path / "rCRSd.fa", "rCRSd")
-        phage = _build_on_disk_store(tmp_path / "vgp", fixtures_path / "t7.fa", "t7")
+        human = build_on_disk_store(tmp_path / "jungle", fixtures_path / "rCRSd.fa", "rCRSd")
+        phage = build_on_disk_store(tmp_path / "vgp", fixtures_path / "t7.fa", "t7")
         RefgetStore.on_disk(str(tmp_path / "jungle")).set_fhr_metadata(
             human, GenomeManager._fhr_metadata_from_dict(self.FHR)
         )
@@ -566,9 +556,7 @@ class TestSharedReadonlyStores:
 
     @staticmethod
     def _mounts(app):
-        from starlette.routing import Mount
-
-        return {r.path: r.app for r in app.routes if isinstance(r, Mount)}
+        return {m.url: m.app for m in app.state.seqcol.mounts}
 
     def test_seqcol_mounts_share_the_routers_readonly_stores(
         self, tmp_path, fixtures_path, monkeypatch
