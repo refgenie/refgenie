@@ -35,7 +35,7 @@ what changed for pipelines and Python code.
   assets to cloud storage for serving.
 - A built-in server (`refgenie serve`) with a JSON API at `/v4` and GA4GH DRS
   and seqcol endpoints. One server can serve several refget stores
-  (`refgenie store`, `REFGENIE_STORES`). The web UI for the public server is
+  (`refgenie store`). The web UI for the public server is
   at https://refgenie.org.
 - `refgenie dash`: a local web dashboard for your genomes and assets, which
   runs pulls and builds as background jobs.

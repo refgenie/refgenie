@@ -105,7 +105,6 @@ All are optional. Refgenie uses defaults under `~/.refgenie/` when they are unse
 | `REFGENIE_GENOME_FOLDER` | `$REFGENIE_HOME_PATH/genomes` | Where built asset files live. Auto-created on `refgenie init`. |
 | `REFGENIE_GENOME_STAGE_FOLDER` | `$REFGENIE_HOME_PATH/archives` | Where staged/archived assets live before push. Auto-created on `refgenie init`. |
 | `REFGENIE_SUBSCRIBE_DEFAULT_SERVER` | `true` | Whether `refgenie init` subscribes a new configuration to `https://api.refgenie.org`. |
-| `REFGENIE_STORES` | unset | JSON array of federated refget stores registered on server boot, e.g. `[{"name": "jungle", "url": "https://.../jungle/", "priority": 10}]`. Lower priority wins alias ties. See `deployment/stores.example.json`. |
 | `REFGENIE_BRIDGE_MODE` | `read` | Localhost bridge policy for `refgenie dash`. `off` = no cross-origin access; `read` = allowlisted public origins may read `/ping`, `/v4`, `/v1/jobs`; `full` = additionally allows `POST /v1/actions/pull`. `refgenie dash --bridge` overrides it for one run. |
 | `REFGENIE_BRIDGE_ORIGINS` | `https://refgenie.org` | Comma-separated exact origins the bridge admits. **Replaces** the default rather than appending. |
 | `REFGENIE_BRIDGE_ORIGIN_REGEX` | unset | Origin regex, for SPA dev servers and preview deployments only. Wildcard-equivalent patterns are refused at startup. |

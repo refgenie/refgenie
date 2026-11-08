@@ -15,7 +15,6 @@
             ],
             "essential": true,
             "environment": [
-                {"name": "REFGENIE_STORES", "value": "[{\"name\": \"jungle\", \"url\": \"https://refgenie.s3.us-east-1.amazonaws.com/refget-store/jungle/\", \"priority\": 10}, {\"name\": \"vgp\", \"url\": \"https://refgenie.s3.us-east-1.amazonaws.com/refget-store/vgp/\", \"priority\": 20}, {\"name\": \"refgenie-main\", \"url\": \"https://refgenie.s3.us-east-1.amazonaws.com/refget-store/refgenie-main/\", \"priority\": 30}, {\"name\": \"igenomes\", \"url\": \"https://refgenie.s3.us-east-1.amazonaws.com/refget-store/igenomes/\", \"priority\": 40}, {\"name\": \"plantref\", \"url\": \"https://refgenie.s3.us-east-1.amazonaws.com/refget-store/plantref/\", \"priority\": 50}]"},
                 {"name": "REFGENIE_CATALOG_URL", "value": "https://refgenie.s3.us-east-1.amazonaws.com/catalog/publish_catalog.sqlite"}
             ],
             "secrets": [
