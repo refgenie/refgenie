@@ -357,13 +357,29 @@ A server that imports a publish catalog instead of building (api.refgenie.org)
 has no store of its own, but the catalog still carries every genome built on
 the build node, aliases included. Their collections live in the build node's
 store, which the nightly mirrors to S3 as `refget-store/refgenie-main/`, so
-that mirror must be in the server's `REFGENIE_STORES`, or the server lists
+that mirror must be one of the server's stores, or the server lists
 those genomes and answers 404 for their collections (and clients cannot pull
-them). It is ranked after the curated stores, not ahead like `local`, so the curated
+them). The catalog carries it: `catalog-export --catalog-store-name
+refgenie-main --catalog-store-url ...` publishes that store and assigns it the
+built genomes, which have no store on the build node. It is ranked after the curated stores, not ahead like `local`, so the curated
 stores keep the default `/seqcol` mount. One mirror of the build node's store
 is used instead of each built genome's registry store, because loading a whole
 registry store for a few genomes costs a lot of memory, and each new store
 would have to be added by hand.
+
+## The store list travels in the publish catalog
+
+`genome.store_name` and `alias.store_name` are foreign keys to `store.name`, so
+a catalog whose genomes name a store the server lacks cannot be imported into
+Postgres at all. The catalog therefore exports the build node's store table,
+and the server takes its store list from it: an import adds or updates each
+store by name and disables, never deletes, any store the catalog does not
+list (genomes still point at it). Only `remote` stores are exported; an
+`on_disk` store's URL is a path on the build node, and an export that would
+publish a genome in an unpublished store fails before writing anything. An
+artifact with no store rows leaves the server's stores alone, so one empty
+table cannot switch every store off. On the build node, `refgenie store apply`
+sets the store table from a declaration file, disabling stores the file drops.
 
 ## Background jobs in local mode
 

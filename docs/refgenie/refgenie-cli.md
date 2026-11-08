@@ -599,12 +599,23 @@ Export a publish catalog covering pushed assets only, for a server to import.
 
 ```
 refgenie catalog-export [--dest PATH] [--https-prefix URL]
+    [--catalog-store-name NAME --catalog-store-url URL [--catalog-store-priority N]]
 ```
 
 | Option | Description |
 | --- | --- |
 | `--dest` | Path to write the publish-catalog SQLite artifact to. |
 | `--https-prefix` | Public https base URL mirroring the stage folder that `refgenie push` uploaded to, e.g. `https://<bucket>.s3.amazonaws.com/assets`. Download links are served from here. |
+| `--catalog-store-name` | Name of the public store that holds the genomes this node built itself, e.g. `refgenie-main`. Those genomes belong to no registered store; the catalog lists them under this one. |
+| `--catalog-store-url` | Public root URL of that store. Required with `--catalog-store-name`. |
+| `--catalog-store-priority` | Priority of that store. Defaults to `30`. |
+
+The catalog carries the [store list](#store): every `remote` store in the
+database, plus the catalog store if one is named. `on_disk` stores are left
+out, since their URL is a path on this machine. A server that imports the
+catalog adds or updates those stores and disables any store the catalog does
+not list. The export fails if a genome belongs to a store it does not publish,
+because the server could not import that genome.
 
 #### `catalog-prune`
 
@@ -856,6 +867,7 @@ priority number wins.
 
 ```
 refgenie store add --name NAME -u URL [-t {remote,on_disk}] [-p PRIORITY] [--description TEXT]
+refgenie store apply -f FILE
 refgenie store sync [--name NAME] [--page-size N]
 refgenie store list
 refgenie store remove --name NAME
@@ -865,6 +877,7 @@ refgenie store conflicts
 | Subcommand | Description |
 | --- | --- |
 | `add` | Register a store. `--name` (unique; `local` is reserved) and `-u, --url` (store root URL, or a local `.refget_store` path with `-t on_disk`) are **required**. `-p, --priority` defaults to `100`. |
+| `apply` | Make the store list match a JSON file. `-f, --file` is **required**: a JSON array of stores, each `{"name", "url", "type"?, "priority"?, "description"?, "enabled"?}`. Listed stores are added or updated; stores not listed are disabled, never deleted. Prints what was added, updated and disabled. |
 | `sync` | Load a store's collections and aliases into the database. With no `--name`, syncs every enabled store. `--page-size` defaults to `100`. |
 | `list` | List registered stores. |
 | `remove` | Remove a store from the registry. `--name` is **required**. |
