@@ -357,13 +357,45 @@ A server that imports a publish catalog instead of building (api.refgenie.org)
 has no store of its own, but the catalog still carries every genome built on
 the build node, aliases included. Their collections live in the build node's
 store, which the nightly mirrors to S3 as `refget-store/refgenie-main/`, so
-that mirror must be in the server's `REFGENIE_STORES`, or the server lists
-those genomes and answers 404 for their collections (and clients cannot pull
-them). It is ranked after the curated stores, not ahead like `local`, so the curated
+that mirror must be in the store list the catalog publishes, or the server
+lists those genomes and answers 404 for their collections (and clients cannot
+pull them). It is ranked after the curated stores, not ahead like `local`, so the curated
 stores keep the default `/seqcol` mount. One mirror of the build node's store
 is used instead of each built genome's registry store, because loading a whole
 registry store for a few genomes costs a lot of memory, and each new store
 would have to be added by hand.
+
+## The server learns its stores from the catalog
+
+Which RefgetStores are published is decided in one place: the registry
+(refgenie-registry `stores/*/project_config.yaml`, a `publish:` block per
+store). The nightly writes that list into the build catalog's `store` table,
+the publish catalog carries the table, and the server's catalog import makes
+its own `store` table match it (a store missing from the catalog is disabled,
+not deleted, since genomes keep a foreign key to it). There is no server-side
+store list: the `REFGENIE_STORES` variable and its boot-time bootstrap are
+gone. Two lists, one on the build node and one in the ECS task definition,
+drifted apart and dropped whole stores' genomes without an error.
+
+So the store list is runtime data, and two things follow:
+
+- **The first import runs in `create_app`**, before anything reads the store
+  table, so a fresh container serves the right stores from its first request.
+  A failed import is logged and the server starts with whatever its database
+  already holds.
+- **A store-set change needs no restart.** After each scheduled import,
+  `SeqcolServing.refresh()` (`refgenie/server/seqcol.py`) compares the enabled
+  stores' name, URL, type and priority with what it serves. If they changed, it
+  rebuilds the store router and a new table of per-store seqcol sub-apps, then
+  swaps both in. One ASGI app is mounted at `/seqcol` for the life of the
+  process and sends each request to the sub-app its path names (default store
+  at `/seqcol`, others at `/seqcol/<name>`), reading the table once per
+  request. refget binds one backend per app, which is why each store keeps its
+  own sub-app rather than one router with a store parameter. A store that fails
+  to load leaves the old router and table in place. While the new stores load,
+  the old ones stay in memory, so a refresh briefly needs room for both. A
+  change to a store's contents with the same URL still needs a restart (or a
+  store-set change), since loaded stores are frozen.
 
 ## Background jobs in local mode
 
