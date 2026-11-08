@@ -34,12 +34,14 @@ from refgenie.db.tables import (
     Species,
     SpeciesName,
     StagedAsset,
+    Store,
 )
 
 # FK-safe order for both export inserts and import upserts.
 ORDERED_MODELS = [
     Configuration,
     Remote,
+    Store,
     Genome,
     Alias,
     Species,
@@ -106,6 +108,30 @@ def _replace_species(src, dest) -> dict[str, int]:
     return {"species": len(species_rows), "speciesname": len(name_rows)}
 
 
+def _disable_absent_stores(dest, store_rows: list[dict]) -> list[str]:
+    """Set ``enabled=False`` on ``dest`` stores the artifact does not carry.
+
+    An artifact with no store rows leaves the server's stores alone rather
+    than disabling every one.
+
+    Returns:
+        The names of the stores disabled.
+    """
+    if not store_rows:
+        return []
+    store = Store.__table__
+    kept = [r["name"] for r in store_rows]
+    disabled = [
+        r.name
+        for r in dest.execute(
+            select(store.c.name).where(store.c.enabled == True, store.c.name.not_in(kept))  # noqa: E712
+        )
+    ]
+    if disabled:
+        dest.execute(store.update().where(store.c.name.in_(disabled)).values(enabled=False))
+    return disabled
+
+
 def read_publishable(engine: Engine) -> tuple[set[tuple[str, str]], dict[str, list[dict]]]:
     """
     The rows a publish catalog is built from, as plain dicts.
@@ -139,6 +165,7 @@ def read_publishable(engine: Engine) -> tuple[set[tuple[str, str]], dict[str, li
             name: _rows(src, t[name])
             for name in (
                 "configuration",
+                "store",
                 "genome",
                 "alias",
                 "species",
@@ -217,6 +244,8 @@ def import_catalog(engine: Engine, local_path: str) -> dict[str, int]:
 
     Insert-or-update only, in one transaction; nothing is ever deleted, except
     that each species taxon in the artifact has its row and names rewritten.
+    Stores are matched by name, and a server store the artifact does not carry
+    is disabled (genomes keep a foreign key to it, so it is never deleted).
 
     Returns:
         A table -> row-count summary.
@@ -273,6 +302,8 @@ def import_catalog(engine: Engine, local_path: str) -> dict[str, int]:
                                 insert_row["id"] = _free_id(dest, table, row["id"])
                             dest.execute(table.insert().values(**insert_row))
                     summary[name] = len(rows)
+                    if name == "store":
+                        summary["store_disabled"] = len(_disable_absent_stores(dest, rows))
                 summary.update(_replace_species(src, dest))
     finally:
         src_engine.dispose()

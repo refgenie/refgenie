@@ -17,6 +17,7 @@ from refgenie.db.tables import (
     RemoteAssetLink,
     RemoteType,
     StagedAsset,
+    Store,
     StoreType,
 )
 from refgenie.managers.alias import AliasManager, _StoreAliases
@@ -122,6 +123,110 @@ class TestPluginSettings:
         server.plugins.set("own", key="kept")
         import_publish_catalog(server.database_engine, str(dest))
         assert server.plugins.all_settings() == {"own": {"key": "kept"}}
+
+
+def _exported_stores(path):
+    with artifact_engine(path).connect() as conn:
+        return {s.name: s for s in conn.execute(select(Store.__table__))}
+
+
+def _exported_genome_stores(path):
+    with artifact_engine(path).connect() as conn:
+        return {g.digest: g.store_name for g in conn.execute(select(Genome.__table__))}
+
+
+CATALOG_STORE = {
+    "catalog_store_name": "refgenie-main",
+    "catalog_store_url": "https://example.org/refget-store/refgenie-main/",
+}
+
+
+class TestStores:
+    """The store list travels in the catalog, so a server learns its stores from it."""
+
+    def test_export_publishes_remote_stores_only(self, build_node, tmp_path):
+        rg, local_digest = build_node
+        rg.store.add("scratch", str(tmp_path / "scratch"), StoreType.on_disk, priority=5)
+        dest = tmp_path / "publish.sqlite"
+
+        summary = export_publish_catalog(rg, dest, HTTPS_PREFIX)
+
+        assert summary["store"] == 1
+        assert set(_exported_stores(dest)) == {"vgp"}
+        assert _exported_genome_stores(dest) == {local_digest: None, FEDERATED_DIGEST: "vgp"}
+
+    def test_catalog_store_owns_the_nodes_own_genomes(self, build_node, tmp_path):
+        rg, local_digest = build_node
+        dest = tmp_path / "publish.sqlite"
+
+        export_publish_catalog(rg, dest, HTTPS_PREFIX, catalog_store_priority=15, **CATALOG_STORE)
+
+        stores = _exported_stores(dest)
+        assert set(stores) == {"vgp", "refgenie-main"}
+        main = stores["refgenie-main"]
+        assert (main.url, main.type, main.priority, main.enabled) == (
+            CATALOG_STORE["catalog_store_url"],
+            StoreType.remote,
+            15,
+            True,
+        )
+        assert _exported_genome_stores(dest) == {
+            local_digest: "refgenie-main",
+            FEDERATED_DIGEST: "vgp",
+        }
+        # The build catalog itself is not rewritten.
+        assert rg.genome.get(local_digest).store_name is None
+
+    def test_export_refuses_a_genome_in_an_unpublished_store(self, build_node, tmp_path):
+        """A genome in an on-disk store would break the server's store foreign key."""
+        rg, _ = build_node
+        rg.store.add("scratch", str(tmp_path / "scratch"), StoreType.on_disk, priority=5)
+        rg.genome.add("S" * 32, "in a build-node path", [], store_name="scratch")
+        dest = tmp_path / "publish.sqlite"
+        dest.write_text("previous artifact")
+
+        with pytest.raises(RuntimeError, match="'scratch' \\(1 genome\\)"):
+            export_publish_catalog(rg, dest, HTTPS_PREFIX, **CATALOG_STORE)
+        assert dest.read_text() == "previous artifact"
+
+    def test_export_needs_both_catalog_store_name_and_url(self, build_node, tmp_path):
+        rg, _ = build_node
+        with pytest.raises(ValueError, match="both a name and a url"):
+            export_publish_catalog(
+                rg, tmp_path / "p.sqlite", HTTPS_PREFIX, catalog_store_name="refgenie-main"
+            )
+
+    def test_import_upserts_stores_and_disables_absent_ones(self, build_node, tmp_path):
+        rg, local_digest = build_node
+        dest = tmp_path / "publish.sqlite"
+        export_publish_catalog(rg, dest, HTTPS_PREFIX, **CATALOG_STORE)
+        server = _new_server(tmp_path)
+        server.store.add("vgp", "url://stale", StoreType.remote, priority=99)
+        server.store.add("retired", "url://r", StoreType.remote, priority=60)
+
+        summary = import_publish_catalog(server.database_engine, str(dest))
+
+        assert summary["store"] == 2
+        assert summary["store_disabled"] == 1
+        assert [s.name for s in server.store.enabled_stores()] == ["vgp", "refgenie-main"]
+        assert server.store.get("vgp").url == "url://vgp"
+        assert server.store.get("vgp").priority == 20
+        assert not server.store.get("retired").enabled
+        assert server.genome.get(local_digest).store_name == "refgenie-main"
+
+    def test_import_of_an_artifact_without_stores_leaves_stores_alone(self, build_node, tmp_path):
+        rg, _ = build_node
+        dest = tmp_path / "publish.sqlite"
+        export_publish_catalog(rg, dest, HTTPS_PREFIX)
+        with artifact_engine(dest).begin() as conn:
+            conn.execute(Genome.__table__.update().values(store_name=None))
+            conn.execute(Store.__table__.delete())
+        server = _new_server(tmp_path)
+        server.store.add("jungle", "url://j", StoreType.remote, priority=10)
+
+        import_publish_catalog(server.database_engine, str(dest))
+
+        assert [s.name for s in server.store.enabled_stores()] == ["jungle"]
 
 
 class TestSpecies:

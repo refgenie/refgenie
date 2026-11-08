@@ -12,6 +12,10 @@ Export makes two changes:
   written as SQL rows, since a server reads only the SQL table.
 - Pushed links are re-targeted at one https remote for the public mirror of the
   stage folder, since download redirects only use http(s) remotes.
+
+It also publishes the store list (remote stores only), so a server learns which
+stores to read from the catalog. Genomes the build node made itself have no
+store; when a *catalog store* is named, they are exported as living in it.
 """
 
 import logging
@@ -20,7 +24,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from refgenie.db import publish
-from refgenie.db.tables import RemoteType
+from refgenie.db.tables import RemoteType, Store, StoreType
 
 logger = logging.getLogger(__name__)
 
@@ -44,22 +48,110 @@ def _assert_no_dropped_aliases(sql_aliases: list[dict], genome_digests, aliases)
         )
 
 
-def export_publish_catalog(rg, dest_path: str | Path, https_prefix: str) -> dict[str, int]:
+def _publishable_stores(
+    store_rows: list[dict],
+    catalog_store_name: str | None,
+    catalog_store_url: str | None,
+    catalog_store_priority: int,
+) -> list[dict]:
+    """The store rows to publish: the remote ones, plus the catalog's own store.
+
+    An ``on_disk`` row names a build-node path, so it is never published. The
+    catalog store replaces any build-catalog row of the same name.
+
+    Raises:
+        ValueError: If only one of the catalog store's name and url is given.
+    """
+    if bool(catalog_store_name) != bool(catalog_store_url):
+        raise ValueError("A catalog store needs both a name and a url")
+    stores = [
+        s for s in store_rows if s["type"] == StoreType.remote and s["name"] != catalog_store_name
+    ]
+    skipped = sorted(s["name"] for s in store_rows if s["type"] != StoreType.remote)
+    if skipped:
+        logger.info(f"Not publishing on-disk store(s): {', '.join(skipped)}")
+    if catalog_store_name:
+        stores.append(
+            Store(
+                name=catalog_store_name,
+                url=catalog_store_url,
+                type=StoreType.remote,
+                priority=catalog_store_priority,
+                enabled=True,
+                description="Genomes built for this catalog",
+            ).model_dump()
+        )
+    return stores
+
+
+def _assert_store_names_published(stores: list[dict], **tables: list[dict]) -> None:
+    """Fail the export if any exported row names a store it does not publish.
+
+    A server import of such a catalog would fail on the store foreign key.
+
+    Raises:
+        RuntimeError: Naming each unpublished store and the rows pointing at it.
+    """
+    published = {s["name"] for s in stores}
+    missing: dict[str, dict[str, int]] = {}
+    for table, rows in tables.items():
+        for r in rows:
+            name = r.get("store_name")
+            if name is not None and name not in published:
+                counts = missing.setdefault(name, {})
+                counts[table] = counts.get(table, 0) + 1
+    if missing:
+        detail = "; ".join(
+            f"'{name}' ({', '.join(f'{n} {t}' for t, n in sorted(c.items()))})"
+            for name, c in sorted(missing.items())
+        )
+        raise RuntimeError(
+            f"Exported rows name stores the catalog does not publish: {detail}. "
+            f"Only remote stores are published; register them with "
+            f"'refgenie store apply', or name the catalog store."
+        )
+
+
+def export_publish_catalog(
+    rg,
+    dest_path: str | Path,
+    https_prefix: str,
+    catalog_store_name: str | None = None,
+    catalog_store_url: str | None = None,
+    catalog_store_priority: int = 30,
+) -> dict[str, int]:
     """
     Write the publishable subset of ``rg``'s catalog to a fresh SQLite file.
 
     Only pushed (asset_digest, mode) pairs are included, re-linked to one https
     remote at ``https_prefix``. Local paths are stripped and download counters
-    start at zero.
+    start at zero. Remote stores are published; on-disk ones are not.
+
+    Args:
+        rg: The build node's Refgenie instance.
+        dest_path: Where to write the artifact.
+        https_prefix: Public https base URL mirroring the stage folder.
+        catalog_store_name: The public store holding the genomes this node
+            built itself (those with no store). When given, it is published
+            and those genomes are exported as living in it.
+        catalog_store_url: That store's public root URL. Required with the name.
+        catalog_store_priority: That store's priority (lower wins alias ties).
 
     Returns a table -> row-count summary.
-    """
-    dest_path = Path(dest_path)
-    if dest_path.exists():
-        dest_path.unlink()
-    dest_path.parent.mkdir(parents=True, exist_ok=True)
 
+    Raises:
+        ValueError: If only one of the catalog store's name and url is given.
+        RuntimeError: If an exported genome or alias names a store the
+            catalog does not publish.
+    """
     pushed_pairs, rows = publish.read_publishable(rg.database_engine)
+    stores = _publishable_stores(
+        rows["store"], catalog_store_name, catalog_store_url, catalog_store_priority
+    )
+    if catalog_store_name:
+        for g in rows["genome"]:
+            if g["store_name"] is None:
+                g["store_name"] = catalog_store_name
     genome_digests = {g["digest"] for g in rows["genome"]}
 
     # The alias manager unions the RefgetStore and SQL aliases.
@@ -69,6 +161,7 @@ def export_publish_catalog(rg, dest_path: str | Path, https_prefix: str) -> dict
         if a.genome_digest in genome_digests
     ]
     _assert_no_dropped_aliases(rows["alias"], genome_digests, aliases)
+    _assert_store_names_published(stores, genome=rows["genome"], alias=aliases)
 
     for a in rows["asset"]:
         a["path"] = None  # build-node-local; meaningless (and ugly) in public
@@ -94,6 +187,7 @@ def export_publish_catalog(rg, dest_path: str | Path, https_prefix: str) -> dict
 
     table_rows: dict[str, list[dict]] = {
         **rows,
+        "store": stores,
         "configuration": config_rows,
         "remote": [remote_row],
         "alias": aliases,
@@ -108,6 +202,10 @@ def export_publish_catalog(rg, dest_path: str | Path, https_prefix: str) -> dict
             for digest, mode in sorted(pushed_pairs)
         ],
     }
+    dest_path = Path(dest_path)
+    if dest_path.exists():
+        dest_path.unlink()
+    dest_path.parent.mkdir(parents=True, exist_ok=True)
     summary = publish.write_catalog(dest_path, table_rows)
     logger.info(f"Exported publish catalog to {dest_path}: {summary}")
     return summary

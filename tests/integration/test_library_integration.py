@@ -676,3 +676,64 @@ class TestCatalogImportPostgres:
         with server.connect() as conn:
             names = {n.name for n in conn.execute(select(AssetName.__table__))}
         assert names == {"default", "second"}
+
+    @staticmethod
+    def _node_with_store_genome(tmp_path, fixtures_path):
+        """A build node with one genome of its own and one in store 'igenomes'."""
+        from refgenie.db.tables import StoreType
+        from tests.support.factories import make_engine
+
+        node = Refgenie(database_engine=make_engine(), suppress_migrations=True)
+        node.database.init(genome_folder=tmp_path / "node_genomes")
+        node.genome.initialize_genome(
+            fasta_file_path=fixtures_path / "rCRSd.fa", alias_names=["rCRSd"], description="rCRSd"
+        )
+        node.store.add("igenomes", "https://example.org/igenomes/", StoreType.remote, priority=40)
+        node.genome.add("I" * 32, "an igenomes genome", [], store_name="igenomes")
+        return node
+
+    def test_import_brings_the_stores_its_genomes_name(
+        self, refgenie_instance, fixtures_path, tmp_path
+    ):
+        """Genomes in a store the server lacks import: the store row comes with them."""
+        from refgenie.publish_catalog import export_publish_catalog, import_publish_catalog
+
+        node = self._node_with_store_genome(tmp_path, fixtures_path)
+        server = refgenie_instance
+        server.store.add("retired", "https://example.org/retired/", priority=90)
+        artifact = tmp_path / "publish.sqlite"
+        export_publish_catalog(
+            node,
+            artifact,
+            "https://example.org/assets",
+            catalog_store_name="refgenie-main",
+            catalog_store_url="https://example.org/refgenie-main/",
+        )
+
+        import_publish_catalog(server.database_engine, str(artifact))
+
+        assert [s.name for s in server.store.enabled_stores()] == ["refgenie-main", "igenomes"]
+        assert not server.store.get("retired").enabled
+        assert server.genome.get("I" * 32).store_name == "igenomes"
+        assert server.genome.get(server.alias.resolve("rCRSd")).store_name == "refgenie-main"
+
+    def test_import_without_the_store_row_fails_and_rolls_back(
+        self, refgenie_instance, fixtures_path, tmp_path
+    ):
+        """Without its store row, the genome's store foreign key fails the whole import."""
+        from sqlalchemy.exc import IntegrityError
+
+        from refgenie.db.tables import Genome, Store
+        from refgenie.publish_catalog import export_publish_catalog, import_publish_catalog
+        from tests.test_publish_catalog import artifact_engine
+
+        node = self._node_with_store_genome(tmp_path, fixtures_path)
+        artifact = tmp_path / "publish.sqlite"
+        export_publish_catalog(node, artifact, "https://example.org/assets")
+        with artifact_engine(artifact).begin() as conn:
+            conn.execute(Store.__table__.delete())
+
+        with pytest.raises(IntegrityError):
+            import_publish_catalog(refgenie_instance.database_engine, str(artifact))
+        with refgenie_instance.database_engine.connect() as conn:
+            assert conn.execute(Genome.__table__.select()).first() is None
