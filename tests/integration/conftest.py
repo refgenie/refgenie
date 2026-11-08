@@ -13,7 +13,6 @@ Or manually:
     3. Stop services: ./tests/scripts/services.sh stop
 """
 
-import json
 import os
 import subprocess
 import sys
@@ -22,7 +21,7 @@ from pathlib import Path
 import pytest
 
 from tests.support.factories import DEMO_FASTA, RCRSD_FASTA, TESTS_DATA_DIR, register_fasta
-from tests.support.processes import find_free_port, popen_cli, wait_for_server
+from tests.support.processes import find_free_port, popen_cli, run_cli, wait_for_server
 from tests.support.server import make_server_client, requires_server
 
 from tests.integration.helpers import (
@@ -574,7 +573,8 @@ def refgenie_serve_subprocess(cli_multi_archived_config):
 # Store-backed serving fixtures
 # =============================================================================
 # A remote RefgetStore served over HTTP, with a refgenie server federating over
-# it (registered on boot from REFGENIE_STORES).
+# it (registered in the server's store table before boot, as a catalog import
+# would).
 
 # Small demo collections from the refget package's test FASTA files.
 # Resolved relative to this repo's sibling `refget` source checkout.
@@ -627,8 +627,9 @@ def store_backed_server(tmp_path_factory):
     """Run a refgenie server in store-backed mode against an HTTP-served store.
 
     Builds a small on-disk RefgetStore (3 collections from refget test FASTAs),
-    serves it over HTTP, then starts `refgenie serve` with REFGENIE_STORES
-    declaring the HTTP store as its one federated store (production path).
+    serves it over HTTP, registers it as the server's one federated store with
+    `refgenie store add` (standing in for the catalog import that writes the
+    store table in production), then starts `refgenie serve`.
 
     Yields a dict with:
         - url: refgenie server base URL
@@ -655,7 +656,6 @@ def store_backed_server(tmp_path_factory):
         "REFGENIE_HOME_PATH": str(home),
         "REFGENIE_DB_CONFIG_PATH": str(db_config),
         "REFGENIE_GENOME_FOLDER": str(genome_folder),
-        "REFGENIE_STORES": json.dumps([{"name": "demo", "url": store_url, "type": "remote"}]),
         "NO_COLOR": "1",
         "TERM": "dumb",
         "COLUMNS": "500",
@@ -665,6 +665,7 @@ def store_backed_server(tmp_path_factory):
     # ``None`` unsets: no stale REFGENIE config var leaks into the subprocess.
     server_env = {**env, "REFGENIE": None}
 
+    run_cli("store", "add", "--name", "demo", "-u", store_url, "-t", "remote", env=server_env)
     proc = popen_cli("serve", "-p", str(server_port), env=server_env)
 
     try:

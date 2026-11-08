@@ -174,10 +174,16 @@ class Refgenie:
 
         Call after ``store add``/``sync``/``remove``. The alias manager caches
         against the store it reads, so it is invalidated too.
+
+        The new router is built before it replaces the old one, so a server's
+        concurrent requests keep reading the old router meanwhile, and a store
+        that fails to load leaves the old router in place.
         """
-        self._store_router = None
+        router = self._mode.create_store_router(self.store)
+        with self._store_router_lock:
+            self._store_router = router
         self.alias.invalidate()
-        return self.store_router
+        return router
 
     @property
     def refget_store(self) -> RefgetStore:

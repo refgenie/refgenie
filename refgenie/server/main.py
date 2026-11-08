@@ -10,14 +10,12 @@ except ImportError as e:
     ) from e
 import logging
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
 from pathlib import Path
 
 from refgenie.server.dependencies import get_refgenie as _get_refgenie
 from refgenie.server.dependencies import reject_nul_bytes
 from refgenie.server.routers.catalog import router as refgenie_core_router
 from refgenie.core import Refgenie
-from refget.router import create_refget_router, setup_backend
 
 from refgenie.const import API_VERSION
 from refgenie.server.const import (
@@ -36,13 +34,13 @@ from refgenie.server.const import (
     SERVICE_GITHUB_URL,
     SERVICE_ORGANIZATION,
 )
+from refgenie.server.seqcol import SeqcolService, SeqcolServing
 from refgenie.server.spa import mount_spa, read_build_info, resolve_web_dist
 from refgenie.server.stats import (
     EndpointCollector,
     EndpointHitCounterMiddleware,
     handle_endpoint_collector_hits,
 )
-from refgenie.db.tables import StoreType
 
 logger = logging.getLogger(__name__)
 
@@ -131,90 +129,19 @@ def _configure_cors(app: FastAPI, mode: AppMode) -> None:
     )
 
 
-@dataclass
-class SeqcolMount:
-    """One store's seqcol sub-app and where it is served."""
-
-    store: str
-    url: str
-    id: str
-    name: str
-    store_url: str
-    app: FastAPI
-
-
-def _mount_seqcol(app: FastAPI, store_rows: list) -> list[SeqcolMount]:
-    """Serve seqcol: one mounted sub-app per store, or the DB-backed router with none.
-
-    refget binds one backend per app, hence one sub-app per store. The
-    highest-priority store is the default mount; others are name-qualified.
-    """
-    if not store_rows:
-        app.include_router(
-            create_refget_router(
-                sequences=False,
-                pangenomes=False,
-                refget_store_url=None,
-                mount_prefix=SEQCOL_MOUNT_PATH,
-            ),
-            prefix=SEQCOL_MOUNT_PATH,
-        )
-
-        # DB mode only; store mounts serve their own service-info.
-        @app.get(f"{SEQCOL_MOUNT_PATH}/service-info", tags=["Sequence Collections"])
-        async def seqcol_service_info():
-            return {
-                "id": SEQCOL_SERVICE_ID,
-                "name": SEQCOL_SERVICE_NAME,
-                "type": {"group": "org.ga4gh", "artifact": "refget-seqcol", "version": "1.0.0"},
-                "seqcol": {"refget_store": {"enabled": False}},
-            }
-
-        return []
-
-    from refget.seqcolapi import create_seqcol_app
-
-    mounts = []
-    for idx, row in enumerate(store_rows):
-        default = idx == 0
-        service_id = SEQCOL_SERVICE_ID if default else f"{SEQCOL_SERVICE_ID}.{row.name}"
-        service_name = SEQCOL_SERVICE_NAME if default else f"{SEQCOL_SERVICE_NAME} ({row.name})"
-        sc_app = create_seqcol_app(
-            store_path=row.url,
-            remote=row.type == StoreType.remote,
-            store_url=row.url,
-            service_info_id=service_id,
-            service_info_name=service_name,
-            organization=SERVICE_ORGANIZATION,
-            contact_url=SERVICE_CONTACT_URL,
-            documentation_url=SERVICE_DOCUMENTATION_URL,
-            # Store updates are picked up by redeploying, not reloaded.
-            freshness=False,
-            cors=False,  # the host app's CORS middleware does not reach a mount
-            # Routes now; the lifespan binds the router's store.
-            defer_backend=True,
-        )
-        url = SEQCOL_MOUNT_PATH if default else f"{SEQCOL_MOUNT_PATH}/{row.name}"
-        mounts.append(SeqcolMount(row.name, url, service_id, service_name, row.url, sc_app))
-    # Name-qualified paths first, or /seqcol would swallow /seqcol/<name>.
-    for mount in reversed(mounts):
-        app.mount(mount.url, mount.app)
-    return mounts
-
-
 def _service_info_doc(
     mode: AppMode,
     root_path: str,
     build_info: dict | None,
     capabilities: dict[str, bool],
-    seqcol_mounts: list[SeqcolMount],
+    seqcol_services: tuple[SeqcolService, ...],
 ) -> dict:
     """The ``/service-info`` document.
 
     Refgenie-specific fields, including ``capabilities``, nest under
     ``refgenie``. In server mode, ``seqcol.services`` lists every seqcol mount
     and the flat ``seqcol`` keys describe the default one. Local mode has no
-    ``seqcol`` block.
+    ``seqcol`` block. Built per request, since the store set can change.
     """
     is_local = mode == APP_MODE_LOCAL
     document = {
@@ -256,7 +183,7 @@ def _service_info_doc(
             "service_info": f"{m.url}/service-info",
             "refget_store": {"enabled": True, "url": m.store_url},
         }
-        for m in seqcol_mounts
+        for m in seqcol_services
     ] or [
         {
             "id": SEQCOL_SERVICE_ID,
@@ -325,20 +252,6 @@ def create_app(
         rg = _get_refgenie()
     else:
         rg = Refgenie(server_mode=True)
-        # Register declared stores (REFGENIE_STORES) before enumerating them.
-        from refgenie.server.store_bootstrap import bootstrap_stores_from_env
-
-        bootstrap_stores_from_env(rg)
-
-    # Stores come from the `store` registry table; none means DB-backed seqcol.
-    # Read now because the seqcol mounts must precede the SPA catch-all.
-    store_rows = []
-    if not is_local:
-        try:
-            store_rows = rg.store.enabled_stores()
-        except Exception:  # noqa: BLE001 - a missing/empty registry is DB mode
-            logger.exception("Could not read the store registry; serving DB-mode seqcol")
-            store_rows = []
 
     def _import_catalog():
         """Refresh the SQL catalog from the published artifact; a failure is logged, not fatal."""
@@ -348,6 +261,24 @@ def create_app(
             import_publish_catalog(rg.database_engine, REFGENIE_CATALOG_URL)
         except Exception:
             logger.exception(f"Publish-catalog import from {REFGENIE_CATALOG_URL} failed")
+
+    # The catalog carries the store list, so import it before anything reads
+    # the stores: a fresh container learns its stores here.
+    if not is_local and REFGENIE_CATALOG_URL:
+        rg.database.create_tables()
+        _import_catalog()
+
+    # Seqcol follows the `store` registry: one sub-app per enabled store, or
+    # DB-backed seqcol with none. The lifespan loads the stores.
+    seqcol = None if is_local else SeqcolServing(rg)
+
+    def _scheduled_catalog_import():
+        """Import the catalog, then serve whatever store set it now lists."""
+        _import_catalog()
+        try:
+            seqcol.refresh()
+        except Exception:
+            logger.exception("Could not load the new store set; still serving the old one")
 
     @asynccontextmanager
     async def local_lifespan(app: FastAPI):
@@ -364,9 +295,11 @@ def create_app(
 
     @asynccontextmanager
     async def server_lifespan(app: FastAPI):
-        """Server mode: tables, catalog import, stores, seqcol, scheduler, MCP.
+        """Server mode: tables, stores, seqcol, scheduler, MCP.
 
-        Each store is loaded once, read-only, and shared by the API and its seqcol mount.
+        The first catalog import already ran in ``create_app``. Each store is
+        loaded once, read-only, and shared by the API and its seqcol sub-app;
+        each scheduled import reloads them if the store set changed.
         """
         # A `server`-extra dependency; `refgenie dash` installs lack it.
         from apscheduler.schedulers.background import BackgroundScheduler
@@ -376,16 +309,8 @@ def create_app(
         startup = time.monotonic()
         print("Creating database and tables")
         rg.database.create_tables()
-        if REFGENIE_CATALOG_URL:
-            _import_catalog()
-        if store_rows:
-            # Load every store now; a store that fails to load stops startup.
-            logger.info(f"Store router ready ({', '.join(rg.store_router.names)})")
-        if seqcol_mounts:
-            for mount in seqcol_mounts:
-                setup_backend(mount.app, store=rg.store_router.get_store(mount.store))
-        else:
-            setup_backend(app, engine=rg.database_engine)
+        # Load every store now; a store that fails to load stops startup.
+        seqcol.refresh()
         app.state.endpoint_hits_collector = EndpointCollector()
         scheduler = BackgroundScheduler()
         scheduler.add_job(
@@ -397,7 +322,7 @@ def create_app(
         if REFGENIE_CATALOG_URL:
             # Idempotent upsert, so the per-worker scheduler is harmless.
             scheduler.add_job(
-                _import_catalog,
+                _scheduled_catalog_import,
                 "interval",
                 seconds=CATALOG_IMPORT_INTERVAL_SECONDS,
             )
@@ -476,8 +401,10 @@ def create_app(
         app.include_router(data_channel, prefix="/v4/data_channel", tags=["Data Channel"])
         app.include_router(data_channel, prefix="/data_channel", tags=["Data Channel"])
 
-    # Mounted sub-apps get no lifespan events, so the lifespan binds their backends.
-    seqcol_mounts = [] if is_local else _mount_seqcol(app, store_rows)
+    if not is_local:
+        # One mount for every store; it dispatches per request.
+        app.mount(SEQCOL_MOUNT_PATH, seqcol)
+        app.state.seqcol = seqcol
 
     # --- The web UI bundle --------------------------------------------------
     web_dist = resolve_web_dist(web_dist)
@@ -490,12 +417,11 @@ def create_app(
 
     app.include_router(ping_router)
 
-    service_info_doc = _service_info_doc(mode, root_path, build_info, capabilities, seqcol_mounts)
-
     @app.get("/service-info", tags=["Default"])
     async def service_info():
         """GA4GH-style discovery document, and the web UI's bootstrap."""
-        return service_info_doc
+        services = () if is_local else seqcol.services()
+        return _service_info_doc(mode, root_path, build_info, capabilities, services)
 
     if not is_local:
         _mount_mcp(app, rg)
