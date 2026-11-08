@@ -25,16 +25,15 @@ def build_fasta_main(args=None):
 
     store = RefgetStore.open_local(parsed.store_path)
     digest = parsed.digest
-    # Load only this collection: export_fasta() needs full records, and
-    # load_all_*() would scale memory with the whole store.
-    store.load_collection(digest)
-    for seq_digest in store.get_collection_level2(digest)["sequences"]:
-        store.load_sequence(seq_digest.removeprefix("SQ."))
     output = parsed.output_folder
     output.mkdir(parents=True, exist_ok=True)
 
+    # export_fasta() streams one sequence at a time; a fasta asset keeps
+    # chromosome names, so label records by name.
     fa_path = output / f"{digest}.fa"
-    store.export_fasta(digest, fa_path, None, parsed.line_width)
+    store.export_fasta(
+        str(fa_path), collections=digest, label="{name}", line_width=parsed.line_width
+    )
 
     fai_records = compute_fai(fa_path)
     fai_path = output / f"{digest}.fa.fai"

@@ -1219,8 +1219,8 @@ class TestBuildFastaCli:
         store_path, _ = store_with_genome
         output = tmp_path / "output"
         # gtars surfaces an unknown collection digest as OSError from
-        # RefgetStore.load_collection.
-        with pytest.raises(OSError, match="Error loading collection"):
+        # RefgetStore.export_fasta.
+        with pytest.raises(OSError, match="nonexistent_digest"):
             build_fasta_main([str(store_path), "nonexistent_digest", str(output)])
 
 

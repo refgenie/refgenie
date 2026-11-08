@@ -202,11 +202,13 @@ class SequenceManager:
         """Export a genome's sequences to a FASTA file."""
         genome = self._genome.get(digest)
         if not genome.remote_url:
-            self._router().default_store.export_fasta(digest, str(output_path))
+            self._router().default_store.export_fasta(
+                str(output_path), collections=digest, label="{name}"
+            )
             return output_path
         try:
             with open_remote_store(genome.remote_url) as remote_store:
-                remote_store.export_fasta(digest, str(output_path))
+                remote_store.export_fasta(str(output_path), collections=digest, label="{name}")
         except (IOError, ConnectionError) as e:
             raise ConnectionError(f"Cannot export FASTA from {genome.remote_url}: {e}") from e
         return output_path
