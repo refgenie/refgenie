@@ -34,7 +34,7 @@ from refgenie.server.const import (
     SERVICE_GITHUB_URL,
     SERVICE_ORGANIZATION,
 )
-from refgenie.server.seqcol import SeqcolMount, SeqcolServing
+from refgenie.server.seqcol import SeqcolService, SeqcolServing
 from refgenie.server.spa import mount_spa, read_build_info, resolve_web_dist
 from refgenie.server.stats import (
     EndpointCollector,
@@ -134,7 +134,7 @@ def _service_info_doc(
     root_path: str,
     build_info: dict | None,
     capabilities: dict[str, bool],
-    seqcol_mounts: tuple[SeqcolMount, ...],
+    seqcol_services: tuple[SeqcolService, ...],
 ) -> dict:
     """The ``/service-info`` document.
 
@@ -183,7 +183,7 @@ def _service_info_doc(
             "service_info": f"{m.url}/service-info",
             "refget_store": {"enabled": True, "url": m.store_url},
         }
-        for m in seqcol_mounts
+        for m in seqcol_services
     ] or [
         {
             "id": SEQCOL_SERVICE_ID,
@@ -420,8 +420,8 @@ def create_app(
     @app.get("/service-info", tags=["Default"])
     async def service_info():
         """GA4GH-style discovery document, and the web UI's bootstrap."""
-        mounts = () if is_local else seqcol.mounts
-        return _service_info_doc(mode, root_path, build_info, capabilities, mounts)
+        services = () if is_local else seqcol.services()
+        return _service_info_doc(mode, root_path, build_info, capabilities, services)
 
     if not is_local:
         _mount_mcp(app, rg)

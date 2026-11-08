@@ -43,14 +43,33 @@ def store_key(row: Store) -> StoreKey:
 
 
 @dataclass(frozen=True)
-class SeqcolMount:
-    """One store's seqcol sub-app and where it is served."""
+class SeqcolService:
+    """Where one store's seqcol service is served, as ``/service-info`` lists it."""
 
     store: str
     url: str
     id: str
     name: str
     store_url: str
+
+    @classmethod
+    def for_row(cls, row: Store, *, default: bool) -> "SeqcolService":
+        """The service for ``row``; the default store is unqualified."""
+        if default:
+            return cls(row.name, SEQCOL_MOUNT_PATH, SEQCOL_SERVICE_ID, SEQCOL_SERVICE_NAME, row.url)
+        return cls(
+            row.name,
+            f"{SEQCOL_MOUNT_PATH}/{row.name}",
+            f"{SEQCOL_SERVICE_ID}.{row.name}",
+            f"{SEQCOL_SERVICE_NAME} ({row.name})",
+            row.url,
+        )
+
+
+@dataclass(frozen=True)
+class SeqcolMount(SeqcolService):
+    """A :class:`SeqcolService` with the sub-app that serves it."""
+
     app: FastAPI
 
 
@@ -90,14 +109,13 @@ def _store_mount(row: Store, store, *, default: bool) -> SeqcolMount:
     """A seqcol sub-app serving ``store``, the opened store for ``row``."""
     from refget.seqcolapi import create_seqcol_app
 
-    service_id = SEQCOL_SERVICE_ID if default else f"{SEQCOL_SERVICE_ID}.{row.name}"
-    service_name = SEQCOL_SERVICE_NAME if default else f"{SEQCOL_SERVICE_NAME} ({row.name})"
+    service = SeqcolService.for_row(row, default=default)
     app = create_seqcol_app(
         store_path=row.url,
         remote=row.type == StoreType.remote,
         store_url=row.url,
-        service_info_id=service_id,
-        service_info_name=service_name,
+        service_info_id=service.id,
+        service_info_name=service.name,
         organization=SERVICE_ORGANIZATION,
         contact_url=SERVICE_CONTACT_URL,
         documentation_url=SERVICE_DOCUMENTATION_URL,
@@ -108,8 +126,7 @@ def _store_mount(row: Store, store, *, default: bool) -> SeqcolMount:
         defer_backend=True,
     )
     setup_backend(app, store=store)
-    url = SEQCOL_MOUNT_PATH if default else f"{SEQCOL_MOUNT_PATH}/{row.name}"
-    return SeqcolMount(row.name, url, service_id, service_name, row.url, app)
+    return SeqcolMount(**vars(service), app=app)
 
 
 def _qualifier(scope: Scope) -> str:
@@ -151,6 +168,18 @@ class SeqcolServing:
         """The store sub-apps now served; empty in DB mode."""
         return self.table.mounts
 
+    def services(self) -> tuple[SeqcolService, ...]:
+        """The store services to advertise; empty in DB mode.
+
+        Before the first refresh (the lifespan has not run) this describes the
+        registry without loading any store.
+        """
+        table = self._table
+        if table is not None:
+            return table.mounts
+        rows = self._enabled_rows() or []
+        return tuple(SeqcolService.for_row(r, default=i == 0) for i, r in enumerate(rows))
+
     def refresh(self) -> bool:
         """Serve the registry's current enabled stores. Returns whether anything changed.
 
@@ -160,9 +189,13 @@ class SeqcolServing:
         raises, and the old router and table stay in place.
         """
         with self._lock:
-            rows = self._enabled_rows()
-            keys = tuple(store_key(r) for r in rows)
             current = self._table
+            rows = self._enabled_rows()
+            if rows is None:
+                if current is not None:
+                    return False  # keep serving what we have
+                rows = []
+            keys = tuple(store_key(r) for r in rows)
             if current is not None and current.stores == keys:
                 return False
             if rows:
@@ -193,13 +226,17 @@ class SeqcolServing:
         logger.info(f"Serving seqcol for stores: {names}")
         return True
 
-    def _enabled_rows(self) -> list[Store]:
-        """The enabled store rows in priority order; none if the registry can't be read."""
+    def _enabled_rows(self) -> list[Store] | None:
+        """The enabled store rows in priority order, or ``None`` if the registry can't be read.
+
+        At startup an unreadable registry means DB-mode seqcol; later, a refresh
+        that cannot read it keeps the current stores.
+        """
         try:
             return list(self._rg.store.enabled_stores())
-        except Exception:  # noqa: BLE001 - a missing/empty registry is DB mode
-            logger.exception("Could not read the store registry; serving DB-mode seqcol")
-            return []
+        except Exception:  # noqa: BLE001 - logged; the caller picks the fallback
+            logger.exception("Could not read the store registry")
+            return None
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         table = self.table  # read once: one request, one store set
