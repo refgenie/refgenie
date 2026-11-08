@@ -2,8 +2,10 @@
 
 Opens one refget store per enabled :class:`~refgenie.db.tables.Store` row, in
 priority order, and dispatches reads to the store that owns a genome. In server
-mode (``readonly=True``) each store is loaded in full at startup and frozen, so
-no request touches the network; store updates need a redeploy. In local mode
+mode (``readonly=True``) each store is loaded in full and frozen, so no request
+touches the network. A change to the set of stores builds a new router
+(``Refgenie.reload_store_router``); a change to a store's contents needs a
+restart. In local mode
 (``readonly=False``) it holds the editable on-disk store.
 """
 
