@@ -84,6 +84,80 @@ class TestStoreRegistry:
         assert [s.name for s in rg.store.list_all()] == ["vgp"]
         assert "reserved" in caplog.text
 
+    def test_apply_declaration_reports_changes(self):
+        rg = _server_rgc()
+        rg.store.add("jungle", "url://j", StoreType.remote, priority=10)
+        rg.store.add("vgp", "url://v", StoreType.remote, priority=20)
+        changes = rg.store.apply_declaration(
+            [
+                {"name": "jungle", "url": "url://j", "priority": 10},
+                {"name": "vgp", "url": "url://v2", "priority": 20},
+                {"name": "igenomes", "url": "url://i", "priority": 40},
+            ]
+        )
+        assert changes == {"added": ["igenomes"], "updated": ["vgp"], "disabled": []}
+        assert rg.store.get("vgp").url == "url://v2"
+
+    def test_apply_declaration_keeps_undeclared_stores_by_default(self):
+        rg = _server_rgc()
+        rg.store.add("jungle", "url://j", StoreType.remote, priority=10)
+        rg.store.apply_declaration([{"name": "vgp", "url": "url://v"}])
+        assert rg.store.get("jungle").enabled
+
+    def test_apply_declaration_disables_missing(self):
+        """Undeclared stores are disabled, never deleted: genomes keep their FK."""
+        rg = _server_rgc()
+        rg.store.add("jungle", "url://j", StoreType.remote, priority=10)
+        rg.store.add("old", "url://o", StoreType.remote, priority=50)
+        rg.genome.add("D" * 32, "owned by old", [], store_name="old")
+
+        changes = rg.store.apply_declaration(
+            [{"name": "jungle", "url": "url://j", "priority": 10}], disable_missing=True
+        )
+
+        assert changes == {"added": [], "updated": [], "disabled": ["old"]}
+        assert [s.name for s in rg.store.list_all()] == ["jungle", "old"]
+        assert [s.name for s in rg.store.enabled_stores()] == ["jungle"]
+        assert rg.genome.get("D" * 32).store_name == "old"
+        # Applying the same file again changes nothing.
+        again = rg.store.apply_declaration(
+            [{"name": "jungle", "url": "url://j", "priority": 10}], disable_missing=True
+        )
+        assert again == {"added": [], "updated": [], "disabled": []}
+
+    def test_apply_declaration_reenables_a_declared_store(self):
+        rg = _server_rgc()
+        rg.store.add("vgp", "url://v", StoreType.remote, priority=20, enabled=False)
+        changes = rg.store.apply_declaration(
+            [{"name": "vgp", "url": "url://v", "priority": 20}], disable_missing=True
+        )
+        assert changes["updated"] == ["vgp"]
+        assert rg.store.get("vgp").enabled
+
+    def test_store_apply_cli_reads_the_file(self, tmp_path, capsys):
+        from refgenie.cli.commands.store import StoreApplyModel, handle_store_apply
+
+        rg = _server_rgc()
+        rg.store.add("old", "url://o", StoreType.remote, priority=50)
+        declaration = tmp_path / "stores.json"
+        declaration.write_text(
+            json.dumps([{"name": "jungle", "url": "url://j", "priority": 10, "type": "remote"}])
+        )
+
+        handle_store_apply(StoreApplyModel(file=declaration), rg)
+
+        assert [s.name for s in rg.store.enabled_stores()] == ["jungle"]
+        out = capsys.readouterr().out
+        assert "added" in out and "disabled" in out
+
+    def test_store_apply_cli_rejects_a_non_array(self, tmp_path):
+        from refgenie.cli.commands.store import StoreApplyModel, handle_store_apply
+
+        declaration = tmp_path / "stores.json"
+        declaration.write_text(json.dumps({"name": "jungle", "url": "url://j"}))
+        with pytest.raises(SystemExit):
+            handle_store_apply(StoreApplyModel(file=declaration), _server_rgc())
+
     def test_remove_missing_raises(self):
         rg = _server_rgc()
         with pytest.raises(MissingStoreError):

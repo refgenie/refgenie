@@ -99,18 +99,28 @@ class StoreManager(ResourceManager):
         with self._database_session as session:
             return genome_queries.count_by_store(session)
 
-    def apply_declaration(self, declared: list[dict]) -> None:
+    def apply_declaration(
+        self, declared: list[dict], disable_missing: bool = False
+    ) -> dict[str, list[str]]:
         """
         Idempotently upsert each declared store into the registry.
 
         Insert if new; update url/type/priority/enabled/description when they
-        drift. Never removes rows not in the declaration. An entry with no name
-        or url, or with the reserved name, is logged and skipped.
+        drift. Rows are never deleted (genomes keep a foreign key to them).
+        With ``disable_missing``, every existing store not in the declaration
+        is set ``enabled=False``. An entry with no name or url, or with the
+        reserved name, is logged and skipped.
 
         Args:
             declared: Store objects, each ``{"name", "url", "type"?,
                 "priority"?, "description"?, "enabled"?}``.
+            disable_missing: Disable stores the declaration does not list.
+
+        Returns:
+            Store names by change: ``{"added", "updated", "disabled"}``.
         """
+        changes: dict[str, list[str]] = {"added": [], "updated": [], "disabled": []}
+        declared_names: set[str] = set()
         with self._database_session as session:
             for entry in declared:
                 name = entry.get("name")
@@ -123,34 +133,36 @@ class StoreManager(ResourceManager):
                 except ValueError as e:
                     logger.error(f"Skipping store declaration: {e}")
                     continue
-                store_type = StoreType(entry.get("type", "remote"))
-                priority = int(entry.get("priority", 100))
-                enabled = bool(entry.get("enabled", True))
-                description = entry.get("description")
+                declared_names.add(name)
+                values = {
+                    "url": url,
+                    "type": StoreType(entry.get("type", "remote")),
+                    "priority": int(entry.get("priority", 100)),
+                    "enabled": bool(entry.get("enabled", True)),
+                    "description": entry.get("description"),
+                }
 
                 existing = queries.find(session, name)
                 if existing is None:
-                    session.add(
-                        Store(
-                            name=name,
-                            url=url,
-                            type=store_type,
-                            priority=priority,
-                            enabled=enabled,
-                            description=description,
-                        )
-                    )
+                    session.add(Store(name=name, **values))
+                    changes["added"].append(name)
                     logger.info(
-                        f"Registered store '{name}' ({store_type.value}, priority={priority})"
+                        f"Registered store '{name}' "
+                        f"({values['type'].value}, priority={values['priority']})"
                     )
-                else:
-                    existing.url = url
-                    existing.type = store_type
-                    existing.priority = priority
-                    existing.enabled = enabled
-                    existing.description = description
-                    logger.info(f"Updated store '{name}' from REFGENIE_STORES")
+                elif any(getattr(existing, k) != v for k, v in values.items()):
+                    for k, v in values.items():
+                        setattr(existing, k, v)
+                    changes["updated"].append(name)
+                    logger.info(f"Updated store '{name}'")
+            if disable_missing:
+                for store in queries.list_all(session, enabled_only=True):
+                    if store.name not in declared_names:
+                        store.enabled = False
+                        changes["disabled"].append(store.name)
+                        logger.info(f"Disabled store '{store.name}' (not declared)")
             session.commit()
+        return changes
 
     def conflicts(self) -> list[tuple[str, str, str]]:
         """

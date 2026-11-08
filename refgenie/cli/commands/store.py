@@ -6,6 +6,7 @@ names from each enabled store's optional ``species.json``.
 """
 
 from collections.abc import Callable
+from pathlib import Path
 from typing import Literal
 
 from pydantic import AliasChoices, BaseModel, Field
@@ -35,6 +36,16 @@ class StoreAddModel(BaseModel):
         validation_alias=AliasChoices("p", "priority"),
     )
     description: str | None = Field(default=None, description="Optional description.")
+
+
+class StoreApplyModel(BaseModel):
+    """store apply: make the registry match a JSON declaration file."""
+
+    file: Path = Field(
+        description="JSON array of stores, each {name, url, type?, priority?, "
+        "description?, enabled?}. Stores not listed are disabled, never deleted.",
+        validation_alias=AliasChoices("f", "file"),
+    )
 
 
 class StoreSyncModel(BaseModel):
@@ -73,6 +84,9 @@ class StoreParser(BaseModel):
     """Intermediate parser for store subcommands."""
 
     add: CliSubCommand[StoreAddModel] = Field(description="Add a store.")
+    apply: CliSubCommand[StoreApplyModel] = Field(
+        description="Make the store list match a declaration file."
+    )
     sync: CliSubCommand[StoreSyncModel] = Field(description="Ingest a store's genomes.")
     list: CliSubCommand[StoreListModel] = Field(description="List stores.")
     remove: CliSubCommand[StoreRemoveModel] = Field(description="Remove a store.")
@@ -105,6 +119,28 @@ def handle_store_add(cmd, refgenie) -> None:
         )
     except (StoreExistsError, ValueError) as e:
         fail(str(e))
+
+
+def handle_store_apply(cmd, refgenie) -> None:
+    import json
+
+    try:
+        declared = json.loads(Path(cmd.file).read_text())
+    except (OSError, json.JSONDecodeError) as e:
+        fail(f"Could not read store declaration {cmd.file}: {e}")
+    if not isinstance(declared, list):
+        fail(f"Store declaration {cmd.file} must be a JSON array of store objects")
+    try:
+        changes = refgenie.store.apply_declaration(declared, disable_missing=True)
+    except ValueError as e:
+        fail(f"Invalid store declaration: {e}")
+    rows = [(kind, name) for kind, names in changes.items() for name in names]
+    if not rows:
+        logger.info("Stores already match the declaration; nothing changed.")
+        return
+    from refgenie.utils.tables import build_table
+
+    rprint(build_table("Store changes", ["Change", "Store"], rows))
 
 
 def handle_store_remove(cmd, refgenie) -> None:
@@ -203,6 +239,7 @@ def handle_store_sync(cmd, refgenie) -> None:
 
 STORE_DISPATCH: dict[type, Callable] = {
     StoreAddModel: handle_store_add,
+    StoreApplyModel: handle_store_apply,
     StoreSyncModel: handle_store_sync,
     StoreListModel: handle_store_list,
     StoreRemoveModel: handle_store_remove,
