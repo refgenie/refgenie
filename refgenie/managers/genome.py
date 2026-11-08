@@ -212,8 +212,9 @@ class GenomeManager(ResourceManager):
         Maps ``documentation``, ``taxon.name``, ``taxon.uri``, ``genomeSynonym``,
         ``assemblySource``, ``accessionID.name`` and ``assemblyLevel``. Only
         fields present in the record are written, so a partial record never
-        nulls existing columns. Federated ``store sync`` uses this directly,
-        since the owning store already holds the sidecar.
+        nulls existing columns. An empty ``genomeSynonym`` clears the
+        synonyms. Federated ``store sync`` uses this directly, since the
+        owning store already holds the sidecar.
         """
         taxon = fhr_dict.get("taxon") or {}
         synonyms = fhr_dict.get("genomeSynonym")
@@ -227,6 +228,9 @@ class GenomeManager(ResourceManager):
             "assembly_level": fhr_dict.get("assemblyLevel"),
         }
         updates = {column: value for column, value in values.items() if value is not None}
+        if synonyms is not None:
+            # A record that lists genomeSynonym, even empty, states the full set.
+            updates["synonyms"] = values["synonyms"]
 
         with self._database_session as session:
             genome = queries.get(session, digest)

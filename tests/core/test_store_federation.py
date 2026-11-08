@@ -307,6 +307,11 @@ class TestStoreSyncIntegration:
         seed_species(rg, 9606, "Homo sapiens", "human")
         assert rg.genome.detail(digest).common_name == "human"
 
+        del fhr["genomeSynonym"]
+        store.set_fhr_metadata(digest, GenomeManager._fhr_metadata_from_dict(fhr))
+        _sync_one_store(rg, srow, priorities, 100)
+        assert rg.genome.get(digest).synonyms is None
+
 
 # ---------------------------------------------------------------------------
 # Local mode reads both halves of the alias space

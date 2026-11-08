@@ -208,4 +208,7 @@ def _ingest_fhr(rgc, store, digest, store_row: Store) -> None:
             logger.debug(f"pull_fhr({digest}) failed on store '{store_row.name}': {e}")
     fhr = store.get_fhr_metadata(digest)
     if fhr is not None:
-        rgc.genome.apply_fhr_columns(digest, fhr.to_dict())
+        record = fhr.to_dict()
+        # The store's sidecar is the whole record: no synonyms there means none.
+        record.setdefault("genomeSynonym", [])
+        rgc.genome.apply_fhr_columns(digest, record)
