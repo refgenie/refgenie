@@ -665,7 +665,7 @@ def store_backed_server(tmp_path_factory):
     # ``None`` unsets: no stale REFGENIE config var leaks into the subprocess.
     server_env = {**env, "REFGENIE": None}
 
-    run_cli("store", "add", "demo", "--url", store_url, "--type", "remote", env=server_env)
+    run_cli("store", "add", "--name", "demo", "-u", store_url, "-t", "remote", env=server_env)
     proc = popen_cli("serve", "-p", str(server_port), env=server_env)
 
     try:
