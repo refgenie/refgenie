@@ -28,6 +28,8 @@ import { BuildPage } from '../pages/BuildPage';
 import { ManagePage } from '../pages/ManagePage';
 import { ServersPage } from '../pages/ServersPage';
 import { JobsPage } from '../pages/JobsPage';
+import { CollectionsPage } from '../pages/CollectionsPage';
+import { CollectionPage } from '../pages/CollectionPage';
 import { LoadingState } from '../components/common/states';
 import { LocalScope } from '../components/bridge/LocalScope';
 import { BridgeScopeContext } from '../services/bridge/scope';
@@ -45,10 +47,19 @@ function AssetDeepLink() {
   return <Navigate to={`${routeBase}/assets/${assetDigest}`} replace />;
 }
 
+/**
+ * One genome page per digest. Keyed, so moving to another genome remounts it:
+ * no download, extract or compare state (or job in flight) carries over.
+ */
+export function GenomeRoute() {
+  const { digest } = useParams<{ digest: string }>();
+  return <GenomePage key={digest} />;
+}
+
 /** Browse pages, mounted at the root and again under `/local`. */
 const BROWSE_ROUTES: RouteObject[] = [
   { path: 'genomes', element: <GenomesPage /> },
-  { path: 'genomes/:digest', element: <GenomePage /> },
+  { path: 'genomes/:digest', element: <GenomeRoute /> },
   { path: 'genomes/:digest/:assetDigest', element: <AssetDeepLink /> },
   { path: 'species', element: <SpeciesPage /> },
   { path: 'assets/:digest', element: <AssetPage /> },
@@ -127,6 +138,9 @@ export function createRoutes(config: UiConfig): RouteObject[] {
                 </Suspense>
               ),
             },
+            // Server collections; not under /local. Always registered so a shared link resolves.
+            { path: 'collections', element: <CollectionsPage /> },
+            { path: 'collections/:id', element: <CollectionPage /> },
             { path: 'remote', element: <RemotePage /> },
             // Always registered: a bridge hand-off URL shows "not available", never a 404.
             { path: 'pull', element: <PullPage /> },
@@ -154,6 +168,7 @@ export const SPA_CLIENT_ROUTES = [
   '/recipes',
   '/aliases',
   '/tree',
+  '/collections',
   '/local',
   '/remote',
   '/manage',

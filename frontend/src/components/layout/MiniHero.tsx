@@ -26,9 +26,18 @@ export interface MiniHeroProps {
   breadcrumbs?: ReactNode;
   /** Buttons, links and jump navs, right-aligned on the title's line. */
   actions?: ReactNode;
+  /** Extra head content under the title line, e.g. a detail page's key facts. */
+  children?: ReactNode;
 }
 
-export function MiniHero({ title, documentTitle, lede, breadcrumbs, actions }: MiniHeroProps) {
+export function MiniHero({
+  title,
+  documentTitle,
+  lede,
+  breadcrumbs,
+  actions,
+  children,
+}: MiniHeroProps) {
   useDocumentTitle(documentTitle === false ? undefined : (documentTitle ?? title));
 
   return (
@@ -39,6 +48,7 @@ export function MiniHero({ title, documentTitle, lede, breadcrumbs, actions }: M
         {actions && <div className="rg-minihero__actions">{actions}</div>}
       </div>
       {lede && <p className="rg-minihero__lede">{lede}</p>}
+      {children}
     </header>
   );
 }

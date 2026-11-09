@@ -3,9 +3,12 @@ import { ExternalLink } from '../common/ExternalLink';
 import { JsonBlock } from '../common/JsonBlock';
 import type { DescriptionItem } from '../common/DescriptionList';
 import type { FhrMetadata } from '../../types/api';
+import { hasFhr } from '../../utils/genomePage';
 
 export interface FhrPanelProps {
   fhr: FhrMetadata | null | undefined;
+  /** Plain heading and content instead of a collapsed card. */
+  flat?: boolean;
 }
 
 function names(people: FhrMetadata['metadataAuthor']): string | undefined {
@@ -18,10 +21,11 @@ function names(people: FhrMetadata['metadataAuthor']): string | undefined {
 }
 
 /**
- * The FHR sidecar, collapsed by default with a raw-JSON toggle.
+ * The FHR sidecar with a raw-JSON toggle: a collapsed card, or with `flat`,
+ * a plain section.
  */
-export function FhrPanel({ fhr }: FhrPanelProps) {
-  if (!fhr || Object.keys(fhr).length === 0) return null;
+export function FhrPanel({ fhr, flat = false }: FhrPanelProps) {
+  if (!hasFhr(fhr)) return null;
 
   const stats = fhr.vitalStats ?? {};
   const statItems: DescriptionItem[] = (
@@ -69,24 +73,37 @@ export function FhrPanel({ fhr }: FhrPanelProps) {
     },
   ];
 
+  const body = (
+    <>
+      {statItems.length > 0 && (
+        <section>
+          <h3 className="text-sm font-semibold mb-2">Assembly stats</h3>
+          <DescriptionList items={statItems} hideEmpty />
+        </section>
+      )}
+      <section>
+        <h3 className="text-sm font-semibold mb-2">Provenance and publication</h3>
+        <DescriptionList items={provenance} hideEmpty />
+      </section>
+      <JsonBlock value={fhr} label="Raw metadata JSON" />
+    </>
+  );
+
+  if (flat) {
+    return (
+      <section className="rg-flat-section flex flex-col gap-6">
+        <h2>Metadata</h2>
+        {body}
+      </section>
+    );
+  }
+
   return (
     <details className="rg-card">
       <summary className="rg-card__header cursor-pointer">
-        <span className="rg-card__title">FHR metadata</span>
+        <span className="rg-card__title">Metadata</span>
       </summary>
-      <div className="rg-card__body flex flex-col gap-6">
-        {statItems.length > 0 && (
-          <section>
-            <h3 className="text-sm font-semibold mb-2">Assembly stats</h3>
-            <DescriptionList items={statItems} hideEmpty />
-          </section>
-        )}
-        <section>
-          <h3 className="text-sm font-semibold mb-2">Provenance and publication</h3>
-          <DescriptionList items={provenance} hideEmpty />
-        </section>
-        <JsonBlock value={fhr} label="Raw FHR JSON" />
-      </div>
+      <div className="rg-card__body flex flex-col gap-6">{body}</div>
     </details>
   );
 }

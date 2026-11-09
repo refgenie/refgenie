@@ -89,9 +89,9 @@ export function GenomeTable({
     },
     {
       key: 'assets',
-      header: 'Assets',
+      header: 'Built assets',
       align: 'right',
-      // Most genomes have nothing built, so zero is styled as absence.
+      // Zero is muted: most genomes have nothing built yet.
       render: (genome) =>
         genome.asset_count > 0 ? (
           <span className="font-semibold">{genome.asset_count}</span>

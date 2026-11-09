@@ -21,6 +21,7 @@ const BARE: GenomeResponse = {
   taxon_id: null,
   assembly_source: null,
   assembly_accession: null,
+  assembly_level: null,
   species: null,
 };
 
@@ -56,29 +57,40 @@ describe('GenomesPage', () => {
     expect(row).toHaveTextContent('Homo sapiens human');
   });
 
-  it('hides genomes with no assets by default', async () => {
+  it('shows genomes with no built assets by default', async () => {
     seed([...genomesFixture.results, BARE]);
     renderWithProviders(<GenomesPage />);
-    await screen.findByRole('link', { name: 'hg38' });
-    expect(screen.queryByRole('link', { name: 'bare-genome' })).not.toBeInTheDocument();
-  });
-
-  it('shows them once the filter is unticked, and records that in the URL', async () => {
-    seed([...genomesFixture.results, BARE]);
-    renderWithProviders(<GenomesPage />);
-    await screen.findByRole('link', { name: 'hg38' });
-
-    await userEvent.click(screen.getByLabelText('Only genomes with assets'));
+    expect(await screen.findByRole('link', { name: 'hg38' })).toBeInTheDocument();
     expect(
       await screen.findByRole('link', { name: 'bare-genome' }),
     ).toBeInTheDocument();
   });
 
-  it('keeps a deep link with ?assets=all unfiltered', async () => {
+  it('hides them once the filter is ticked, and records that in the URL', async () => {
     seed([...genomesFixture.results, BARE]);
-    renderWithProviders(<GenomesPage />, { route: '/genomes?assets=all' });
+    renderWithProviders(<GenomesPage />);
+    await screen.findByRole('link', { name: 'bare-genome' });
+
+    await userEvent.click(screen.getByLabelText('Only genomes with built assets'));
+    await waitFor(() =>
+      expect(
+        screen.queryByRole('link', { name: 'bare-genome' }),
+      ).not.toBeInTheDocument(),
+    );
+    expect(screen.getByRole('link', { name: 'hg38' })).toBeInTheDocument();
+  });
+
+  it('keeps a deep link with ?assets=built filtered', async () => {
+    seed([...genomesFixture.results, BARE]);
+    renderWithProviders(<GenomesPage />, { route: '/genomes?assets=built' });
+    expect(await screen.findByRole('link', { name: 'hg38' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'bare-genome' })).not.toBeInTheDocument();
+  });
+
+  it('labels the count column "Built assets"', async () => {
+    renderWithProviders(<GenomesPage />);
     expect(
-      await screen.findByRole('link', { name: 'bare-genome' }),
+      await screen.findByRole('columnheader', { name: 'Built assets' }),
     ).toBeInTheDocument();
   });
 
@@ -91,7 +103,7 @@ describe('GenomesPage', () => {
       }),
     );
 
-    renderWithProviders(<GenomesPage />);
+    renderWithProviders(<GenomesPage />, { route: '/genomes?assets=built' });
     await userEvent.type(screen.getByLabelText('Search genomes'), 'rCRSd');
 
     await waitFor(() =>
@@ -110,10 +122,14 @@ describe('GenomesPage', () => {
       }),
     );
 
-    renderWithProviders(<GenomesPage />, { route: '/genomes?assets=all' });
+    renderWithProviders(<GenomesPage />, { route: '/genomes' });
     await userEvent.type(screen.getByLabelText('Search genomes'), 'hg38');
 
-    await waitFor(() => expect(seen.some((s) => s.includes('q=hg38'))).toBe(true));
+    await waitFor(() =>
+      expect(seen.some((s) => s.includes('q=hg38') && !s.includes('has_assets'))).toBe(
+        true,
+      ),
+    );
   });
 
   it('searches the species field, which covers every species name', async () => {
@@ -140,21 +156,21 @@ describe('GenomesPage', () => {
 
   it('renders the no-data empty state', async () => {
     server.use(http.get(`${API}/genomes`, () => HttpResponse.json(emptyPage)));
-    renderWithProviders(<GenomesPage />, { route: '/genomes?assets=all' });
+    renderWithProviders(<GenomesPage />, { route: '/genomes' });
     expect(await screen.findByText(/No genomes yet/)).toBeInTheDocument();
   });
 
   it('names the filter when it is what emptied the list', async () => {
     seed([BARE]);
-    renderWithProviders(<GenomesPage />);
+    renderWithProviders(<GenomesPage />, { route: '/genomes?assets=built' });
     expect(await screen.findByText(/Untick the filter/)).toBeInTheDocument();
   });
 
   it('counts the matches the filter hid and offers to show them', async () => {
     seed([BARE]);
-    renderWithProviders(<GenomesPage />, { route: '/genomes?q=bare' });
+    renderWithProviders(<GenomesPage />, { route: '/genomes?assets=built&q=bare' });
     expect(
-      await screen.findByText(/1 genome matches “bare”, but it has no assets/),
+      await screen.findByText(/1 genome matches “bare”, but it has no built assets/),
     ).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Show all matches' }));
     expect(

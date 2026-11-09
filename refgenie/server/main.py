@@ -34,6 +34,7 @@ from refgenie.server.const import (
     SERVICE_GITHUB_URL,
     SERVICE_ORGANIZATION,
 )
+from refgenie.server.collections import load_collections_from_env
 from refgenie.server.seqcol import SeqcolService, SeqcolServing
 from refgenie.server.spa import mount_spa, read_build_info, resolve_web_dist
 from refgenie.server.stats import (
@@ -135,11 +136,13 @@ def _service_info_doc(
     build_info: dict | None,
     capabilities: dict[str, bool],
     seqcol_services: tuple[SeqcolService, ...],
+    collections: list[dict],
 ) -> dict:
     """The ``/service-info`` document.
 
-    Refgenie-specific fields, including ``capabilities``, nest under
-    ``refgenie``. In server mode, ``seqcol.services`` lists every seqcol mount
+    Refgenie-specific fields, including ``capabilities`` and the validated
+    ``collections`` views (``REFGENIE_COLLECTIONS``; always empty in local
+    mode), nest under ``refgenie``. In server mode, ``seqcol.services`` lists every seqcol mount
     and the flat ``seqcol`` keys describe the default one. Local mode has no
     ``seqcol`` block. Built per request, since the store set can change.
     """
@@ -165,6 +168,7 @@ def _service_info_doc(
             "service_name": "refgenie local dashboard" if is_local else "refgenie server",
             "web_ui": build_info,
             "capabilities": capabilities,
+            "collections": collections,
             "links": {
                 "docs": SERVICE_DOCUMENTATION_URL,
                 "github": SERVICE_GITHUB_URL,
@@ -417,11 +421,26 @@ def create_app(
 
     app.include_router(ping_router)
 
+    # Collections are validated against the served stores, which can change at
+    # each catalog import; validate once per store set, not per request.
+    collections_by_stores: dict[tuple[str, ...], list[dict]] = {}
+
+    def _collections(services: tuple[SeqcolService, ...]) -> list[dict]:
+        names = tuple(s.store for s in services)
+        if names not in collections_by_stores:
+            collections_by_stores.clear()
+            collections_by_stores[names] = load_collections_from_env(names)
+        return collections_by_stores[names]
+
     @app.get("/service-info", tags=["Default"])
     async def service_info():
         """GA4GH-style discovery document, and the web UI's bootstrap."""
-        services = () if is_local else seqcol.services()
-        return _service_info_doc(mode, root_path, build_info, capabilities, services)
+        if is_local:
+            return _service_info_doc(mode, root_path, build_info, capabilities, (), [])
+        services = seqcol.services()
+        return _service_info_doc(
+            mode, root_path, build_info, capabilities, services, _collections(services)
+        )
 
     if not is_local:
         _mount_mcp(app, rg)

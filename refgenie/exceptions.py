@@ -34,6 +34,8 @@ __all__ = [
     "ServerCannotServe",
     "SpeciesFileError",
     "StoreExistsError",
+    "UnknownStoreError",
+    "UnservedStoreError",
 ]
 
 
@@ -123,6 +125,28 @@ class MissingGenomeError(RefgenieError):
         super(MissingGenomeError, self).__init__(f"Genome '{genome}' not found.")
 
 
+class UnservedStoreError(MissingGenomeError):
+    """A genome lives in a store this refgenie does not serve.
+
+    A :class:`MissingGenomeError`, so callers that answer 404 for a missing
+    genome answer 404 here too.
+    """
+
+    def __init__(self, genome, store_name: str | None):
+        self.genome = genome
+        self.store_name = store_name
+        if store_name is None:
+            message = (
+                f"Genome '{genome}' has no store, and this server has no store of its own "
+                "to read it from."
+            )
+        else:
+            message = (
+                f"Genome '{genome}' is in store '{store_name}', which this server does not serve."
+            )
+        RefgenieError.__init__(self, message)
+
+
 class MissingAssetGroupError(RefgenieError):
     """Error type for request of an unavailable asset group."""
 
@@ -197,6 +221,14 @@ class StoreExistsError(RefgenieError):
 
     def __init__(self, name):
         super(StoreExistsError, self).__init__(f"Store '{name}' already exists.")
+
+
+class UnknownStoreError(RefgenieError, ValueError):
+    """A genome filter named a store this server did not load."""
+
+    def __init__(self, name: str, known: list[str]):
+        listed = ", ".join(known) if known else "none"
+        super().__init__(f"Unknown store '{name}'. Known stores: {listed}.")
 
 
 class SpeciesFileError(RefgenieError):

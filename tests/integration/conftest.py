@@ -576,9 +576,8 @@ def refgenie_serve_subprocess(cli_multi_archived_config):
 # it (registered in the server's store table before boot, as a catalog import
 # would).
 
-# Small demo collections from the refget package's test FASTA files.
-# Resolved relative to this repo's sibling `refget` source checkout.
-_REFGET_TEST_FASTA_DIR = Path(__file__).resolve().parents[3] / "refget" / "test_fasta"
+# Small demo collections: copies of three of the refget package's test FASTAs.
+_REFGET_TEST_FASTA_DIR = Path(__file__).resolve().parents[1] / "data" / "refget_test_fasta"
 STORE_DEMO_FASTAS = ["base.fa", "subset.fa", "different_names.fa"]
 
 
@@ -609,12 +608,6 @@ def _build_demo_store(store_dir: Path) -> list[str]:
     Returns the list of collection digests (FASTA-add order).
     """
     from refget.store import RefgetStore
-
-    if not _REFGET_TEST_FASTA_DIR.is_dir():
-        raise RuntimeError(
-            f"refget test_fasta dir not found at {_REFGET_TEST_FASTA_DIR}; "
-            "store-backed integration tests require the refget source checkout."
-        )
 
     store = RefgetStore.on_disk(str(store_dir))
     for fa in STORE_DEMO_FASTAS:

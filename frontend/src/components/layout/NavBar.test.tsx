@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { screen } from '@testing-library/react';
 import { NavBar } from './NavBar';
-import { localConfig, renderWithProviders, serverConfig } from '../../test/renderWithProviders';
+import {
+  localConfig,
+  renderWithProviders,
+  serverConfig,
+} from '../../test/renderWithProviders';
+import { vgpCollection } from '../../test/collectionFixtures';
 
 describe('NavBar', () => {
   it('always shows the browse entries', () => {
@@ -34,7 +39,9 @@ describe('NavBar', () => {
 
   it('leaves the tree out of the nav; it is linked from Home and Species', () => {
     renderWithProviders(<NavBar />, { config: serverConfig });
-    expect(screen.queryByRole('link', { name: 'Tree of life' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Tree of life' }),
+    ).not.toBeInTheDocument();
   });
 
   it('hides Remote, Manage and Jobs in server mode', () => {
@@ -47,5 +54,18 @@ describe('NavBar', () => {
   it('shows Remote in local mode, where remote_browse is on', () => {
     renderWithProviders(<NavBar />, { config: localConfig });
     expect(screen.getByRole('link', { name: 'Remote' })).toBeInTheDocument();
+  });
+
+  it('shows Collections only when the server declares some', () => {
+    const { unmount } = renderWithProviders(<NavBar />, {
+      config: { ...serverConfig, collections: [vgpCollection] },
+    });
+    expect(screen.getByRole('link', { name: 'Collections' })).toHaveAttribute(
+      'href',
+      '/collections',
+    );
+    unmount();
+    renderWithProviders(<NavBar />, { config: serverConfig });
+    expect(screen.queryByRole('link', { name: 'Collections' })).not.toBeInTheDocument();
   });
 });

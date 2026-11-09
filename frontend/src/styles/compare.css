@@ -1,0 +1,46 @@
+/* === COMPARE YOUR OWN FASTA (genome page, Compare tab) === */
+
+/* One fixed height for idle and reading, so starting a digest moves nothing. */
+.rg-dropzone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 10rem;
+  padding: var(--space-4);
+  border: 2px dashed rgb(var(--color-border-strong));
+  border-radius: var(--radius-lg);
+  background: rgb(var(--color-surface));
+  text-align: center;
+  transition:
+    border-color 0.15s,
+    background-color 0.15s;
+}
+
+.rg-dropzone--active {
+  border-color: rgb(var(--color-accent));
+  background: rgb(var(--color-info-surface));
+}
+
+.rg-dropzone__body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 28rem;
+  min-width: 0;
+}
+
+.rg-dropzone__body p {
+  margin: 0;
+}
+
+.rg-dropzone__name {
+  overflow-wrap: anywhere;
+}
+
+.rg-compare-fasta__details {
+  margin: 0;
+  padding-left: var(--space-5);
+  list-style: disc;
+}

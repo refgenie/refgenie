@@ -102,7 +102,7 @@ export function speciesMatches(row: SpeciesRow, query: string): boolean {
   return row.taxonIds.some((id) => String(id).includes(needle));
 }
 
-/** Unspecified last; then the species you can actually get files for. */
+/** Unspecified last; then species with the most built assets. */
 export function compareSpecies(a: SpeciesRow, b: SpeciesRow): number {
   if ((a.key === '') !== (b.key === '')) return a.key === '' ? 1 : -1;
   return (
@@ -115,8 +115,7 @@ export function compareSpecies(a: SpeciesRow, b: SpeciesRow): number {
 /**
  * Link to the genome list filtered to this species, or null for the unspecified
  * row. Uses `op=contains` because server `eq` is case-sensitive and rows are
- * grouped case-insensitively. Adds `assets=all` when the species has no assets,
- * so the link does not land on an empty list.
+ * grouped case-insensitively.
  */
 export function speciesGenomesHref(row: SpeciesRow): string | null {
   if (row.key === '') return null;
@@ -125,6 +124,5 @@ export function speciesGenomesHref(row: SpeciesRow): string | null {
     fields: 'species',
     op: 'contains',
   });
-  if (row.assets === 0) params.set('assets', 'all');
   return `/genomes?${params.toString()}`;
 }

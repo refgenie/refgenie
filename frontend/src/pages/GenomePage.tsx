@@ -1,20 +1,48 @@
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useGenome } from '../hooks/queries/useGenomes';
 import { useAssets } from '../hooks/queries/useAssets';
 import { useAliases } from '../hooks/queries/useAliases';
 import { useArchives } from '../hooks/queries/useServerInfo';
+import { useGenomeSequences } from '../hooks/queries/useGenomeSequences';
 import { useCapability } from '../hooks/useCapability';
+import { useFastaDownload } from '../hooks/useFastaDownload';
+import { useCompareCandidates } from '../hooks/useCompareCandidates';
 import { useUiConfig } from '../hooks/useUiConfig';
 import { preferredAlias } from '../utils/genomes';
 import { formatDigest } from '../utils/format';
+import {
+  defaultGenomeTab,
+  fastaDownloadAvailable,
+  isGenomeTab,
+} from '../utils/genomePage';
+import type { GenomeTab } from '../utils/genomePage';
+import { ApiError } from '../services/http';
+import { fastaDownloadEnabled } from '../services/config';
 import { Breadcrumbs } from '../components/common/Breadcrumbs';
 import { MiniHero } from '../components/layout/MiniHero';
 import { CapabilityGate } from '../components/common/CapabilityGate';
 import { DeleteGenomeButton } from '../components/actions/DeleteGenomeButton';
 import { ErrorState, LoadingState } from '../components/common/states';
+import { TabPanel, Tabs } from '../components/common/Tabs';
+import type { TabItem } from '../components/common/Tabs';
+import { GenomeHeader } from '../components/genomes/GenomeHeader';
 import { GenomeSummaryCard } from '../components/genomes/GenomeSummaryCard';
+import { GenomeAliases } from '../components/genomes/GenomeAliases';
 import { FhrPanel } from '../components/genomes/FhrPanel';
 import { GenomeAssetTable } from '../components/genomes/GenomeAssetTable';
+import { GenomeDownloadPanel } from '../components/genomes/GenomeDownload';
+import {
+  ComparePanel,
+  ExtractPanel,
+  SequencesPanel,
+} from '../components/sequences/GenomeSequencePanels';
+import { CollectionDigests } from '../components/sequences/CollectionDigests';
+import { isExtractable } from '../services/regionExtract';
+
+const NO_SEQUENCES = 'No sequence data for this genome';
+const NO_SAME_SPECIES = 'No other genomes of this species';
+const NO_STORE = 'This genome has no refget store';
+const NO_READABLE = 'No sequence here can be read by range';
 
 export function GenomePage() {
   const { digest } = useParams<{ digest: string }>();
@@ -23,8 +51,16 @@ export function GenomePage() {
 
   const genome = useGenome(digest);
   const aliases = useAliases({ genome_digest: digest, pageSize: 100 });
-  const assets = useAssets({ genome_digest: digest, pageSize: 200 }, { enabled: !!digest });
-  const archives = useArchives({ genome_digest: digest }, { enabled: canReadArchives && !!digest });
+  const assets = useAssets(
+    { genome_digest: digest, pageSize: 200 },
+    { enabled: !!digest },
+  );
+  const archives = useArchives(
+    { genome_digest: digest },
+    { enabled: canReadArchives && !!digest },
+  );
+  const sequences = useGenomeSequences(digest);
+  const [params, setParams] = useSearchParams();
 
   // No early return: the head renders in every state.
   const record = genome.data;
@@ -32,25 +68,110 @@ export function GenomePage() {
   // A new genome may have no alias; fall back to a shortened digest.
   const primaryAlias = preferredAlias(aliasNames);
   const title = record ? (primaryAlias ?? formatDigest(record.digest)) : 'Genome';
+
+  const storeUrl = record?.refget_store_url ?? null;
+  // The browser reads the store itself only when the build turns that on.
+  const canDownload = !!record && fastaDownloadAvailable(record);
+  const fasta = useFastaDownload({
+    storeUrl: canDownload ? record.refget_store_url : null,
+    digest: digest ?? '',
+    fileStem: primaryAlias ?? digest ?? 'genome',
+  });
+
+  // A 404 means the genome has no sequence data here: a normal answer.
+  const noSequences = sequences.error instanceof ApiError && sequences.error.isNotFound;
+  const hasSequences = sequences.data
+    ? true
+    : noSequences
+      ? false
+      : sequences.error
+        ? true
+        : null;
+  const sequenceStats = sequences.data
+    ? {
+        count: sequences.data.sequences.length,
+        bases: sequences.data.sequences.reduce((sum, s) => sum + s.length, 0),
+      }
+    : hasSequences === false || sequences.error
+      ? (false as const)
+      : null;
+  const assetCount = assets.data ? assets.data.results.length : null;
+  const hasFastaAsset = !!assets.data?.results.some(
+    (asset) => asset.asset_class_name === 'fasta',
+  );
+  const candidates = useCompareCandidates(record);
+  const noCandidates = candidates !== null && candidates.length === 0;
+  // The in-browser FASTA comparison keeps Compare open without other genomes.
+  const compareFile = fastaDownloadEnabled();
+  const compareOff =
+    hasSequences === false
+      ? NO_SEQUENCES
+      : noCandidates && !compareFile
+        ? NO_SAME_SPECIES
+        : undefined;
+  const readable = sequences.data
+    ? sequences.data.sequences.some((row) => isExtractable(row.alphabet))
+    : null;
+  const downloadOff = record && !storeUrl ? NO_STORE : undefined;
+  const extractOff =
+    downloadOff ??
+    (hasSequences === false ? NO_SEQUENCES : readable === false ? NO_READABLE : undefined);
+
+  const tabs: TabItem<GenomeTab>[] = [
+    {
+      id: 'sequences',
+      label: 'Sequences',
+      count:
+        hasSequences === false ? undefined : sequenceStats ? sequenceStats.count : null,
+      disabled: hasSequences === false,
+      title: hasSequences === false ? NO_SEQUENCES : undefined,
+    },
+    { id: 'extract', label: 'Extract', disabled: !!extractOff, title: extractOff },
+    { id: 'download', label: 'Download', disabled: !!downloadOff, title: downloadOff },
+    { id: 'assets', label: 'Assets', count: assetCount },
+    {
+      id: 'compare',
+      label: 'Compare',
+      count: compareOff || noCandidates ? undefined : candidates ? candidates.length : null,
+      disabled: !!compareOff,
+      title: compareOff,
+    },
+    { id: 'details', label: 'Details' },
+  ];
+
+  const requested = params.get('tab');
+  const requestedTab =
+    isGenomeTab(requested) && !tabs.find((tab) => tab.id === requested)?.disabled
+      ? requested
+      : null;
+  const activeTab = requestedTab ?? defaultGenomeTab({ assetCount, hasSequences });
+  const selectTab = (id: GenomeTab) => {
+    const next = new URLSearchParams(params);
+    next.set('tab', id);
+    setParams(next);
+  };
+
   // The build form needs an alias; the digest is only for the job target.
   const buildHref =
     `/build?genome=${encodeURIComponent(aliasNames[0] ?? '')}` +
     `&genome_digest=${encodeURIComponent(record?.digest ?? '')}`;
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-6">
       <MiniHero
         title={title}
         // `false` while loading keeps the placeholder 'Genome' out of the tab title.
         documentTitle={record ? undefined : false}
         breadcrumbs={
-          <Breadcrumbs items={[{ label: 'Genomes', to: '/genomes' }, { label: title }]} />
+          <Breadcrumbs
+            items={[{ label: 'Genomes', to: '/genomes' }, { label: title }]}
+          />
         }
         actions={
           record && (
             <>
               <CapabilityGate cap="build">
-                <Link className="rg-btn rg-btn--primary" to={buildHref}>
+                <Link className="rg-btn" to={buildHref}>
                   Build asset
                 </Link>
               </CapabilityGate>
@@ -63,9 +184,16 @@ export function GenomePage() {
             </>
           )
         }
-      />
+      >
+        {!genome.error && (
+          <GenomeHeader
+            genome={record}
+            sequenceStats={sequenceStats}
+            assetCount={assetCount}
+          />
+        )}
+      </MiniHero>
 
-      {genome.isPending && <LoadingState label="Loading genome" />}
       {genome.error && (
         <ErrorState
           error={genome.error}
@@ -75,33 +203,83 @@ export function GenomePage() {
         />
       )}
 
-      {record && (
-        <>
-          <GenomeSummaryCard genome={record} aliases={aliasNames} />
-
-          <FhrPanel fhr={record.fhr} />
-
-          <section>
-            <h2 className="text-xl font-semibold mb-4">Assets</h2>
-            <GenomeAssetTable
-              assets={assets.data?.results}
-              archives={archives.data?.results}
-              loading={assets.isPending}
-              error={assets.error}
-              onRetry={() => assets.refetch()}
-              empty={
-                <div className="rg-state rg-state--empty">
-                  <p className="mb-4">No assets for this genome yet.</p>
-                  <CapabilityGate cap="build">
-                    <Link className="rg-btn rg-btn--primary" to={buildHref}>
-                      Build the first one
-                    </Link>
-                  </CapabilityGate>
-                </div>
-              }
-            />
-          </section>
-        </>
+      {!genome.error && (
+        <div>
+          <Tabs
+            idPrefix="genome"
+            label="Genome sections"
+            tabs={tabs}
+            selected={record ? activeTab : null}
+            onSelect={selectTab}
+          />
+          {record && activeTab ? (
+            <TabPanel idPrefix="genome" id={activeTab}>
+              {activeTab === 'assets' && (
+                <GenomeAssetTable
+                  assets={assets.data?.results}
+                  archives={archives.data?.results}
+                  loading={assets.isPending}
+                  error={assets.error}
+                  onRetry={() => assets.refetch()}
+                  empty={
+                    <div className="rg-state rg-state--empty">
+                      <p className="mb-4">No assets for this genome yet.</p>
+                      <CapabilityGate cap="build">
+                        <Link className="rg-btn rg-btn--primary" to={buildHref}>
+                          Build the first one
+                        </Link>
+                      </CapabilityGate>
+                    </div>
+                  }
+                />
+              )}
+              {activeTab === 'sequences' && (
+                <SequencesPanel digest={record.digest} canExtract={!extractOff} />
+              )}
+              {activeTab === 'extract' && storeUrl && (
+                <ExtractPanel
+                  digest={record.digest}
+                  storeUrl={storeUrl}
+                  browserStoreUrl={canDownload ? storeUrl : null}
+                />
+              )}
+              {activeTab === 'download' && storeUrl && (
+                <GenomeDownloadPanel
+                  digest={record.digest}
+                  storeUrl={storeUrl}
+                  alias={primaryAlias}
+                  download={canDownload ? fasta : null}
+                  hasFastaAsset={hasFastaAsset}
+                />
+              )}
+              {activeTab === 'compare' && (
+                <ComparePanel
+                  digest={record.digest}
+                  candidates={candidates}
+                  canCompareFile={compareFile}
+                />
+              )}
+              {activeTab === 'details' && (
+                <>
+                  <section className="rg-flat-section">
+                    <h2>Genome</h2>
+                    <GenomeSummaryCard genome={record} />
+                  </section>
+                  {sequences.data && <CollectionDigests level1={sequences.data.level1} />}
+                  <GenomeAliases
+                    aliases={aliasNames}
+                    collectionAliases={sequences.data?.collection_aliases}
+                  />
+                  <FhrPanel fhr={record.fhr} flat />
+                </>
+              )}
+            </TabPanel>
+          ) : (
+            <div className="rg-tabs__panel">
+              <LoadingState rows={8} label="Loading" />
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

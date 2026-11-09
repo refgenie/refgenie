@@ -103,6 +103,8 @@ class LocalMode(RefgenieMode):
             [_local_store_row(genome_folder)],
             genome_folder / ".refget_store_cache",
             readonly=False,
+            # Every genome this node reads is in its one store, pulled or built.
+            sole_store=True,
         )
 
     def create_alias_manager(

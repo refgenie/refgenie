@@ -54,6 +54,38 @@ export interface WebUiBuildInfo {
   dirty?: boolean | null;
 }
 
+export interface CollectionLink {
+  label: string;
+  url: string;
+}
+
+/** A per-genome link; placeholders `{assembly_accession}`, `{species_name}`, `{species_underscored}`, `{digest}`. */
+export interface GenomeLinkTemplate {
+  label: string;
+  template: string;
+}
+
+export type CollectionColumn =
+  | 'assembly_accession'
+  | 'haplotype'
+  | 'assembly_level'
+  | 'assembly_source';
+
+/** A branded slice of the catalog drawn from one or more stores (server config). */
+export interface CollectionConfig {
+  id: string;
+  name: string;
+  short_name: string | null;
+  blurb: string;
+  note: string | null;
+  accent_color: string;
+  logo_url: string | null;
+  stores: string[];
+  links: CollectionLink[];
+  genome_links: GenomeLinkTemplate[];
+  columns: CollectionColumn[];
+}
+
 export interface UiConfig {
   mode: Mode;
   /** Absolute or root-relative base for the shared read API, e.g. `/v4`. */
@@ -64,6 +96,8 @@ export interface UiConfig {
   service_name: string;
   capabilities: Capabilities;
   web_ui?: WebUiBuildInfo | null;
+  /** Collection views the server declares; empty in local mode. */
+  collections: CollectionConfig[];
   /** True when `/service-info` was unreachable and the read-only fallback is in use. */
   degraded: boolean;
 }
@@ -78,6 +112,7 @@ export interface ServiceInfoRefgenieBlock {
   capabilities?: Partial<Record<string, boolean>>;
   // The `links` block is ignored; project links live in services/projectLinks.ts.
   web_ui?: WebUiBuildInfo | null;
+  collections?: unknown;
 }
 
 export interface ServiceInfoResponse {

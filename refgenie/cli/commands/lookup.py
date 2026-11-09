@@ -157,12 +157,14 @@ def handle_seekr(cmd, refgenie) -> None:
 
 def _print_genome_id(cmd, refgenie, genome_digest) -> None:
     """Print a local genome's digest, validating its store or adding metadata if asked."""
-    from refgenie.exceptions import RefgenieError
+    from refgenie.exceptions import MissingGenomeError, RefgenieError
 
     if cmd.validate_store:
         # Store backends (local, HTTP, S3) raise open-ended transport errors.
         try:
-            metadata = refgenie.store_router.get_collection_level2(genome_digest)
+            metadata = refgenie.genome.level2(genome_digest)
+        except MissingGenomeError as e:
+            fail(f"Genome {genome_digest} has no sequences in store: {e}", EXIT_NOT_FOUND)
         except Exception as e:
             fail(f"Store validation failed for {genome_digest}: {e}")
         if metadata is None:

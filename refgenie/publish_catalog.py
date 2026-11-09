@@ -13,8 +13,9 @@ Export makes two changes:
 - Pushed links are re-targeted at one https remote for the public mirror of the
   stage folder, since download redirects only use http(s) remotes.
 
-It also publishes the store list (remote stores only), so a server learns which
-stores to read from the catalog. Genomes the build node made itself have no
+It also publishes the store list (enabled remote stores only), so a server
+learns which stores to read from the catalog. Genomes in a disabled store are
+left out. Genomes the build node made itself have no
 store; when a *catalog store* is named, they are exported as living in it.
 """
 
@@ -65,7 +66,9 @@ def _publishable_stores(
     if bool(catalog_store_name) != bool(catalog_store_url):
         raise ValueError("A catalog store needs both a name and a url")
     stores = [
-        s for s in store_rows if s["type"] == StoreType.remote and s["name"] != catalog_store_name
+        s
+        for s in store_rows
+        if s["type"] == StoreType.remote and s["enabled"] and s["name"] != catalog_store_name
     ]
     skipped = sorted(s["name"] for s in store_rows if s["type"] != StoreType.remote)
     if skipped:
@@ -82,6 +85,43 @@ def _publishable_stores(
             ).model_dump()
         )
     return stores
+
+
+def _omit_disabled_store_genomes(
+    rows: dict[str, list[dict]], pushed_pairs: set[tuple[str, str]]
+) -> tuple[set[tuple[str, str]], dict[str, int]]:
+    """Drop, in place, every genome in a disabled store and everything hanging off it.
+
+    A disabled store is not published, so neither are its genomes, their SQL
+    aliases, asset groups, assets, asset names, seek keys, links and staged
+    records. Returns the pushed pairs that remain and ``{store: genomes omitted}``.
+    """
+    disabled = {s["name"] for s in rows["store"] if not s["enabled"]}
+    omitted: dict[str, int] = {}
+    dropped: set[str] = set()
+    for g in rows["genome"]:
+        if g["store_name"] in disabled:
+            dropped.add(g["digest"])
+            omitted[g["store_name"]] = omitted.get(g["store_name"], 0) + 1
+    if not dropped:
+        return pushed_pairs, omitted
+    rows["genome"] = [g for g in rows["genome"] if g["digest"] not in dropped]
+    rows["alias"] = [a for a in rows["alias"] if a["genome_digest"] not in dropped]
+    group_ids = {g["id"] for g in rows["assetgroup"] if g["genome_digest"] in dropped}
+    rows["assetgroup"] = [g for g in rows["assetgroup"] if g["id"] not in group_ids]
+    assets = {a["digest"] for a in rows["asset"] if a["asset_group_id"] in group_ids}
+    rows["asset"] = [a for a in rows["asset"] if a["digest"] not in assets]
+    rows["assetname"] = [n for n in rows["assetname"] if n["asset_group_id"] not in group_ids]
+    rows["seekkey"] = [k for k in rows["seekkey"] if k["asset_digest"] not in assets]
+    rows["stagedasset"] = [s for s in rows["stagedasset"] if s["asset_digest"] not in assets]
+    rows["assetlink"] = [
+        link
+        for link in rows["assetlink"]
+        if link["parent_digest"] not in assets and link["child_digest"] not in assets
+    ]
+    for name, count in sorted(omitted.items()):
+        logger.info(f"Not publishing disabled store '{name}': omitting its {count} genome(s)")
+    return {(d, m) for d, m in pushed_pairs if d not in assets}, omitted
 
 
 def _assert_store_names_published(stores: list[dict], **tables: list[dict]) -> None:
@@ -125,7 +165,9 @@ def export_publish_catalog(
 
     Only pushed (asset_digest, mode) pairs are included, re-linked to one https
     remote at ``https_prefix``. Local paths are stripped and download counters
-    start at zero. Remote stores are published; on-disk ones are not.
+    start at zero. Enabled remote stores are published; on-disk ones are not.
+    A disabled store is left out along with its genomes and everything that
+    hangs off them (aliases, asset groups, assets, staged records).
 
     Args:
         rg: The build node's Refgenie instance.
@@ -145,6 +187,7 @@ def export_publish_catalog(
             catalog does not publish.
     """
     pushed_pairs, rows = publish.read_publishable(rg.database_engine)
+    pushed_pairs, _ = _omit_disabled_store_genomes(rows, pushed_pairs)
     stores = _publishable_stores(
         rows["store"], catalog_store_name, catalog_store_url, catalog_store_priority
     )

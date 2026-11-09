@@ -112,7 +112,7 @@ class TestPluginSettings:
         rg, _local_digest = build_node
         rg.plugins.set("nfcore", config_path="/build/node/nf.config")
         dest = tmp_path / "publish.sqlite"
-        export_publish_catalog(rg, dest, HTTPS_PREFIX)
+        export_publish_catalog(rg, dest, HTTPS_PREFIX, **CATALOG_STORE)
 
         exported = Refgenie(
             database_engine=artifact_engine(dest), suppress_migrations=True
@@ -219,7 +219,7 @@ class TestStores:
         dest = tmp_path / "publish.sqlite"
         export_publish_catalog(rg, dest, HTTPS_PREFIX)
         with artifact_engine(dest).begin() as conn:
-            conn.execute(Genome.__table__.update().values(store_name=None))
+            conn.execute(Genome.__table__.update().values(store_name="jungle"))
             conn.execute(Store.__table__.delete())
         server = _new_server(tmp_path)
         server.store.add("jungle", "url://j", StoreType.remote, priority=10)
@@ -227,6 +227,22 @@ class TestStores:
         import_publish_catalog(server.database_engine, str(dest))
 
         assert [s.name for s in server.store.enabled_stores()] == ["jungle"]
+
+    @pytest.mark.parametrize("store_name", [None, "plantref"])
+    def test_import_refuses_genomes_without_a_listed_store(self, build_node, tmp_path, store_name):
+        from refgenie.db.publish import CatalogStoreError
+
+        rg, _ = build_node
+        dest = tmp_path / "publish.sqlite"
+        export_publish_catalog(rg, dest, HTTPS_PREFIX, **CATALOG_STORE)
+        with artifact_engine(dest).begin() as conn:
+            conn.execute(Genome.__table__.update().values(store_name=store_name))
+        server = _new_server(tmp_path)
+
+        with pytest.raises(CatalogStoreError, match="could not serve"):
+            import_publish_catalog(server.database_engine, str(dest))
+        assert list(server.genome.list_all()) == []
+        assert list(server.store.enabled_stores()) == []
 
 
 class TestSpecies:
@@ -242,7 +258,7 @@ class TestSpecies:
         from refgenie.publish_catalog import import_publish_catalog
 
         dest = tmp_path / name
-        summary = export_publish_catalog(rg, dest, HTTPS_PREFIX)
+        summary = export_publish_catalog(rg, dest, HTTPS_PREFIX, **CATALOG_STORE)
         import_publish_catalog(server.database_engine, str(dest))
         return summary
 
@@ -325,13 +341,13 @@ def artifacts(tmp_path_factory, fixtures_path):
     rg, digest = _build_node(root, fixtures_path)
     paths = {name: root / f"{name}.sqlite" for name in ("first", "second", "bare")}
     for path in paths.values():
-        export_publish_catalog(rg, path, HTTPS_PREFIX)
+        export_publish_catalog(rg, path, HTTPS_PREFIX, **CATALOG_STORE)
     _add_group(paths["first"], digest, 129, "a" * 64)
     _add_group(paths["second"], digest, 146, "b" * 64)
     empty = Refgenie(database_engine=make_engine(), suppress_migrations=True)
     empty.database.init(genome_folder=root / "g2", genome_stage_folder=root / "s2")
     paths["empty"] = root / "empty.sqlite"
-    export_publish_catalog(empty, paths["empty"], HTTPS_PREFIX)
+    export_publish_catalog(empty, paths["empty"], HTTPS_PREFIX, **CATALOG_STORE)
     return digest, paths
 
 
@@ -463,7 +479,7 @@ def pushed(tmp_path_factory, fixtures_path):
     r.remote.link(ref=remote.id, asset_digest=asset.digest, mode="archive", pushed=True)
     r.remote.link(ref=remote.id, asset_digest=asset.digest, mode="file", pushed=False)
     dest = tmp_path / "publish.sqlite"
-    summary = export_publish_catalog(r, dest, HTTPS_PREFIX)
+    summary = export_publish_catalog(r, dest, HTTPS_PREFIX, **CATALOG_STORE)
     assert (summary["genome"], summary["asset"]) == (1, 1)
     return dest, genome_digest, asset
 
@@ -578,9 +594,117 @@ class TestImport:
 
         dest, genome_digest, asset = artifact
         import_publish_catalog(eng, str(dest))
+        # The catalog's store URL is fake; with no enabled store the server
+        # serves DB-backed seqcol and lists every genome.
+        with eng.begin() as conn:
+            conn.execute(Store.__table__.update().values(enabled=False))
 
         with make_server_client(rgc) as client:
             resp = client.get("/v4/genomes")
             assert resp.status_code == 200
             digests = [g["digest"] for g in resp.json()["results"]]
             assert digests == [genome_digest]
+
+
+class TestDisabledStores:
+    """A disabled store is not published, and neither is anything of its genomes."""
+
+    @staticmethod
+    def _node(tmp_path, fixtures_path):
+        """A node with a built, staged, pushed asset on a genome in store 'plantref'."""
+        r = Refgenie(database_engine=make_engine(), suppress_migrations=True)
+        r.database.init(genome_folder=tmp_path / "genomes", genome_stage_folder=tmp_path / "stage")
+        register_fasta(r, fixtures_path)
+        r.genome.initialize_genome(
+            fasta_file_path=fixtures_path / "rCRSd.fa", alias_names=["rCRSd"], description="x"
+        )
+        r.build.run(
+            recipe_name="fasta", genome_alias="rCRSd", asset_group_name="fasta", asset_name="t"
+        )
+        digest = r.alias.resolve("rCRSd")
+        asset = r.asset.get(genome_digest=digest, asset_group_name="fasta", asset_name="t")
+        r.stage.create(
+            asset=asset, genome_folder=r.genome_folder, genome_stage_folder=r.genome_stage_folder
+        )
+        remote = r.remote.add(type=RemoteType.s3, prefix="b/assets", name="s3", push_command="true")
+        r.remote.link(ref=remote.id, asset_digest=asset.digest, mode="archive", pushed=True)
+        r.store.add("plantref", "url://plantref", StoreType.remote, priority=50)
+        r.genome.set_store_name(digest, "plantref")
+        AliasManager(r.database_engine).federated_sync(
+            "athal", digest, "plantref", {"plantref": 50}
+        )
+        r.store.add("vgp", "url://vgp", StoreType.remote, priority=20)
+        r.genome.add(FEDERATED_DIGEST, "federated genome", [], store_name="vgp")
+        return r, digest
+
+    @staticmethod
+    def _set_enabled(r, name, enabled):
+        with r.database_engine.begin() as conn:
+            conn.execute(
+                Store.__table__.update()
+                .where(Store.__table__.c.name == name)
+                .values(enabled=enabled)
+            )
+
+    @staticmethod
+    def _counts(path):
+        from refgenie.db.tables import Alias, Asset, AssetGroup, SeekKey, StagedAsset
+
+        with artifact_engine(path).connect() as conn:
+            return {
+                m.__tablename__: len(conn.execute(select(m.__table__)).all())
+                for m in (Alias, Asset, AssetGroup, SeekKey, StagedAsset, RemoteAssetLink)
+            }
+
+    def test_disabled_store_is_omitted_with_its_genomes(self, tmp_path, fixtures_path, caplog):
+        r, digest = self._node(tmp_path, fixtures_path)
+        self._set_enabled(r, "plantref", False)
+        dest = tmp_path / "publish.sqlite"
+
+        with caplog.at_level("INFO"):
+            summary = export_publish_catalog(r, dest, HTTPS_PREFIX, **CATALOG_STORE)
+
+        assert set(_exported_stores(dest)) == {"vgp", "refgenie-main"}
+        assert _exported_genome_stores(dest) == {FEDERATED_DIGEST: "vgp"}
+        assert self._counts(dest) == {
+            "alias": 0,
+            "asset": 0,
+            "assetgroup": 0,
+            "seekkey": 0,
+            "stagedasset": 0,
+            "remoteassetlink": 0,
+        }
+        assert summary["genome"] == 1
+        assert "disabled store 'plantref': omitting its 1 genome(s)" in caplog.text
+
+        server = _new_server(tmp_path)
+        import_publish_catalog(server.database_engine, str(dest))
+        assert [s.name for s in server.store.enabled_stores()] == ["vgp", "refgenie-main"]
+        assert not server.genome.exists(digest)
+
+    def test_re_enabling_the_store_brings_them_back(self, tmp_path, fixtures_path):
+        r, digest = self._node(tmp_path, fixtures_path)
+        self._set_enabled(r, "plantref", False)
+        export_publish_catalog(r, tmp_path / "off.sqlite", HTTPS_PREFIX, **CATALOG_STORE)
+        self._set_enabled(r, "plantref", True)
+        dest = tmp_path / "on.sqlite"
+
+        export_publish_catalog(r, dest, HTTPS_PREFIX, **CATALOG_STORE)
+
+        assert set(_exported_stores(dest)) == {"vgp", "plantref", "refgenie-main"}
+        assert _exported_genome_stores(dest) == {digest: "plantref", FEDERATED_DIGEST: "vgp"}
+        counts = self._counts(dest)
+        assert counts["asset"] == counts["assetgroup"] == counts["stagedasset"] == 1
+        assert counts["remoteassetlink"] == 1 and counts["seekkey"] > 0
+        assert counts["alias"] >= 2  # rCRSd from the store, athal from SQL
+
+    def test_a_store_missing_from_the_registry_still_fails(self, tmp_path, fixtures_path):
+        r, _ = self._node(tmp_path, fixtures_path)
+        with r.database_engine.begin() as conn:
+            conn.execute(
+                Genome.__table__.update()
+                .where(Genome.__table__.c.digest == FEDERATED_DIGEST)
+                .values(store_name="nowhere")
+            )
+        with pytest.raises(RuntimeError, match="'nowhere'"):
+            export_publish_catalog(r, tmp_path / "p.sqlite", HTTPS_PREFIX, **CATALOG_STORE)

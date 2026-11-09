@@ -6,4 +6,6 @@
 @import './tokens.css';
 @import './utilities.css';
 @import './components.css';
+@import './collections.css';
+@import './compare.css';
 @import './modal.css';

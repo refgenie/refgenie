@@ -1,0 +1,6 @@
+#name	length	alphabet	sha512t24u	md5	description
+chrA	203	dna2bit	-YdTIx-7BHGG-SwIgibnGX3Ze5ckvvsW	22ad6ec17caa30188cb9afca20b2962d	
+chrE	81	dna3bit	AfiTNZBkBk7Xdl9TmxIZy3Z6W917ytmv	ba2cb36e25f65807145d47198406c423	
+chrC	7	dnaio	ZtXLNJBhD6cXyML7cmO5je6OtFyvPUzc	01176237c8188ade4d97b196a5bdd5e1	
+chrB	160	dna3bit	r8p1Ai89F8W0bIfTc36HEZ-Bm_SUPqW2	457103b830e8e42bae94d88417eb6eb8	test contig B
+chrD	1000	dna2bit	ucgZ85ROJOzFxp_RfYcvZuMKFjW_JIOh	328fb80195cb69fbe4a8b7045a178f43	long one

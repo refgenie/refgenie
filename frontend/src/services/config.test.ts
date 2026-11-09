@@ -41,7 +41,10 @@ describe('parseServiceInfo', () => {
     // readthedocs URL. ServiceInfoRefgenieBlock no longer declares the field,
     // so the payload is built first and handed over as data.
     const wire = {
-      refgenie: { ...PAYLOAD.refgenie, links: { docs: 'https://refgenie.databio.org' } },
+      refgenie: {
+        ...PAYLOAD.refgenie,
+        links: { docs: 'https://refgenie.databio.org' },
+      },
     };
     const config = parseServiceInfo(wire);
     expect('links' in config).toBe(false);
@@ -68,7 +71,8 @@ describe('loadUiConfig resolution chain', () => {
 
   it('falls back without crashing or retrying on malformed JSON', async () => {
     const fetchImpl = vi.fn(
-      async () => new Response('not json', { headers: { 'content-type': 'application/json' } }),
+      async () =>
+        new Response('not json', { headers: { 'content-type': 'application/json' } }),
     );
     const config = await loadUiConfig(fetchImpl as never);
     expect(config.degraded).toBe(true);
@@ -127,5 +131,59 @@ describe('fallbackConfig', () => {
     ] as const) {
       expect(config.capabilities[key]).toBe(false);
     }
+  });
+});
+
+describe('collections in the bootstrap config', () => {
+  const valid = {
+    id: 'vgp',
+    name: 'VGP',
+    blurb: 'Assemblies.',
+    accent_color: '#2b7a78',
+    stores: ['vgp'],
+  };
+
+  function parse(collections: unknown) {
+    return parseServiceInfo({ refgenie: { ...PAYLOAD.refgenie, collections } })
+      .collections;
+  }
+
+  it('keeps a valid collection and defaults its optional fields', () => {
+    expect(parse([valid])).toEqual([
+      {
+        ...valid,
+        short_name: null,
+        note: null,
+        logo_url: null,
+        links: [],
+        genome_links: [],
+        columns: [],
+      },
+    ]);
+  });
+
+  it('drops entries with a bad color or no stores', () => {
+    expect(
+      parse([
+        { ...valid, id: 'a', accent_color: 'teal' },
+        { ...valid, id: 'b', stores: [] },
+        valid,
+      ]),
+    ).toHaveLength(1);
+  });
+
+  it('drops unknown columns', () => {
+    expect(parse([{ ...valid, columns: ['haplotype', 'bogus'] }])[0].columns).toEqual([
+      'haplotype',
+    ]);
+  });
+
+  it('is empty when the block has no collections', () => {
+    expect(parseServiceInfo(PAYLOAD).collections).toEqual([]);
+    expect(parse('nope')).toEqual([]);
+  });
+
+  it('is empty in the fallback config', () => {
+    expect(fallbackConfig().collections).toEqual([]);
   });
 });

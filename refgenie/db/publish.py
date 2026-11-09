@@ -238,6 +238,40 @@ def _check_stamp(src, action: str) -> None:
         )
 
 
+class CatalogStoreError(ValueError):
+    """A publish catalog has genomes whose store it does not carry."""
+
+
+def _check_genome_stores(src, dest) -> None:
+    """Refuse an artifact with a genome that names no store, or one it does not list.
+
+    A server reads each genome from the store its ``store_name`` names, so a
+    genome without one could never be served. The stores are the artifact's,
+    or the server's own when the artifact carries none.
+
+    Raises:
+        CatalogStoreError: Naming the counts of offending genomes.
+    """
+    store = Store.__table__
+    known = {r.name for r in src.execute(select(store.c.name))}
+    if not known:
+        known = {r.name for r in dest.execute(select(store.c.name))}
+    genome = Genome.__table__
+    counts: dict[str | None, int] = {}
+    for row in src.execute(select(genome.c.store_name)):
+        if row.store_name is None or row.store_name not in known:
+            counts[row.store_name] = counts.get(row.store_name, 0) + 1
+    if counts:
+        detail = "; ".join(
+            f"{n} with {'no store' if name is None else f'unknown store {name!r}'}"
+            for name, n in sorted(counts.items(), key=lambda kv: str(kv[0]))
+        )
+        raise CatalogStoreError(
+            f"Refusing to import a publish catalog with genomes the server could not serve: "
+            f"{detail}. Every genome must name a store the catalog lists."
+        )
+
+
 def import_catalog(engine: Engine, local_path: str) -> dict[str, int]:
     """
     Upsert the publish catalog SQLite file at ``local_path`` into ``engine``.
@@ -246,12 +280,15 @@ def import_catalog(engine: Engine, local_path: str) -> dict[str, int]:
     that each species taxon in the artifact has its row and names rewritten.
     Stores are matched by name, and a server store the artifact does not carry
     is disabled (genomes keep a foreign key to it, so it is never deleted).
+    Every genome must name a store the artifact lists (or, if it lists none,
+    one the server has); otherwise nothing is imported.
 
     Returns:
         A table -> row-count summary.
 
     Raises:
         ValueError: If the file's schema stamp is not this code's.
+        CatalogStoreError: If a genome has no store, or one the catalog does not list.
     """
     src_engine = create_engine(f"sqlite:///{local_path}")
     summary: dict[str, int] = {}
@@ -259,6 +296,7 @@ def import_catalog(engine: Engine, local_path: str) -> dict[str, int]:
         with src_engine.connect() as src:
             _check_stamp(src, "import")
             with engine.begin() as dest:
+                _check_genome_stores(src, dest)
                 # {table: {artifact id: server id}} for _REMAPPED_KEYS tables.
                 id_maps: dict[str, dict[int, int]] = {t: {} for t in _REMAPPED_KEYS}
                 for model in ORDERED_MODELS:

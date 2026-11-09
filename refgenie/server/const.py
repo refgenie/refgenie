@@ -32,6 +32,7 @@ SPA_CLIENT_ROUTES: tuple[str, ...] = (
     "recipes",
     "aliases",
     "tree",
+    "collections",
     # The public SPA's browse scope for a connected local refgenie; here it
     # only makes a pasted /local URL show the SPA's not-found page.
     "local",

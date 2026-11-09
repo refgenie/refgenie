@@ -72,7 +72,7 @@ All tools are read-only. They give the same answers as the server's HTTP API.
 |------|-------------|
 | `catalog_summary` | Count genomes, asset groups and assets, and list the species that have assets |
 | `list_genomes` | List genomes, most assets first; filter by `has_assets` and `taxon_id` |
-| `search_genomes` | Search genomes by digest, alias, any species name (scientific, common or other common names, e.g. brown rat), other genome names (GRCh38), description or accession (substring matching); same filters |
+| `search_genomes` | Search genomes by digest, alias, any species name (scientific, common or other common names, e.g. brown rat), other genome names (GRCh38), description or accession (substring matching; a description must match at a word start); best matches first; same filters |
 | `get_genome` | Get one genome by `alias` or `digest`, with its FHR metadata and a `species` object holding all its species' names, other common names included |
 | `list_assets` | List assets, optionally of one genome (`alias` or `digest`) and/or one `asset_class` |
 | `get_asset` | Get one asset by digest: names, seek keys, parents, children, and how to get its files |

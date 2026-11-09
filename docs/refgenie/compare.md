@@ -48,7 +48,7 @@ Based on the output above we can conclude that genome `hg38_plus` is a superset 
 
 For the coordinate-system question above, look at `name_length_pairs`: if every name-length pair of one genome is shared with the other, the two share a coordinate system for those sequences, even if the sequences themselves differ.
 
-If one or both genomes come from a remote server, or the two genomes live in different RefgetStores, refgenie compares them from their sequence collections and the result may use a simpler layout (counts and the shared or unique elements for `names`, `lengths`, and `sequences`).
+The result has this same layout in every case: when both genomes are in one RefgetStore, when they live in different RefgetStores, and when one or both come from a remote server.
 
 ## Other ways to compare
 

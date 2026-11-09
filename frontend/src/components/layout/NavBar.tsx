@@ -6,7 +6,9 @@ import { cn } from '../../utils/cn';
 export function NavBar() {
   const config = useUiConfig();
   const entries = NAV.filter(
-    (entry) => !entry.capability || config.capabilities[entry.capability] === true,
+    (entry) =>
+      (!entry.capability || config.capabilities[entry.capability] === true) &&
+      (!entry.visible || entry.visible(config)),
   );
 
   return (

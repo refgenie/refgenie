@@ -57,3 +57,4 @@ export REFGENIE_DB_CONFIG_PATH=/path/to/refgenie_db_config.yaml
 | `REFGENIE_GENOME_FOLDER` | `$REFGENIE_HOME_PATH/genomes` | Directory for genome assets |
 | `REFGENIE_GENOME_STAGE_FOLDER` | `$REFGENIE_HOME_PATH/archives` | Directory for staged assets |
 | `REFGENIE_LOG_LEVEL` | `INFO` | Log verbosity |
+| `REFGENIE_COLLECTIONS` | unset | Server only: a JSON list of collection pages for the web UI, each drawn from one or more declared stores. Entries naming an unknown store are skipped. See [`deployment/collections.example.json`](https://github.com/refgenie/refgenie/blob/master/deployment/collections.example.json). |

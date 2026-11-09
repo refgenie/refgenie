@@ -4,6 +4,7 @@ router and the data-channel mirror.
 
 from collections import Counter
 from unittest.mock import MagicMock
+from refgenie.exceptions import MissingGenomeError
 
 import pytest
 import yaml
@@ -44,6 +45,7 @@ from refgenie.db.tables import (  # noqa: E402
     Genome,
     SeekKey,
     SeekKeyType,
+    StoreType,
 )
 from refgenie.managers.sources.manager import IndexFile, IndexFileSection  # noqa: E402
 from refgenie.server.routers.data_channel import resolve_channel_file_url  # noqa: E402
@@ -198,7 +200,8 @@ class TestAliasEndpoints:
         """Alias exists but the store has no collection data -> 404 with detail."""
         client, test_rgc = client_with_alias, rgc_with_alias
         mock_router = MagicMock()
-        mock_router.get_collection_level2.return_value = None
+        mock_router.serves.return_value = True
+        mock_router.get_collection_level2.side_effect = MissingGenomeError(TEST_DIGEST)
         test_rgc._store_router = mock_router
 
         response = client.get("/v4/aliases/rCRSd")
@@ -252,6 +255,12 @@ class TestGenomesEndpoint:
                 seen.append(outstanding["open"])
                 return None
 
+            def serves(self, store_name):
+                return True
+
+            def store_configs(self):
+                return []
+
         # Read the store's aliases now; the stub router below has no store.
         rgc_with_alias.alias.get_for_genome(TEST_DIGEST)
         rgc_with_alias._store_router = _Router()
@@ -259,6 +268,77 @@ class TestGenomesEndpoint:
         assert response.status_code == 200
         assert response.json()["digest"] == TEST_DIGEST
         assert seen == [0]
+
+    @pytest.mark.parametrize(
+        "store_name, store_type, url, expected",
+        [
+            (
+                "jungle",
+                StoreType.remote,
+                "https://s3.test/refget-store/jungle",
+                "https://s3.test/refget-store/jungle/",
+            ),
+            ("jungle", StoreType.remote, "https://s3.test/jungle/", "https://s3.test/jungle/"),
+            ("disk", StoreType.on_disk, "/data/disk.refget_store", None),
+            (None, None, None, None),
+        ],
+    )
+    def test_get_genome_reports_remote_store_url(
+        self, client_with_alias, rgc_with_alias, store_name, store_type, url, expected
+    ):
+        """refget_store_url is the remote store's base URL, else null."""
+        digest = fake_digest("stored_genome")
+        if store_name:
+            rgc_with_alias.store.add(store_name, url, store_type, priority=10)
+        rgc_with_alias.genome.add(digest, "stored genome", [], store_name=store_name)
+        rows = rgc_with_alias.store.list_all()
+
+        class _Router:
+            def get_fhr_metadata(self, digest, store_name=None):
+                return None
+
+            def serves(self, store_name):
+                return True
+
+            def store_configs(self):
+                return rows
+
+        rgc_with_alias.alias.get_for_genome(digest)
+        rgc_with_alias._store_router = _Router()
+        response = client_with_alias.get(f"/v4/genomes/{digest}")
+        assert response.status_code == 200
+        assert response.json()["refget_store_url"] == expected
+
+    def test_genome_in_an_unserved_store_is_hidden(self, client_with_alias, rgc_with_alias):
+        """A genome whose store_name this server does not serve: 404, and not listed."""
+        digest = fake_digest("plant_genome")
+        rgc_with_alias.store.add("jungle", "https://s3.test/jungle/", StoreType.remote, priority=10)
+        rgc_with_alias.store.add(
+            "plantref", "https://s3.test/plant/", StoreType.remote, priority=50
+        )
+        rgc_with_alias.genome.add(digest, "a plant", [], store_name="plantref")
+
+        class _Router:
+            def serves(self, store_name):
+                return store_name in (None, "jungle")
+
+            def served_store_names(self):
+                return ["jungle"], True
+
+        # Read the store's aliases now; the stub router below has no store.
+        rgc_with_alias.alias.get_for_genome(digest)
+        rgc_with_alias._store_router = _Router()
+        response = client_with_alias.get(f"/v4/genomes/{digest}")
+        assert response.status_code == 404
+        assert (
+            "'plantref', which this server does not serve" in response.json()["detail"]["message"]
+        )
+        assert client_with_alias.get(f"/v4/genomes/{digest}/sequences").status_code == 404
+        listed = [g["digest"] for g in client_with_alias.get("/v4/genomes").json()["results"]]
+        assert digest not in listed
+        assert TEST_DIGEST in listed
+        found = client_with_alias.get("/v4/genomes?q=plant").json()
+        assert digest not in [g["digest"] for g in found["results"]]
 
     def test_genome_without_alias_appears(self, client_no_alias):
         """A genome with zero aliases must still be listed, with aliases == []."""
@@ -1268,3 +1348,96 @@ class TestEndpointHitCounter:
         client, _ = client
         assert client.get("/v4/nonexistent").status_code == 404
         assert client.app.state.endpoint_hits_collector.get_stats("download_archive") == {}
+
+
+# --- genome sequences and comparison ------------------------------------------
+
+
+@pytest.mark.component
+class TestGenomeSequences:
+    """``/v4/genomes/{digest}/sequences`` and ``/compare/{other}`` over a real store."""
+
+    @pytest.fixture
+    def world(self, tmp_path, fixtures_path):
+        """Two real genomes: rCRSd (one sequence) and rCRSd-extra (two)."""
+        rgc = Refgenie(database_engine=make_engine(), suppress_migrations=True)
+        rgc.database.init(genome_folder=tmp_path / "genomes")
+        register_fasta(rgc, fixtures_path)
+        digest, _ = rgc.genome.initialize_genome(
+            fasta_file_path=fixtures_path / "rCRSd.fa", description="", alias_names=["rCRSd"]
+        )
+        other, _ = rgc.genome.initialize_genome(
+            fasta_file_path=fixtures_path / "rCRSd-extra.fa",
+            description="",
+            alias_names=["rCRSd_extra"],
+        )
+        return rgc, digest, other
+
+    @pytest.fixture
+    def client(self, world):
+        with make_server_client(world[0]) as client:
+            yield client
+
+    def test_sequences_from_real_store(self, world, client):
+        _, digest, _ = world
+        response = client.get(f"/v4/genomes/{digest}/sequences")
+        assert response.status_code == 200
+        data = response.json()
+        assert data["digest"] == digest
+        assert data["n_sequences"] == len(data["sequences"]) == 1
+        for row in data["sequences"]:
+            assert row["name"]
+            assert row["length"] > 0
+            assert len(row["sha512t24u"]) == 32
+            assert not row["sha512t24u"].startswith("SQ.")
+            assert len(row["md5"]) == 32
+            assert row["alphabet"]
+        assert data["total_length"] == sum(r["length"] for r in data["sequences"])
+        assert {"names", "lengths", "sequences"} <= set(data["level1"])
+        assert {"namespace": "refgenie", "alias": "rCRSd"} in data["collection_aliases"]
+
+    def test_sequence_aliases_are_listed(self, world, client):
+        rgc, digest, _ = world
+        before = client.get(f"/v4/genomes/{digest}/sequences").json()
+        bare = before["sequences"][0]["sha512t24u"]
+        rgc.store_router.default_store.add_sequence_alias("test_ns", "chrM_alias", bare)
+        row = client.get(f"/v4/genomes/{digest}/sequences").json()["sequences"][0]
+        assert {"namespace": "test_ns", "alias": "chrM_alias"} in row["aliases"]
+
+    def test_sequences_unknown_genome_is_404(self, client):
+        response = client.get(f"/v4/genomes/{fake_digest('nope')}/sequences")
+        assert response.status_code == 404
+
+    def test_compare_self(self, world, client):
+        _, digest, _ = world
+        data = client.get(f"/v4/genomes/{digest}/compare/{digest}").json()
+        assert data["digests"] == {"a": digest, "b": digest}
+        counts = data["array_elements"]
+        assert counts["a_and_b_count"]["names"] == counts["a_count"]["names"]
+        assert all(data["array_elements"]["a_and_b_same_order"].values())
+
+    def test_compare_two_genomes(self, world, client):
+        _, digest, other = world
+        data = client.get(f"/v4/genomes/{digest}/compare/{other}").json()
+        assert data["digests"] == {"a": digest, "b": other}
+        assert set(data["attributes"]) == {"a_only", "b_only", "a_and_b"}
+        counts = data["array_elements"]
+        assert counts["a_count"]["sequences"] == 1
+        assert counts["b_count"]["sequences"] == 2
+        assert counts["a_and_b_count"]["sequences"] == 1
+
+    def test_compare_unknown_is_404(self, world, client):
+        _, digest, _ = world
+        response = client.get(f"/v4/genomes/{digest}/compare/{fake_digest('nope')}")
+        assert response.status_code == 404
+
+    def test_sequences_in_local_mode(self, world):
+        """The local demo (``refgenie dash``) reads the same endpoint."""
+        rgc, digest, _ = world
+        with make_local_client(rgc) as client:
+            response = client.get(f"/v4/genomes/{digest}/sequences")
+            missing = client.get(f"/v4/genomes/{fake_digest('nope')}/sequences")
+        assert response.status_code == 200
+        assert response.json()["n_sequences"] == 1
+        assert missing.status_code == 404
+        assert missing.json()["error"]["code"] == "genome_not_found"

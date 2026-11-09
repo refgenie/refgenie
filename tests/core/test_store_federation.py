@@ -378,6 +378,73 @@ class TestStoreSyncIntegration:
 
 
 # ---------------------------------------------------------------------------
+# Comparing genomes that live in different stores
+# ---------------------------------------------------------------------------
+
+
+def _write_fasta(path, records):
+    path.write_text("".join(f">{name}\n{seq}\n" for name, seq in records))
+    return path
+
+
+def _synced_rgc(stores):
+    """A server-mode refgenie with the given (name, path) on-disk stores synced."""
+    from refgenie.cli.commands.store import _sync_one_store
+
+    rg = _server_rgc()
+    for priority, (name, path) in enumerate(stores):
+        rg.store.add(name, str(path), StoreType.on_disk, priority=priority)
+    priorities = {s.name: s.priority for s in rg.store.list_all()}
+    for srow in rg.store.enabled_stores():
+        _sync_one_store(rg, srow, priorities, 100)
+    return rg
+
+
+class TestCompareAcrossStores:
+    @pytest.fixture
+    def fastas(self, tmp_path):
+        # Two shared sequences in the same order, one unique to each genome.
+        a = _write_fasta(
+            tmp_path / "a.fa", [("chr1", "ACGTACGT"), ("chr2", "GGGGCCCC"), ("chr3", "TTTTAA")]
+        )
+        b = _write_fasta(
+            tmp_path / "b.fa", [("chr1", "ACGTACGT"), ("chr2", "GGGGCCCC"), ("chr4", "CA")]
+        )
+        return a, b
+
+    def test_cross_store_compare_returns_the_seqcol_comparison(self, tmp_path, fastas):
+        digest_a = build_on_disk_store(tmp_path / "s1", fastas[0], "a")
+        digest_b = build_on_disk_store(tmp_path / "s2", fastas[1], "b")
+        rg = _synced_rgc([("s1", tmp_path / "s1"), ("s2", tmp_path / "s2")])
+        assert rg.genome.get(digest_a).store_name == "s1"
+        assert rg.genome.get(digest_b).store_name == "s2"
+
+        result = rg.genome.compare(digest_a, digest_b)
+
+        assert result["digests"] == {"a": digest_a, "b": digest_b}
+        assert set(result["attributes"]) == {"a_only", "b_only", "a_and_b"}
+        assert {"names", "lengths", "sequences", "name_length_pairs"} <= set(
+            result["attributes"]["a_and_b"]
+        )
+        elements = result["array_elements"]
+        assert set(elements) == {"a_count", "b_count", "a_and_b_count", "a_and_b_same_order"}
+        assert elements["a_count"]["names"] == 3
+        assert elements["a_and_b_count"]["sequences"] == 2
+        assert elements["a_and_b_same_order"]["names"] is True
+
+    def test_same_store_and_cross_store_agree(self, tmp_path, fastas):
+        build_on_disk_store(tmp_path / "both", fastas[0], "a")
+        build_on_disk_store(tmp_path / "both", fastas[1], "b")
+        digest_a = build_on_disk_store(tmp_path / "s1", fastas[0], "a")
+        digest_b = build_on_disk_store(tmp_path / "s2", fastas[1], "b")
+
+        same = _synced_rgc([("both", tmp_path / "both")])
+        cross = _synced_rgc([("s1", tmp_path / "s1"), ("s2", tmp_path / "s2")])
+
+        assert same.genome.compare(digest_a, digest_b) == cross.genome.compare(digest_a, digest_b)
+
+
+# ---------------------------------------------------------------------------
 # Local mode reads both halves of the alias space
 # ---------------------------------------------------------------------------
 

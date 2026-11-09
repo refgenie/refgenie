@@ -645,7 +645,7 @@ class TestCatalogImportPostgres:
         from sqlalchemy import select, text
 
         from tests.support.factories import make_engine
-        from tests.test_publish_catalog import _add_group, artifact_engine
+        from tests.test_publish_catalog import CATALOG_STORE, _add_group, artifact_engine
         from refgenie.db.tables import AssetName
         from refgenie.publish_catalog import export_publish_catalog, import_publish_catalog
 
@@ -656,14 +656,14 @@ class TestCatalogImportPostgres:
         )
         server = refgenie_instance.database_engine
         first = tmp_path / "first.sqlite"
-        export_publish_catalog(node, first, "https://example.org/assets")
+        export_publish_catalog(node, first, "https://example.org/assets", **CATALOG_STORE)
         _add_group(first, digest, 129, "a" * 64)
         import_publish_catalog(server, str(first))
         with server.begin() as conn:
             conn.execute(text("ALTER SEQUENCE assetname_id_seq RESTART WITH 1"))
 
         second = tmp_path / "second.sqlite"
-        export_publish_catalog(node, second, "https://example.org/assets")
+        export_publish_catalog(node, second, "https://example.org/assets", **CATALOG_STORE)
         _add_group(second, digest, 129, "a" * 64)
         with artifact_engine(second).begin() as conn:
             conn.execute(
@@ -720,8 +720,8 @@ class TestCatalogImportPostgres:
     def test_import_without_the_store_row_fails_and_rolls_back(
         self, refgenie_instance, fixtures_path, tmp_path
     ):
-        """Without its store row, the genome's store foreign key fails the whole import."""
-        from sqlalchemy.exc import IntegrityError
+        """Without its store row, the genome's store check fails the whole import."""
+        from refgenie.db.publish import CatalogStoreError
 
         from refgenie.db.tables import Genome, Store
         from refgenie.publish_catalog import export_publish_catalog, import_publish_catalog
@@ -733,7 +733,7 @@ class TestCatalogImportPostgres:
         with artifact_engine(artifact).begin() as conn:
             conn.execute(Store.__table__.delete())
 
-        with pytest.raises(IntegrityError):
+        with pytest.raises(CatalogStoreError):
             import_publish_catalog(refgenie_instance.database_engine, str(artifact))
         with refgenie_instance.database_engine.connect() as conn:
             assert conn.execute(Genome.__table__.select()).first() is None

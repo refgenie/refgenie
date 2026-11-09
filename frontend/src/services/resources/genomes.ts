@@ -19,6 +19,7 @@ export interface ListGenomesParams extends ListParams {
   alias?: string;
   has_assets?: boolean;
   taxon_id?: number;
+  store?: string[];
 }
 
 export const listGenomes = (
@@ -33,6 +34,7 @@ export const listGenomes = (
       alias: p.alias,
       has_assets: p.has_assets,
       taxon_id: p.taxon_id,
+      store: p.store,
       ...listQuery(p),
     },
     init,

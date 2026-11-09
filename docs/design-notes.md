@@ -400,6 +400,30 @@ So the store list is runtime data, and two things follow:
   change to a store's contents with the same URL still needs a restart (or a
   store-set change), since loaded stores are frozen.
 
+## A genome's store_name picks its store
+
+The router never probes stores for a genome. `store_for_genome(digest,
+store_name)` reads from the store `store_name` names; `None` means a genome
+built on this node, held by its own `local` store. If the router does not
+serve that store, it raises `UnservedStoreError` (a `MissingGenomeError`, so
+routes answer 404) naming the store. Probing in priority order hid
+misconfigured servers: a genome whose store was not loaded was read from
+whichever other store happened to hold the same collection, or vanished
+without saying why.
+
+The same rule decides what a server lists: every genome listing and detail
+route keeps only genomes whose `store_name` the router serves
+(`RefgetStoreRouter.served_store_names`). A server with no stores at all
+(DB-backed seqcol) lists everything, since it routes nothing.
+
+Local mode is the exception, by design: its router holds one editable store,
+the genome folder's, and every genome the node reads is in it, pulled or
+built. Genomes `refgenie store sync` registered keep their federated
+`store_name` (it is what the catalog export publishes), but local reads go to
+the one store (`sole_store=True`). Built genomes keep `store_name` unset: the
+`local` row is synthetic, not a `store` table row, and the export assigns them
+the catalog store.
+
 ## The store list travels in the publish catalog
 
 `genome.store_name` and `alias.store_name` are foreign keys to `store.name`, so
@@ -407,9 +431,15 @@ a catalog whose genomes name a store the server lacks cannot be imported into
 Postgres at all. The catalog therefore exports the build node's store table,
 and the server takes its store list from it: an import adds or updates each
 store by name and disables, never deletes, any store the catalog does not
-list (genomes still point at it). Only `remote` stores are exported; an
-`on_disk` store's URL is a path on the build node, and an export that would
-publish a genome in an unpublished store fails before writing anything. An
+list (genomes still point at it). Only enabled `remote` stores are exported;
+an `on_disk` store's URL is a path on the build node, and an export that would
+publish a genome in such a store fails before writing anything. A disabled
+store is different: it is a deliberate "not now" (plantref, whose 1.57M
+sequences do not fit in the server's memory), so its genomes, with their
+aliases, asset groups, assets and staged records, are left out of the export
+rather than failing it, and the export logs how many per store. Leaving them
+out at the source, rather than having the server skip a store, keeps one place
+that decides what is published. An
 artifact with no store rows leaves the server's stores alone, so one empty
 table cannot switch every store off. On the build node, `refgenie store apply`
 sets the store table from a declaration file, disabling stores the file drops.
@@ -590,6 +620,12 @@ Search: the genome `species` field matches the genome's own scientific name, plu
 Display: lists show one common name, the species list's. Other names are searchable everywhere but shown only in detail views (HTTP genome detail, MCP `get_genome`, the web UI genome page). HTTP list rows still carry the species object, because the web UI's species page groups and searches genomes in the browser.
 
 The common name is looked up in `GenomeListing.common_name` at read time and never stored on the genome. A pull copies the server's species row, every time, so a pulled genome shows the same common name locally.
+
+## Search: word-start descriptions, ranked genomes
+
+A `contains` search of a `description` field (genomes, asset classes, recipes) matches only where a word starts: descriptions are prose, so a plain substring finds "rat" in "curated" and "satellite" and buries the rat genomes under human ones. Names, aliases and accessions keep substring matching, since a partial name ("mRat") is a real query.
+
+Genome search results are ranked in SQL (a rank in `ORDER BY`, ahead of the usual order), so paging and `total` stay correct. The matching genomes go into a materialized CTE that pads each name column once, and one `CASE` per column reads the padded value for all three tiers; species-list names are ranked once per taxon in their own CTE. Aliases may not live in SQL, so the alias backend ranks its own matches in Python (`match_rank`) and passes `digest -> rank`; the query receives that as one JSON parameter unpacked by `json_each`, because an `IN` list of every match overflows the 65,535 bind parameter limit on Postgres for a short term. The SQL (`padded_words`, `rank_condition`) and Python (`words`, `match_rank`) rules are twins, held together by `tests/db/test_search.py`. They use only `lower`, `replace` and `LIKE`, so they run on SQLite and Postgres alike.
 
 ## Which FHR fields refgenie reads
 

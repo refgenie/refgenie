@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The genome page has Sequences, Extract, Download and Compare tabs: browse a
+  genome's sequences, extract regions or a BED file of regions, download FASTA
+  in the browser, and compare with another genome or your own FASTA file.
+- Collection pages (`REFGENIE_COLLECTIONS`) show a branded slice of the
+  catalog, such as the VGP assemblies.
+- `GET /v4/genomes/{digest}/sequences` and `GET /v4/genomes/{digest}/compare/{other}`.
+
+### Changed
+
+- A genome is read only from the store its `store_name` names; stores are no
+  longer probed. A genome whose store the server does not serve is left out of
+  every listing and answers 404.
+- A publish catalog with a genome that names no store, or a store the catalog
+  does not list, is refused at import.
+- Compare returns the same GA4GH comparison from the server, the CLI and MCP.
+
 ## [1.0.0a1] - 2026-11-06
 
 First public alpha of refgenie 1.0, a rewrite that replaces the `refgenie` 0.x,

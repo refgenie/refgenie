@@ -24,6 +24,7 @@ function genome(overrides: Partial<GenomeResponse> = {}): GenomeResponse {
     taxon_id: null,
     assembly_source: null,
     assembly_accession: null,
+    assembly_level: null,
     species: null,
     ...overrides,
   };
@@ -163,9 +164,9 @@ describe('speciesGenomesHref', () => {
     );
   });
 
-  it('unticks the assets filter only when the species has nothing built', () => {
+  it('links the same way whether or not anything is built', () => {
     expect(speciesGenomesHref(row({ assets: 0 }))).toBe(
-      '/genomes?q=Homo+sapiens&fields=species&op=contains&assets=all',
+      '/genomes?q=Homo+sapiens&fields=species&op=contains',
     );
   });
 });

@@ -508,18 +508,24 @@ class TestRemoteGenome:
     def test_compare_both_remote_same_server(
         self, refgenie_minimal, make_remote_source, init_remote
     ):
-        """Two remote genomes on the same store use the store's compare."""
+        """Two remote genomes on the same store compare their level 2 from that store."""
         digest_a = "aaaaaaaaaaaabbbbbbbbbbbbcccccccc"
         digest_b = "ddddddddddddeeeeeeeeeeeeffffffff"
         source = make_remote_source(digests=[digest_a, digest_b])
         for d, name in ((digest_a, "genome_a"), (digest_b, "genome_b")):
             init_remote(source, name, digest=d)
 
-        expected = {"digests": {}, "attributes": {}, "array_elements": {}}
-        with patch("gtars.refget.RefgetStore") as MockStore:
-            MockStore.open_remote.return_value.compare.return_value = expected
+        level2 = {"names": ["chr1"], "lengths": [8], "sequences": ["SQ.x"]}
+        with patch.object(
+            refgenie_minimal.genome.__class__, "_get_remote_level2", return_value=level2
+        ) as remote:
             result = refgenie_minimal.genome.compare(digest_a, digest_b)
-        assert result == expected
+        assert {c.args for c in remote.call_args_list} == {
+            ("https://store.example.com", digest_a),
+            ("https://store.example.com", digest_b),
+        }
+        assert result["digests"] == {"a": digest_a, "b": digest_b}
+        assert result["attributes"]["a_and_b"] == ["lengths", "names", "sequences"]
 
     def test_compare_one_local_one_remote(
         self,
@@ -614,20 +620,20 @@ class TestRemoteGenome:
         assert "list_alias_test" in refgenie_minimal.alias.get_for_genome(remote_digest)
 
     def test_compare_level2_helper(self):
-        """_compare_level2 counts shared/unique names, lengths and sequences."""
-        from refgenie.managers.genome import _compare_level2
+        """compare_level2 returns the GA4GH seqcol comparison object."""
+        from refgenie.utils.seqcol import compare_level2 as _compare_level2
 
         level2_a = {"names": ["chr1", "chr2"], "lengths": [100, 200], "sequences": ["s1", "s2"]}
         level2_b = {"names": ["chr1", "chr3"], "lengths": [100, 300], "sequences": ["s1", "s3"]}
         result = _compare_level2(level2_a, level2_b, "digest_a", "digest_b")
 
         assert result["digests"] == {"a": "digest_a", "b": "digest_b"}
-        names = result["attributes"]["names"]
-        assert names["a_count"] == 2
-        assert names["b_count"] == 2
-        assert names["a_and_b"] == 1  # chr1
-        assert names["a_only"] == 1  # chr2
-        assert names["b_only"] == 1  # chr3
+        assert sorted(result["attributes"]["a_and_b"]) == ["lengths", "names", "sequences"]
+        elements = result["array_elements"]
+        assert set(elements) == {"a_count", "b_count", "a_and_b_count", "a_and_b_same_order"}
+        assert elements["a_count"]["names"] == 2
+        assert elements["b_count"]["names"] == 2
+        assert elements["a_and_b_count"]["names"] == 1  # chr1
 
 
 # ---------------------------------------------------------------------------

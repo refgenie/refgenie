@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol
 
-from refgenie.exceptions import MissingGenomeError
+from refgenie.exceptions import MissingGenomeError, UnservedStoreError
 from refgenie.logger import logger
 from refgenie.models import GenomeDigest
 
@@ -63,10 +63,9 @@ class StoreRouter(Protocol):
     structurally so this manager does not import up into ``refgenie.core``.
     """
 
-    names: Any
     default_store: Any
 
-    def get_store(self, name: str) -> Any: ...
+    def store_for_genome(self, genome_digest: str, store_name: str | None) -> Any: ...
 
 
 class SequenceManager:
@@ -111,16 +110,19 @@ class SequenceManager:
         """
         name, start, end = parse_locus(locus)
         router = self._router()
-        # Route to the store that owns this genome, else the default store
-        # (a genome may resolve from the store's alias index with no SQL row).
+        # The genome's store_name picks its store. A genome may resolve from
+        # the local store's alias index with no SQL row, which reads as None.
         store_name = None
         try:
             store_name = self._genome.get(genome_digest).store_name
         except MissingGenomeError:
             pass
-        if store_name and store_name in router.names:
-            store = router.get_store(store_name)
-        else:
+        try:
+            store = router.store_for_genome(genome_digest, store_name)
+        except UnservedStoreError:
+            raise
+        except MissingGenomeError:
+            # Not in the store yet (a metadata-only pull); fetched from the remote below.
             store = router.default_store
 
         record = None

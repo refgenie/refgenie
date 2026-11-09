@@ -1,0 +1,79 @@
+/*
+ * Collection pages (/collections, /collections/:id).
+ *
+ * `--rg-collection-accent` is set inline from the server config. It is used
+ * only for borders, the logo badge and tinted backgrounds; text keeps the
+ * theme tokens so contrast does not depend on a deployment's color choice.
+ */
+
+.rg-collection-hero {
+  border-top: var(--space-1) solid var(--rg-collection-accent, rgb(var(--color-primary)));
+  background: color-mix(
+    in srgb,
+    var(--rg-collection-accent, rgb(var(--color-primary))) 6%,
+    rgb(var(--color-background))
+  );
+}
+
+.rg-collection-hero__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  font-size: var(--font-size-sm);
+}
+
+.rg-collection-card {
+  border-top: var(--space-1) solid var(--rg-collection-accent, rgb(var(--color-primary)));
+}
+
+.rg-collection-logo {
+  flex: none;
+  width: var(--space-10);
+  height: var(--space-10);
+  border-radius: var(--radius-md);
+  object-fit: contain;
+}
+
+.rg-collection-logo--lg {
+  width: var(--space-16);
+  height: var(--space-16);
+}
+
+/* The placeholder: initials on the accent. White on a mid-to-dark accent. */
+.rg-collection-logo--badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--rg-collection-accent, rgb(var(--color-primary)));
+  color: rgb(var(--color-text-inverse));
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+}
+
+.rg-collection-logo--lg.rg-collection-logo--badge {
+  font-size: var(--font-size-xl);
+}
+
+.rg-collection-haplotype {
+  background: color-mix(
+    in srgb,
+    var(--rg-collection-accent, rgb(var(--color-primary))) 15%,
+    rgb(var(--color-background))
+  );
+}
+
+.rg-collection__filters .rg-field__input:focus-visible {
+  outline: var(--border-width) solid var(--rg-collection-accent, rgb(var(--color-accent)));
+  outline-offset: var(--border-width);
+}
+
+.rg-collection-hero__links,
+.rg-collection-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rg-collection select.rg-field__input {
+  width: auto;
+}

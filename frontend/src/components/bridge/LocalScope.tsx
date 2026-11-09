@@ -75,6 +75,7 @@ export function LocalScope({ children }: LocalScopeProps) {
         drs: ping?.capabilities.drs === true,
       },
       web_ui: null,
+      collections: [],
       degraded: false,
     }),
     [baseUrl, ping],

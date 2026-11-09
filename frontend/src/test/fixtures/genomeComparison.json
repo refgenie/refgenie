@@ -1,0 +1,47 @@
+{
+  "attributes": {
+    "a_only": [],
+    "b_only": [],
+    "a_and_b": [
+      "lengths",
+      "name_length_pairs",
+      "names",
+      "sequences",
+      "sorted_sequences"
+    ]
+  },
+  "array_elements": {
+    "a_count": {
+      "lengths": 1,
+      "name_length_pairs": 1,
+      "names": 1,
+      "sequences": 1,
+      "sorted_sequences": 1
+    },
+    "b_count": {
+      "lengths": 2,
+      "name_length_pairs": 2,
+      "names": 2,
+      "sequences": 2,
+      "sorted_sequences": 2
+    },
+    "a_and_b_count": {
+      "lengths": 1,
+      "name_length_pairs": 1,
+      "names": 1,
+      "sequences": 1,
+      "sorted_sequences": 1
+    },
+    "a_and_b_same_order": {
+      "lengths": true,
+      "name_length_pairs": true,
+      "names": true,
+      "sequences": true,
+      "sorted_sequences": true
+    }
+  },
+  "digests": {
+    "a": "jthDpfNIgzM5AGJlOkRtfnky4rXMBIUP",
+    "b": "smiTbD3jP5EwF4DNWVm0c6DGKRlFHfas"
+  }
+}

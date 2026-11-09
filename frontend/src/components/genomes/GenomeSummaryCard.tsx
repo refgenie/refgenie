@@ -6,10 +6,9 @@ import type { GenomeDetailResponse } from '../../types/api';
 
 export interface GenomeSummaryCardProps {
   genome: GenomeDetailResponse;
-  aliases: string[];
 }
 
-export function GenomeSummaryCard({ genome, aliases }: GenomeSummaryCardProps) {
+export function GenomeSummaryCard({ genome }: GenomeSummaryCardProps) {
   const taxon = taxonUrl(genome.taxon_uri, genome.taxon_id);
   const accession = accessionUrl(
     genome.assembly_accession,
@@ -21,10 +20,6 @@ export function GenomeSummaryCard({ genome, aliases }: GenomeSummaryCardProps) {
   return (
     <DescriptionList
       items={[
-        {
-          term: 'Aliases',
-          value: aliases.length ? <strong>{aliases.join(', ')}</strong> : '',
-        },
         { term: 'Digest', value: <DigestChip digest={genome.digest} length={32} /> },
         { term: 'Description', value: genome.description ?? '' },
         { term: 'Scientific name', value: genome.species_name ?? '' },

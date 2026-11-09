@@ -1,0 +1,23 @@
+[
+  {
+    "id": "vgp",
+    "name": "Vertebrate Genomes Project assemblies",
+    "short_name": "VGP",
+    "blurb": "Reference-quality vertebrate genome assemblies produced by the Vertebrate Genomes Project and affiliated efforts, as listed by the UCSC VGP assembly hub. Each assembly is identified here by a sequence collection digest, with any refgenie assets built for it.",
+    "note": "An independent refgenie view of publicly available assemblies. Not run by the Vertebrate Genomes Project.",
+    "accent_color": "#2b7a78",
+    "logo_url": null,
+    "stores": ["vgp"],
+    "links": [
+      {"label": "Vertebrate Genomes Project", "url": "https://vertebrategenomesproject.org/"},
+      {"label": "GenomeArk", "url": "https://www.genomeark.org/"},
+      {"label": "NCBI BioProject PRJNA489243", "url": "https://www.ncbi.nlm.nih.gov/bioproject/PRJNA489243"},
+      {"label": "UCSC VGP assembly hub", "url": "https://hgdownload.soe.ucsc.edu/hubs/VGP/"}
+    ],
+    "genome_links": [
+      {"label": "NCBI", "template": "https://www.ncbi.nlm.nih.gov/datasets/genome/{assembly_accession}/"},
+      {"label": "GenomeArk", "template": "https://www.genomeark.org/genomeark-all/{species_underscored}.html"}
+    ],
+    "columns": ["assembly_accession", "haplotype", "assembly_level"]
+  }
+]

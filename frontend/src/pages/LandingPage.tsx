@@ -13,7 +13,7 @@ import { useRecipes } from '../hooks/queries/useRecipes';
 import { useUiConfig } from '../hooks/useUiConfig';
 import { useApiClient } from '../hooks/useApiClient';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
-import { CopyButton } from '../components/common/CopyButton';
+import { Copyable } from '../components/common/Copyable';
 import { ExternalLink } from '../components/common/ExternalLink';
 import { Icon } from '../components/common/Icon';
 import { PROJECT_LINKS } from '../services/projectLinks';
@@ -42,10 +42,9 @@ const STEPS = [
 
 function Command({ value, label }: { value: string; label?: string }) {
   return (
-    <span className="rg-command flex items-center gap-2">
-      <code className="rg-code rg-code--inline flex-1 overflow-x-auto">{value}</code>
-      <CopyButton value={value} label={label ?? `Copy: ${value}`} />
-    </span>
+    <Copyable value={value} label={label ?? `Copy: ${value}`} className="rg-command">
+      <code className="rg-code rg-code--inline">{value}</code>
+    </Copyable>
   );
 }
 

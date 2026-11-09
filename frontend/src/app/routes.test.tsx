@@ -17,6 +17,14 @@ function paths(routes: RouteObject[], prefix = ''): string[] {
 }
 
 describe('createRoutes', () => {
+  it('registers the collection pages at the root, not under /local', () => {
+    const registered = paths(createRoutes(serverConfig));
+    expect(registered).toContain('collections');
+    expect(registered).toContain('collections/:id');
+    expect(registered).not.toContain('local/collections');
+    expect(SPA_CLIENT_ROUTES).toContain('/collections');
+  });
+
   it('registers the /local branch on a page that is not itself the dash', () => {
     const registered = paths(createRoutes(serverConfig));
     expect(registered).toContain('local');

@@ -12,7 +12,7 @@ import { MiniHero } from '../components/layout/MiniHero';
 import { DescriptionList } from '../components/common/DescriptionList';
 import { ApiLink } from '../components/common/ApiLink';
 import { ExternalLink } from '../components/common/ExternalLink';
-import { CopyButton } from '../components/common/CopyButton';
+import { Copyable } from '../components/common/Copyable';
 import { Icon } from '../components/common/Icon';
 import { instanceUrl } from '../services/instanceLinks';
 import { CITATIONS, PROJECT_LINKS } from '../services/projectLinks';
@@ -186,15 +186,12 @@ export function AboutPage() {
                   <span className="rg-muted">{citation.venue}</span>
                 </span>
                 <span className="rg-muted text-sm">{citation.note}</span>
-                <span className="flex items-center gap-2">
-                  <code className="rg-code rg-code--inline flex-1 overflow-x-auto">
-                    {citation.doi}
-                  </code>
-                  <CopyButton
-                    value={citation.plain}
-                    label={`Copy citation: ${citation.title}`}
-                  />
-                </span>
+                <Copyable
+                  value={citation.plain}
+                  label={`Copy citation: ${citation.title}`}
+                >
+                  <code className="rg-code rg-code--inline">{citation.doi}</code>
+                </Copyable>
               </li>
             ))}
           </ol>

@@ -1,5 +1,5 @@
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
 from typing import Annotated, Any, Generic, TypeVar
@@ -307,3 +307,40 @@ class GenomeDetail(GenomeListing):
     """A genome listing plus its FHR record from the store that owns it."""
 
     fhr: dict | None = None
+    #: Base URL (ending in ``/``) of the remote refget store holding the
+    #: genome's sequences; None for on-disk or unknown stores.
+    store_url: str | None = None
+
+
+@dataclass(frozen=True)
+class AliasEntry:
+    """One ``(namespace, alias)`` pair from a refget store's alias tables."""
+
+    namespace: str
+    alias: str
+
+
+@dataclass(frozen=True)
+class SequenceRow:
+    """One sequence of a genome's collection, as the genome page lists it."""
+
+    name: str
+    length: int
+    #: Bare GA4GH digest, without the ``SQ.`` prefix level 2 carries.
+    sha512t24u: str
+    md5: str | None = None
+    alphabet: str | None = None
+    description: str | None = None
+    aliases: list[AliasEntry] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class CollectionSequences:
+    """A genome's sequence collection, row by row, from the store that owns it."""
+
+    digest: str
+    store: str
+    #: Level-1 attribute digests (``names``, ``lengths``, ``sequences``, ...).
+    level1: dict[str, str]
+    sequences: list[SequenceRow]
+    collection_aliases: list[AliasEntry]

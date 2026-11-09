@@ -2,9 +2,10 @@
 
 from collections.abc import Iterable
 
-from sqlmodel import Session, delete, select
+from sqlmodel import Session, delete, func, select
 from sqlalchemy.orm import selectinload
 
+from refgenie.db.queries.search import RankPatterns, like_escape, padded_words
 from refgenie.db.tables import Species, SpeciesName
 from refgenie.utils.search import SearchOperator, build_search_condition
 
@@ -47,6 +48,31 @@ def taxon_ids_named(term: str, operator: SearchOperator):
         select(SpeciesName.taxon_id)
         .where(build_search_condition(SpeciesName.name, term, operator))
         .distinct()
+    )
+
+
+def taxon_name_ranks(patterns: RankPatterns, wanted: str):
+    """The subquery of each taxon's best :class:`MatchRank` over its names, as columns ``taxon_id`` and ``rank``.
+
+    Only taxa with a name holding every word of ``wanted`` (the term as
+    :func:`refgenie.utils.search.search_words` reads it) are listed. Each name
+    is padded once, in a materialized CTE, however many tests read it.
+    """
+    padded = (
+        select(SpeciesName.taxon_id, padded_words(SpeciesName.name).label("padded"))
+        .where(
+            *(
+                func.lower(SpeciesName.name).like(f"%{like_escape(word)}%", escape="\\")
+                for word in wanted.split()
+            )
+        )
+        .cte("species_name_padded")
+        .prefix_with("MATERIALIZED")
+    )
+    return (
+        select(padded.c.taxon_id, func.min(patterns.rank(padded.c.padded)).label("rank"))
+        .group_by(padded.c.taxon_id)
+        .subquery("species_rank")
     )
 
 

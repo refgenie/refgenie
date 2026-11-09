@@ -44,6 +44,15 @@ describe('ExternalLink', () => {
     );
     expect(container.querySelector('svg')).toBeNull();
   });
+
+  it.each(['javascript:alert(1)', ' JavaScript:alert(1)', 'data:text/html,hi', 'vbscript:x'])(
+    'renders %j as plain text, not a link',
+    (href) => {
+      const { container } = render(<ExternalLink href={href}>Bad</ExternalLink>);
+      expect(container.querySelector('a')).toBeNull();
+      expect(screen.getByText('Bad')).toBeInTheDocument();
+    },
+  );
 });
 
 describe('ApiLink', () => {

@@ -610,12 +610,16 @@ refgenie catalog-export [--dest PATH] [--https-prefix URL]
 | `--catalog-store-url` | Public root URL of that store. Required with `--catalog-store-name`. |
 | `--catalog-store-priority` | Priority of that store. Defaults to `30`. |
 
-The catalog carries the [store list](#store): every `remote` store in the
-database, plus the catalog store if one is named. `on_disk` stores are left
-out, since their URL is a path on this machine. A server that imports the
-catalog adds or updates those stores and disables any store the catalog does
-not list. The export fails if a genome belongs to a store it does not publish,
-because the server could not import that genome.
+The catalog carries the [store list](#store): every enabled `remote` store in
+the database, plus the catalog store if one is named. `on_disk` stores are left
+out, since their URL is a path on this machine. A disabled store is left out
+too, along with its genomes and their aliases, assets and download records; the
+export logs how many genomes it omitted for each such store. Enable the store
+again (`refgenie store apply`) and the next export carries them. A server that
+imports the catalog adds or updates the listed stores and disables any store
+the catalog does not list. The export fails if a genome belongs to any other
+store it does not publish (an `on_disk` store, or one missing from the store
+table), because the server could not import that genome.
 
 #### `catalog-prune`
 

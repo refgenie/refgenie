@@ -5,7 +5,8 @@ Files used to run the public refgenie server on AWS ECS.
 | File | What it is | Used by |
 |---|---|---|
 | `config.yaml` | PostgreSQL settings for the server. Each value is an environment variable (`$POSTGRES_HOST` and so on), filled in when the container starts. | The `Dockerfile` copies it to `/config.yaml` in the image. |
-| `task_defs/primary.json` | The ECS task definition: the container, its environment (`REFGENIE_CATALOG_URL`) and the secrets that supply the `POSTGRES_*` variables. | `.github/workflows/deploy-api.yml` fills in the new image and deploys it to the `refgenie-service-primary` service. |
+| `task_defs/primary.json` | The ECS task definition: the container, its environment (`REFGENIE_COLLECTIONS`, `REFGENIE_CATALOG_URL`) and the secrets that supply the `POSTGRES_*` variables. | `.github/workflows/deploy-api.yml` fills in the new image and deploys it to the `refgenie-service-primary` service. |
+| `collections.example.json` | An example value for `REFGENIE_COLLECTIONS`, the collection pages the web UI shows (each a branded slice of the catalog drawn from one or more stores). | Documentation only; a server test checks that it is valid. |
 
 Change `config.yaml` and the task definition together. Every variable that
 `config.yaml` names must be set in `task_defs/primary.json`, or the server

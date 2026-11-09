@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { screen } from '@testing-library/react';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { Route, Routes } from 'react-router-dom';
@@ -7,6 +7,18 @@ import { GenomePage } from './GenomePage';
 import { server } from '../test/server';
 import { API } from '../test/handlers';
 import { renderWithProviders } from '../test/renderWithProviders';
+import { genomeDetailFixture, genomesFixture } from '../test/fixtures';
+
+const flags = vi.hoisted(() => ({ fasta: true }));
+vi.mock('../services/config', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../services/config')>()),
+  fastaDownloadEnabled: () => flags.fasta,
+}));
+
+vi.mock('../services/fastaExport', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../services/fastaExport')>()),
+  loadCollection: async () => ({ seqTemplate: 'sequences/%s2/%s.seq', seqs: [] }),
+}));
 
 const DIGEST = '5cb5b9d2d1e2b5e5e2f0a3c4d5e6f708';
 
@@ -20,8 +32,8 @@ function renderGenome(route = `/genomes/${DIGEST}`) {
 }
 
 describe('GenomePage', () => {
-  it('renders the genome detail parity fields', async () => {
-    renderGenome();
+  it('renders the genome detail parity fields on the Details tab', async () => {
+    renderGenome(`/genomes/${DIGEST}?tab=details`);
     expect(
       await screen.findByRole('heading', { name: 'hg38', level: 1 }),
     ).toBeInTheDocument();
@@ -33,28 +45,125 @@ describe('GenomePage', () => {
       'href',
       'https://identifiers.org/taxonomy:9606',
     );
-    expect(screen.getByRole('link', { name: /^GCA_000001405\.15\b/ })).toHaveAttribute(
+    const accessions = screen.getAllByRole('link', { name: /^GCA_000001405\.15\b/ });
+    // Once in the head, once in Details.
+    expect(accessions).toHaveLength(2);
+    expect(accessions[1]).toHaveAttribute(
       'href',
       'https://www.ncbi.nlm.nih.gov/datasets/genome/GCA_000001405.15/',
     );
   });
 
   it("shows the species list's other names", async () => {
-    renderGenome();
-    const term = await screen.findByText('Other species names');
+    renderGenome(`/genomes/${DIGEST}?tab=details`);
+    await screen.findByRole('heading', { name: 'hg38', level: 1 });
+    const term = screen.getByText('Other species names');
     expect(term.nextElementSibling).toHaveTextContent('modern human');
   });
 
-  it('shows the FHR panel', async () => {
-    renderGenome();
-    expect(await screen.findByText('FHR metadata')).toBeInTheDocument();
+  it('shows the metadata panel on the Details tab', async () => {
+    renderGenome(`/genomes/${DIGEST}?tab=details`);
+    expect(
+      await screen.findByRole('heading', { name: 'Metadata' }),
+    ).toBeInTheDocument();
+  });
+
+  it('shows the collection digests on the Details tab, each copyable', async () => {
+    renderGenome(`/genomes/${DIGEST}?tab=details`);
+    const heading = await screen.findByRole('heading', { name: 'Collection digests' });
+    const section = heading.closest('section') as HTMLElement;
+    expect(within(section).getByText('names')).toBeInTheDocument();
+    expect(within(section).getByRole('button', { name: 'Copy names digest' })).toBeInTheDocument();
   });
 
   it('lists file-mode assets that have no archive record', async () => {
-    renderGenome();
+    renderGenome(`/genomes/${DIGEST}?tab=assets`);
     // fasta_index is serving_modes: ["file"] and has no tarball, but the table
     // is driven from /assets so it still gets a row.
     expect(await screen.findByText('FASTA index')).toBeInTheDocument();
+  });
+
+  it('offers the FASTA download on the Download tab, not in the head', async () => {
+    renderGenome();
+    await screen.findByRole('table', { name: 'Sequences' });
+    expect(screen.queryByRole('button', { name: /^Download/ })).toBeNull();
+    await userEvent.click(screen.getByRole('tab', { name: 'Download' }));
+    expect(
+      await screen.findByRole('button', { name: /^Download \.fa\.gz/ }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'All sequences' })).toBeChecked();
+    expect(screen.getByRole('tab', { name: 'refget CLI' })).toBeInTheDocument();
+  });
+
+  it('offers no FASTA download without a refget store', async () => {
+    server.use(
+      http.get(`${API}/genomes/:digest`, () =>
+        HttpResponse.json({ ...genomeDetailFixture, refget_store_url: null }),
+      ),
+    );
+    renderGenome(`/genomes/${DIGEST}?tab=download`);
+    await screen.findByRole('heading', { name: 'hg38', level: 1 });
+    expect(screen.queryByRole('button', { name: /^Download/ })).toBeNull();
+    for (const name of ['Download', 'Extract']) {
+      expect(screen.getByRole('tab', { name })).toBeDisabled();
+      expect(screen.getByRole('tab', { name })).toHaveAttribute(
+        'title',
+        'This genome has no refget store',
+      );
+    }
+  });
+
+  it('opens the Extract tab with the region in the URL', async () => {
+    renderGenome(`/genomes/${DIGEST}?tab=extract&region=extra:1-4`);
+    expect(await screen.findByRole('tab', { selected: true })).toHaveTextContent(
+      'Extract',
+    );
+    expect(await screen.findByLabelText('Region')).toHaveValue('extra:1-4');
+    expect(screen.getByRole('heading', { name: 'In your own code' })).toBeInTheDocument();
+  });
+
+  it('shows the whole description, with no More toggle', async () => {
+    renderGenome();
+    await screen.findByRole('heading', { name: 'hg38', level: 1 });
+    expect(screen.queryByRole('button', { name: /^(More|Less)$/ })).toBeNull();
+  });
+
+  it('shows key facts in the head', async () => {
+    renderGenome();
+    await screen.findByRole('heading', { name: 'hg38', level: 1 });
+    expect(await screen.findByText(/built assets?$/)).toBeInTheDocument();
+    expect(await screen.findByText(/sequences? · /)).toBeInTheDocument();
+  });
+
+  it('keeps the alias list off the head; Details has it, each with a copy button', async () => {
+    const names = ['hg38', 'GRCh38-a', 'GRCh38-b', 'hs38', 'hg38-x', 'hg38-y'];
+    server.use(
+      http.get(`${API}/aliases`, () =>
+        HttpResponse.json({
+          results: names.map((name) => ({ name, genome_digest: DIGEST })),
+          pagination: { page: 0, page_size: 100, total: names.length },
+        }),
+      ),
+    );
+    renderGenome();
+    await screen.findByRole('heading', { name: 'hg38', level: 1 });
+    expect(screen.queryByText(/Also known as/)).toBeNull();
+    expect(screen.queryByRole('link', { name: /more$/ })).toBeNull();
+    await userEvent.click(screen.getByRole('tab', { name: 'Details' }));
+    const table = await screen.findByRole('table', { name: 'Aliases' });
+    expect(within(table).getAllByRole('row')).toHaveLength(names.length + 2);
+    // The button sits in the alias's own cell.
+    const cell = within(table).getByText('hs38').closest('td') as HTMLElement;
+    expect(within(cell).getByRole('button', { name: 'Copy hs38' })).toBeInTheDocument();
+  });
+
+  it('lists genome and store aliases on the Details tab, with their source', async () => {
+    renderGenome(`/genomes/${DIGEST}?tab=details`);
+    const table = await screen.findByRole('table', { name: 'Aliases' });
+    expect(within(table).getByText('hg38').closest('tr')).toHaveTextContent('refgenie');
+    expect(
+      (await within(table).findByText('rCRSd_extra')).closest('tr'),
+    ).toHaveTextContent('refget store, refgenie');
   });
 
   it('renders 404 copy naming the digest', async () => {
@@ -107,5 +216,114 @@ describe('GenomePage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(await screen.findByText(/Not found/)).toBeInTheDocument();
     expect(calls).toBe(2);
+  });
+
+  it('opens on the Sequences tab when the genome has sequence data', async () => {
+    renderGenome();
+    const tabs = await screen.findAllByRole('tab');
+    expect(tabs.map((tab) => tab.textContent?.replace(/\d|,/g, ''))).toEqual([
+      'Sequences',
+      'Extract',
+      'Download',
+      'Assets',
+      'Compare',
+      'Details',
+    ]);
+    expect(await screen.findByRole('tab', { selected: true })).toHaveTextContent(
+      /^Sequences/,
+    );
+    expect(await screen.findByRole('table', { name: 'Sequences' })).toBeInTheDocument();
+  });
+
+  it('opens the tab named in the URL', async () => {
+    renderGenome(`/genomes/${DIGEST}?tab=sequences`);
+    expect(await screen.findByRole('tab', { selected: true })).toHaveTextContent(
+      /^Sequences/,
+    );
+    expect(await screen.findByRole('table', { name: 'Sequences' })).toBeInTheDocument();
+  });
+
+  it('moves between tabs with the arrow keys', async () => {
+    renderGenome(`/genomes/${DIGEST}?tab=details`);
+    const details = await screen.findByRole('tab', { name: 'Details' });
+    details.focus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(screen.getByRole('tab', { selected: true })).toHaveTextContent(/^Sequences/);
+    expect(document.activeElement).toBe(screen.getByRole('tab', { selected: true }));
+    await userEvent.keyboard('{ArrowLeft}{ArrowLeft}');
+    expect(screen.getByRole('tab', { selected: true })).toHaveTextContent(/^Compare/);
+  });
+
+  it('disables Sequences and Compare when the genome has no sequence data', async () => {
+    server.use(
+      http.get(
+        `${API}/genomes/:digest/sequences`,
+        () => new HttpResponse(null, { status: 404 }),
+      ),
+    );
+    renderGenome(`/genomes/${DIGEST}?tab=sequences`);
+    await waitFor(() =>
+      expect(screen.getByRole('tab', { name: /^Sequences/ })).toBeDisabled(),
+    );
+    expect(screen.getByRole('tab', { name: 'Compare' })).toBeDisabled();
+    // The URL asked for a tab that has nothing, so the default opens instead.
+    expect(screen.getByRole('tab', { selected: true })).toHaveTextContent(/^Assets/);
+    expect(screen.queryByText(/not available/)).not.toBeInTheDocument();
+  });
+
+  it('asks for genomes of the same taxon, and counts them on the Compare tab', async () => {
+    let query: URLSearchParams | undefined;
+    server.use(
+      http.get(`${API}/genomes`, ({ request }) => {
+        query = new URL(request.url).searchParams;
+        return HttpResponse.json(genomesFixture);
+      }),
+    );
+    renderGenome(`/genomes/${DIGEST}?tab=compare`);
+    const compare = await screen.findByRole('tab', { name: 'Compare 1' });
+    expect(compare).toBeEnabled();
+    expect(query?.get('taxon_id')).toBe('9606');
+  });
+
+  it('disables Compare when no other genome shares the species', async () => {
+    flags.fasta = false;
+    onTestFinished(() => {
+      flags.fasta = true;
+    });
+    server.use(
+      http.get(`${API}/genomes`, () =>
+        HttpResponse.json({
+          ...genomesFixture,
+          results: genomesFixture.results.filter((g) => g.digest === DIGEST),
+        }),
+      ),
+    );
+    renderGenome(`/genomes/${DIGEST}?tab=compare`);
+    await waitFor(() =>
+      expect(screen.getByRole('tab', { name: 'Compare' })).toBeDisabled(),
+    );
+    expect(screen.getByRole('tab', { name: 'Compare' })).toHaveAttribute(
+      'title',
+      'No other genomes of this species',
+    );
+  });
+
+  it('keeps Compare open for your own FASTA when no other genome shares the species', async () => {
+    server.use(
+      http.get(`${API}/genomes`, () =>
+        HttpResponse.json({
+          ...genomesFixture,
+          results: genomesFixture.results.filter((g) => g.digest === DIGEST),
+        }),
+      ),
+    );
+    renderGenome(`/genomes/${DIGEST}?tab=compare`);
+    expect(
+      await screen.findByRole('heading', { name: 'Compare your own FASTA' }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Compare' })).toBeEnabled();
+    expect(
+      await screen.findByText('No other genomes of this species to compare with.'),
+    ).toBeInTheDocument();
   });
 });

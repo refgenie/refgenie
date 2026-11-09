@@ -463,10 +463,7 @@ def get_genome_sequences(alias: str | None = None, digest: str | None = None) ->
         alias: Genome alias, a name like 'hg38'.
         digest: Genome digest, 32 characters.
     """
-    level2 = _get_refgenie().store_router.get_collection_level2(_genome_digest(alias, digest))
-    if level2 is None:
-        raise MissingGenomeError(genome=digest or alias)
-    return level2
+    return _get_refgenie().genome.level2(_genome_digest(alias, digest))
 
 
 @_tool
@@ -477,6 +474,10 @@ def compare_genomes(
     digest_b: str | None = None,
 ) -> dict:
     """Compare two genomes using seqcol comparison.
+
+    Returns the GA4GH seqcol comparison object: digests, attributes (a_only,
+    b_only, a_and_b) and array_elements (a_count, b_count, a_and_b_count,
+    a_and_b_same_order, each keyed by attribute).
 
     Name genome A with exactly one of alias_a or digest_a, and genome B with
     exactly one of alias_b or digest_b.

@@ -5,20 +5,27 @@ GenomeManager - handles genome CRUD operations.
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Sequence
 from typing import TYPE_CHECKING, Any, Protocol
 
 from rich.table import Table
 
 from refgenie.db.engine import Engine
 from refgenie.db.queries import genome as queries
-from refgenie.db.tables import Genome
-from refgenie.exceptions import FastaDigestMismatchError, MissingAliasError
+from refgenie.db.tables import Genome, StoreType
+from refgenie.exceptions import (
+    FastaDigestMismatchError,
+    MissingAliasError,
+    MissingGenomeError,
+    UnknownStoreError,
+    UnservedStoreError,
+)
 from refgenie.logger import logger
 from refgenie.managers.base import ResourceManager
 from refgenie.managers.sequence import open_remote_store
 from refgenie.models import GenomeAlias, GenomeDetail, GenomeDigest, GenomeListing, Page
 from refgenie.utils.search import Search, alias_digests_matching
+from refgenie.utils.seqcol import compare_level2, seqcol_level2
 from refgenie.utils.species_file import SpeciesEntry
 from refgenie.utils.tables import build_table
 from refgenie.managers.sources import RemoteGenomeSource
@@ -83,38 +90,6 @@ class GenomeCreationResult:
     genome_attrs: dict | None = None
 
 
-def _compare_level2(level2_a: dict, level2_b: dict, digest_a: str, digest_b: str) -> dict:
-    """Compare two level2 collection dicts locally using seqcol comparison logic."""
-    attributes = {}
-    array_elements = {}
-
-    for attr in ("names", "lengths", "sequences"):
-        arr_a = level2_a.get(attr, [])
-        arr_b = level2_b.get(attr, [])
-        set_a = set(arr_a) if isinstance(arr_a, list) else set()
-        set_b = set(arr_b) if isinstance(arr_b, list) else set()
-
-        attributes[attr] = {
-            "a_count": len(arr_a),
-            "b_count": len(arr_b),
-            "a_and_b": len(set_a & set_b),
-            "a_only": len(set_a - set_b),
-            "b_only": len(set_b - set_a),
-        }
-
-        array_elements[attr] = {
-            "a_and_b": sorted(set_a & set_b),
-            "a_only": sorted(set_a - set_b),
-            "b_only": sorted(set_b - set_a),
-        }
-
-    return {
-        "digests": {"a": digest_a, "b": digest_b},
-        "attributes": attributes,
-        "array_elements": array_elements,
-    }
-
-
 class GenomeStoreRouter(Protocol):
     """What genome reads need from the root's store router.
 
@@ -122,8 +97,34 @@ class GenomeStoreRouter(Protocol):
     structurally so this manager does not import up into ``refgenie.core``.
     """
 
-    def store_for_genome(self, genome_digest: str, store_name: str | None = None) -> Any: ...
-    def get_fhr_metadata(self, genome_digest: str, store_name: str | None = None) -> Any: ...
+    names: list[str]
+
+    def store_for_genome(self, genome_digest: str, store_name: str | None) -> Any: ...
+    def get_fhr_metadata(self, genome_digest: str, store_name: str | None) -> Any: ...
+    def get_collection_sequences(self, genome_digest: str, store_name: str | None) -> Any: ...
+    def serves(self, store_name: str | None) -> bool: ...
+    def served_store_names(self) -> tuple[list[str], bool] | None: ...
+    def collection_digests(self, name: str) -> frozenset[str]: ...
+    def store_configs(self) -> list[Any]: ...
+
+
+def _remote_store_url(router: GenomeStoreRouter, genome: Genome) -> str | None:
+    """The base URL of the remote store holding ``genome``, ending in ``/``.
+
+    None when the genome is in an on-disk store (its own ``local`` store, or
+    the one store of local mode).
+
+    Raises:
+        UnservedStoreError: If the router does not serve the genome's store.
+    """
+    if not router.serves(genome.store_name):
+        raise UnservedStoreError(genome.digest, genome.store_name)
+    for row in router.store_configs():
+        if row.name == genome.store_name:
+            if row.type != StoreType.remote:
+                return None
+            return row.url if row.url.endswith("/") else row.url + "/"
+    return None
 
 
 class GenomeManager(ResourceManager):
@@ -346,6 +347,7 @@ class GenomeManager(ResourceManager):
         search: Search | None = None,
         has_assets: bool | None = None,
         taxon_id: int | None = None,
+        stores: Sequence[str] | None = None,
         offset: int,
         limit: int,
     ) -> Page[GenomeListing]:
@@ -353,6 +355,7 @@ class GenomeManager(ResourceManager):
         One page of genomes with their aliases, asset counts and species rows.
 
         Genomes with assets come first, then by species name, then digest.
+        With a search term, better matches come first (``MatchRank``).
         Aliases come from the mode-selected alias backend (the RefgetStore in
         local mode), read for the whole page at once, and so does an
         ``alias`` filter and the ``aliases`` search field.
@@ -364,12 +367,26 @@ class GenomeManager(ResourceManager):
             search: Match the genome search fields (``queries.SEARCH_FIELDS``).
             has_assets: Only genomes with (True) or without (False) assets.
             taxon_id: Only genomes of this NCBI taxon.
+            stores: Only genomes present in any of these stores. This is store
+                membership, not ownership: a genome held by several stores
+                matches each of them.
             offset: Rows to skip.
             limit: Most rows to return.
 
         Raises:
             ValueError: If the search names a field that is not searchable.
+            UnknownStoreError: If ``stores`` names a store the router lacks.
         """
+        router = self._store_router_getter()
+        served = router.served_store_names()
+        digest_in: set[str] | None = None
+        if stores:
+            digest_in = set()
+            for name in stores:
+                try:
+                    digest_in |= router.collection_digests(name)
+                except KeyError:
+                    raise UnknownStoreError(name, router.names) from None
         alias_mgr = self._alias_manager_getter()
         if alias is not None:
             try:
@@ -379,7 +396,7 @@ class GenomeManager(ResourceManager):
             if digest is not None and digest != resolved:
                 return Page(items=[], offset=offset, limit=limit, total=0)
             digest = resolved
-        alias_matches = []
+        alias_matches = {}
         if queries.searches_aliases(search):
             alias_matches = alias_digests_matching(alias_mgr, search.term.strip(), search.operator)
         with self._database_session as session:
@@ -390,6 +407,8 @@ class GenomeManager(ResourceManager):
                 alias_matches=alias_matches,
                 has_assets=has_assets,
                 taxon_id=taxon_id,
+                digest_in=digest_in,
+                served_stores=served,
                 offset=offset,
                 limit=limit,
             )
@@ -421,15 +440,18 @@ class GenomeManager(ResourceManager):
         with self._database_session as session:
             genome = queries.get(session, digest)
             count = queries.count_asset_groups(session, [digest]).get(digest, 0)
+        router = self._store_router_getter()
+        store_url = _remote_store_url(router, genome)
         aliases = self._alias_manager_getter().get_for_genomes([digest]).get(digest, [])
         species = self._species.get(genome.taxon_id) if genome.taxon_id is not None else None
-        fhr = self._store_router_getter().get_fhr_metadata(digest, store_name=genome.store_name)
+        fhr = router.get_fhr_metadata(digest, genome.store_name)
         return GenomeDetail(
             genome=genome,
             aliases=aliases,
             asset_count=count,
             species=species,
             fhr=fhr.to_dict() if fhr is not None else None,
+            store_url=store_url,
         )
 
     @update_scope
@@ -499,6 +521,38 @@ class GenomeManager(ResourceManager):
         """The store that owns ``genome``, with its collection loaded."""
         return self._store_router_getter().store_for_genome(genome.digest, genome.store_name)
 
+    def get_served(self, digest: GenomeDigest) -> Genome:
+        """The genome, if this refgenie serves the store it lives in.
+
+        Raises:
+            MissingGenomeError: If there is no such genome.
+            UnservedStoreError: If its store is not served here.
+        """
+        genome = self.get(digest)
+        if not self._store_router_getter().serves(genome.store_name):
+            raise UnservedStoreError(digest, genome.store_name)
+        return genome
+
+    def level2(self, digest: GenomeDigest) -> dict:
+        """A genome's level-2 collection, from the store its ``store_name`` names.
+
+        Raises:
+            MissingGenomeError: If there is no such genome, its store is not
+                served, or the store lacks the collection.
+        """
+        genome = self.get_served(digest)
+        return self._owning_store(genome).get_collection_level2(digest)
+
+    def sequences(self, digest: GenomeDigest):
+        """A genome's sequences with metadata and aliases (a ``CollectionSequences``).
+
+        Raises:
+            MissingGenomeError: If there is no such genome, its store is not
+                served, or the store lacks the collection.
+        """
+        genome = self.get_served(digest)
+        return self._store_router_getter().get_collection_sequences(digest, genome.store_name)
+
     def get_metadata(self, digest: GenomeDigest) -> dict:
         """Get metadata for a genome from the RefgetStore that owns it."""
         genome = self.get(digest)
@@ -523,43 +577,40 @@ class GenomeManager(ResourceManager):
         return result
 
     def compare(self, digest_a: GenomeDigest, digest_b: GenomeDigest) -> dict:
-        """Compare two genomes by their digests."""
+        """Compare two genomes by their digests.
+
+        Returns the GA4GH seqcol comparison object (``digests``, ``attributes``,
+        ``array_elements``), wherever the two genomes live. Every path builds
+        each side with :func:`refgenie.utils.seqcol.seqcol_level2`, so the
+        server, the CLI and MCP all return the same object.
+        """
         genome_a = self.get(digest_a)
         genome_b = self.get(digest_b)
-
-        if genome_a.remote_url or genome_b.remote_url:
-            return self._compare_with_remote(genome_a, genome_b)
-        # Each genome may live in a different store of the router; the store's
-        # own compare needs both collections in the same store.
-        store_a = self._owning_store(genome_a)
-        store_b = self._owning_store(genome_b)
-        if store_a is store_b:
-            return store_a.compare(digest_a, digest_b)
-        return _compare_level2(
-            store_a.get_collection_level2(digest_a),
-            store_b.get_collection_level2(digest_b),
-            digest_a,
-            digest_b,
+        return compare_level2(
+            self._compare_side(genome_a), self._compare_side(genome_b), digest_a, digest_b
         )
 
-    def _compare_with_remote(self, genome_a: Genome, genome_b: Genome) -> dict:
-        """Compare genomes where at least one is remote."""
-        if genome_a.remote_url and genome_a.remote_url == genome_b.remote_url:
-            with open_remote_store(genome_a.remote_url) as remote_store:
-                return remote_store.compare(genome_a.digest, genome_b.digest)
-        level2_a, level2_b = (
-            self._get_remote_level2(g.remote_url, g.digest)
-            if g.remote_url
-            else self._owning_store(g).get_collection_level2(g.digest)
-            for g in (genome_a, genome_b)
-        )
-        return _compare_level2(level2_a, level2_b, genome_a.digest, genome_b.digest)
+    def _compare_side(self, genome: Genome) -> dict:
+        """One side of a compare: from the genome's store, else from its ``remote_url``.
+
+        The remote is read only when the store that ``store_name`` picks does
+        not hold the collection (a metadata-only pull), never for a store this
+        refgenie does not serve.
+        """
+        try:
+            return seqcol_level2(self._owning_store(genome), genome.digest)
+        except UnservedStoreError:
+            raise
+        except MissingGenomeError:
+            if not genome.remote_url:
+                raise
+        return self._get_remote_level2(genome.remote_url, genome.digest)
 
     @staticmethod
     def _get_remote_level2(remote_url: str, digest: str) -> dict:
         """Fetch level2 data from a remote RefgetStore."""
         with open_remote_store(remote_url) as remote_store:
-            return remote_store.get_collection_level2(digest)
+            return seqcol_level2(remote_store, digest)
 
     @update_scope
     def initialize_genome(

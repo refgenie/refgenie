@@ -85,7 +85,7 @@ class TestRemoteStore:
             def __init__(self, store):
                 self.default_store = store
 
-            def get_store(self, name):
+            def store_for_genome(self, genome_digest, store_name):
                 return self.default_store
 
         r._store_router = _FakeRouter(mock_store)

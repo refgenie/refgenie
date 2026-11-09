@@ -117,6 +117,8 @@ All paths are relative to the origin. `{braces}` are path parameters.
 | `GET /docs` | Swagger UI |
 | `GET /v4/genomes` | page of genomes, most assets first |
 | `GET /v4/genomes/{digest}` | one genome, by **digest only** |
+| `GET /v4/genomes/{digest}/sequences` | the genome's sequences: names, lengths, sequence digests, aliases |
+| `GET /v4/genomes/{digest}/compare/{other}` | GA4GH sequence-collection comparison of two genomes |
 | `GET /v4/aliases` | page of `{name, genome_digest}` |
 | `GET /v4/aliases/{name}` | **resolve an alias to a digest**, plus its FHR metadata and level-2 sequence collection |
 | `GET /v4/asset_groups` | page of asset groups |
