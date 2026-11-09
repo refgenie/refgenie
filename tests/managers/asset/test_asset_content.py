@@ -33,6 +33,7 @@ from tests.support.factories import (
     ASSET,
     GENOME,
     GROUP,
+    add_asset_from_files,
     build_rcrsd,
     make_built_refgenie,
     make_engine,
@@ -904,6 +905,35 @@ class TestAssetNameContent:
         assert "/data/" in content_path
         assert alias_path != content_path
         assert Path(alias_path).read_bytes() == Path(content_path).read_bytes()
+
+    def test_seek_force_exists_accepts_prefix_seek_key(self, refgenie_fs, fixtures_path):
+        """A prefix seek key exists when files start with it, though the prefix is not a file (#296)."""
+        r = refgenie_fs
+        r.asset_class.add(fixtures_path / "bowtie2_index_asset_class.yaml")
+        add_asset_from_files(
+            r,
+            rel_dir="data/bt2_payload",
+            files=["{genome}.1.bt2", "{genome}.rev.1.bt2"],
+            asset_class_name="bowtie2_index",
+            asset_group_name="bowtie2_index",
+            asset_name="default",
+        )
+        parsed = r.parse_asset_registry_path("rCRSd/bowtie2_index")
+        alias_path = r.asset.seek_components(parsed, force_exists=True)
+        assert alias_path == r.asset.seek_components(parsed)
+        assert not Path(alias_path).exists()  # the prefix itself is not a file
+        r.asset.seek(
+            r.alias.resolve("rCRSd"),
+            "bowtie2_index",
+            "default",
+            force_exists=True,
+            abs_path=True,
+        )
+
+        for f in Path(alias_path).parent.iterdir():
+            f.unlink()
+        with pytest.raises(FileNotFoundError):
+            r.asset.seek_components(parsed, force_exists=True)
 
     def test_supplied_digest_becomes_the_asset_identity(
         self, refgenie_built_versioned, genome_digest

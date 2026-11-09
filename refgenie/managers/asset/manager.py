@@ -19,7 +19,7 @@ from rich.table import Table
 from refgenie.db.engine import Engine
 from refgenie.db.queries import asset as queries
 from refgenie.db.queries import asset_group as group_queries
-from refgenie.db.tables import Asset, is_path_type
+from refgenie.db.tables import Asset, SeekKeyType, is_path_type, prefix_matches
 from refgenie.exceptions import MissingAssetError
 from refgenie.logger import logger
 from refgenie.models import AssetRegistryPathComponents, GenomeAlias, GenomeDigest, Page
@@ -620,6 +620,11 @@ class AssetManager(ResourceManager):
                 / rewritten_value
             ).absolute()
 
-        if force_exists and not seek_key_path.exists():
-            raise FileNotFoundError(f"Seek key path not found: {seek_key_path}")
+        if force_exists:
+            if seek_key.type == SeekKeyType.prefix:
+                found = bool(prefix_matches(seek_key_path))
+            else:
+                found = seek_key_path.exists()
+            if not found:
+                raise FileNotFoundError(f"Seek key path not found: {seek_key_path}")
         return str(seek_key_path)
