@@ -42,7 +42,7 @@ export const CITATIONS: readonly Citation[] = [
     title: 'Identity and compatibility of reference genome resources',
     venue: 'NAR Genomics and Bioinformatics 3(2)',
     doi: 'https://doi.org/10.1093/nargab/lqab036',
-    note: 'Sequence-derived genome identifiers and provenance tracking — the work behind the digests this interface shows.',
+    note: 'Sequence-derived genome identifiers and provenance tracking, the work behind the digests this interface shows.',
     plain:
       'Stolarczyk M, Xue B, Sheffield NC. Identity and compatibility of ' +
       'reference genome resources. NAR Genomics and Bioinformatics. 2021;3(2). ' +

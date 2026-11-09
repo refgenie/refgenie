@@ -103,8 +103,8 @@ export default function CollectionTree({ genomes }: { genomes: GenomeResponse[] 
           onMatchStats={noop}
         />
         {selected && (
-          <aside className="rg-tree__detail rg-card">
-            <div className="rg-card__body flex flex-col gap-2">
+          <aside className="rg-tree__detail">
+            <div className="flex flex-col gap-2">
               <div className="flex items-start justify-between gap-2">
                 <h3 className="font-semibold">{selected}</h3>
                 <button

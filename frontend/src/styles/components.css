@@ -241,40 +241,47 @@
   color: rgb(var(--color-text-inverse));
 }
 
-/* === CARD / PANEL === */
+/* === FLAT GROUPS ===
+   No boxed cards: content is grouped by headings and thin divider lines. */
 
-.rg-card {
-  border: var(--border-width) solid rgb(var(--color-border));
-  border-radius: var(--radius-lg);
-  background: rgb(var(--color-background));
+/* A headline number over its label's line, e.g. "Genomes 605". */
+.rg-stat {
+  min-width: 0;
+  padding-top: var(--space-3);
+  border-top: var(--border-width) solid rgb(var(--color-border));
 }
 
-.rg-card__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding: var(--space-4);
+/* A list whose items are separated by thin lines, top and bottom. */
+.rg-divided-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   border-bottom: var(--border-width) solid rgb(var(--color-border));
-  background: rgb(var(--color-surface));
-  border-top-left-radius: var(--radius-lg);
-  border-top-right-radius: var(--radius-lg);
 }
 
-.rg-card__title {
+.rg-divided-list > li {
+  padding-block: var(--space-4);
+  border-top: var(--border-width) solid rgb(var(--color-border));
+}
+
+/* A collapsible section: a heading-like summary between two thin lines. */
+.rg-flat-details {
+  border-block: var(--border-width) solid rgb(var(--color-border));
+}
+
+.rg-flat-details__summary {
+  padding-block: var(--space-3);
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
+  cursor: pointer;
 }
 
-.rg-card__body {
-  padding: var(--space-4);
+.rg-flat-details[open] > .rg-flat-details__summary {
+  margin-bottom: var(--space-2);
 }
 
-.rg-card__footer {
-  padding: var(--space-4);
-  border-top: var(--border-width) solid rgb(var(--color-border));
-  color: rgb(var(--color-text-muted));
-  font-size: var(--font-size-sm);
+.rg-flat-details[open] {
+  padding-bottom: var(--space-4);
 }
 
 /* === TABLE === */
@@ -329,6 +336,85 @@
 .rg-table__cell--numeric {
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+/* Long free-text values (aliases, descriptions) wrap anywhere instead of
+   widening their column. */
+.rg-table__cell--wrap {
+  overflow-wrap: anywhere;
+}
+
+/* A short secondary line under a cell's main value. */
+.rg-table__sub {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-normal);
+  color: rgb(var(--color-text-muted));
+  overflow-wrap: anywhere;
+}
+
+/* Phones: each row becomes a block, the first cell its title and every other
+   cell a "label: value" line, so wide tables never scroll sideways. Cells
+   carry their column header in data-label. */
+@media (max-width: 639px) {
+  .rg-table--stack,
+  .rg-table--stack > tbody,
+  .rg-table--stack .rg-table__row {
+    display: block;
+  }
+
+  .rg-table--stack > thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .rg-table--stack .rg-table__row {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .rg-table--stack .rg-table__row:first-child {
+    border-top: 0;
+  }
+
+  .rg-table--stack .rg-table__cell,
+  .rg-table--compact.rg-table--stack .rg-table__cell {
+    display: block;
+    position: relative;
+    min-height: 1.5em;
+    padding: 2px 0 2px 7.5rem;
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+
+  .rg-table--stack .rg-table__cell::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 0;
+    top: 2px;
+    width: 7rem;
+    color: rgb(var(--color-text-muted));
+    font-size: var(--font-size-xs);
+    line-height: 1.6;
+    overflow-wrap: normal;
+  }
+
+  .rg-table--stack .rg-table__cell:not([data-label]) {
+    padding-left: 0;
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .rg-table--stack .rg-table__cell:not([data-label])::before {
+    content: none;
+  }
+
+  .rg-table--stack .rg-table__cell:empty {
+    display: none;
+  }
 }
 
 /* === BADGE === */
@@ -1430,7 +1516,9 @@
   /* Fixed height only: this is the full wordmark, much wider than tall, so
      a matching fixed width would distort it. Width follows its own ratio. */
   width: auto;
+  max-width: 100%;
   height: var(--hero-logo-size);
+  object-fit: contain;
 }
 
 .rg-hero__lede {
@@ -1443,10 +1531,9 @@
 
 /* Layout comes from utilities; the block owns the card surface. */
 .rg-step {
-  padding: var(--space-4);
-  border: var(--border-width) solid rgb(var(--color-border));
-  border-radius: var(--radius-md);
-  background: rgb(var(--color-surface));
+  min-width: 0;
+  padding-top: var(--space-4);
+  border-top: var(--border-width) solid rgb(var(--color-border));
 }
 
 .rg-step__index {
@@ -1560,7 +1647,11 @@
   top: var(--space-3);
   left: var(--space-3);
   width: var(--tree-detail-width);
-  box-shadow: var(--shadow-md);
+  /* It floats over the tree, so it needs a background and an edge. */
+  padding: var(--space-3) var(--space-4);
+  background: rgb(var(--color-background));
+  border: var(--border-width) solid rgb(var(--color-border));
+  border-radius: var(--radius-sm);
 }
 
 @media (max-width: 1023px) {

@@ -57,7 +57,7 @@ export function ComparisonResult({
         ))}
       </div>
       <div className="rg-table__wrap">
-        <table className="rg-table rg-table--compact">
+        <table className="rg-table rg-table--compact rg-table--stack">
           <caption className="sr-only">Comparison by attribute</caption>
           <thead className="rg-table__head">
             <tr>
@@ -84,20 +84,20 @@ export function ComparisonResult({
           <tbody>
             {comparison.attributes.a_and_b.map((attribute) => (
               <tr key={attribute} className="rg-table__row">
-                <td className="rg-table__cell">{attribute}</td>
-                <td className="rg-table__cell rg-table__cell--numeric">
+                <td className="rg-table__cell rg-table__cell--wrap">{attribute}</td>
+                <td className="rg-table__cell rg-table__cell--numeric" data-label="In this genome">
                   {counts.a_count[attribute] ?? 'NA'}
                 </td>
-                <td className="rg-table__cell rg-table__cell--numeric">
+                <td className="rg-table__cell rg-table__cell--numeric" data-label={otherColumn}>
                   {counts.b_count[attribute] ?? 'NA'}
                 </td>
-                <td className="rg-table__cell rg-table__cell--numeric">
+                <td className="rg-table__cell rg-table__cell--numeric" data-label="Shared">
                   {counts.a_and_b_count[attribute] ?? 'NA'}
                 </td>
-                <td className="rg-table__cell">
+                <td className="rg-table__cell" data-label="Same order">
                   {orderLabel(counts.a_and_b_same_order[attribute])}
                 </td>
-                <td className="rg-table__cell">
+                <td className="rg-table__cell" data-label="Interpretation">
                   {interpretAttribute(comparison, attribute, otherName)}
                 </td>
               </tr>

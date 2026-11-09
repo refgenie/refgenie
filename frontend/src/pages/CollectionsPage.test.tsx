@@ -8,7 +8,7 @@ import { renderWithProviders, serverConfig } from '../test/renderWithProviders';
 import { vgpCollection } from '../test/collectionFixtures';
 
 describe('CollectionsPage', () => {
-  it('shows one card per collection with its genome count', async () => {
+  it('shows one row per collection with its genome and store counts', async () => {
     server.use(
       http.get(`${API}/genomes`, ({ request }) => {
         const params = new URL(request.url).searchParams;
@@ -33,8 +33,8 @@ describe('CollectionsPage', () => {
       'href',
       '/collections/vgp',
     );
-    expect(await screen.findByText('605 genomes')).toBeInTheDocument();
-    expect(await screen.findByText('0 genomes')).toBeInTheDocument();
+    expect(await screen.findByText('605 genomes · 1 store')).toBeInTheDocument();
+    expect(await screen.findByText('0 genomes · 1 store')).toBeInTheDocument();
   });
 
   it('shows an empty state with no collections', () => {

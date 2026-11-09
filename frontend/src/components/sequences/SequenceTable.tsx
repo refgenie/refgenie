@@ -104,7 +104,7 @@ export function SequenceTable({ sequences, extractHref }: SequenceTableProps) {
         <EmptyState query={query} message="No sequences." onClearSearch={() => onQuery('')} />
       ) : (
         <div className="rg-table__wrap">
-          <table className="rg-table rg-table--compact">
+          <table className="rg-table rg-table--compact rg-table--stack">
             <caption className="sr-only">Sequences</caption>
             <thead className="rg-table__head">
               <tr>
@@ -133,23 +133,23 @@ export function SequenceTable({ sequences, extractHref }: SequenceTableProps) {
               {paged.map((row, index) => (
                 <tr key={`${row.sha512t24u}-${row.name}-${index}`} className="rg-table__row">
                   <td className="rg-table__cell">{row.name}</td>
-                  <td className="rg-table__cell rg-table__cell--numeric">
+                  <td className="rg-table__cell rg-table__cell--numeric" data-label="Length">
                     {row.length.toLocaleString()}
                   </td>
-                  <td className="rg-table__cell">
+                  <td className="rg-table__cell" data-label="Aliases">
                     <AliasCell row={row} />
                   </td>
-                  <td className="rg-table__cell">
+                  <td className="rg-table__cell" data-label="SHA-512/24u">
                     <DigestChip digest={row.sha512t24u} />
                   </td>
-                  <td className="rg-table__cell">
+                  <td className="rg-table__cell" data-label="MD5">
                     <DigestChip digest={row.md5} />
                   </td>
-                  <td className="rg-table__cell">
+                  <td className="rg-table__cell" data-label="Alphabet">
                     {row.alphabet ?? <span className="rg-muted">NA</span>}
                   </td>
                   {extractHref && (
-                    <td className="rg-table__cell">
+                    <td className="rg-table__cell" data-label="">
                       {isExtractable(row.alphabet) && (
                         <Link
                           className="rg-link text-sm"

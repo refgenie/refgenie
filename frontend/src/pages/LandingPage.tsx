@@ -143,7 +143,7 @@ export function LandingPage() {
         <h2 className="text-xl font-semibold">Use it with an AI assistant</h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="rg-card rg-card__body flex flex-col gap-2">
+          <div className="rg-step flex flex-col gap-2">
             <span className="font-semibold">Connect the MCP server</span>
             <span className="rg-muted text-sm">
               {isLocal
@@ -153,7 +153,7 @@ export function LandingPage() {
             <Command value={mcpCommand} />
           </div>
 
-          <div className="rg-card rg-card__body flex flex-col gap-2">
+          <div className="rg-step flex flex-col gap-2">
             <span className="font-semibold">Or give it the API guide</span>
             <span className="rg-muted text-sm">
               {/* Plain <a>: /SKILL.md is a static file, not a client route. */}

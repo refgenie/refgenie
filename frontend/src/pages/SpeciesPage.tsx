@@ -67,7 +67,7 @@ export function SpeciesPage() {
       <SearchBox
         value={state.q}
         onChange={actions.setQuery}
-        placeholder="Search species — any name, or taxon ID…"
+        placeholder="Search species by any name or taxon ID…"
         label="Search species"
       />
 

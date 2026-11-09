@@ -82,9 +82,9 @@ export function AboutPage() {
         documentTitle="About"
         lede={
           <>
-            Refgenie the open-source project — its documentation, its papers, its source
-            — and the particular instance serving you this page, with the version it
-            runs and the operations it will let you perform.
+            Refgenie the open-source project (its documentation, its papers, its source)
+            and the particular instance serving you this page, with the version it runs
+            and the operations it will let you perform.
           </>
         }
         actions={
@@ -174,12 +174,9 @@ export function AboutPage() {
           <p className="rg-muted text-sm">
             If refgenie helped with work you are publishing, please cite it.
           </p>
-          <ol className="flex flex-col gap-4">
+          <ol className="rg-divided-list">
             {CITATIONS.map((citation) => (
-              <li
-                className="rg-card rg-card__body flex flex-col gap-2"
-                key={citation.doi}
-              >
+              <li className="flex flex-col gap-2" key={citation.doi}>
                 <span>
                   {citation.authors} ({citation.year}).{' '}
                   <ExternalLink href={citation.doi}>{citation.title}</ExternalLink>.{' '}

@@ -7,17 +7,89 @@
     "note": "An independent refgenie view of publicly available assemblies. Not run by the Vertebrate Genomes Project.",
     "accent_color": "#2b7a78",
     "logo_url": null,
-    "stores": ["vgp"],
+    "stores": [
+      "vgp"
+    ],
     "links": [
-      {"label": "Vertebrate Genomes Project", "url": "https://vertebrategenomesproject.org/"},
-      {"label": "GenomeArk", "url": "https://www.genomeark.org/"},
-      {"label": "NCBI BioProject PRJNA489243", "url": "https://www.ncbi.nlm.nih.gov/bioproject/PRJNA489243"},
-      {"label": "UCSC VGP assembly hub", "url": "https://hgdownload.soe.ucsc.edu/hubs/VGP/"}
+      {
+        "label": "Vertebrate Genomes Project",
+        "url": "https://vertebrategenomesproject.org/"
+      },
+      {
+        "label": "GenomeArk",
+        "url": "https://www.genomeark.org/"
+      },
+      {
+        "label": "NCBI BioProject PRJNA489243",
+        "url": "https://www.ncbi.nlm.nih.gov/bioproject/PRJNA489243"
+      },
+      {
+        "label": "UCSC VGP assembly hub",
+        "url": "https://hgdownload.soe.ucsc.edu/hubs/VGP/"
+      }
     ],
     "genome_links": [
-      {"label": "NCBI", "template": "https://www.ncbi.nlm.nih.gov/datasets/genome/{assembly_accession}/"},
-      {"label": "GenomeArk", "template": "https://www.genomeark.org/genomeark-all/{species_underscored}.html"}
+      {
+        "label": "NCBI",
+        "template": "https://www.ncbi.nlm.nih.gov/datasets/genome/{assembly_accession}/"
+      },
+      {
+        "label": "GenomeArk",
+        "template": "https://www.genomeark.org/genomeark-all/{species_underscored}.html"
+      }
     ],
-    "columns": ["assembly_accession", "haplotype", "assembly_level"]
+    "columns": [
+      "assembly_accession",
+      "haplotype",
+      "assembly_level"
+    ]
+  },
+  {
+    "id": "jungle",
+    "name": "Reference genome jungle",
+    "short_name": "Jungle",
+    "blurb": "Human and mouse reference genomes collected for the reference genome jungle dataset: 60 Homo sapiens and 36 Mus musculus assemblies from UCSC, Ensembl, NCBI, GENCODE, iGenomes, refgenie and other sources. Many are near-copies of one another, so this collection shows how assemblies that share a name can differ.",
+    "accent_color": "#7a5c2b",
+    "logo_url": null,
+    "stores": [
+      "jungle"
+    ],
+    "links": [
+      {
+        "label": "Source list on PEPhub",
+        "url": "https://pephub.databio.org/donaldcampbelljr/human_mouse_fasta_brickyard"
+      }
+    ],
+    "genome_links": [],
+    "columns": [
+      "assembly_source",
+      "assembly_accession"
+    ]
+  },
+  {
+    "id": "igenomes",
+    "name": "AWS iGenomes",
+    "short_name": "iGenomes",
+    "blurb": "The AWS iGenomes reference genomes used by nf-core and Illumina pipelines: about 130 builds for 31 organisms, from Ensembl, NCBI, UCSC, GATK and Illumina. Each build is identified here by a sequence collection digest, with any refgenie assets built for it.",
+    "note": "An independent refgenie view of the public iGenomes FASTA files.",
+    "accent_color": "#2b4f7a",
+    "logo_url": null,
+    "stores": [
+      "igenomes"
+    ],
+    "links": [
+      {
+        "label": "AWS iGenomes",
+        "url": "https://github.com/ewels/AWS-iGenomes"
+      },
+      {
+        "label": "nf-core iGenomes config",
+        "url": "https://github.com/nf-core/rnaseq/blob/master/conf/igenomes.config"
+      }
+    ],
+    "genome_links": [],
+    "columns": [
+      "assembly_source"
+    ]
   }
 ]

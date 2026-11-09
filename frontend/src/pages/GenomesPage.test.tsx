@@ -50,11 +50,11 @@ describe('GenomesPage', () => {
     expect(screen.getByText('NCBI · GCA_000001405.15')).toBeInTheDocument();
   });
 
-  it('shows one common name beside the scientific name', async () => {
+  it('shows one common name under the scientific name', async () => {
     renderWithProviders(<GenomesPage />);
     const row = await screen.findByRole('row', { name: /hg38/ });
-    expect(within(row).getByText('human')).toHaveClass('rg-muted');
-    expect(row).toHaveTextContent('Homo sapiens human');
+    expect(within(row).getByText('human')).toHaveClass('rg-table__sub');
+    expect(row).toHaveTextContent('Homo sapienshuman');
   });
 
   it('shows genomes with no built assets by default', async () => {

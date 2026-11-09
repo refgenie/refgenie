@@ -99,11 +99,9 @@ export function FhrPanel({ fhr, flat = false }: FhrPanelProps) {
   }
 
   return (
-    <details className="rg-card">
-      <summary className="rg-card__header cursor-pointer">
-        <span className="rg-card__title">Metadata</span>
-      </summary>
-      <div className="rg-card__body flex flex-col gap-6">{body}</div>
+    <details className="rg-flat-details">
+      <summary className="rg-flat-details__summary">Metadata</summary>
+      <div className="flex flex-col gap-6">{body}</div>
     </details>
   );
 }

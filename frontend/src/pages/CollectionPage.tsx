@@ -5,7 +5,10 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { CollectionHero } from '../components/collections/CollectionHero';
 import { CollectionStats } from '../components/collections/CollectionStats';
 import { CollectionGenomeDetail } from '../components/collections/CollectionGenomeDetail';
-import { collectionColumns } from '../components/collections/collectionColumns';
+import {
+  COLLECTION_HIDDEN_COLUMNS,
+  collectionColumns,
+} from '../components/collections/collectionColumns';
 import { useAccent } from '../components/collections/useAccent';
 import { GenomeTable } from '../components/genomes/GenomeTable';
 import { Pagination } from '../components/common/Pagination';
@@ -163,6 +166,7 @@ function CollectionView({ id }: { id: string }) {
           genomes={pageRows}
           query={q || undefined}
           extraColumns={extraColumns}
+          hideColumns={COLLECTION_HIDDEN_COLUMNS}
           loading={query.isPending}
           error={query.error}
           onRetry={() => query.refetch()}

@@ -54,7 +54,7 @@ export function PullPage() {
         documentTitle="Pull"
         lede={
           <>
-            A remote page handed off this pull request. Nothing has been submitted yet — review
+            A remote page handed off this pull request. Nothing has been submitted yet. Review
             it, then pull.
           </>
         }

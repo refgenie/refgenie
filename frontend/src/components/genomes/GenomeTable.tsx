@@ -16,7 +16,12 @@ export interface GenomeTableProps {
   query?: string;
   /** Appended after the built-in columns (the bridge's local-presence badge). */
   extraColumns?: Array<Column<GenomeResponse>>;
+  /** Built-in column keys to leave out, when extraColumns cover the same data. */
+  hideColumns?: string[];
 }
+
+/** How many other aliases show under the genome name before "+N more". */
+const OTHER_ALIASES_SHOWN = 2;
 
 export function GenomeTable({
   genomes,
@@ -26,26 +31,33 @@ export function GenomeTable({
   onRetry,
   query,
   extraColumns,
+  hideColumns,
 }: GenomeTableProps) {
   const columns: Array<Column<GenomeResponse>> = [
     {
       key: 'aliases',
       header: 'Genome',
-      // A real <Link> so keyboard and middle-click work.
-      render: (genome) => (
-        <ScopedLink className="rg-link font-medium" to={`/genomes/${genome.digest}`}>
-          {preferredAlias(genome.aliases, query) ?? formatDigest(genome.digest)}
-        </ScopedLink>
-      ),
-    },
-    {
-      key: 'other_aliases',
-      header: 'Other aliases',
-      // Exclude whichever alias the primary cell chose, not blindly index 0.
+      className: 'rg-table__cell--wrap',
+      // A real <Link> so keyboard and middle-click work. Other aliases sit on
+      // a second line rather than in their own wide column.
       render: (genome) => {
         const shown = preferredAlias(genome.aliases, query);
+        // Exclude whichever alias the primary cell chose, not blindly index 0.
         const rest = genome.aliases.filter((alias) => alias !== shown);
-        return rest.length ? rest.join(', ') : <span className="rg-muted">NA</span>;
+        const extra = rest.length - OTHER_ALIASES_SHOWN;
+        return (
+          <>
+            <ScopedLink className="rg-link font-medium" to={`/genomes/${genome.digest}`}>
+              {shown ?? formatDigest(genome.digest)}
+            </ScopedLink>
+            {rest.length > 0 && (
+              <span className="rg-table__sub" title={rest.join('\n')}>
+                {rest.slice(0, OTHER_ALIASES_SHOWN).join(', ')}
+                {extra > 0 && `, +${extra} more`}
+              </span>
+            )}
+          </>
+        );
       },
     },
     {
@@ -56,6 +68,7 @@ export function GenomeTable({
     {
       key: 'description',
       header: 'Description',
+      className: 'rg-table__cell--wrap',
       render: (genome) => genome.description ?? <span className="rg-muted">NA</span>,
     },
     {
@@ -66,8 +79,8 @@ export function GenomeTable({
         if (genome.species_name && genome.common_name) {
           return (
             <>
-              {genome.species_name}{' '}
-              <span className="rg-muted">{genome.common_name}</span>
+              {genome.species_name}
+              <span className="rg-table__sub">{genome.common_name}</span>
             </>
           );
         }
@@ -101,10 +114,14 @@ export function GenomeTable({
     },
   ];
 
+  const shownColumns = hideColumns
+    ? columns.filter((column) => !hideColumns.includes(column.key))
+    : columns;
+
   return (
     <DataTable
       caption="Genomes"
-      columns={extraColumns ? [...columns, ...extraColumns] : columns}
+      columns={extraColumns ? [...shownColumns, ...extraColumns] : shownColumns}
       rows={genomes}
       rowKey={(genome) => genome.digest}
       loading={loading}

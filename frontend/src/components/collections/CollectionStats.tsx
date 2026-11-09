@@ -8,7 +8,7 @@ export interface CollectionStatsProps {
   stats: Stats | undefined;
 }
 
-/** Headline counts, like the GenomesPage summary cards. */
+/** Headline counts, like the GenomesPage summary line. */
 export function CollectionStats({ collection, stats }: CollectionStatsProps) {
   const cards: Array<[string, number | undefined]> = [
     ['Genomes', stats?.genomes],
@@ -21,9 +21,9 @@ export function CollectionStats({ collection, stats }: CollectionStatsProps) {
     <div className="flex flex-col gap-2">
       <dl className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {cards.map(([term, value]) => (
-          <div className="rg-card p-4" key={term}>
+          <div className="rg-stat" key={term}>
             <dt className="rg-kv__term">{term}</dt>
-            <dd className="text-2xl font-semibold">{value ?? '—'}</dd>
+            <dd className="text-2xl font-semibold">{value ?? '…'}</dd>
           </div>
         ))}
       </dl>

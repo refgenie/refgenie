@@ -1,4 +1,4 @@
-/** `/collections`: one card per collection the server declares. */
+/** `/collections`: one row per collection the server declares. */
 
 import { MiniHero } from '../components/layout/MiniHero';
 import { ScopedLink } from '../components/common/ScopedLink';
@@ -8,30 +8,33 @@ import { useAccent } from '../components/collections/useAccent';
 import { useCollectionCount, useCollections } from '../hooks/queries/useCollections';
 import type { CollectionConfig } from '../types/ui';
 
-/** The blurb's first sentence, for a card. */
+/** The blurb's first sentence, for a row. */
 function firstSentence(text: string): string {
   const match = /^.*?[.!?](?=\s|$)/.exec(text.trim());
   return match ? match[0] : text;
 }
 
-function CollectionCard({ collection }: { collection: CollectionConfig }) {
+function plural(n: number, word: string): string {
+  return `${n} ${word}${n === 1 ? '' : 's'}`;
+}
+
+function CollectionRow({ collection }: { collection: CollectionConfig }) {
   const count = useCollectionCount(collection);
   const accentRef = useAccent<HTMLLIElement>(collection.accent_color);
+  const genomes =
+    count.data === undefined ? '… genomes' : plural(count.data, 'genome');
   return (
-    <li className="rg-card rg-collection-card" ref={accentRef}>
-      <div className="rg-card__body flex flex-col gap-3">
-        <div className="flex items-center gap-3">
-          <CollectionLogo collection={collection} />
-          <h2 className="rg-card__title">
-            <ScopedLink className="rg-link" to={`/collections/${collection.id}`}>
-              {collection.name}
-            </ScopedLink>
-          </h2>
-        </div>
+    <li className="rg-collection-row" ref={accentRef}>
+      <CollectionLogo collection={collection} />
+      <div className="flex flex-col gap-1 min-w-0">
+        <h2 className="text-lg font-semibold">
+          <ScopedLink className="rg-link" to={`/collections/${collection.id}`}>
+            {collection.name}
+          </ScopedLink>
+        </h2>
         <p className="text-sm">{firstSentence(collection.blurb)}</p>
         <p className="rg-muted text-sm">
-          {count.data === undefined ? '—' : count.data} genome
-          {count.data === 1 ? '' : 's'}
+          {genomes} · {plural(collection.stores.length, 'store')}
         </p>
       </div>
     </li>
@@ -49,9 +52,9 @@ export function CollectionsPage() {
       {collections.length === 0 ? (
         <EmptyState message="This server has no collections configured." />
       ) : (
-        <ul className="rg-collection-grid grid grid-cols-1 md:grid-cols-2 gap-4">
+        <ul className="rg-collection-list">
           {collections.map((collection) => (
-            <CollectionCard key={collection.id} collection={collection} />
+            <CollectionRow key={collection.id} collection={collection} />
           ))}
         </ul>
       )}

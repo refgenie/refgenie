@@ -130,13 +130,13 @@ export function GenomesPage() {
 
       {summary.data && (
         <dl className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="rg-card p-4">
+          <div className="rg-stat">
             <dt className="rg-kv__term">Genomes</dt>
             <dd className="text-2xl font-semibold">
               {summary.data.genomes}
               <span className="rg-muted text-sm font-normal">
                 {' '}
-                · {withAssets.data ? withAssets.data.pagination.total : '—'} with built
+                · {withAssets.data ? withAssets.data.pagination.total : '…'} with built
                 assets
               </span>
             </dd>
@@ -147,7 +147,7 @@ export function GenomesPage() {
               ['Assets', summary.data.assets],
             ] as const
           ).map(([term, value]) => (
-            <div className="rg-card p-4" key={term}>
+            <div className="rg-stat" key={term}>
               <dt className="rg-kv__term">{term}</dt>
               <dd className="text-2xl font-semibold">{value}</dd>
             </div>

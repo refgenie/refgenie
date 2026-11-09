@@ -7,6 +7,8 @@ export interface Column<T> {
   header: string;
   render: (row: T) => ReactNode;
   align?: 'left' | 'right';
+  /** Extra class on this column's cells, e.g. to let long values wrap. */
+  className?: string;
 }
 
 export interface DataTableProps<T> {
@@ -49,7 +51,8 @@ export function DataTable<T>({
 
   return (
     <div className="rg-table__wrap">
-      <table className={compact ? 'rg-table rg-table--compact' : 'rg-table'}>
+      {/* On phones the stack class turns each row into a labelled block (see components.css). */}
+      <table className={cn('rg-table rg-table--stack', compact && 'rg-table--compact')}>
         <caption className="sr-only">{caption}</caption>
         <thead className="rg-table__head">
           <tr>
@@ -74,12 +77,15 @@ export function DataTable<T>({
               className={cn('rg-table__row', onRowClick && 'rg-table__row--clickable')}
               onClick={onRowClick ? () => onRowClick(row) : undefined}
             >
-              {columns.map((column) => (
+              {columns.map((column, columnIndex) => (
                 <td
                   key={column.key}
+                  // The first cell is the row's title when stacked, so it has no label.
+                  data-label={columnIndex === 0 ? undefined : column.header}
                   className={cn(
                     'rg-table__cell',
                     column.align === 'right' && 'rg-table__cell--numeric',
+                    column.className,
                   )}
                 >
                   {column.render(row)}

@@ -41,6 +41,7 @@ export function CollectionGenomeDetail({
       <div className="flex flex-col gap-4">
         <DescriptionList
           items={[
+            { term: 'Description', value: genome.description ?? '' },
             { term: 'Species', value: genome.species_name ?? '' },
             { term: 'Accession', value: genome.assembly_accession ?? '' },
             { term: 'Haplotype', value: haplotypeOf(genome) ?? '' },
