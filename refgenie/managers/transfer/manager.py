@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING
 
 from refgenie.const import DEFAULT_SERVER_URL
-from refgenie.exceptions import MissingAliasError, NoSubscriptionsError
+from refgenie.exceptions import MissingAliasError, NoSubscriptionsError, PullFailedError
 from refgenie.logger import logger
 from refgenie.managers.sources.servers import estimate_pull_size
 from refgenie.managers.transfer.puller import BulkPullResult, PullOptions
@@ -201,6 +201,10 @@ class TransferManager:
 
         Returns:
             List of registered genome digests.
+
+        Raises:
+            PullFailedError: Some genomes could not be registered (the rest
+                still are); the message names them.
         """
         if all_genomes:
             aliases = [
@@ -208,15 +212,19 @@ class TransferManager:
                 for g in self._servers.list_genomes()
                 if g.get("aliases")
             ]
-        registered = []
+        registered, failed = [], []
         for alias in aliases or []:
-            if self._genome.init_from_remote(alias):
-                try:
-                    registered.append(self._alias.resolve(alias))
-                except MissingAliasError:
-                    pass
+            if not self._genome.init_from_remote(alias, require_collection=True):
+                failed.append(alias)
+                continue
+            try:
+                registered.append(self._alias.resolve(alias))
+            except MissingAliasError:
+                pass
 
         logger.info(f"Registered {len(registered)} genome(s)")
+        if failed:
+            raise PullFailedError(f"could not register {', '.join(failed)}")
         return registered
 
     @update_scope

@@ -159,10 +159,15 @@ def handle_pull(cmd, refgenie) -> None:
     if cmd.init:
         if genome_digests:
             fail("--init registers genomes by alias; use -g, not --genome-digest.")
-        registered = refgenie.transfer.init_genomes(
-            aliases=[GenomeAlias(g) for g in genome_names] or None,
-            all_genomes=cmd.all_genomes,
-        )
+        from refgenie.exceptions import PullFailedError
+
+        try:
+            registered = refgenie.transfer.init_genomes(
+                aliases=[GenomeAlias(g) for g in genome_names] or None,
+                all_genomes=cmd.all_genomes,
+            )
+        except PullFailedError as e:
+            fail(f"Init failed: {e}.", EXIT_NOT_FOUND)
         if not registered:
             fail("Init failed: no genomes were registered.", EXIT_NOT_FOUND)
     elif cmd.all:
