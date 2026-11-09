@@ -799,7 +799,7 @@ class TestAssetNameContent:
         self, refgenie_built_versioned, genome_digest
     ):
         """A rebuild under a new name reuses the one content row and adds a name row;
-        Asset.names exposes every name for use by the pull path."""
+        Asset.names and list_all expose every name (#295)."""
         r = refgenie_built_versioned
         build_rcrsd(r, asset_name=NEW_NAME)
         assert len(assets_rows(r)) == 1
@@ -808,6 +808,8 @@ class TestAssetNameContent:
             genome_digest=genome_digest, asset_group_name="fasta", asset_name=OLD_NAME
         )
         assert {n.name for n in asset.names} == {OLD_NAME, NEW_NAME}
+        asset_data, _ = r.asset.list_all(genome_digests=[genome_digest])
+        assert {f"fasta:{OLD_NAME}", f"fasta:{NEW_NAME}"} <= set(asset_data[genome_digest])
 
     def test_both_names_resolve_across_the_api(self, refgenie_built_versioned, genome_digest):
         """Both names resolve via get/exists/seek/seek_key.get/set_parents to one digest."""

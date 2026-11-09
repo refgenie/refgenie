@@ -370,15 +370,16 @@ class AssetManager(ResourceManager):
         assets = self.list_assets(genome_digests=genome_digests, asset_group_name=asset_group_name)
         return_dict = defaultdict(list)
         for asset in assets:
-            asset_strings = (
-                [
-                    f"{asset.asset_group.name}.{seek_key.name}:{asset.name}"
-                    for seek_key in asset.seek_keys
-                ]
-                if include_seek_keys
-                else [f"{asset.asset_group.name}:{asset.name}"]
-            )
-            return_dict[asset.asset_group.genome.digest].extend(asset_strings)
+            for name in sorted(n.name for n in asset.asset_names):
+                asset_strings = (
+                    [
+                        f"{asset.asset_group.name}.{seek_key.name}:{name}"
+                        for seek_key in asset.seek_keys
+                    ]
+                    if include_seek_keys
+                    else [f"{asset.asset_group.name}:{name}"]
+                )
+                return_dict[asset.asset_group.genome.digest].extend(asset_strings)
 
         genome_digests_with_assets = list(return_dict.keys())
         aliases_dict = {}
