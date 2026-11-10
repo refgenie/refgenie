@@ -370,16 +370,19 @@ class AssetManager(ResourceManager):
         assets = self.list_assets(genome_digests=genome_digests, asset_group_name=asset_group_name)
         return_dict = defaultdict(list)
         for asset in assets:
-            for name in sorted(n.name for n in asset.asset_names):
-                asset_strings = (
-                    [
-                        f"{asset.asset_group.name}.{seek_key.name}:{name}"
-                        for seek_key in asset.seek_keys
-                    ]
-                    if include_seek_keys
-                    else [f"{asset.asset_group.name}:{name}"]
-                )
-                return_dict[asset.asset_group.genome.digest].extend(asset_strings)
+            # One content row can carry several names (identical builds dedupe),
+            # and every name is seekable, so list each one.
+            names = sorted({n.name for n in asset.asset_names} | {asset.name})
+            asset_strings = (
+                [
+                    f"{asset.asset_group.name}.{seek_key.name}:{name}"
+                    for name in names
+                    for seek_key in asset.seek_keys
+                ]
+                if include_seek_keys
+                else [f"{asset.asset_group.name}:{name}" for name in names]
+            )
+            return_dict[asset.asset_group.genome.digest].extend(asset_strings)
 
         genome_digests_with_assets = list(return_dict.keys())
         aliases_dict = {}
