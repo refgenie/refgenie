@@ -135,6 +135,16 @@ def test_init_genomes_tries_every_alias_then_raises_for_failures(transfer, deps)
     assert genome.init_from_remote.call_count == 3
 
 
+def test_init_genomes_skips_genome_without_local_collection(transfer, deps):
+    """The server store lacks the collection, so the alias would not survive (#299)."""
+    _, alias, genome, _ = deps
+    genome.init_from_remote.return_value = True
+    alias.resolve.return_value = D1
+    genome.get_metadata.side_effect = ValueError("no collection")
+
+    assert transfer.init_genomes([GenomeAlias("t7")]) == []
+
+
 def test_mirror_registers_each_genome_with_description_and_digest_fallback(transfer, deps):
     servers, _, genome, puller = deps
     servers.list_genomes.return_value = [
