@@ -471,6 +471,27 @@ class TestInitFromRemote:
         assert client_rg.genome.exists(digest)
         assert not client_rg.alias.exists("rCRSd")
 
+    def test_reads_the_store_named_by_the_genome_record(self, world):
+        """A server serves several stores but advertises only one; a genome in
+        another store is read from the store its record names."""
+        client_rg, server_rg = world
+        digest = server_rg.alias.resolve("rCRSd")
+        store_url = "https://store.test/vgp/"
+        source = MagicMock()
+        with (
+            patch.object(
+                client_rg.servers, "genome_attrs", return_value={"refget_store_url": store_url}
+            ),
+            patch("refgenie.managers.sources.genomes.make_source", return_value=source) as make,
+            patch.object(
+                client_rg.genome, "initialize_genome", return_value=(digest, True)
+            ) as init,
+        ):
+            result = client_rg.genome.ensure_from_remote("rCRSd")
+        assert result.success
+        make.assert_called_once_with(store_url)
+        assert init.call_args.kwargs["source"] is source
+
     def test_existing_alias_is_a_no_op(self, world):
         client_rg, _ = world
         client_rg.genome.add("d" * 32, "local", ["rCRSd"])

@@ -808,6 +808,25 @@ class GenomeManager(ResourceManager):
     # Bootstrapping a genome from subscribed servers
     # =========================================================================
 
+    @staticmethod
+    def _genome_store_source(genome_attrs: dict) -> "RemoteGenomeSource | None":
+        """The store the server's genome record names, if any.
+
+        A server can serve several stores; its service-info advertises only the
+        first, so a genome in another store must be read from the one its record
+        names.
+        """
+        store_url = genome_attrs.get("refget_store_url")
+        if not store_url:
+            return None
+        from refgenie.managers.sources.genomes import make_source
+
+        try:
+            return make_source(store_url)
+        except Exception as exc:
+            logger.debug(f"Could not open the genome's store {store_url}: {exc}")
+            return None
+
     @update_scope
     def ensure_from_remote(
         self,
@@ -867,7 +886,7 @@ class GenomeManager(ResourceManager):
         genome_description = genome_description or genome_attrs.get("description") or NO_DESCRIPTION
 
         created = True
-        source = servers.genome_source(server_urls)
+        source = self._genome_store_source(genome_attrs) or servers.genome_source(server_urls)
         initialized = False
         if source is not None:
             try:
@@ -934,7 +953,8 @@ class GenomeManager(ResourceManager):
                     self._alias_manager_getter().remove(alias_name)
                 logger.error(
                     f"Could not register '{alias_name}': its sequence collection is not in "
-                    f"the server's sequence store. Run 'refgenie pull {alias_name}/fasta' instead."
+                    f"the server's sequence store. If the genome has a fasta asset, "
+                    f"'refgenie pull {alias_name}/fasta' downloads it with its sequences."
                 )
                 return False
             if result.genome_attrs is not None:
