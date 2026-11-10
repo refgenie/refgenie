@@ -212,7 +212,8 @@ def handle_store_sync(cmd, refgenie) -> None:
         if not targets:
             fail("No enabled stores to sync. Add one with 'refgenie store add'.")
 
-    priorities = {s.name: s.priority for s in refgenie.store.list_all()}
+    # Only enabled stores rank, so a disabled store's genomes move to any enabled store.
+    priorities = {s.name: s.priority for s in refgenie.store.enabled_stores()}
 
     total = 0
     failures = 0

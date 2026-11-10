@@ -331,6 +331,20 @@ class TestStoreSyncIntegration:
         assert len(genomes) == 1
         assert genomes[0].store_name == "a"
 
+    def test_disabled_owner_loses_genome(self, tmp_path, fixtures_path):
+        """A genome owned by a disabled store moves to an enabled store that offers it."""
+        from refgenie.cli.commands.store import StoreSyncModel, handle_store_sync
+
+        digest = build_on_disk_store(tmp_path / "new", fixtures_path / "rCRSd.fa", "rCRSd")
+        rg = _server_rgc()
+        rg.store.add("old", "url://old", StoreType.remote, priority=10, enabled=False)
+        rg.store.add("new", str(tmp_path / "new"), StoreType.on_disk, priority=20)
+        rg.genome.add(digest=digest, description="", alias_names=[], store_name="old")
+
+        handle_store_sync(StoreSyncModel(), rg)
+
+        assert rg.genome.get(digest).store_name == "new"
+
     def test_resync_backfills_fhr_columns(self, tmp_path, fixtures_path):
         """A sidecar added to the store after the first sync lands on re-sync."""
         from refget.store import RefgetStore
