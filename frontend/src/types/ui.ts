@@ -100,6 +100,17 @@ export interface UiConfig {
   collections: CollectionConfig[];
   /** True when `/service-info` was unreachable and the read-only fallback is in use. */
   degraded: boolean;
+  /** One GA4GH seqcol API per store the server serves (`seqcol.services`). */
+  seqcol_services?: SeqcolServiceInfo[];
+}
+
+/** A seqcol API mount, e.g. `{ store: 'vgp', url: '/seqcol/vgp', ... }`. */
+export interface SeqcolServiceInfo {
+  store: string;
+  /** Root-relative to the API server, or absolute. */
+  url: string;
+  /** The RefgetStore it reads, matched against a genome's `refget_store_url`. */
+  refget_store_url: string | null;
 }
 
 /** The `refgenie` sub-object as it arrives on the wire (every field optional). */

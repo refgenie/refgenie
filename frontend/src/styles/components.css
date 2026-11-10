@@ -40,6 +40,19 @@
   color: inherit;
 }
 
+/* A link that should not outshine what is next to it. */
+.rg-link--quiet {
+  color: rgb(var(--color-text-muted));
+  text-decoration: underline;
+  text-decoration-color: rgb(var(--color-border-strong));
+  text-underline-offset: 0.15em;
+}
+
+.rg-link--quiet:hover {
+  color: rgb(var(--color-text));
+  text-decoration-color: currentColor;
+}
+
 .rg-btn {
   display: inline-flex;
   align-items: center;
@@ -473,6 +486,17 @@
 
 .rg-digest__copy {
   flex: none;
+}
+
+/* The header's refget digest look, for the Details tab's digest lists. */
+.rg-digest--plate .rg-digest__text {
+  padding: var(--space-1) var(--space-2);
+  background: rgb(var(--color-background));
+  border: var(--border-width) solid rgb(var(--color-border));
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  font-size: var(--font-size-sm);
+  color: rgb(var(--color-primary-dark));
 }
 
 /* === SEARCH === */
@@ -1460,6 +1484,34 @@
   );
 }
 
+/* A head with a top-right panel: the panel sits level with the breadcrumb. */
+.rg-minihero--aside {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--space-8);
+}
+
+.rg-minihero__main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.rg-minihero__aside {
+  flex: none;
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 860px) {
+  .rg-minihero--aside {
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+}
+
 /* Title and actions share one optical line and wrap independently: a long
    genome label must not squeeze the buttons into a column. */
 .rg-minihero__bar {
@@ -1841,14 +1893,6 @@
 
 /* === GENOME PAGE HEAD === */
 
-.rg-genome-head {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  max-width: 100%;
-  min-width: 0;
-}
-
 .rg-genome-head__line {
   min-height: 2rem;
   display: flex;
@@ -1857,18 +1901,138 @@
   gap: 0 var(--space-1);
 }
 
-.rg-genome-head__stats {
-  color: rgb(var(--color-text-muted));
-  font-variant-numeric: tabular-nums;
+.rg-genome-head__facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
 }
 
-.rg-genome-head__ids {
-  gap: var(--space-2) var(--space-3);
+/* The digest is the genome's identity, so it leads the header. One white
+   plate holds the label row and the value, so they read as one thing. */
+.rg-genome-digest {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-width: 100%;
+  min-width: 0;
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+  background: rgb(var(--color-background));
+  border: var(--border-width) solid rgb(var(--color-border));
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition-fast);
+}
+
+.rg-genome-digest:hover,
+.rg-genome-digest:focus-within {
+  border-color: rgba(var(--color-brand), 0.45);
+}
+
+.rg-genome-digest__label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: rgb(var(--color-text-muted));
+  line-height: 1;
+}
+
+.rg-genome-digest__mark {
+  flex: none;
+  width: var(--space-5);
+  height: var(--space-5);
+  object-fit: contain;
+}
+
+.rg-genome-digest__title {
+  color: rgb(var(--color-text));
+}
+
+.rg-genome-digest__help {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-5);
+  height: var(--space-5);
+  border: var(--border-width) solid rgb(var(--color-border-strong));
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: rgb(var(--color-text-muted));
+  text-decoration: none;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.rg-genome-digest__help:hover {
+  color: rgb(var(--color-brand));
+  border-color: rgb(var(--color-brand));
+}
+
+.rg-genome-digest__help:focus-visible {
+  outline: 2px solid rgb(var(--color-accent));
+  outline-offset: 2px;
+}
+
+.rg-genome-digest__row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* The refgenie row sits under the digest, split from it by a hairline. */
+.rg-genome-digest__row--get {
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: var(--border-width) solid rgb(var(--color-border));
+}
+
+.rg-genome-digest__command .rg-copyable__text {
+  font-size: var(--font-size-sm);
+  color: rgb(var(--color-primary-dark));
+}
+
+.rg-genome-digest__connect,
+.rg-genome-digest__row--get .rg-pull-button {
+  align-self: flex-start;
+  margin-top: var(--space-1);
+}
+
+.rg-genome-digest__value {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.rg-genome-digest__value .rg-copyable__text {
+  font-size: var(--font-size-lg);
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  color: rgb(var(--color-primary-dark));
+  overflow-wrap: anywhere;
+}
+
+.rg-genome-digest__value .rg-digest__copy {
+  flex: none;
 }
 
 .rg-genome-head__desc {
-  min-height: 2rem;
   max-width: 60rem;
+  margin-top: var(--space-2);
+  padding-left: var(--space-4);
+  border-left: 2px solid rgb(var(--color-border));
+}
+
+.rg-genome-head__desc-label {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: rgb(var(--color-text-muted));
+  opacity: 0.8;
+}
+
+.rg-genome-head__desc p {
   margin: 0;
   color: rgb(var(--color-text-muted));
 }
@@ -2161,4 +2325,192 @@
   margin: 0;
   font-size: var(--font-size-sm);
   color: rgb(var(--color-text-muted));
+}
+
+/* === ALPHABETS (Sequences tab, beside the filter box) === */
+
+.rg-seq-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-6);
+}
+
+.rg-seq-toolbar > .rg-search {
+  flex: 1 1 18rem;
+  max-width: 36rem;
+}
+
+.rg-series-1 { background: rgb(var(--color-series-1)); }
+.rg-series-2 { background: rgb(var(--color-series-2)); }
+.rg-series-3 { background: rgb(var(--color-series-3)); }
+.rg-series-4 { background: rgb(var(--color-series-4)); }
+
+.rg-seq-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-6);
+}
+
+.rg-seq-summary__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.rg-seq-summary__label {
+  font-size: var(--font-size-xs);
+  color: rgb(var(--color-text-muted));
+}
+
+
+.rg-alphabets__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 18rem;
+}
+
+/* One bar per measure, its name to the left in a fixed column. */
+.rg-alphabets__row {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.rg-alphabets__measure {
+  font-size: var(--font-size-xs);
+  color: rgb(var(--color-text-muted));
+  text-align: right;
+}
+
+/* Thin segmented bar: a small surface gap between parts, rounded outer ends. */
+.rg-alphabets__bar {
+  display: block;
+  width: 100%;
+  height: 0.375rem;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.rg-series-1.rg-alphabets__seg { fill: rgb(var(--color-series-1)); }
+.rg-series-2.rg-alphabets__seg { fill: rgb(var(--color-series-2)); }
+.rg-series-3.rg-alphabets__seg { fill: rgb(var(--color-series-3)); }
+.rg-series-4.rg-alphabets__seg { fill: rgb(var(--color-series-4)); }
+
+.rg-alphabets__list {
+  font-size: var(--font-size-xs);
+  color: rgb(var(--color-text-muted));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-3);
+  margin: 0;
+  /* Lined up under the bars, past the measure-name column. */
+  padding: 0 0 0 calc(4.5rem + var(--space-2));
+  list-style: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.rg-alphabets__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.rg-alphabets__swatch {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 2px;
+}
+
+/* === REFGET SECTION (Details tab) === */
+
+/* Level-1 rows are a step smaller than the top-level digest. */
+.rg-refget__attr .rg-digest__text,
+.rg-refget__attr .rg-refget__term code {
+  font-size: var(--font-size-xs);
+}
+
+.rg-refget__links {
+  font-size: var(--font-size-sm);
+}
+
+
+.rg-refget__head .rg-genome-digest__label {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.rg-refget__table {
+  border-collapse: collapse;
+  max-width: 100%;
+}
+
+.rg-refget__table th,
+.rg-refget__table td {
+  padding: var(--space-1) var(--space-4) var(--space-1) 0;
+  vertical-align: middle;
+  text-align: left;
+}
+
+.rg-refget__term {
+  font-weight: var(--font-weight-semibold);
+  color: rgb(var(--color-text-muted));
+  white-space: nowrap;
+}
+
+.rg-refget__table .rg-refget__term--attr {
+  padding-left: var(--space-4);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+}
+
+.rg-refget__table .rg-refget__group {
+  padding-top: var(--space-4);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: rgb(var(--color-text-muted));
+}
+
+.rg-refget__links {
+  white-space: nowrap;
+}
+
+.rg-refget__links > * + * {
+  margin-left: var(--space-3);
+}
+
+/* The shared-genomes modal renders inside the links cell; undo the cell's layout. */
+.rg-refget__links > .modal-overlay {
+  margin-left: 0;
+  white-space: normal;
+}
+
+.rg-refget__shared-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 860px) {
+  .rg-refget__table,
+  .rg-refget__table tbody,
+  .rg-refget__table tr,
+  .rg-refget__table th,
+  .rg-refget__table td {
+    display: block;
+  }
+
+  .rg-refget__table tr {
+    padding-block: var(--space-1);
+  }
 }

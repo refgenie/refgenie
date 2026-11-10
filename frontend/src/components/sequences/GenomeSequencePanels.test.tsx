@@ -25,12 +25,11 @@ const OTHER = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
 const CANDIDATES = [{ digest: OTHER, label: 'rCRSd · GenBank' }];
 
 describe('SequencesPanel', () => {
-  it('shows a one-line summary and the table', async () => {
+  it('names the alphabet and shows the table', async () => {
     renderWithProviders(<SequencesPanel digest={DIGEST} />);
-    expect(
-      await screen.findByText(`${(33218).toLocaleString()} bp`),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/alphabets: dna3bit/)).toBeInTheDocument();
+    const figure = (await screen.findByText('Alphabets')).closest('figure');
+    expect(figure).toHaveTextContent('dna3bit');
+    expect(figure).toHaveTextContent('dna2bit');
     expect(screen.getByRole('table', { name: 'Sequences' })).toBeInTheDocument();
   });
 });

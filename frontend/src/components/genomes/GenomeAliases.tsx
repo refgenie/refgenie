@@ -1,4 +1,6 @@
 import { Copyable } from '../common/Copyable';
+import { ExternalLink } from '../common/ExternalLink';
+import { accessionUrl } from '../../utils/links';
 import type { AliasEntry } from '../../types/api';
 
 export interface GenomeAliasesProps {
@@ -57,7 +59,7 @@ export function GenomeAliases({ aliases, collectionAliases }: GenomeAliasesProps
               {rows.map((row) => (
                 <tr key={row.alias} className="rg-table__row">
                   <td className="rg-table__cell rg-alias-table__alias">
-                    <Copyable value={row.alias} label={`Copy ${row.alias}`} mono />
+                    <AliasValue alias={row.alias} />
                   </td>
                   <td className="rg-table__cell rg-muted">{row.sources.join('; ')}</td>
                 </tr>
@@ -67,5 +69,21 @@ export function GenomeAliases({ aliases, collectionAliases }: GenomeAliasesProps
         </div>
       )}
     </section>
+  );
+}
+
+/** An alias with its copy button; an INSDC or RefSeq accession also links to NCBI. */
+function AliasValue({ alias }: { alias: string }) {
+  const href = accessionUrl(alias);
+  return (
+    <Copyable value={alias} label={`Copy ${alias}`} mono>
+      {href ? (
+        <ExternalLink href={href} title="View this assembly at NCBI">
+          {alias}
+        </ExternalLink>
+      ) : (
+        alias
+      )}
+    </Copyable>
   );
 }

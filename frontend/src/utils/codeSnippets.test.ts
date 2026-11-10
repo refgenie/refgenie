@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { bedSnippets, downloadSnippets, regionSnippets } from './codeSnippets';
+import {
+  bedSnippets,
+  downloadSnippets,
+  refgeniePullCommand,
+  regionSnippets,
+} from './codeSnippets';
 import { parseRegion } from './parseRegion';
 
 const STORE = 'https://store.test/s/';
@@ -106,5 +111,17 @@ describe('bedSnippets', () => {
     expect(code('node')).toContain('fetch(`' + STORE + 'sequences/${d.slice(0, 2)}/${d}.seq`');
     expect(code('browser')).toContain(`store.openCollection("${DIGEST}")`);
     expect(code('browser')).toContain('store.getSubstring(chrom, Number(start), Number(end))');
+  });
+});
+
+describe('refgeniePullCommand', () => {
+  it('pulls the fasta asset when there is one, else registers the genome', () => {
+    expect(refgeniePullCommand('hg38', true)).toBe('refgenie pull hg38/fasta');
+    expect(refgeniePullCommand('fAbrBra2.1', false)).toBe('refgenie pull --init -g fAbrBra2.1');
+  });
+
+  it('gives none without a usable alias', () => {
+    expect(refgeniePullCommand(null, true)).toBeNull();
+    expect(refgeniePullCommand('Caenorhabditis_elegans/Ensembl/WS210', false)).toBeNull();
   });
 });
