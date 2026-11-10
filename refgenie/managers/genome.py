@@ -499,6 +499,13 @@ class GenomeManager(ResourceManager):
         with self._database_session as session:
             return queries.exists(session, digest)
 
+    def has_collection(self, digest: GenomeDigest) -> bool:
+        """Whether the genome's sequence collection is in the local RefgetStore."""
+        try:
+            return self._refget_store_getter().get_collection_metadata(digest) is not None
+        except Exception:  # noqa: BLE001 - a missing collection can raise
+            return False
+
     def table(self) -> Table:
         """Create a Rich table of all genomes."""
         genomes = self.list_all()
@@ -892,6 +899,7 @@ class GenomeManager(ResourceManager):
         genome_digest: GenomeDigest | None = None,
         genome_description: str | None = None,
         server_urls: list[str] | None = None,
+        require_collection: bool = False,
     ) -> bool:
         """
         Register a genome locally from remote metadata, downloading no assets.
@@ -901,9 +909,12 @@ class GenomeManager(ResourceManager):
             genome_digest: The digest of the genome, if already known.
             genome_description: The description of the genome.
             server_urls: Optional list of server URLs to query.
+            require_collection: If True, undo the registration and return False
+                when the genome's sequence collection is not in the local store.
 
         Returns:
-            True if the alias exists afterwards, False if no server knew it.
+            True if the alias exists afterwards, False if no server knew it, or
+            the collection was required and is missing.
         """
         if self._alias_manager_getter().exists(alias_name):
             logger.info(f"Alias '{alias_name}' already exists locally")
@@ -916,6 +927,16 @@ class GenomeManager(ResourceManager):
             server_urls=server_urls,
         )
         if result.success:
+            if require_collection and not self.has_collection(result.genome_digest):
+                if result.created_genome:
+                    self.remove(result.genome_digest)  # also removes its aliases
+                elif result.created_alias:
+                    self._alias_manager_getter().remove(alias_name)
+                logger.error(
+                    f"Could not register '{alias_name}': its sequence collection is not in "
+                    f"the server's sequence store. Run 'refgenie pull {alias_name}/fasta' instead."
+                )
+                return False
             if result.genome_attrs is not None:
                 self.fill_from_server(result.genome_digest, result.genome_attrs)
             logger.info(f"Registered genome for alias '{alias_name}': {result.genome_digest}")

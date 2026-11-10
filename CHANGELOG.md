@@ -25,6 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   does not list, is refused at import.
 - Compare returns the same GA4GH comparison from the server, the CLI and MCP.
 
+### Fixed
+
+- `pull --init` now fails with a clear error, instead of saving an alias that cannot be resolved, when a genome's sequence collection is not on the server (#299).
+
 ## [1.0.0a1] - 2026-11-06
 
 First public alpha of refgenie 1.0, a rewrite that replaces the `refgenie` 0.x,

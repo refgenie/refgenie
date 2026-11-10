@@ -453,12 +453,23 @@ class TestInitFromRemote:
         ):
             yield client_rg, server_rg
 
-    def test_registers_genome_and_alias(self, world):
+    def test_registers_genome_and_alias(self, world, caplog):
+        """The test server's store lacks rCRSd's collection, so require_collection
+        undoes what the call created and suggests a fasta pull (#299)."""
         client_rg, server_rg = world
-        assert not client_rg.alias.exists("rCRSd")
+        digest = server_rg.alias.resolve("rCRSd")
+        assert client_rg.genome.init_from_remote("rCRSd", require_collection=True) is False
+        assert not client_rg.genome.exists(digest)
+        assert "refgenie pull rCRSd/fasta" in caplog.text
+
         assert client_rg.genome.init_from_remote("rCRSd") is True
-        assert client_rg.alias.resolve("rCRSd") == server_rg.alias.resolve("rCRSd")
-        assert client_rg.genome.exists(server_rg.alias.resolve("rCRSd"))
+        assert client_rg.alias.resolve("rCRSd") == digest
+        assert client_rg.genome.exists(digest)
+
+        client_rg.alias.remove("rCRSd")  # genome exists, alias will be new
+        assert client_rg.genome.init_from_remote("rCRSd", require_collection=True) is False
+        assert client_rg.genome.exists(digest)
+        assert not client_rg.alias.exists("rCRSd")
 
     def test_existing_alias_is_a_no_op(self, world):
         client_rg, _ = world

@@ -11,7 +11,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from refgenie.exceptions import MissingAliasError
+from refgenie.exceptions import MissingAliasError, PullFailedError
 from refgenie.managers.transfer import TransferManager
 from refgenie.managers.transfer.puller import BulkPullResult
 from refgenie.models import GenomeAlias, GenomeDigest
@@ -121,15 +121,18 @@ def test_init_genomes_all_skips_aliasless_remote_genomes(transfer, deps):
     alias.resolve.return_value = D1
 
     assert transfer.init_genomes(all_genomes=True) == [D1]
-    genome.init_from_remote.assert_called_once_with(GenomeAlias("hg38"))
+    genome.init_from_remote.assert_called_once_with(GenomeAlias("hg38"), require_collection=True)
 
 
-def test_init_genomes_skips_alias_that_does_not_resolve(transfer, deps):
+def test_init_genomes_tries_every_alias_then_raises_for_failures(transfer, deps):
+    """A failed or unresolvable alias does not stop the rest; failures raise (#299)."""
     _, alias, genome, _ = deps
-    genome.init_from_remote.return_value = True
+    genome.init_from_remote.side_effect = [True, False, True]
     alias.resolve.side_effect = [D1, MissingAliasError("gone")]
 
-    assert transfer.init_genomes([GenomeAlias("hg38"), GenomeAlias("mm10")]) == [D1]
+    with pytest.raises(PullFailedError, match="t7"):
+        transfer.init_genomes([GenomeAlias("hg38"), GenomeAlias("t7"), GenomeAlias("mm10")])
+    assert genome.init_from_remote.call_count == 3
 
 
 def test_mirror_registers_each_genome_with_description_and_digest_fallback(transfer, deps):
