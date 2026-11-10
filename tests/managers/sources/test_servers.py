@@ -158,6 +158,11 @@ class TestListAssets:
             engine, tmp_path, fixtures_path, stage=False, register_client_fasta=False
         )
 
+        # A second name on identical content: one asset row, two names (#295).
+        server_rg.build.run(
+            recipe_name="fasta", genome_alias="rCRSd", asset_group_name="fasta", asset_name="v2"
+        )
+
         mock_server_url = "http://mock-refgenie-server"
         client_rg.servers.subscribe(mock_server_url)
 
@@ -174,8 +179,7 @@ class TestListAssets:
         server_assets = asset_data[mock_server_url]
         assert len(server_assets) > 0
         for genome_digest, asset_list in server_assets.items():
-            assert len(asset_list) > 0
-            assert any("fasta:" in a for a in asset_list)
+            assert {"fasta:default", "fasta:v2"} <= set(asset_list)
 
         # Aliases: mapping that includes "rCRSd"
         assert mock_server_url in aliases_data

@@ -104,6 +104,11 @@ def is_path_type(seek_key_type: SeekKeyType) -> bool:
     return seek_key_type in PATH_SEEK_KEY_TYPES
 
 
+def prefix_matches(prefix_path: Path) -> list[Path]:
+    """Files whose names start with a prefix seek key's path."""
+    return [f for f in prefix_path.parent.glob(f"{prefix_path.name}*") if f.is_file()]
+
+
 class RemoteType(Enum):
     """
     The remote type enumeration.

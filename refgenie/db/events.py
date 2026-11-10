@@ -23,6 +23,7 @@ from refgenie.db.tables import (
     Configuration,
     SeekKey,
     SeekKeyType,
+    prefix_matches,
 )
 from refgenie.logger import logger
 from refgenie.utils.symlinks import alias_owned_paths
@@ -173,8 +174,7 @@ def _seek_key_before_insert_handler(_, connection: Connection, target: SeekKey):
     elif target.type == SeekKeyType.directory:
         size = sum(f.stat().st_size for f in seek_key_path.glob("**/*") if f.is_file())
     elif target.type == SeekKeyType.prefix:
-        matched_files = (Path(genome_folder) / target.asset.path).glob(f"{target.value}*")
-        size = sum(f.stat().st_size for f in matched_files if f.is_file())
+        size = sum(f.stat().st_size for f in prefix_matches(seek_key_path))
     else:
         raise ValueError(f"Seek key size calculation not supported for {target.type=}")
     target.size = size

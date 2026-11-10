@@ -350,8 +350,9 @@ class ServerManager(ResourceManager):
                     continue
                 if genome_digests and genome_digest not in genome_digests:
                     continue
-                server_assets.setdefault(genome_digest, []).append(
-                    f"{asset_group.get('name', 'unknown')}:{asset.get('name', 'unknown')}"
+                group_name = asset_group.get("name", "unknown")
+                server_assets.setdefault(genome_digest, []).extend(
+                    f"{group_name}:{n['name']}" for n in asset.get("names", [])
                 )
 
             result[server_url] = server_assets
