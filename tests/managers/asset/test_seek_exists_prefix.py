@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from refgenie.db.tables import SeekKeyType
+from refgenie.db.tables import SeekKeyType, prefix_matches
 from tests.support.factories import GENOME, GROUP, stage_copy
 from tests.support.snapshots import fasta_asset
 
@@ -38,3 +38,11 @@ def test_force_exists_rejects_a_prefix_without_files(refgenie_built):
     _add_with_prefix_key(r, "no_such_prefix")
     with pytest.raises(FileNotFoundError):
         r.asset.seek(r.alias.resolve(GENOME), GROUP, "with_prefix", "idx", force_exists=True)
+
+
+def test_prefix_matches_treats_glob_characters_literally(tmp_path):
+    for name in ["idx[1].1.bt2", "idx[1].rev.1.bt2", "idx1.1.bt2"]:
+        (tmp_path / name).touch()
+    (tmp_path / "idx[1].d").mkdir()
+    found = sorted(f.name for f in prefix_matches(tmp_path / "idx[1]"))
+    assert found == ["idx[1].1.bt2", "idx[1].rev.1.bt2"]

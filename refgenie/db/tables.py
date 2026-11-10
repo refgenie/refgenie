@@ -8,6 +8,7 @@ re-runnable. See "Filesystem side effects of the ORM" in
 ``docs/refgenie/development.md`` before inserting or deleting these rows.
 """
 
+import glob
 import os
 import re
 from datetime import datetime, timezone
@@ -106,7 +107,8 @@ def is_path_type(seek_key_type: SeekKeyType) -> bool:
 
 def prefix_matches(prefix_path: Path) -> list[Path]:
     """Files whose names start with a prefix seek key's path."""
-    return [f for f in prefix_path.parent.glob(f"{prefix_path.name}*") if f.is_file()]
+    pattern = f"{glob.escape(prefix_path.name)}*"
+    return [f for f in prefix_path.parent.glob(pattern) if f.is_file()]
 
 
 class RemoteType(Enum):
