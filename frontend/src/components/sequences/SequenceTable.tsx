@@ -1,6 +1,7 @@
 // Ported from repos/refget/frontend/src/components/SequenceTable.tsx @ c0d3e09; keep the two in step.
 
 import { useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { DigestChip } from '../common/DigestChip';
 import { EmptyState } from '../common/states';
@@ -20,6 +21,8 @@ export interface SequenceTableProps {
   sequences: SequenceRow[];
   /** Shows a per-row "Extract…" link, to this href, for rows whose bases can be read. */
   extractHref?: (row: SequenceRow) => string;
+  /** Shown to the right of the filter box, e.g. the alphabet summary. */
+  aside?: ReactNode;
 }
 
 function matches(row: SequenceRow, needle: string): boolean {
@@ -47,7 +50,7 @@ function AliasCell({ row }: { row: SequenceRow }) {
  * A genome's sequences: filter by name or alias, sort by name or length,
  * 50 rows a page. Presentational: rows in, table out.
  */
-export function SequenceTable({ sequences, extractHref }: SequenceTableProps) {
+export function SequenceTable({ sequences, extractHref, aside }: SequenceTableProps) {
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState<SortState>(null);
   const [page, setPage] = useState(0);
@@ -94,12 +97,15 @@ export function SequenceTable({ sequences, extractHref }: SequenceTableProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <SearchBox
-        value={query}
-        onChange={onQuery}
-        label="Filter sequences"
-        placeholder="Filter by name or alias…"
-      />
+      <div className="rg-seq-toolbar">
+        <SearchBox
+          value={query}
+          onChange={onQuery}
+          label="Filter sequences"
+          placeholder="Filter by name or alias…"
+        />
+        {aside}
+      </div>
       {rows.length === 0 ? (
         <EmptyState query={query} message="No sequences." onClearSearch={() => onQuery('')} />
       ) : (

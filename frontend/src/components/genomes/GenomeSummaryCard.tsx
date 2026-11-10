@@ -1,5 +1,4 @@
 import { DescriptionList } from '../common/DescriptionList';
-import { DigestChip } from '../common/DigestChip';
 import { ExternalLink } from '../common/ExternalLink';
 import { accessionUrl, taxonUrl } from '../../utils/links';
 import type { GenomeDetailResponse } from '../../types/api';
@@ -20,7 +19,6 @@ export function GenomeSummaryCard({ genome }: GenomeSummaryCardProps) {
   return (
     <DescriptionList
       items={[
-        { term: 'Digest', value: <DigestChip digest={genome.digest} length={32} /> },
         { term: 'Description', value: genome.description ?? '' },
         { term: 'Scientific name', value: genome.species_name ?? '' },
         { term: 'Common name', value: genome.common_name ?? '' },

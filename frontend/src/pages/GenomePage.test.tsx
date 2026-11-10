@@ -68,12 +68,23 @@ describe('GenomePage', () => {
     ).toBeInTheDocument();
   });
 
-  it('shows the collection digests on the Details tab, each copyable', async () => {
+  it('opens the raw metadata JSON in a modal', async () => {
     renderGenome(`/genomes/${DIGEST}?tab=details`);
-    const heading = await screen.findByRole('heading', { name: 'Collection digests' });
+    await userEvent.click(await screen.findByRole('button', { name: 'Raw metadata JSON' }));
+    const dialog = screen.getByRole('dialog', { name: 'Raw metadata JSON' });
+    expect(dialog).toHaveTextContent('"license": "CC0-1.0"');
+  });
+
+  it('groups every digest in one refget section on the Details tab', async () => {
+    renderGenome(`/genomes/${DIGEST}?tab=details`);
+    const heading = await screen.findByRole('heading', { name: /refget sequence collection/ });
     const section = heading.closest('section') as HTMLElement;
+    expect(within(section).getByText('Top-level collection digest')).toBeInTheDocument();
     expect(within(section).getByText('names')).toBeInTheDocument();
     expect(within(section).getByRole('button', { name: 'Copy names digest' })).toBeInTheDocument();
+    expect(
+      within(section).getAllByRole('button', { name: 'Genomes that share this' }).length,
+    ).toBeGreaterThan(0);
   });
 
   it('lists file-mode assets that have no archive record', async () => {
@@ -131,8 +142,12 @@ describe('GenomePage', () => {
   it('shows key facts in the head', async () => {
     renderGenome();
     await screen.findByRole('heading', { name: 'hg38', level: 1 });
-    expect(await screen.findByText(/built assets?$/)).toBeInTheDocument();
-    expect(await screen.findByText(/sequences? · /)).toBeInTheDocument();
+    expect(await screen.findByText('refget digest')).toBeInTheDocument();
+    expect(screen.queryByText(/built assets?$/)).toBeNull();
+    expect(screen.getByRole('link', { name: /What is a refget digest/ })).toHaveAttribute(
+      'href',
+      'https://ga4gh.github.io/refget/seqcols/',
+    );
   });
 
   it('keeps the alias list off the head; Details has it, each with a copy button', async () => {

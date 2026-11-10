@@ -9,7 +9,7 @@ import { ErrorState, LoadingState } from '../common/states';
 import { CodeSnippets } from '../common/CodeSnippets';
 import { CompareFasta } from './CompareFasta';
 import { CompareGenomes } from './CompareGenomes';
-import { SequenceStats, SequenceStatsSkeleton } from './SequenceStats';
+import { SequenceStats } from './SequenceStats';
 import { SequenceTable } from './SequenceTable';
 import { RegionExtract } from './RegionExtract';
 import { BedExtract } from './BedExtract';
@@ -50,11 +50,11 @@ export function SequencesPanel({
   return (
     <div className="flex flex-col gap-4">
       <h2 className="sr-only">Sequences</h2>
-      {data ? <SequenceStats sequences={data.sequences} /> : <SequenceStatsSkeleton />}
       {data ? (
         <SequenceTable
           sequences={data.sequences}
           extractHref={canExtract ? extractHref : undefined}
+          aside={<SequenceStats sequences={data.sequences} />}
         />
       ) : (
         <LoadingState rows={12} label="Loading sequences" />

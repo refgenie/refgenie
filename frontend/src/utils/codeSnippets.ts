@@ -372,3 +372,17 @@ export function bedSnippets({
     },
   ];
 }
+
+/**
+ * The one `refgenie pull` command for a genome page: its fasta asset when it
+ * has one, else `--init`, which registers the genome and its sequences. Null
+ * without an alias, or for an alias with a "/" (the CLI reads that as an
+ * asset path).
+ */
+export function refgeniePullCommand(
+  alias: string | null | undefined,
+  hasFastaAsset: boolean,
+): string | null {
+  if (!alias || alias.includes('/')) return null;
+  return hasFastaAsset ? `refgenie pull ${alias}/fasta` : `refgenie pull --init -g ${alias}`;
+}

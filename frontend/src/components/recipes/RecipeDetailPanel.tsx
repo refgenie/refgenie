@@ -99,7 +99,7 @@ export function RecipeDetailPanel({ recipe }: RecipeDetailPanelProps) {
             term: 'Custom seek keys',
             value:
               recipe.custom_seek_keys && Object.keys(recipe.custom_seek_keys).length > 0 ? (
-                <JsonBlock value={recipe.custom_seek_keys} label="Show" />
+                <JsonBlock value={recipe.custom_seek_keys} label="Show" title="Custom seek keys" />
               ) : (
                 ''
               ),

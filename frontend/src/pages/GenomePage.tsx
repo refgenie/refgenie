@@ -25,7 +25,9 @@ import { DeleteGenomeButton } from '../components/actions/DeleteGenomeButton';
 import { ErrorState, LoadingState } from '../components/common/states';
 import { TabPanel, Tabs } from '../components/common/Tabs';
 import type { TabItem } from '../components/common/Tabs';
+import { GenomeDigest } from '../components/genomes/GenomeDigest';
 import { GenomeHeader } from '../components/genomes/GenomeHeader';
+import { refgeniePullCommand } from '../utils/codeSnippets';
 import { GenomeSummaryCard } from '../components/genomes/GenomeSummaryCard';
 import { GenomeAliases } from '../components/genomes/GenomeAliases';
 import { FhrPanel } from '../components/genomes/FhrPanel';
@@ -99,6 +101,11 @@ export function GenomePage() {
   const hasFastaAsset = !!assets.data?.results.some(
     (asset) => asset.asset_class_name === 'fasta',
   );
+  // A local dash already has the genome; the command is for visitors.
+  const pullCommand =
+    config.mode === 'local' || !assets.data
+      ? null
+      : refgeniePullCommand(primaryAlias, hasFastaAsset);
   const candidates = useCompareCandidates(record);
   const noCandidates = candidates !== null && candidates.length === 0;
   // The in-browser FASTA comparison keeps Compare open without other genomes.
@@ -184,13 +191,18 @@ export function GenomePage() {
             </>
           )
         }
+        aside={
+          record ? (
+            <GenomeDigest
+              digest={record.digest}
+              pullCommand={pullCommand}
+              hasFastaAsset={hasFastaAsset}
+            />
+          ) : undefined
+        }
       >
         {!genome.error && (
-          <GenomeHeader
-            genome={record}
-            sequenceStats={sequenceStats}
-            assetCount={assetCount}
-          />
+          <GenomeHeader genome={record} />
         )}
       </MiniHero>
 
@@ -265,7 +277,13 @@ export function GenomePage() {
                     <h2>Genome</h2>
                     <GenomeSummaryCard genome={record} />
                   </section>
-                  {sequences.data && <CollectionDigests level1={sequences.data.level1} />}
+                  {sequences.data && (
+                    <CollectionDigests
+                      digest={record.digest}
+                      level1={sequences.data.level1}
+                      storeUrl={record.refget_store_url}
+                    />
+                  )}
                   <GenomeAliases
                     aliases={aliasNames}
                     collectionAliases={sequences.data?.collection_aliases}

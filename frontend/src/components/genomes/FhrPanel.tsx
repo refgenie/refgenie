@@ -21,7 +21,7 @@ function names(people: FhrMetadata['metadataAuthor']): string | undefined {
 }
 
 /**
- * The FHR sidecar with a raw-JSON toggle: a collapsed card, or with `flat`,
+ * The FHR sidecar with a raw-JSON button: a collapsed card, or with `flat`,
  * a plain section.
  */
 export function FhrPanel({ fhr, flat = false }: FhrPanelProps) {
@@ -85,7 +85,9 @@ export function FhrPanel({ fhr, flat = false }: FhrPanelProps) {
         <h3 className="text-sm font-semibold mb-2">Provenance and publication</h3>
         <DescriptionList items={provenance} hideEmpty />
       </section>
-      <JsonBlock value={fhr} label="Raw metadata JSON" />
+      <div>
+        <JsonBlock value={fhr} label="Raw metadata JSON" />
+      </div>
     </>
   );
 
