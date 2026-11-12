@@ -237,6 +237,8 @@ refgenie compare hg38 hg38_noalt_decoy   # works for genomes you have not pulled
 Same `sequences` and `names`: the same genome. Same `sequences`, different
 `names`: renamed. Shared `name_length_pairs`: the same coordinates.
 
+Not sure which hg38 to pull? See the [choosing hg38 page](https://docs.refgenie.org/refgenie/choosing_hg38).
+
 ---
 
 ## Request a genome or an asset
