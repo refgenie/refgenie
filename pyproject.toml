@@ -1,5 +1,5 @@
 [build-system]
-requires = ["uv_build>=0.12.15"]
+requires = ["uv_build>=0.13.7"]
 build-backend = "uv_build"
 
 [project]
@@ -47,8 +47,8 @@ classifiers = [
 ]
 
 dependencies = [
-    "alembic>=1.20.0",
-    "cryptography>=50.0.1",
+    "alembic>=1.20.1",
+    "cryptography>=50.0.2",
     "gtars>=0.11.2",
     "httpx>=0.28.1,<1",
     "jinja2>=3.1.6",
@@ -56,7 +56,7 @@ dependencies = [
     # PostgresConfig is a first-class base config type (refgenie/config/db.py),
     # and refgenie.py calls create_engine() on its postgresql+psycopg:// URL,
     # so the driver cannot live behind an extra.
-    "psycopg>=3.3.5",
+    "psycopg>=3.3.8",
     "pyyaml>=6.0.3",
     # 0.12.0 is the first release carrying what the server needs:
     # `refget.seqcolapi.create_seqcol_app` / `prepare_store` and
@@ -69,12 +69,12 @@ dependencies = [
     # refgenie[server] dependency, and only refgenie.server.main imports it, so
     # refget's own `seqcolapi` extra -- which additionally pulls uvicorn and
     # psycopg2-binary for its PostgreSQL app -- is deliberately not requested.
-    "refget>=0.12.0",
+    "refget>=0.13.0",
     "rich>=15.0.0",
-    "sqlmodel>=0.0.42",
+    "sqlmodel>=0.0.48",
     "ubiquerg>=0.9.3",
     "yacman>=1.0.0",
-    "pydantic-settings>=2.15.0",
+    "pydantic-settings>=2.16.2",
 ]
 
 [project.optional-dependencies]
@@ -89,17 +89,17 @@ dash = [
     # routes, since 0.137 include_router no longer flattens child routes onto
     # app.routes. The guards import that walker defensively and skip if it is
     # absent, so a version drift never crashes test collection.
-    "fastapi>=0.141.1",
-    "uvicorn>=0.53.0",
+    "fastapi>=0.162.2",
+    "uvicorn>=0.54.0",
 ]
 # Requires mcp 2.x: refgenie/mcp/tools.py imports MCPServer from
 # mcp.server.mcpserver (the 2.x replacement for the removed
 # mcp.server.fastmcp.FastMCP).
-mcp = ["mcp[cli]>=2.2.0"]
+mcp = ["mcp[cli]>=2.3.0"]
 server = [
     "refgenie[dash]",
     "apscheduler>=3.11.3",
-    "mcp[cli]>=2.2.0",
+    "mcp[cli]>=2.3.0",
 ]
 
 [project.urls]
@@ -146,12 +146,12 @@ ignore = [
 
 [dependency-groups]
 dev = [
-    "ipykernel>=7.3.0",
-    "ipython>=9.17.1",
-    "pytest>=9.1.1",
-    "pytest-mock>=3.15.1",
-    "mypy>=2.3.1",
-    "ruff>=0.16.7",
+    "ipykernel>=7.4.0",
+    "ipython>=9.18.1",
+    "pytest>=9.2.0",
+    "pytest-mock>=3.17.0",
+    "mypy>=2.4.1",
+    "ruff>=0.17.4",
     "sqlalchemy-data-model-visualizer>=0.1.3",
 ]
 
