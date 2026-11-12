@@ -5,10 +5,9 @@ from typing import Literal
 
 from pydantic import AliasChoices, BaseModel, Field
 from pydantic_settings import CliPositionalArg, CliSubCommand, get_subcommand
-from rich import print as rprint
 
+from refgenie.cli.commands.helpers import note, print_table
 from refgenie.cli.errors import EXIT_NOT_FOUND, fail
-from refgenie.logger import logger
 
 
 class RemoteAddModel(BaseModel):
@@ -64,9 +63,9 @@ class RemoteParser(BaseModel):
 
 def handle_remote_list(cmd, refgenie) -> None:
     if table := refgenie.remote.table():
-        rprint(table)
+        print_table(table)
     else:
-        logger.info("No remotes configured.")
+        note("No remotes configured.")
 
 
 def handle_remote_add(cmd, refgenie) -> None:
@@ -104,7 +103,7 @@ def handle_remote_status(cmd, refgenie) -> None:
     except MissingRemoteError as e:
         fail(f"Failed to show remote status: {e}", EXIT_NOT_FOUND)
     if not status:
-        logger.info("No remotes configured.")
+        note("No remotes configured.")
         return
 
     for entry in status.values():

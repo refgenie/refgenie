@@ -23,6 +23,7 @@ from tests.support.server import (
     make_server_client,
     requires_dash,
     requires_server,
+    serve_refgenie,
     server_with_asset,
 )
 
@@ -1430,6 +1431,16 @@ class TestGenomeSequences:
         _, digest, _ = world
         response = client.get(f"/v4/genomes/{digest}/compare/{fake_digest('nope')}")
         assert response.status_code == 404
+
+    def test_the_client_compare_is_the_servers_compare(self, world, tmp_path):
+        """``refgenie compare`` of a remote genome asks the server through the client."""
+        server_rg, digest, other = world
+        client_rg = Refgenie(database_engine=make_engine(), suppress_migrations=True)
+        client_rg.database.init(genome_folder=tmp_path / "client_genomes")
+        url = "http://mock-refgenie-server"
+        with serve_refgenie(client_rg, server_rg, url):
+            remote = client_rg.servers.client(url).genome.compare(digest, other)
+        assert remote == server_rg.genome.compare(digest, other)
 
     def test_sequences_in_local_mode(self, world):
         """The local demo (``refgenie dash``) reads the same endpoint."""

@@ -1,5 +1,7 @@
 # Tagging assets
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 ## Why to tag assets?
 
 It is natural in a research environment to use various flavors of the reference genome related resources that may result from different versions of the software used to create them. And this is what inspired the introduction of assets tagging concept in `refgenie`.

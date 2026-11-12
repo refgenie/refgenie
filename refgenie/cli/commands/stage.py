@@ -4,9 +4,9 @@ from collections.abc import Callable
 
 from pydantic import AliasChoices, BaseModel, Field
 from pydantic_settings import CliPositionalArg, CliSubCommand, get_subcommand
-from rich import print as rprint
 
 from refgenie.cli.commands.helpers import (
+    print_table,
     _GENOME_DIGEST_DESCRIPTION,
     _validate_registry_paths,
     check_push_remotes,
@@ -61,7 +61,7 @@ class StageParser(BaseModel):
 
 
 def handle_stage_list(cmd, refgenie) -> None:
-    rprint(refgenie.stage.table())
+    print_table(refgenie.stage.table())
 
 
 def handle_stage_add(cmd, refgenie) -> None:

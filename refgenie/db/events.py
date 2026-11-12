@@ -9,6 +9,7 @@ from pathlib import Path
 from sqlalchemy import Connection, event, func
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import select
+
 from refgenie.db.cleanup import (
     discard_pending_cleanups,
     enqueue_callable,
@@ -17,12 +18,12 @@ from refgenie.db.cleanup import (
 )
 from refgenie.db.tables import (
     Alias,
-    StagedAsset,
     Asset,
     AssetGroup,
     Configuration,
     SeekKey,
     SeekKeyType,
+    StagedAsset,
     prefix_matches,
 )
 from refgenie.logger import logger

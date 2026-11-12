@@ -256,21 +256,115 @@ def test_get_asset_loads_parents_and_children(mcp_refgenie, chain):
     assert asset.asset_class == "fasta"
     assert asset.names == ["mid"]
     assert asset.pull_command == "refgenie pull hg38/fasta:mid"
-    # stdio: the local path, no download URLs.
-    assert asset.downloads is None
-    expected = Path(mcp_refgenie.genome_folder) / f"data/{A}/fasta/{chain['mid']}"
-    assert asset.local_path == str(expected)
+    # stdio: no archive URL, and a chain asset with no seek keys has no files.
+    assert asset.archive_url is None
+    assert asset.files == {}
+    assert asset.description == mcp_refgenie.asset_class.get("fasta").description
 
 
 @requires_mcp
 def test_get_asset_on_a_server_gives_download_urls(mcp_refgenie, chain):
-    tools.set_refgenie(mcp_refgenie, serves_downloads=True)
+    tools.set_refgenie(mcp_refgenie, public_url="https://rg.example")
     asset = tools.get_asset(chain["mid"])
-    assert asset.local_path is None
-    assert asset.downloads == {
-        "archive": f"/v4/archives/{chain['mid']}/download",
-        "file": f"/v4/assets/{chain['mid']}/files",
+    assert asset.archive_url == f"https://rg.example/v4/archives/{chain['mid']}/download"
+
+
+def _add_seek_keys(rgc, digest, **keys):
+    """Give an asset seek keys: ``name=(value, type)``."""
+    from refgenie.db.tables import SeekKey, SeekKeyType
+
+    with Session(rgc.database_engine) as session:
+        asset = session.get(Asset, digest)
+        folder = Path(rgc.genome_folder) / asset.path
+        folder.mkdir(parents=True, exist_ok=True)
+        for name, (value, kind) in keys.items():
+            (folder / value).write_text("x")
+            session.add(
+                SeekKey(
+                    name=name,
+                    value=value,
+                    description=None,
+                    type=SeekKeyType(kind),
+                    asset=asset,
+                )
+            )
+        session.commit()
+
+
+@requires_mcp
+def test_pull_command_uses_the_shortest_plain_alias(mcp_refgenie, chain, monkeypatch):
+    mcp_refgenie.alias.add("GRCh38-igenomes-ncbi", A)
+    mcp_refgenie.alias.add("hs38", A)
+    assert tools.get_asset(chain["mid"]).pull_command == "refgenie pull hg38/fasta:mid"
+    # An alias with "/" is no use in a command; with no plain alias, use the digest.
+    monkeypatch.setattr(mcp_refgenie.alias, "get_for_genomes", lambda digests: {A: ["a/b"]})
+    expected = f"refgenie pull fasta:mid --genome-digest {A}"
+    assert tools.get_asset(chain["mid"]).pull_command == expected
+
+
+@requires_mcp
+def test_files_give_seek_paths_locally_and_urls_on_a_server(mcp_refgenie, chain):
+    mid = chain["mid"]
+    _add_seek_keys(mcp_refgenie, mid, fa=("x y.fa", "file"), idx=("x", "prefix"))
+    files = tools.get_asset(mid).files
+    for key in ("fa", "idx"):
+        assert files[key] == mcp_refgenie.asset.seek(A, "fasta", "mid", key)
+    tools.set_refgenie(mcp_refgenie, public_url="https://rg.example")
+    assert tools.get_asset(mid).files == {
+        "fa": f"https://rg.example/v4/assets/{mid}/files/x%20y.fa"
     }
+
+
+@requires_mcp
+def test_hints_for_empty_results(mcp_refgenie):
+    hint = tools.list_assets(alias="mm39").hint
+    assert f"template=asset_request.yml&genome=mm39&genome_digest={B}" in hint
+    assert "genome_proposal.yml&genome=zzz" in tools.search_genomes("zzz").hint
+    assert "4932" in tools.list_genomes(taxon_id=559292).hint
+
+
+@requires_mcp
+def test_catalog_summary_and_instructions_name_the_server(mcp_refgenie):
+    url = mcp_refgenie.database_engine.url.render_as_string(hide_password=True)
+    assert url in tools.catalog_summary().server
+    assert url in tools.mcp.instructions
+    tools.set_refgenie(mcp_refgenie, public_url="https://rg.example")
+    assert "https://rg.example" in tools.catalog_summary().server
+    assert tools.mcp.instructions.startswith("refgenie server at https://rg.example.")
+    tools.set_refgenie(None)
+    assert tools.mcp.instructions == tools.INSTRUCTIONS
+
+
+@requires_mcp
+def test_get_sequence_refuses_more_than_the_limit(mcp_refgenie):
+    with pytest.raises(ToolError, match="At most 100,000 bases"):
+        tools.get_sequence("chr1", 0, 100_001, alias="hg38")
+
+
+@requires_mcp
+def test_get_genome_sequences_pages_and_filters(mcp_refgenie, monkeypatch):
+    level2 = {
+        "names": ["chr1", "chr2", "chrM"],
+        "lengths": [10, 20, 5],
+        "sequences": ["SQ.1", "SQ.2", "SQ.m"],
+    }
+    monkeypatch.setattr(mcp_refgenie.genome, "level2", lambda digest: level2)
+    page = tools.get_genome_sequences(alias="hg38", name_contains="CHR")
+    assert [r.name for r in page.results] == ["chr1", "chr2", "chrM"]
+    assert (page.n_sequences, page.total_length) == (3, 35)
+    assert [
+        r.name for r in tools.get_genome_sequences(alias="hg38", name_contains="m").results
+    ] == ["chrM"]
+    first = tools.get_genome_sequences(alias="hg38", page_size=1)
+    assert first.results[0].digest == "SQ.1" and first.pagination.total == 3
+    second = tools.get_genome_sequences(
+        alias="hg38", page_size=1, token=first.pagination.next_page_token
+    )
+    assert second.results[0].name == "chr2"
+    with pytest.raises(ToolError, match="does not match"):
+        tools.get_genome_sequences(
+            alias="hg38", name_contains="x", token=first.pagination.next_page_token
+        )
 
 
 @requires_mcp
@@ -425,6 +519,32 @@ def test_mcp_stdio_entry_point_exits_with_friendly_error(without_mcp, capsys):
     """`refgenie-mcp` must exit non-zero with an actionable message, not a traceback."""
     stdio = importlib.import_module("refgenie.mcp.stdio")
     with pytest.raises(SystemExit) as excinfo:
-        stdio.main()
+        stdio.main([])
     assert excinfo.value.code == 1
     _assert_friendly(capsys.readouterr().err)
+
+
+def test_refgenie_mcp_help_works_without_the_extra(without_mcp, capsys):
+    stdio = importlib.import_module("refgenie.mcp.stdio")
+    with pytest.raises(SystemExit) as excinfo:
+        stdio.main(["--help"])
+    assert excinfo.value.code == 0
+    assert "REFGENIE_HOME_PATH" in capsys.readouterr().out
+
+
+@requires_mcp
+@pytest.mark.parametrize(
+    "doc", ["docs/site/SKILL.md", "frontend/public/SKILL.md", "docs/refgenie/mcp.md"]
+)
+def test_doc_tool_tables_match_registered_tools(doc):
+    import re
+
+    root = Path(__file__).resolve().parents[2]
+    lines = (root / doc).read_text().splitlines()
+    start = next(i for i, line in enumerate(lines) if line.startswith("| Tool |"))
+    documented = set()
+    for line in lines[start + 2 :]:
+        if not line.startswith("|"):
+            break
+        documented.update(re.findall(r"`(\w+)`", line.split("|")[1]))
+    assert documented == {t.name for t in asyncio.run(tools.mcp.list_tools())}

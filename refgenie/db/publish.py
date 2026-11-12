@@ -7,6 +7,7 @@ and their links through ``RemoteManager`` (``rgc.remote``). What to publish,
 and how rows are rewritten on the way, is ``refgenie.publish_catalog``.
 """
 
+from collections.abc import Callable
 from pathlib import Path
 
 from sqlalchemy import create_engine, func, select
@@ -81,9 +82,9 @@ _REMAP_FKS = {
 _PRESERVE = {"stagedasset": ("download_count",), "configuration": ("plugin_settings",)}
 
 
-#: Tables the import rewrites per taxon instead of upserting, so a species
-#: name removed upstream leaves the server too.
-_PER_TAXON = ("species", "speciesname")
+#: Tables the import rewrites instead of upserting, so a name removed upstream
+#: leaves the server too: species per taxon, aliases per carried genome.
+_REWRITTEN = ("species", "speciesname", "alias")
 
 
 def _rows(conn, table, where=None) -> list[dict]:
@@ -106,6 +107,37 @@ def _replace_species(src, dest) -> dict[str, int]:
         if name_rows:
             dest.execute(names.insert(), name_rows)
     return {"species": len(species_rows), "speciesname": len(name_rows)}
+
+
+def _replace_aliases(src, dest, valid_alias: Callable[[str], bool]) -> dict[str, int]:
+    """Rewrite, in ``dest``, the alias set of every genome the artifact ``src`` carries.
+
+    Names ``valid_alias`` rejects are dropped. The server's rows for a carried
+    genome, and rows holding a name the artifact assigns, are deleted before the
+    artifact's rows go in. Other genomes keep their aliases.
+
+    Raises:
+        ValueError: If fewer rows remain than half the server's valid rows for
+            the carried genomes, so a short artifact cannot strip the catalog.
+    """
+    alias = Alias.__table__
+    carried = [r.digest for r in src.execute(select(Genome.__table__.c.digest))]
+    rows = _rows(src, alias)
+    kept = [r for r in rows if valid_alias(r["name"])]
+    held = sum(
+        valid_alias(r.name)
+        for r in dest.execute(select(alias.c.name).where(alias.c.genome_digest.in_(carried)))
+    )
+    if 2 * len(kept) < held:
+        raise ValueError(
+            f"Publish catalog has {len(kept)} aliases for its genomes, down from {held} "
+            f"on this server; refusing to import"
+        )
+    names = [r["name"] for r in kept]
+    dest.execute(alias.delete().where(alias.c.genome_digest.in_(carried) | alias.c.name.in_(names)))
+    if kept:
+        dest.execute(alias.insert(), kept)
+    return {"alias": len(kept), "alias_skipped": len(rows) - len(kept)}
 
 
 def _disable_absent_stores(dest, store_rows: list[dict]) -> list[str]:
@@ -272,14 +304,18 @@ def _check_genome_stores(src, dest) -> None:
         )
 
 
-def import_catalog(engine: Engine, local_path: str) -> dict[str, int]:
+def import_catalog(
+    engine: Engine, local_path: str, *, valid_alias: Callable[[str], bool]
+) -> dict[str, int]:
     """
     Upsert the publish catalog SQLite file at ``local_path`` into ``engine``.
 
-    Insert-or-update only, in one transaction; nothing is ever deleted, except
-    that each species taxon in the artifact has its row and names rewritten.
-    Stores are matched by name, and a server store the artifact does not carry
-    is disabled (genomes keep a foreign key to it, so it is never deleted).
+    Insert-or-update, in one transaction. Nothing is deleted, except that each
+    species taxon in the artifact has its row and names rewritten, and each
+    genome the artifact carries has its alias set rewritten (names
+    ``valid_alias`` rejects are skipped). Genomes and stores are never deleted;
+    ``prune_catalog`` removes those the catalog no longer carries. Stores are
+    matched by name, and a server store the artifact does not carry is disabled.
     Every genome must name a store the artifact lists (or, if it lists none,
     one the server has); otherwise nothing is imported.
 
@@ -287,7 +323,8 @@ def import_catalog(engine: Engine, local_path: str) -> dict[str, int]:
         A table -> row-count summary.
 
     Raises:
-        ValueError: If the file's schema stamp is not this code's.
+        ValueError: If the file's schema stamp is not this code's, or the
+            artifact would remove more than half the carried genomes' aliases.
         CatalogStoreError: If a genome has no store, or one the catalog does not list.
     """
     src_engine = create_engine(f"sqlite:///{local_path}")
@@ -302,7 +339,7 @@ def import_catalog(engine: Engine, local_path: str) -> dict[str, int]:
                 for model in ORDERED_MODELS:
                     table = model.__table__
                     name = model.__tablename__
-                    if name in _PER_TAXON:
+                    if name in _REWRITTEN:
                         continue
                     natural = _NATURAL_KEYS.get(name) or _REMAPPED_KEYS.get(name)
                     key_cols = natural or tuple(c.name for c in table.primary_key.columns)
@@ -343,26 +380,70 @@ def import_catalog(engine: Engine, local_path: str) -> dict[str, int]:
                     if name == "store":
                         summary["store_disabled"] = len(_disable_absent_stores(dest, rows))
                 summary.update(_replace_species(src, dest))
+                summary.update(_replace_aliases(src, dest, valid_alias))
     finally:
         src_engine.dispose()
     return summary
 
 
+def _prune_absent_genomes(dest, carried: set[str], dry_run: bool) -> dict[str, list[str]]:
+    """Delete server genomes the artifact no longer carries, with their aliases.
+
+    A genome that still has asset groups is kept and listed under
+    ``kept_genome``. Then disabled stores left with no genome and no alias go.
+    An artifact with no genomes deletes nothing, so an empty file cannot wipe
+    the catalog.
+    """
+    genome, alias, store = Genome.__table__, Alias.__table__, Store.__table__
+    absent = set()
+    if carried:
+        absent = {r.digest for r in dest.execute(select(genome.c.digest))} - carried
+    grouped = {r.genome_digest for r in dest.execute(select(AssetGroup.__table__.c.genome_digest))}
+    stale = sorted(absent - grouped)
+    aliases = dest.execute(select(alias.c.name, alias.c.genome_digest, alias.c.store_name)).all()
+    stale_aliases = sorted(a.name for a in aliases if a.genome_digest in stale)
+    in_use = {a.store_name for a in aliases if a.genome_digest not in stale} | {
+        r.store_name
+        for r in dest.execute(select(genome.c.store_name, genome.c.digest))
+        if r.digest not in stale
+    }
+    stale_stores = sorted(
+        r.name
+        for r in dest.execute(select(store.c.name).where(store.c.enabled == False))  # noqa: E712
+        if r.name not in in_use
+    )
+    if not dry_run:
+        dest.execute(alias.delete().where(alias.c.name.in_(stale_aliases)))
+        dest.execute(genome.delete().where(genome.c.digest.in_(stale)))
+        dest.execute(store.delete().where(store.c.name.in_(stale_stores)))
+    return {
+        "genome": stale,
+        "alias": stale_aliases,
+        "store": stale_stores,
+        "kept_genome": sorted(absent & grouped),
+    }
+
+
 def prune_catalog(engine: Engine, local_path: str, dry_run: bool = False) -> dict[str, list[str]]:
     """
-    Delete, from ``engine``, the assets the publish catalog at ``local_path`` retracted.
+    Delete, from ``engine``, what the publish catalog at ``local_path`` no longer has.
 
-    :func:`import_catalog` never deletes, so this removes assets of genomes the
-    artifact carries whose digests it lacks, with their dependent rows and any
-    asset group left empty. Uses Core deletes, so no files are removed. Run it
-    after importing the same artifact: an older one would retract newer assets.
+    :func:`import_catalog` never deletes genomes, stores or assets, so this
+    removes assets of genomes the artifact carries whose digests it lacks, with
+    their dependent rows and any asset group left empty. It also removes genomes
+    the artifact no longer carries that have no asset groups, with their
+    aliases, and then disabled stores left empty (:func:`_prune_absent_genomes`).
+    Uses Core deletes, so no files are removed. Run it after importing the same
+    artifact: an older one would retract newer assets.
 
     Raises:
         ValueError: If the file's schema stamp is not this code's.
 
     Returns:
-        ``{"asset": [...], "assetgroup": [...]}``: what was (or, with ``dry_run``,
-        would be) deleted, as asset digests and ``genome_digest/group`` names.
+        What was (or, with ``dry_run``, would be) deleted: ``asset`` digests,
+        ``assetgroup`` names (``genome_digest/group``), ``genome`` digests,
+        ``alias`` names and ``store`` names; plus ``kept_genome``, the absent
+        genomes kept because they still have assets.
     """
     asset, group = Asset.__table__, AssetGroup.__table__
     src_engine = create_engine(f"sqlite:///{local_path}")
@@ -419,7 +500,9 @@ def prune_catalog(engine: Engine, local_path: str, dry_run: bool = False) -> dic
             dest.execute(asset.delete().where(asset.c.digest.in_(stale_assets)))
         if not dry_run and stale_groups:
             dest.execute(group.delete().where(group.c.id.in_([g.id for g in stale_groups])))
+        absent = _prune_absent_genomes(dest, genomes, dry_run)
     return {
         "asset": stale_assets,
         "assetgroup": [f"{g.genome_digest}/{g.name}" for g in stale_groups],
+        **absent,
     }

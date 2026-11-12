@@ -16,22 +16,23 @@ from refgenie import progress
 from refgenie.config import config
 from refgenie.const import API_VERSION, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from refgenie.logger import logger
-from refgenie.utils.console import RICH_PROGRESS_COLUMNS
-from refgenie.utils.http import make_client
 from refgenie.managers.sources.api_ids import (
     API_ID_ALIAS_DIGEST,
     API_ID_ALIASES,
-    API_ID_ASSET_RELATIONSHIPS,
     API_ID_ASSET_CLASS,
     API_ID_ASSET_FILE_DOWNLOAD,
     API_ID_ASSET_FILES,
     API_ID_ASSET_GROUPS,
+    API_ID_ASSET_RELATIONSHIPS,
     API_ID_ASSETS,
     API_ID_GENOME_ATTRS,
+    API_ID_GENOME_COMPARE,
     API_ID_GENOMES,
     API_ID_STAGED_ASSETS,
 )
 from refgenie.managers.sources.openapi import RefgenieserverOpenApiSpec
+from refgenie.utils.console import CONSOLE, RICH_PROGRESS_COLUMNS
+from refgenie.utils.http import make_client
 
 logging.getLogger("httpx").setLevel(config.log_level.value)
 
@@ -300,7 +301,7 @@ class RefgenieserverClient:
             if progress.active_sink() is None:
                 with (
                     tmp_path.open("wb") as download_file,
-                    Progress(*RICH_PROGRESS_COLUMNS) as rich_progress,
+                    Progress(*RICH_PROGRESS_COLUMNS, console=CONSOLE) as rich_progress,
                 ):
                     _open_stream(_RichDownloadReporter(rich_progress, label))
             else:
@@ -439,6 +440,16 @@ class GenomeClient(_ListResourceClient):
             operation_id=API_ID_GENOME_ATTRS, url_format_params={"digest": digest}
         )
         return response if isinstance(response, dict) else {}
+
+    def compare(self, digest: str, other: str) -> dict:
+        """The server's GA4GH seqcol comparison of two genomes it serves."""
+        response = self._transport.get(
+            operation_id=API_ID_GENOME_COMPARE,
+            url_format_params={"digest": digest, "other": other},
+        )
+        if not isinstance(response, dict):
+            raise ValueError(f"Unexpected compare response from {self._transport.server_url}")
+        return response
 
 
 class AliasClient(_ListResourceClient):

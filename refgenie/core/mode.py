@@ -8,13 +8,13 @@ the served genome folder holds a store of its own.
 
 import tempfile
 from abc import ABC, abstractmethod
-from pathlib import Path
 from collections.abc import Callable
+from pathlib import Path
 
 from refget.store import RefgetStore
-from refgenie.db.engine import Engine
 
 from refgenie.core.store_router import RefgetStoreRouter
+from refgenie.db.engine import Engine
 from refgenie.db.tables import Store, StoreType
 from refgenie.exceptions import MissingConfigDataError
 from refgenie.managers.alias import (

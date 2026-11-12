@@ -77,8 +77,10 @@ docs at `GET $BASE/docs`.
 ## Core concepts
 
 - **Genome digest**: the GA4GH sequence-collection digest, computed from the
-  sequences. It is the genome's identity: the same sequences give the same
-  digest anywhere.
+  sequences, their names and their order. The same named sequences in the same
+  order give the same digest anywhere. Two genomes with the same sequences under
+  different names (`chrI` vs `I`) have different digests; `compare` shows they
+  match.
 - **Alias**: a human name like `hg38` or `GRCh38` that points to a digest.
   Each instance keeps its own aliases. **An alias is not a digest.**
 - **Asset group**: a named slot for one kind of asset on one genome, like
@@ -308,13 +310,21 @@ field, which is often enough to compare. For full comparisons on a
 server-mode instance, use the GA4GH sequence-collections service at `/seqcol`
 (start from `GET /seqcol/service-info`).
 
+## Workflow 4: chromosome sizes without the genome
+
+```bash
+D=$(curl -s "$BASE/v4/aliases/hg38" | jq -r .digest)
+curl -s "$BASE/v4/genomes/$D/sequences" | jq -r '.sequences[] | "\(.name)\t\(.length)"' > hg38.chrom.sizes
+```
+
+The HTTP API has no sequence endpoint. For the bases of a region over MCP, call
+`get_sequence(alias="hg38", name="chr17", start=43044294, end=43044394)`.
+
 ---
 
 ## The MCP server
 
-Refgenie has a **read-only** Model Context Protocol server with thirteen
-tools. It reads through the same code as the HTTP API, so both give the same
-answers.
+Refgenie has a **read-only** Model Context Protocol X
 
 **Over HTTP, against a server-mode instance** (Streamable HTTP transport,
 nothing to install):
@@ -329,6 +339,8 @@ To add the public server to Claude Code:
 claude mcp add --transport http refgenie-public https://api.refgenie.org/mcp
 ```
 
+Other clients take
+`{ "mcpServers": { "refgenie-public": { "type": "http", "url": "https://api.refgenie.org/mcp" } } }`.
 Use `/mcp` exactly, with no trailing slash. Only server mode has `/mcp`;
 check `"mode": "server"` in `/service-info` first.
 
@@ -340,8 +352,10 @@ pip install "refgenie[mcp]>=1.0.0a1"
 claude mcp add refgenie refgenie-mcp
 ```
 
-`refgenie-mcp` takes no arguments. It reads the user's config from
-`REFGENIE_HOME_PATH` (default `~/.refgenie`).
+It reads the user's config from `REFGENIE_HOME_PATH` (default `~/.refgenie`).
+To use another folder, run
+`claude mcp add --env REFGENIE_HOME_PATH=/data/refgenie refgenie -- refgenie-mcp`;
+other clients set it in the server's `env` block.
 
 The tools:
 
@@ -357,9 +371,9 @@ The tools:
 | `list_recipes` | recipes, optionally by `output_asset_class` |
 | `get_recipe` | one recipe in full: inputs, command templates, docker image, the build command |
 | `lookup_digest` | what a digest is: a genome, an asset, or nothing |
-| `get_genome_metadata` | seqcol metadata: sequence count, total length, source |
-| `get_genome_sequences` | per-sequence names, lengths, digests |
-| `compare_genomes` | seqcol comparison of two genomes |
+| `get_genome_sequences` | a genome's sequences (name, length, digest), paged; filter with `name_contains` |
+| `get_sequence` | the bases of one region (`name`, `start`, `end`; 0-based, half-open; at most 100,000 bases) |
+| `compare_genomes` | seqcol comparison of two genomes, with a one-sentence summary and a map of renamed sequences |
 
 A tool that takes a genome has separate `alias` and `digest` parameters; give
 exactly one. A digest is 32 characters; a name like `hg38` is an alias.
@@ -380,9 +394,9 @@ Pass `next_page_token` back as `token`, with the same filters, for the next
 page; it is `null` on the last page. A token from other filters is refused.
 `search_genomes` fills `hint` when nothing matched.
 
-**Getting files.** Over HTTP, `get_asset` returns `downloads`: the archive and
-file-list URLs, relative to the API origin. Over stdio it returns `local_path`.
-Both return `pull_command`, the `refgenie pull` line for the asset.
+**Getting files.** `get_asset` returns `files` (local paths over stdio, URLs on
+a server), `archive_url` for archive-served assets, and `pull_command`, the
+`refgenie pull` line for the asset.
 
 **Errors** come back as tool errors with a next step, for example "Genome
 alias 'hg39' not found. Find genomes with search_genomes(query) or
@@ -412,6 +426,16 @@ Rules for an agent:
 - **Treat `/ping` as a claim.** Any program can listen on that port.
 - The only action allowed cross-origin is `POST /v1/actions/pull`, and only
   when `bridge_mode` is `full`.
+
+---
+
+## Request a genome or an asset
+
+- A genome refgenie does not list: open
+  https://github.com/refgenie/refgenie-registry/issues/new?template=genome_proposal.yml
+- A listed genome missing an asset: open
+  https://github.com/refgenie/refgenie-registry/issues/new?template=asset_request.yml&genome=<alias>&genome_digest=<digest>&title=Asset+request:+<alias>
+- Need it now: build it yourself with the refgenie CLI.
 
 ---
 

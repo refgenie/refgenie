@@ -47,7 +47,7 @@ You can register a genome from a refgenie server or a RefgetStore. First, see wh
 refgenie genome browse --server-url https://api.refgenie.org
 ```
 
-Without `--server-url`, `genome browse` lists genomes on your subscribed servers. Then register one by its digest. For example, to register hg38:
+Without `--server-url`, `genome browse` lists genomes on your subscribed servers. Then register one by its digest (`genome init --server` works for any genome the server lists). For example, to register hg38:
 
 ```bash
 refgenie genome init \
@@ -57,7 +57,7 @@ refgenie genome init \
   --no-build
 ```
 
-Without `--no-build`, this downloads the genome's sequences to build its fasta asset. With `--no-build`, refgenie registers the genome without downloading them; `refgenie getseq` then fetches each sequence when you first ask for it. Use `--store <url>` instead of `--server` to register a genome straight from a RefgetStore. To register every genome on your subscribed servers, run `refgenie genome sync`.
+Without `--no-build`, this downloads the genome's sequences to build its fasta asset. With `--no-build`, refgenie registers the genome without downloading them; `refgenie getseq` then reads only the bases you ask for. Use `--store <url>` instead of `--server` to register a genome straight from a RefgetStore. To register every genome on your subscribed servers, run `refgenie genome sync`.
 
 ## The fasta asset
 
@@ -68,6 +68,8 @@ The `fasta` asset is built from the sequences in the RefgetStore. It has three f
 | `{digest}.fa` | `fasta` (default) | FASTA file with all sequences |
 | `{digest}.fa.fai` | `fai` | FASTA index, computed by refgenie (no samtools needed) |
 | `{digest}.chrom.sizes` | `chrom_sizes` | Sequence names and lengths |
+
+For chromosome sizes alone, pull `fasta_index` (about 12 KB) and use `fasta_index.chrom_sizes`. It is the same file as `fasta.chrom_sizes`, without the 3 GB FASTA.
 
 The files live under `~/.refgenie/genomes/data/{genome_digest}/fasta/{asset_digest}/`. `seek` returns paths in the alias tree, named for the alias you used:
 
@@ -81,7 +83,7 @@ To rebuild the asset later, run `refgenie build hg38/fasta`.
 
 ## Retrieve sequences with getseq
 
-`getseq` reads sequences straight from the RefgetStore, so you do not need a FASTA file on disk. With hg38 registered as above:
+`getseq` reads sequences straight from the RefgetStore, so you do not need a FASTA file on disk. It registers a genome from your servers on first use, so `genome init` is optional. With hg38 registered as above:
 
 ```bash
 # Whole chromosome
@@ -92,9 +94,12 @@ refgenie getseq -g hg38 -l chrM:0-60
 
 # From a position to the end of the chromosome
 refgenie getseq -g hg38 -l chrM:16500
+
+# Write FASTA instead of plain bases
+refgenie getseq -g hg38 -l chrM:0-60 --fasta
 ```
 
-Refgenie resolves the alias `hg38` to its genome digest, looks up `chrM` in the sequence collection, and reads that sequence (or just the requested range) from the store. For a genome registered from a server, the first request for a chromosome downloads it, so the first call on a large chromosome like `chr1` takes a while.
+Refgenie resolves the alias `hg38` to its genome digest, looks up `chrM` in the sequence collection, and reads that sequence (or just the requested range) from the store. For a genome registered from a server, it reads only the bytes it needs. Add `--one-based` for samtools-style coordinates, for example `-l chrM:1-60`.
 
 ## Putting it all together
 

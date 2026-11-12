@@ -3,9 +3,9 @@ GenomeManager - handles genome CRUD operations.
 """
 
 import tempfile
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from collections.abc import Callable, Iterable, Sequence
 from typing import TYPE_CHECKING, Any, Protocol
 
 from rich.table import Table
@@ -23,17 +23,26 @@ from refgenie.exceptions import (
 from refgenie.logger import logger
 from refgenie.managers.base import ResourceManager
 from refgenie.managers.sequence import open_remote_store
-from refgenie.models import GenomeAlias, GenomeDetail, GenomeDigest, GenomeListing, Page
+from refgenie.managers.sources import RemoteGenomeSource
+from refgenie.managers.sources.genomes import collection_source
+from refgenie.models import (
+    GenomeAlias,
+    GenomeDetail,
+    GenomeDigest,
+    GenomeListing,
+    Page,
+    first_usable_alias,
+)
+from refgenie.plugins.events import NULL_EVENTS, EventSink, update_scope
+from refgenie.plugins.hooks import Change
 from refgenie.utils.search import Search, alias_digests_matching
 from refgenie.utils.seqcol import compare_level2, seqcol_level2
 from refgenie.utils.species_file import SpeciesEntry
 from refgenie.utils.tables import build_table
-from refgenie.managers.sources import RemoteGenomeSource
-from refgenie.plugins.events import NULL_EVENTS, EventSink, update_scope
-from refgenie.plugins.hooks import Change
 
 if TYPE_CHECKING:
     from gtars.refget import RefgetStore
+
     from refgenie.managers.alias import AliasBackend
     from refgenie.managers.sources.servers import ServerManager
     from refgenie.managers.species import SpeciesManager
@@ -80,13 +89,11 @@ def _clean_synonyms(names: list) -> list[str] | None:
 class GenomeCreationResult:
     """What :meth:`GenomeManager.ensure_from_remote` did, so a pull can undo it."""
 
-    success: bool
-    genome_digest: GenomeDigest | None = None
-    alias_name: GenomeAlias | None = None
+    genome_digest: GenomeDigest
+    alias_name: GenomeAlias
     created_genome: bool = False
     created_alias: bool = False
-    #: The server's record of the genome, if this call fetched it, so the
-    #: caller need not ask the server again.
+    #: The server's record of the genome, so the caller need not ask again.
     genome_attrs: dict | None = None
 
 
@@ -591,10 +598,13 @@ class GenomeManager(ResourceManager):
         each side with :func:`refgenie.utils.seqcol.seqcol_level2`, so the
         server, the CLI and MCP all return the same object.
         """
-        genome_a = self.get(digest_a)
-        genome_b = self.get(digest_b)
-        return compare_level2(
-            self._compare_side(genome_a), self._compare_side(genome_b), digest_a, digest_b
+        return compare_level2(*self.compare_sides(digest_a, digest_b), digest_a, digest_b)
+
+    def compare_sides(self, digest_a: GenomeDigest, digest_b: GenomeDigest) -> tuple[dict, dict]:
+        """The level 2 of each of two genomes, as :meth:`compare` reads them."""
+        return (
+            self._compare_side(self.get(digest_a)),
+            self._compare_side(self.get(digest_b)),
         )
 
     def _compare_side(self, genome: Genome) -> dict:
@@ -642,8 +652,8 @@ class GenomeManager(ResourceManager):
             raise ValueError("Cannot specify both fasta_file_path and source/digest.")
         if not has_local and not has_remote:
             raise ValueError("Must specify either fasta_file_path or source + digest.")
-        if has_remote and source is None:
-            raise ValueError("A RemoteGenomeSource is required for remote init.")
+        if has_remote and (source is None or digest is None):
+            raise ValueError("Remote init needs a source and a digest.")
 
         if has_local:
             return self._initialize_genome_local(
@@ -738,23 +748,11 @@ class GenomeManager(ResourceManager):
         source: RemoteGenomeSource,
         description: str,
         alias_names: list[GenomeAlias],
-        digest: GenomeDigest | None = None,
+        digest: GenomeDigest,
         use_existing: bool = False,
         species_name: str | None = None,
     ) -> tuple[GenomeDigest, bool]:
         """Initialize a genome from a remote source."""
-        if digest is None:
-            if alias_names:
-                resolved = source.resolve_alias(alias_names[0])
-                if resolved is not None:
-                    digest = resolved
-                    logger.info(f"Resolved alias '{alias_names[0]}' to digest: {digest}")
-            if digest is None:
-                raise ValueError(
-                    "No digest provided and could not resolve alias. "
-                    "Provide --digest or use a source that supports alias resolution."
-                )
-
         try:
             collection_data = source.verify_collection(digest)
         except ConnectionError as e:
@@ -808,158 +806,111 @@ class GenomeManager(ResourceManager):
     # Bootstrapping a genome from subscribed servers
     # =========================================================================
 
-    @staticmethod
-    def _genome_store_source(genome_attrs: dict) -> "RemoteGenomeSource | None":
-        """The store the server's genome record names, if any.
-
-        A server can serve several stores; its service-info advertises only the
-        first, so a genome in another store must be read from the one its record
-        names.
-        """
-        store_url = genome_attrs.get("refget_store_url")
-        if not store_url:
-            return None
-        from refgenie.managers.sources.genomes import make_source
-
-        try:
-            return make_source(store_url)
-        except Exception as exc:
-            logger.debug(f"Could not open the genome's store {store_url}: {exc}")
-            return None
-
     @update_scope
     def ensure_from_remote(
-        self,
-        alias_name: GenomeAlias,
-        genome_digest: GenomeDigest | None = None,
-        genome_description: str | None = None,
-        server_urls: list[str] | None = None,
-        genome_attrs: dict | None = None,
-    ) -> GenomeCreationResult:
+        self, genome: GenomeAlias | GenomeDigest, server_urls: list[str] | None = None
+    ) -> GenomeCreationResult | None:
         """
-        Make a genome and its alias exist locally, asking the servers if needed.
+        Make a genome a server knows exist here, with an alias.
 
-        Resolves the alias against the servers, creates what is missing, and
-        reports what it created so a failed pull can roll it back. Where
-        possible the genome is created through a ``RemoteGenomeSource``, so
-        ``remote_url`` is set and sequences can be fetched lazily.
+        An alias is used as given. A digest gets the server's first alias that
+        is valid here, or the digest itself. The collection is read from the
+        store the server's record names, so ``remote_url`` is set and
+        sequences can be fetched lazily. Reports what it created, so a failed
+        pull can roll it back.
 
         Args:
-            alias_name: The name of the alias.
-            genome_digest: The digest of the genome, if already known.
-            genome_description: The description of the genome.
+            genome: The genome, as a ``GenomeAlias`` or a ``GenomeDigest``.
             server_urls: Servers to ask. Defaults to the subscriptions.
-            genome_attrs: The server's genome record, if the caller already
-                has it. Fetched here when needed and not given.
 
         Returns:
-            GenomeCreationResult: Success flag, what this call created, and
-            the server's genome record if it was fetched or given.
+            What this call created and the server's genome record, or None if
+            no server knows the genome.
         """
         servers = self._servers_getter()
         alias_manager = self._alias_manager_getter()
-
-        if genome_digest is None:
-            genome_digest = servers.resolve_alias(alias_name, server_urls)
-            if genome_digest is None:
-                return GenomeCreationResult(success=False)
-            logger.info(f"Determined digest for {alias_name}: {genome_digest}")
-
+        found = servers.locate(genome, server_urls)
+        if found is None:
+            return None
+        server_url, digest, attrs = found
+        alias_name = (
+            genome
+            if isinstance(genome, GenomeAlias)
+            else first_usable_alias(servers.alias_names(digest, server_url)) or GenomeAlias(digest)
+        )
         # Checked before any writes, so a rollback never deletes rows that
         # existed before the pull.
-        genome_existed = self.exists(genome_digest)
+        genome_existed = self.exists(digest)
         alias_existed = alias_manager.exists(alias_name)
-
         if genome_existed:
-            alias_manager.add(alias_name, genome_digest)
-            return GenomeCreationResult(
-                success=True,
-                genome_digest=genome_digest,
-                alias_name=alias_name,
-                created_genome=False,
-                created_alias=not alias_existed,
-                genome_attrs=genome_attrs,
-            )
-
-        if genome_attrs is None:
-            genome_attrs = servers.genome_attrs(genome_digest, server_urls)
-        genome_description = genome_description or genome_attrs.get("description") or NO_DESCRIPTION
-
-        created = True
-        source = self._genome_store_source(genome_attrs) or servers.genome_source(server_urls)
-        initialized = False
-        if source is not None:
+            alias_manager.add(alias_name, digest)
+        else:
+            description = attrs.get("description") or NO_DESCRIPTION
+            source = collection_source(server_url, attrs)
             try:
-                _digest, created = self.initialize_genome(
+                if source is None:
+                    raise ValueError(f"No genome source on {server_url}")
+                self.initialize_genome(
                     source=source,
-                    digest=genome_digest,
-                    description=genome_description,
+                    digest=digest,
+                    description=description,
                     alias_names=[alias_name],
                     use_existing=True,
                 )
-                initialized = True
             except Exception as exc:
-                logger.debug(f"Source-based genome init failed, falling back: {exc}")
-        if not initialized:
-            self.add(genome_digest, genome_description, [alias_name])
+                logger.debug(f"Source-based genome init failed, adding a bare genome: {exc}")
+                self.add(digest, description, [alias_name])
         return GenomeCreationResult(
-            success=True,
-            genome_digest=genome_digest,
+            genome_digest=digest,
             alias_name=alias_name,
-            created_genome=created,
+            created_genome=not genome_existed,
             created_alias=not alias_existed,
-            genome_attrs=genome_attrs,
+            genome_attrs=attrs,
         )
 
     @update_scope
     def init_from_remote(
         self,
-        alias_name: GenomeAlias,
-        genome_digest: GenomeDigest | None = None,
-        genome_description: str | None = None,
+        genome: GenomeAlias | GenomeDigest,
         server_urls: list[str] | None = None,
         require_collection: bool = False,
-    ) -> bool:
+    ) -> GenomeDigest | None:
         """
         Register a genome locally from remote metadata, downloading no assets.
 
+        A genome already here (by alias, or by digest) is returned without
+        asking a server.
+
         Args:
-            alias_name: The alias name to look up on remote servers.
-            genome_digest: The digest of the genome, if already known.
-            genome_description: The description of the genome.
-            server_urls: Optional list of server URLs to query.
-            require_collection: If True, undo the registration and return False
+            genome: The genome, as a ``GenomeAlias`` or a ``GenomeDigest``.
+            server_urls: Servers to ask. Defaults to the subscriptions.
+            require_collection: If True, undo the registration and return None
                 when the genome's sequence collection is not in the local store.
 
         Returns:
-            True if the alias exists afterwards, False if no server knew it, or
-            the collection was required and is missing.
+            The genome's digest, or None if no server knew it, or the
+            collection was required and is missing.
         """
-        if self._alias_manager_getter().exists(alias_name):
-            logger.info(f"Alias '{alias_name}' already exists locally")
-            return True
-
-        result = self.ensure_from_remote(
-            alias_name=alias_name,
-            genome_digest=genome_digest,
-            genome_description=genome_description,
-            server_urls=server_urls,
-        )
-        if result.success:
-            if require_collection and not self.has_collection(result.genome_digest):
-                if result.created_genome:
-                    self.remove(result.genome_digest)  # also removes its aliases
-                elif result.created_alias:
-                    self._alias_manager_getter().remove(alias_name)
-                logger.error(
-                    f"Could not register '{alias_name}': its sequence collection is not in "
-                    f"the server's sequence store. If the genome has a fasta asset, "
-                    f"'refgenie pull {alias_name}/fasta' downloads it with its sequences."
-                )
-                return False
-            if result.genome_attrs is not None:
-                self.fill_from_server(result.genome_digest, result.genome_attrs)
-            logger.info(f"Registered genome for alias '{alias_name}': {result.genome_digest}")
-            return True
-        logger.error(f"Could not find alias '{alias_name}' on remote servers")
-        return False
+        alias_manager = self._alias_manager_getter()
+        if isinstance(genome, GenomeAlias) and alias_manager.exists(genome):
+            return alias_manager.resolve(genome)
+        if isinstance(genome, GenomeDigest) and self.exists(genome):
+            return genome
+        result = self.ensure_from_remote(genome, server_urls)
+        if result is None:
+            logger.error(f"Could not find genome '{genome}' on remote servers")
+            return None
+        if require_collection and not self.has_collection(result.genome_digest):
+            if result.created_genome:
+                self.remove(result.genome_digest)  # also removes its aliases
+            elif result.created_alias:
+                alias_manager.remove(result.alias_name)
+            logger.error(
+                f"Could not register '{genome}': its sequence collection is not in "
+                f"the server's sequence store. If the genome has a fasta asset, "
+                f"'refgenie pull {result.alias_name}/fasta' downloads it with its sequences."
+            )
+            return None
+        self.fill_from_server(result.genome_digest, result.genome_attrs)
+        logger.info(f"Registered genome '{result.alias_name}': {result.genome_digest}")
+        return result.genome_digest

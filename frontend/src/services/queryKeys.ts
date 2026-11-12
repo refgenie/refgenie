@@ -39,7 +39,6 @@ export const qk = {
   configurations: (p: object) => ['configurations', p] as const,
   configuration: (id: number) => ['configuration', id] as const,
 
-  summary: () => ['summary'] as const,
   archives: (p: object) => ['archives', p] as const,
 
   jobs: (p: object) => ['jobs', p] as const,

@@ -1,5 +1,7 @@
 # Installing refgenie
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 Install refgenie from [GitHub releases](https://github.com/databio/refgenie/releases) or from PyPI with `pip`:
 
 - `pip install --user refgenie`: install into user space.

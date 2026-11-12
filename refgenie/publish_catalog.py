@@ -26,6 +26,7 @@ from pathlib import Path
 
 from refgenie.db import publish
 from refgenie.db.tables import RemoteType, Store, StoreType
+from refgenie.models import GenomeAlias
 
 logger = logging.getLogger(__name__)
 
@@ -279,12 +280,13 @@ def import_publish_catalog(engine, source: str) -> dict[str, int]:
     ``engine``'s catalog.
 
     Insert-or-update in one transaction. Nothing is deleted (ORM deletes would
-    queue file removals), except that each species taxon in the artifact is
-    rewritten. Retracted rows stay until :func:`prune_publish_catalog` runs.
+    queue file removals), except that each species taxon and each carried
+    genome's alias set is rewritten; an alias with '/' is skipped. Retracted
+    assets, genomes and stores stay until :func:`prune_publish_catalog` runs.
     The artifact's schema stamp must match this code's.
     """
     with _local_copy(source) as local_path:
-        summary = publish.import_catalog(engine, local_path)
+        summary = publish.import_catalog(engine, local_path, valid_alias=GenomeAlias.is_valid)
 
     logger.info(f"Imported publish catalog from {source}: {summary}")
     return summary
@@ -292,7 +294,8 @@ def import_publish_catalog(engine, source: str) -> dict[str, int]:
 
 def prune_publish_catalog(engine, source: str, dry_run: bool = False) -> dict[str, list[str]]:
     """
-    Delete from ``engine`` the assets that the artifact at ``source`` retracted.
+    Delete from ``engine`` what the artifact at ``source`` no longer has: retracted
+    assets, genomes it dropped that have no assets, and empty disabled stores.
 
     Never run automatically. See :func:`refgenie.db.publish.prune_catalog`.
     """
@@ -300,7 +303,13 @@ def prune_publish_catalog(engine, source: str, dry_run: bool = False) -> dict[st
         removed = publish.prune_catalog(engine, local_path, dry_run=dry_run)
     verb = "Would prune" if dry_run else "Pruned"
     logger.info(
-        f"{verb} {len(removed['asset'])} asset(s) and {len(removed['assetgroup'])} "
-        f"asset group(s) retracted by {source}"
+        f"{verb} {len(removed['asset'])} asset(s), {len(removed['assetgroup'])} asset "
+        f"group(s), {len(removed['genome'])} genome(s), {len(removed['alias'])} alias(es) "
+        f"and {len(removed['store'])} store(s) no longer in {source}"
     )
+    if removed["kept_genome"]:
+        logger.warning(
+            f"Kept {len(removed['kept_genome'])} genome(s) the catalog no longer carries, "
+            f"because they still have assets"
+        )
     return removed

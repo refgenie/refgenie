@@ -5,8 +5,9 @@ from pathlib import Path
 
 from pydantic import AliasChoices, BaseModel, Field
 
-from refgenie.cli.framework import CliList
+from refgenie.cli.commands.helpers import note
 from refgenie.cli.errors import fail
+from refgenie.cli.framework import CliList
 from refgenie.logger import logger
 
 _GENOME_SERVER_DESCRIPTION = "One or more URLs to add to/remove from the list of subscriptions."
@@ -115,7 +116,7 @@ def handle_catalog_export(cmd, refgenie) -> None:
         )
     except (ValueError, RuntimeError) as e:
         fail(f"Catalog export failed: {e}")
-    logger.info(f"Exported publish catalog to {cmd.dest}")
+    note(f"Exported publish catalog to {cmd.dest}")
     for name, count in summary.items():
         logger.info(f"  {name}: {count}")
 
@@ -130,7 +131,11 @@ def handle_catalog_prune(cmd, refgenie) -> None:
 
     removed = prune_publish_catalog(refgenie.database_engine, source, dry_run=cmd.dry_run)
     verb = "Would delete" if cmd.dry_run else "Deleted"
-    for kind in ("asset", "assetgroup"):
-        logger.info(f"{verb} {len(removed[kind])} {kind} row(s)")
+    for kind in ("asset", "assetgroup", "genome", "alias", "store"):
+        note(f"{verb} {len(removed[kind])} {kind} row(s)")
         for item in removed[kind]:
-            logger.info(f"  {item}")
+            note(f"  {item}")
+    if removed["kept_genome"]:
+        note(f"Kept {len(removed['kept_genome'])} genome(s) that still have assets")
+        for item in removed["kept_genome"]:
+            note(f"  {item}")

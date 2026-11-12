@@ -6,8 +6,8 @@ import { Route, Routes } from 'react-router-dom';
 import { GenomePage } from './GenomePage';
 import { server } from '../test/server';
 import { API } from '../test/handlers';
-import { renderWithProviders } from '../test/renderWithProviders';
-import { genomeDetailFixture, genomesFixture } from '../test/fixtures';
+import { renderWithProviders, serverConfig } from '../test/renderWithProviders';
+import { emptyPage, genomeDetailFixture, genomesFixture } from '../test/fixtures';
 
 const flags = vi.hoisted(() => ({ fasta: true }));
 vi.mock('../services/config', async (importOriginal) => ({
@@ -96,7 +96,7 @@ describe('GenomePage', () => {
 
   it('offers the FASTA download on the Download tab, not in the head', async () => {
     renderGenome();
-    await screen.findByRole('table', { name: 'Sequences' });
+    await screen.findByRole('tab', { name: 'Download', selected: false });
     expect(screen.queryByRole('button', { name: /^Download/ })).toBeNull();
     await userEvent.click(screen.getByRole('tab', { name: 'Download' }));
     expect(
@@ -233,7 +233,7 @@ describe('GenomePage', () => {
     expect(calls).toBe(2);
   });
 
-  it('opens on the Sequences tab when the genome has sequence data', async () => {
+  it('opens on the Assets tab', async () => {
     renderGenome();
     const tabs = await screen.findAllByRole('tab');
     expect(tabs.map((tab) => tab.textContent?.replace(/\d|,/g, ''))).toEqual([
@@ -245,9 +245,8 @@ describe('GenomePage', () => {
       'Details',
     ]);
     expect(await screen.findByRole('tab', { selected: true })).toHaveTextContent(
-      /^Sequences/,
+      /^Assets/,
     );
-    expect(await screen.findByRole('table', { name: 'Sequences' })).toBeInTheDocument();
   });
 
   it('opens the tab named in the URL', async () => {
@@ -340,5 +339,28 @@ describe('GenomePage', () => {
     expect(
       await screen.findByText('No other genomes of this species to compare with.'),
     ).toBeInTheDocument();
+  });
+
+  it('on a server with no assets, shows how to request them', async () => {
+    server.use(http.get(`${API}/assets`, () => HttpResponse.json(emptyPage)));
+    renderWithProviders(
+      <Routes>
+        <Route path="/genomes/:digest" element={<GenomePage />} />
+      </Routes>,
+      { route: `/genomes/${DIGEST}`, config: serverConfig },
+    );
+    expect(await screen.findByText('No assets yet')).toBeInTheDocument();
+    const link = screen.getByRole('link', { name: /Request assets/ });
+    const href = link.getAttribute('href') ?? '';
+    expect(href).toContain('genome=');
+    expect(href).toContain('genome_digest=');
+    expect(screen.queryByText('Build the first one')).not.toBeInTheDocument();
+  });
+
+  it('on a local dash with no assets, offers to build and no request link', async () => {
+    server.use(http.get(`${API}/assets`, () => HttpResponse.json(emptyPage)));
+    renderGenome();
+    expect(await screen.findByText('Build the first one')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Request assets/ })).not.toBeInTheDocument();
   });
 });

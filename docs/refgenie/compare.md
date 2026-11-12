@@ -6,7 +6,7 @@ Many analyses need two genomes to be compatible, not identical. For example, to 
 
 ## Usage
 
-To compare two initialized genomes, give their aliases:
+Give any two genomes, local or on your subscribed servers. A genome you have not pulled is read from the server:
 
 ```console
 refgenie compare hg38 hg38_plus

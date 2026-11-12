@@ -1,5 +1,7 @@
 # Build
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 <h1>Build assets</h1>
 
 [TOC]

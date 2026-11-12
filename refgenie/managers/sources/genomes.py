@@ -3,8 +3,8 @@ RemoteGenomeSource protocol and implementations.
 
 Every source reads from a :class:`~gtars.refget.RefgetStore`: a store URL is
 opened directly, and a server URL is resolved to its backing store once,
-through GA4GH service-info. Flat (non-namespaced) alias resolution, which a
-store cannot answer, goes to the server's v4 API via RefgenieserverClient.
+through GA4GH service-info. Which genome an alias names is not a source's
+question; ``ServerManager.locate`` asks the server's v4 API.
 """
 
 import tempfile
@@ -12,8 +12,6 @@ from pathlib import Path
 from typing import Protocol, runtime_checkable
 
 from refgenie.logger import logger
-from refgenie.managers.sources.api_ids import API_ID_ALIAS_DIGEST
-
 
 _cache_root: tempfile.TemporaryDirectory | None = None
 
@@ -43,10 +41,6 @@ class RemoteGenomeSource(Protocol):
         """List available collections with pagination."""
         ...
 
-    def resolve_alias(self, alias: str) -> str | None:
-        """Resolve a human-friendly name to a digest. Returns None if not found."""
-        ...
-
     def get_collection_aliases(self, digest: str) -> list[tuple[str, str]]:
         """All (namespace, alias) pairs the source holds for a collection."""
         ...
@@ -74,6 +68,7 @@ class RefgetStoreSource:
 
         self._url = store_url
         self._store = RefgetStore.open_remote(cache_dir, store_url)
+        self._store.set_quiet(True)
         # open_remote() does not pull the alias TSVs; a store with none is fine.
         try:
             self._store.pull_aliases()
@@ -89,9 +84,6 @@ class RefgetStoreSource:
     def list_collections(self, page: int = 0, page_size: int = 100) -> dict:
         result = self._store.list_collections(page=page, page_size=page_size)
         return result
-
-    def resolve_alias(self, alias: str) -> str | None:
-        return None  # Raw stores don't support alias resolution; use a server
 
     def resolve_alias_in_namespace(self, alias: str, namespace: str) -> str | None:
         """Look up an alias in a specific namespace. Not part of the protocol."""
@@ -147,8 +139,8 @@ def store_url_from_service_info(info: object) -> str | None:
 class RefgenieServerSource:
     """A refgenie / seqcolapi server URL, resolved once to its backing RefgetStore.
 
-    Collection metadata comes from the store; flat alias resolution goes to the
-    server's v4 API through RefgenieserverClient.
+    Collection metadata comes from the store the server's service-info
+    advertises first.
 
     Raises:
         ConnectionError: if no service-info responds, or it advertises no
@@ -157,8 +149,6 @@ class RefgenieServerSource:
 
     def __init__(self, server_url: str, cache_dir: Path | None = None):
         self._url = server_url.rstrip("/")
-        self._client = None
-        self._client_failed = False
 
         info = self._fetch_service_info()
         if info is None:
@@ -204,35 +194,6 @@ class RefgenieServerSource:
 
     def list_collections(self, page: int = 0, page_size: int = 100) -> dict:
         return self._store_source.list_collections(page=page, page_size=page_size)
-
-    def resolve_alias(self, alias: str) -> str | None:
-        """Resolve a flat alias through the server's v4 alias endpoint."""
-        from refgenie.managers.sources.client import RefgenieserverClient
-
-        if self._client_failed:
-            return None
-        if self._client is None:
-            try:
-                self._client = RefgenieserverClient(server_url=self._url)
-            except Exception as e:
-                self._client_failed = True
-                logger.warning(f"Could not read the OpenAPI spec from {self._url}: {e}")
-                return None
-
-        if not self._client.has_endpoint(API_ID_ALIAS_DIGEST):
-            logger.warning(
-                f"{self._url} publishes no '{API_ID_ALIAS_DIGEST}' operation; "
-                f"cannot resolve alias '{alias}' there."
-            )
-            return None
-        try:
-            digest = self._client.alias.resolve(alias)
-        except Exception as e:
-            logger.warning(f"Alias '{alias}' could not be resolved at {self._url}: {e}")
-            return None
-        if digest is None:
-            logger.warning(f"Alias endpoint at {self._url} returned no digest for '{alias}'")
-        return digest
 
     def get_collection_aliases(self, digest: str) -> list[tuple[str, str]]:
         return self._store_source.get_collection_aliases(digest)
@@ -336,3 +297,26 @@ def make_source(url: str, cache_dir: Path | None = None) -> RemoteGenomeSource:
         ) from e
     _source_cache[normalized] = source
     return source
+
+
+def collection_source(server_url: str, genome_attrs: dict) -> RemoteGenomeSource | None:
+    """Where to read a genome's sequence collection.
+
+    The store the server's genome record names (a server serves several stores
+    but advertises only the first), else the store the server advertises.
+
+    Args:
+        server_url: The server that knows the genome.
+        genome_attrs: The server's genome record (``ServerManager.locate``).
+
+    Returns:
+        The source, or None if neither URL is usable as one.
+    """
+    for url in (genome_attrs.get("refget_store_url"), server_url):
+        if not url:
+            continue
+        try:
+            return make_source(url)
+        except Exception as exc:
+            logger.debug(f"Could not use {url} as a genome source: {exc}")
+    return None

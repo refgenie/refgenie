@@ -16,8 +16,7 @@ nav:
   - How-to guides:
       - Refer to assets: asset_registry_paths.md
       - Download pre-built assets: pull.md
-      - Use refgenie from Python: notebooks/refgenie.ipynb
-      - Use refgenie from Python (API): refgenie_object.md
+      - Use refgenie from Python: refgenie_object.md
       - Use data channels: data_channels.md
       - Build assets: build.md
       - Stage assets for serving: staging.md
@@ -55,7 +54,3 @@ nav:
       - FAQ: faq.md
       - Contributing: contributing.md
       - Development setup: development.md
-renderers:
-  - hub-notebooks:
-      include: [notebooks/refgenie.ipynb]
-      execute: false

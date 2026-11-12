@@ -1,16 +1,17 @@
 """The `pull` and `mirror` commands: models and handlers."""
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
+from pydantic_settings import CliPositionalArg
 
-from refgenie.cli.framework import CliList
 from refgenie.cli.commands.helpers import (
-    _ASSET_REGISTRY_PATHS_DESCRIPTION,
     _GENOME_DESCRIPTION,
     _GENOME_DIGEST_DESCRIPTION,
     _validate_registry_paths,
     data_channel_hint,
+    genome_digest_from,
     genome_ref,
     no_data_channel_synced,
+    note,
 )
 from refgenie.cli.errors import (
     EXIT_GENERAL_ERROR,
@@ -20,6 +21,7 @@ from refgenie.cli.errors import (
     fail,
     run_over_paths,
 )
+from refgenie.cli.framework import CliList
 from refgenie.const import DEFAULT_PULL_SIZE_CUTOFF_GB
 from refgenie.logger import logger
 
@@ -82,11 +84,10 @@ class LargeArchiveFlags(BaseModel):
 
 
 class PullModel(LargeArchiveFlags):
-    # Named, not positional: `refgenie.cli.main` rewrites bare paths to this flag.
-    asset_registry_paths: CliList | None = Field(
-        default=None,
-        description=_ASSET_REGISTRY_PATHS_DESCRIPTION,
-        validation_alias=AliasChoices("asset-registry-paths"),
+    asset_registry_paths: CliPositionalArg[list[str]] = Field(
+        default_factory=list,
+        description="Assets to pull, as genome/asset_group[:asset], e.g. hg38/fasta_index "
+        "or hg38/bowtie2_index:2.5.5. With --genome-digest, leave the genome out: fasta_index.",
     )
     genome: CliList | None = Field(
         default=None,
@@ -115,8 +116,8 @@ class PullModel(LargeArchiveFlags):
     )
     init: bool = Field(
         default=False,
-        description="Register genome(s) in the local store (aliases, metadata) "
-        "without downloading asset files.",
+        description="Register genome(s), named with -g or --genome-digest, without "
+        "downloading asset files.",
         validation_alias=AliasChoices("init"),
     )
     force: bool = Field(
@@ -144,9 +145,11 @@ def _check_bulk(result, failure: str) -> None:
     fail(f"Pull failed: {failure}.", EXIT_NOT_FOUND)
 
 
-def handle_pull(cmd, refgenie) -> None:
-    from refgenie.models import GenomeAlias
+def _note_bulk(result) -> None:
+    note(f"Pulled {len(result.pulled)}, skipped {len(result.skipped)}, failed {len(result.failed)}")
 
+
+def handle_pull(cmd, refgenie) -> None:
     genome_names = cmd.genome or []
     genome_digests = cmd.genome_digest or []
     genomes = [genome_ref(g, None) for g in genome_names] + [
@@ -157,19 +160,17 @@ def handle_pull(cmd, refgenie) -> None:
     force_large = cmd.resolve_force_large()
 
     if cmd.init:
-        if genome_digests:
-            fail("--init registers genomes by alias; use -g, not --genome-digest.")
         from refgenie.exceptions import PullFailedError
 
         try:
             registered = refgenie.transfer.init_genomes(
-                aliases=[GenomeAlias(g) for g in genome_names] or None,
-                all_genomes=cmd.all_genomes,
+                genomes=genomes or None, all_genomes=cmd.all_genomes
             )
         except PullFailedError as e:
             fail(f"Init failed: {e}.", EXIT_NOT_FOUND)
         if not registered:
             fail("Init failed: no genomes were registered.", EXIT_NOT_FOUND)
+        note(f"Registered {len(registered)} genome(s): {', '.join(registered)}")
     elif cmd.all:
         if not genomes and not cmd.all_genomes:
             fail("Specify genome(s) with -g or --genome-digest, or use --all-genomes")
@@ -182,6 +183,7 @@ def handle_pull(cmd, refgenie) -> None:
             size_cutoff=cmd.size_cutoff,
         )
         _check_bulk(result, f"no assets were pulled for {', '.join(genomes)}")
+        _note_bulk(result)
     elif cmd.asset:
         if not genomes and not cmd.all_genomes:
             fail("Specify genome(s) with -g or --genome-digest, or use --all-genomes")
@@ -194,6 +196,7 @@ def handle_pull(cmd, refgenie) -> None:
             size_cutoff=cmd.size_cutoff,
         )
         _check_bulk(result, f"no '{cmd.asset}' assets were pulled")
+        _note_bulk(result)
     elif asset_registry_paths:
         from refgenie.exceptions import (
             AssetExistsError,
@@ -242,7 +245,7 @@ def handle_pull(cmd, refgenie) -> None:
                         if genome_digest
                         else f"refgenie pull {genome}/{parsed.asset_group}"
                     )
-                    logger.info(data_channel_hint(retry))
+                    note(data_channel_hint(retry))
                 return EXIT_NOT_FOUND
             if pulled is None:
                 # Skipped: the puller has already logged why and which flag overrides it.
@@ -250,6 +253,9 @@ def handle_pull(cmd, refgenie) -> None:
                     f"Pull skipped: no asset was retrieved for '{genome}/{parsed.asset_group}'."
                 )
                 return EXIT_NOT_FOUND
+            digest = genome_digest_from(refgenie, parsed.genome, genome_digest)
+            path = refgenie.asset.seek(digest, parsed.asset_group, pulled.name)
+            note(f"Pulled {genome}/{parsed.asset_group}:{pulled.name} to {path}")
             return EXIT_OK
 
         run_over_paths(parsed_asset_registry_paths, pull_one)

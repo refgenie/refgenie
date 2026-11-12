@@ -6,8 +6,8 @@ from typing import Literal
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 from pydantic_settings import CliPositionalArg, CliSubCommand, get_subcommand
-from rich import print as rprint
 
+from refgenie.cli.commands.helpers import note, print_table
 from refgenie.cli.errors import EXIT_NOT_FOUND, fail
 from refgenie.logger import logger
 
@@ -97,12 +97,12 @@ class DataChannelParser(BaseModel):
 
 
 def handle_data_channel_list(cmd, refgenie) -> None:
-    rprint(refgenie.sources.channels_table())
+    print_table(refgenie.sources.channels_table())
 
 
 def handle_data_channel_show(cmd, refgenie) -> None:
     if channel := refgenie.sources.get_channel(cmd.name):
-        rprint(refgenie.sources.channels_table(channel_names=[channel.name]))
+        print_table(refgenie.sources.channels_table(channel_names=[channel.name]))
     else:
         fail(f"Data channel '{cmd.name}' not found", EXIT_NOT_FOUND)
 
@@ -133,22 +133,22 @@ def handle_data_channel_add(cmd, refgenie) -> None:
         )
     except (ValueError, RuntimeError, OSError) as e:
         fail(f"Failed to add data channel: {e}")
-    logger.info(f"Added data channel: {cmd.name}")
+    note(f"Added data channel: {cmd.name}")
 
 
 def handle_data_channel_remove(cmd, refgenie) -> None:
     if not refgenie.sources.remove_channel(cmd.name):
         fail(f"Data channel '{cmd.name}' not found", EXIT_NOT_FOUND)
-    logger.info(f"Removed data channel: {cmd.name}")
+    note(f"Removed data channel: {cmd.name}")
 
 
 def handle_data_channel_validate(cmd, refgenie) -> None:
     if not refgenie.sources.test_channel(cmd.name):
-        logger.info(
+        note(
             "Please check whether the resource is accessible and/or validity of the index file"
         )
         fail(f"Data channel '{cmd.name}' is invalid")
-    logger.info(f"Data channel '{cmd.name}' is valid")
+    note(f"Data channel '{cmd.name}' is valid")
 
 
 def handle_data_channel_sync(cmd, refgenie) -> None:
@@ -167,7 +167,7 @@ def handle_data_channel_sync(cmd, refgenie) -> None:
         logger.warning(f"Skipped {skipped} existing item(s) from channel '{cmd.name}'")
     if not report.ok:
         fail(f"Failed to sync from channel '{cmd.name}'")
-    logger.info(
+    note(
         f"Successfully synced from channel '{cmd.name}': "
         f"{report.asset_classes_added} asset class(es), {report.recipes_added} recipe(s)"
     )

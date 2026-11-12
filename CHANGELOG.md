@@ -15,19 +15,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Collection pages (`REFGENIE_COLLECTIONS`) show a branded slice of the
   catalog, such as the VGP assemblies.
 - `GET /v4/genomes/{digest}/sequences` and `GET /v4/genomes/{digest}/compare/{other}`.
+- `list --json` and `listr --json`; `getseq --fasta` and `--one-based`.
+- MCP: a `get_sequence` tool; `compare_genomes` returns a one-sentence summary and
+  a map of renamed sequences; `refgenie-mcp --help`; and the instructions and
+  `catalog_summary` say which server this is.
 
 ### Changed
 
+- `refgenie pull` brings a parent asset only when the asset colocates its files
+  (such as `bismark_bt2_index`). `refgenie pull hg38/fasta_index` now downloads
+  12 KB, not the FASTA.
 - A genome is read only from the store its `store_name` names; stores are no
   longer probed. A genome whose store the server does not serve is left out of
   every listing and answers 404.
 - A publish catalog with a genome that names no store, or a store the catalog
   does not list, is refused at import.
 - Compare returns the same GA4GH comparison from the server, the CLI and MCP.
+- MCP `get_asset` builds its pull command from the shortest plain alias, gives
+  absolute URLs, and lists each file in `files`; `get_genome_sequences` is paged
+  and takes `name_contains`.
+- `listr -g` and `compare` find genomes on the subscribed servers.
+- `getseq` registers an unregistered genome first (metadata only).
+- The default log level is WARNING (set `REFGENIE_LOG_LEVEL=INFO` for the old
+  output). Results and hints print on stderr without the logger.
+- `config get` prints YAML.
+- `getseq` reads byte ranges and no longer caches sequences.
+- `pull --init` accepts `--genome-digest`, and `--all-genomes` registers
+  alias-less genomes by digest.
+- `genome init --server` takes only server URLs (use `--store` for stores).
+- `refgenie store sync` replaces each store's aliases as a set: a name the
+  store dropped is removed, a moved name follows its collection, and names
+  with '/' are skipped. A store that suddenly offers under half its aliases
+  keeps them. Only a genome's owning store writes its description and other
+  FHR columns.
+- A catalog import rewrites the aliases of each genome the catalog carries,
+  skipping names with '/', and refuses a catalog that would remove more than
+  half of them. `refgenie catalog-prune` also deletes genomes the catalog no
+  longer carries that have no assets, with their aliases, and disabled stores
+  left empty.
 
 ### Fixed
 
+- `genome init --server`, `alias set` and `id --remote` read a genome from the
+  store that holds it, not only from the server's first store.
+- Pulling a child asset (bwa_index, fasta_index, ...) of hg38, celegans and similar genomes no longer fails and deletes the genome when the server lists an alias containing '/'. A parent lands under the child's alias and adds none of the server's other aliases.
 - `pull --init` now fails with a clear error, instead of saving an alias that cannot be resolved, when a genome's sequence collection is not on the server (#299).
+- Quadratic `getseq` output time, whole-chromosome downloads for a few bases,
+  truncated tables off a terminal, the download progress bar on stdout, and
+  `build` exiting silently on an unknown alias.
+
+### Removed
+
+- `refgenie pull --asset-registry-paths`; pass registry paths as positional
+  arguments.
+- MCP: the `get_genome_metadata` tool (`get_genome_sequences` pages carry
+  `n_sequences` and `total_length`), and `get_asset`'s `downloads` and `local_path`.
 
 ## [1.0.0a1] - 2026-11-06
 

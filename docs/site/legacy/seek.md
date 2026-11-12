@@ -1,5 +1,7 @@
 # Retrieve paths to *local* assets
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 Once you've assembled a few assets, either by downloading or by building them, you'll be able to use `refgenie seek` to retrieve the paths. It's quite simple, really -- say you've built the `bowtie2_index` and `fasta` assets for `hg38`. If you type:
 
 ```console

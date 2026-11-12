@@ -1,11 +1,17 @@
 """Web-layer constants for the refgenie app factory (both modes)."""
 
 import os
+from importlib.metadata import version
 from typing import Literal
 
-from importlib.metadata import version
+from refgenie.const import DEFAULT_SERVER_URL
 
 ALL_VERSIONS = {"version": version("refgenie")}
+
+# The base URL clients use to reach this server. It comes from an environment
+# variable, not from the request's Host, because behind Cloudflare and ECS
+# uvicorn sees plain http.
+REFGENIE_PUBLIC_URL = os.environ.get("REFGENIE_PUBLIC_URL", DEFAULT_SERVER_URL).rstrip("/")
 
 # App modes: `server` is the public REST API; `local` is the single-user app
 # behind `refgenie dash`. Unrelated to refgenie/core/mode.py's mode objects.

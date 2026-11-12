@@ -68,7 +68,7 @@ refgenie listr
 ...
 ```
 
-Each row is one asset. The *asset group* is the kind of asset (`bowtie2_index`), and the *asset* is a named build within the group (`2.5.5`). To list the assets for one genome, pass its digest: `refgenie listr --genome-digest jthDpfNIgzM5AGJlOkRtfnky4rXMBIUP`. The `-g` flag takes only aliases you already have locally.
+Each row is one asset. The *asset group* is the kind of asset (`bowtie2_index`), and the *asset* is a named build within the group (`2.5.5`). To list the assets for one genome, name it: `refgenie listr -g rCRSd`. It need not be on your machine yet.
 
 ## Step 6: Pull an asset
 

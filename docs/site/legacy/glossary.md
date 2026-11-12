@@ -1,5 +1,7 @@
 # Glossary
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 A common set of concepts is central to these and other genomics resources docs,
 but often terminology differs between sources, or even within the same one (and may here).
 

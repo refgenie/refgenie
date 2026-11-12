@@ -18,10 +18,10 @@ from refget.store import ReadonlyRefgetStore, RefgetStore
 
 from refgenie.db.tables import Store, StoreType
 from refgenie.exceptions import MissingGenomeError, UnservedStoreError
-from refgenie.managers.store import LOCAL_STORE_NAME
-from refgenie.utils.seqcol import compare_in_stores
 from refgenie.logger import logger
+from refgenie.managers.store import LOCAL_STORE_NAME
 from refgenie.models import AliasEntry, CollectionSequences, GenomeDigest, SequenceRow
+from refgenie.utils.seqcol import compare_in_stores
 
 #: A store the router holds: editable (local mode) or frozen (server mode).
 AnyRefgetStore = RefgetStore | ReadonlyRefgetStore

@@ -3,9 +3,14 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from refgenie.server.dependencies import DbId, get_refgenie
-from refgenie.server.errors import ErrorCode
-from refgenie.server.routers import helpers
+from refgenie.core import Refgenie
+from refgenie.db.tables import (
+    AliasPublic,
+    AssetClassPublic,
+    AssetGroupPublic,
+    ConfigurationPublic,
+    StagedAssetPublic,
+)
 from refgenie.exceptions import (
     MissingAliasError,
     MissingAssetError,
@@ -14,17 +19,10 @@ from refgenie.exceptions import (
     UnservedStoreError,
 )
 from refgenie.models import GenomeAlias
-from refgenie.core import Refgenie
-from refgenie.db.tables import (
-    StagedAssetPublic,
-    AliasPublic,
-    AssetClassPublic,
-    AssetGroupPublic,
-    ConfigurationPublic,
-)
+from refgenie.server.dependencies import DbId, get_refgenie
+from refgenie.server.errors import ErrorCode
 from refgenie.server.pagination import PageParams, PageResponse, get_page_params, respond
-from refgenie.server.search import SearchParams, get_search_params, invalid_search_is_422
-
+from refgenie.server.routers import helpers
 from refgenie.server.schemas import (
     AliasResponse,
     AssetClassResponse,
@@ -35,6 +33,7 @@ from refgenie.server.schemas import (
     RecipeResponse,
     SpeciesResponse,
 )
+from refgenie.server.search import SearchParams, get_search_params, invalid_search_is_422
 
 
 def _taxon_uri(taxon_id: int | None) -> str | None:

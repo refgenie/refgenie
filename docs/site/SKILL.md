@@ -56,9 +56,9 @@ pip install "refgenie[mcp]>=1.0.0a1"
 claude mcp add refgenie refgenie-mcp
 ```
 
-For other stdio MCP clients, run the command `refgenie-mcp` with no arguments.
-It reads the user's config from `REFGENIE_HOME_PATH` (default `~/.refgenie`).
-The public server also offers the same tools over HTTP, with nothing
+To use another refgenie folder (default `~/.refgenie`), set `REFGENIE_HOME_PATH`:
+`claude mcp add --env REFGENIE_HOME_PATH=/data/refgenie refgenie -- refgenie-mcp`.
+Other clients set it in the server's `env` block. The public server also offers the same tools over HTTP, with nothing
 installed:
 
 ```bash
@@ -77,9 +77,9 @@ claude mcp add --transport http refgenie-public https://api.refgenie.org/mcp
 | `list_recipes` | recipes, optionally by `output_asset_class` |
 | `get_recipe` | one recipe in full: inputs, command templates, docker image |
 | `lookup_digest` | what a digest is: a genome, an asset, or nothing |
-| `get_genome_metadata` | seqcol metadata: sequence count, total length, source |
-| `get_genome_sequences` | per-sequence names, lengths, digests |
-| `compare_genomes` | seqcol comparison of two genomes |
+| `get_genome_sequences` | a genome's sequences (name, length, digest), paged; filter with `name_contains` |
+| `get_sequence` | the bases of one region (`name`, `start`, `end`; 0-based, half-open; at most 100,000 bases) |
+| `compare_genomes` | seqcol comparison of two genomes, with a one-sentence summary and a map of renamed sequences |
 
 A tool that takes a genome has separate `alias` and `digest` parameters; give
 exactly one. List tools page with a `token` (pass back
@@ -92,8 +92,10 @@ To change anything (pull, build, init, alias edits), use the CLI below.
 ## Core concepts
 
 - **Genome digest**: the GA4GH sequence-collection digest, computed from the
-  sequences. It is the genome's identity: the same sequences give the same
-  digest anywhere.
+  sequences, their names and their order. The same named sequences in the same
+  order give the same digest anywhere. Two genomes with the same sequences under
+  different names (`chrI` vs `I`) have different digests; `compare` shows they
+  match.
 - **Alias**: a human name like `hg38` or `GRCh38` that points to a digest.
   Each refgenie instance keeps its own aliases. **An alias is not a digest.**
 - **Asset group**: a named slot for one kind of asset on one genome, like
@@ -130,10 +132,9 @@ refgenie init
 # 2. Optional: subscribe to another server
 refgenie subscribe -s https://my.server.org
 
-# 3. Browse what's available. Filter by genome digest (copy it from the
-#    listr table); -g works only for aliases you already have locally.
+# 3. Browse what's available (subscribed servers; no download)
 refgenie listr
-refgenie listr --genome-digest jthDpfNIgzM5AGJlOkRtfnky4rXMBIUP
+refgenie listr -g hg38
 
 # 4. Download assets (resolves the alias, fetches, extracts, registers)
 refgenie pull hg38/fasta
@@ -152,6 +153,12 @@ Use `seek` in pipelines so paths are never hardcoded:
 ```bash
 bwa mem $(refgenie seek hg38/bwa_index) reads.fq > aligned.sam
 ```
+
+`pull` downloads only the asset you name, except that a few assets that need
+their parent's files beside them (such as `bismark_bt2_index`) also pull that
+parent. `seek` and `seekr` print only the path or URL. Set
+`REFGENIE_LOG_LEVEL=INFO` to see progress, and add `--json` to `list` or `listr`
+for machine-readable output.
 
 `seekr` gives the path to a file on the server (e.g. on S3) without
 downloading it, for cloud workflows:
@@ -187,36 +194,58 @@ refgenie seek mygenome/fasta.chrom_sizes
 
 ---
 
-## Retrieve sequences directly (no FASTA needed)
+## Recipes
 
-`getseq` reads sequence from the RefgetStore. Coordinates are **0-based,
-half-open**.
+### The aligner that matches an index
+
+Refgenie gives you the index, not the aligner. The asset name is the tool
+version that built it.
 
 ```bash
-# Register hg38 from the public server without downloading its sequences
-refgenie genome init --server https://api.refgenie.org \
-  --digest EiFob05aCWgVU_B_Ae0cypnQut3cxUP1 --name hg38 --no-build
-
-refgenie getseq -g hg38 -l chrM              # whole chromosome
-refgenie getseq -g hg38 -l chrM:0-60         # a subsequence
-refgenie getseq -g hg38 -l chrM:16500        # from a position to the end
+refgenie seek yeast_s288c/bowtie2_index.version   # 2.5.5
+conda install -c bioconda bowtie2=2.5.5           # or any installer; match the version
+bowtie2 -x "$(refgenie seek yeast_s288c/bowtie2_index)" -U reads.fq -S out.sam
 ```
 
-For a genome initialized from a remote source, `getseq` downloads each
-chromosome the first time you ask for it and caches it locally, so the first
-call on a large chromosome like `chr1` takes a while.
+### Chromosome sizes without the genome
+
+```bash
+refgenie pull hg38/fasta_index                 # about 12 KB: the .fai and .chrom.sizes
+refgenie seek hg38/fasta_index.chrom_sizes
+```
+
+Use `fasta_index.chrom_sizes`. It is the same file as `fasta.chrom_sizes`,
+without the 3 GB FASTA. Over MCP: page through `get_genome_sequences`.
+
+### A region of a genome you have not downloaded
+
+```bash
+refgenie getseq -g hg38 -l chr17:43044294-43044394   # first 100 bp of BRCA1; 0-based, half-open
+refgenie getseq -g hg38 -l chr17:43044295-43044394 --one-based   # same 100 bp, 1-based inclusive
+refgenie getseq -g hg38 -l chr17:43044294-43044394 --fasta > brca1_start.fa
+```
+
+The first call registers hg38 from your server; no FASTA is downloaded. Over
+MCP: `get_sequence(alias="hg38", name="chr17", start=43044294, end=43044394)`.
+
+### Check whether two genomes match
+
+```bash
+refgenie compare hg38 hg38_noalt_decoy   # works for genomes you have not pulled
+```
+
+Same `sequences` and `names`: the same genome. Same `sequences`, different
+`names`: renamed. Shared `name_length_pairs`: the same coordinates.
 
 ---
 
-## Compare genomes
+## Request a genome or an asset
 
-```bash
-refgenie compare hg38 hg38_custom
-```
-
-Uses GA4GH seqcol comparison to report which sequences are shared or unique,
-and whether two genomes differ only in sequence names or order or in actual
-sequence content.
+- A genome refgenie does not list: open
+  https://github.com/refgenie/refgenie-registry/issues/new?template=genome_proposal.yml
+- A listed genome missing an asset: open
+  https://github.com/refgenie/refgenie-registry/issues/new?template=asset_request.yml&genome=<alias>&genome_digest=<digest>&title=Asset+request:+<alias>
+- Need it now: build it yourself (see "Build workflow").
 
 ---
 
@@ -238,9 +267,9 @@ rgc.asset.seek(digest, "bowtie2_index")  # local path to an asset
 ## Aliases
 
 ```bash
-refgenie alias get                                        # list aliases
-refgenie alias set --aliases hg38 GRCh38 --digest <SEQCOL_DIGEST>
-refgenie alias remove --aliases old_name
+refgenie alias get                                    # list aliases
+refgenie alias set -a hg38,GRCh38 -d <SEQCOL_DIGEST>  # several aliases: comma-separated
+refgenie alias remove -a old_name
 ```
 
 `pull` resolves aliases to digests automatically.

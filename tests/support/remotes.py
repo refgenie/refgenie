@@ -98,13 +98,11 @@ class MockRemoteSource:
         self,
         collections=None,
         store_url="https://store.example.com",
-        aliases=None,
         collection_aliases=None,
         fhr=None,
     ):
         self._collections = collections or {}
         self._store_url = store_url
-        self._aliases = aliases or {}
         # digest -> [(namespace, alias), ...]
         self._collection_aliases = collection_aliases or {}
         # digest -> camelCase FHR dict
@@ -115,9 +113,6 @@ class MockRemoteSource:
 
     def list_collections(self, page=0, page_size=100):
         return {"results": [{"digest": d} for d in self._collections]}
-
-    def resolve_alias(self, alias):
-        return self._aliases.get(alias)
 
     def get_collection_aliases(self, digest):
         return list(self._collection_aliases.get(digest, []))
@@ -149,7 +144,6 @@ def mocked_puller(
     *,
     alias=GENOME,
     subscriptions=("http://test.example.com",),
-    remote_source=None,
     mock_genome=True,
     mock_download_modes=True,
     mock_asset_writes=True,
@@ -174,17 +168,9 @@ def mocked_puller(
             patch.object(puller._servers, "subscriptions", return_value=list(subscriptions))
         )
         stack.enter_context(patch.object(puller._servers, "client", return_value=mock_client))
-        if remote_source is not None:
-            stack.enter_context(
-                patch(
-                    "refgenie.managers.sources.servers.make_source",
-                    return_value=remote_source,
-                )
-            )
         if mock_genome:
             ensure = stack.enter_context(patch.object(puller._genome_manager, "ensure_from_remote"))
             ensure.return_value = MagicMock(
-                success=True,
                 genome_digest=rg.alias.resolve(alias),
                 created_genome=False,
                 created_alias=False,

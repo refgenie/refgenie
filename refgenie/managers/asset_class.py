@@ -1,5 +1,5 @@
-from pathlib import Path
 from collections.abc import Iterable
+from pathlib import Path
 
 from rich.table import Table
 

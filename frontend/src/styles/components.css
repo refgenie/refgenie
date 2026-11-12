@@ -2514,3 +2514,8 @@
     padding-block: var(--space-1);
   }
 }
+
+/* Text for readers without JavaScript (index.html); React replaces it. */
+.rg-static-fallback {
+  display: none;
+}

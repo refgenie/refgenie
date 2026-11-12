@@ -3,7 +3,6 @@ try:
     import uvicorn
     from fastapi import Depends, FastAPI
     from fastapi.middleware.cors import CORSMiddleware
-    from fastapi.responses import PlainTextResponse
 except ImportError as e:
     raise ImportError(
         "The 'dash' extras are not installed. Please install refgenie with the 'dash' extras to use the web interface."
@@ -12,20 +11,17 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from refgenie.server.dependencies import get_refgenie as _get_refgenie
-from refgenie.server.dependencies import reject_nul_bytes
-from refgenie.server.routers.catalog import router as refgenie_core_router
-from refgenie.core import Refgenie
-
 from refgenie.const import API_VERSION
+from refgenie.core import Refgenie
+from refgenie.server.collections import load_collections_from_env
 from refgenie.server.const import (
     ALL_VERSIONS,
     APP_MODE_LOCAL,
     APP_MODE_SERVER,
-    AppMode,
     CATALOG_IMPORT_INTERVAL_SECONDS,
     DOWNLOAD_COUNT_DUMP_JOB_INTERVAL_SECONDS,
     REFGENIE_CATALOG_URL,
+    REFGENIE_PUBLIC_URL,
     SEQCOL_MOUNT_PATH,
     SEQCOL_SERVICE_ID,
     SEQCOL_SERVICE_NAME,
@@ -33,8 +29,11 @@ from refgenie.server.const import (
     SERVICE_DOCUMENTATION_URL,
     SERVICE_GITHUB_URL,
     SERVICE_ORGANIZATION,
+    AppMode,
 )
-from refgenie.server.collections import load_collections_from_env
+from refgenie.server.dependencies import get_refgenie as _get_refgenie
+from refgenie.server.dependencies import reject_nul_bytes
+from refgenie.server.routers.catalog import router as refgenie_core_router
 from refgenie.server.seqcol import SeqcolService, SeqcolServing
 from refgenie.server.spa import mount_spa, read_build_info, resolve_web_dist
 from refgenie.server.stats import (
@@ -204,9 +203,11 @@ def _service_info_doc(
 def _mount_mcp(app: FastAPI, rg: Refgenie) -> None:
     """Serve the MCP server at ``/mcp``."""
     from mcp.server.transport_security import TransportSecuritySettings
-    from refgenie.mcp.tools import mcp as mcp_server, set_refgenie as set_mcp_refgenie
 
-    set_mcp_refgenie(rg, serves_downloads=True)
+    from refgenie.mcp.tools import mcp as mcp_server
+    from refgenie.mcp.tools import set_refgenie as set_mcp_refgenie
+
+    set_mcp_refgenie(rg, public_url=REFGENIE_PUBLIC_URL)
     # The default DNS-rebinding guard rejects every non-loopback Host; this API is public.
     mcp_app = mcp_server.streamable_http_app(
         transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False)
@@ -306,9 +307,9 @@ def create_app(
         each scheduled import reloads them if the store set changed.
         """
         # A `server`-extra dependency; `refgenie dash` installs lack it.
-        from apscheduler.schedulers.background import BackgroundScheduler
-
         import time
+
+        from apscheduler.schedulers.background import BackgroundScheduler
 
         startup = time.monotonic()
         print("Creating database and tables")
@@ -444,14 +445,6 @@ def create_app(
 
     if not is_local:
         _mount_mcp(app, rg)
-
-    if not is_local:
-        # The llmstxt.org index for AI agents; points at /mcp.
-        llms_txt = (Path(__file__).parent / "llms.txt").read_text()
-
-        @app.get("/llms.txt", include_in_schema=False)
-        def get_llms_txt() -> PlainTextResponse:
-            return PlainTextResponse(llms_txt, media_type="text/plain; charset=utf-8")
 
     # Last: the SPA catch-all.
     mount_spa(app, web_dist, shell=is_local)

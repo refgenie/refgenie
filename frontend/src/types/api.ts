@@ -248,12 +248,6 @@ export interface ArchiveRecord {
   download_count: number;
 }
 
-export interface DatabaseSummaryResponse {
-  genomes: number;
-  asset_groups: number;
-  assets: number;
-}
-
 // === FHR sidecar ===
 
 export interface FhrPerson {

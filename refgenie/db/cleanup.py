@@ -10,8 +10,8 @@ repair pass.
 """
 
 import shutil
-from pathlib import Path
 from collections.abc import Callable
+from pathlib import Path
 from typing import Literal
 
 from sqlalchemy.orm import Session, object_session

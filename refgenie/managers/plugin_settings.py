@@ -3,9 +3,8 @@
 import re
 
 from refgenie.db.engine import Engine
-
-from refgenie.managers.base import ResourceManager
 from refgenie.db.queries import configuration as configuration_queries
+from refgenie.managers.base import ResourceManager
 from refgenie.plugins import registry
 from refgenie.plugins.registry import PluginInfo
 

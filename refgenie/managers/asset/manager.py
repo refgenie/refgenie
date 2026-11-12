@@ -9,10 +9,10 @@ puller, and both depend on this manager, never the other way round.
 """
 
 import shutil
-from pathlib import Path
-from collections.abc import Iterable
-from typing import TYPE_CHECKING
 from collections import defaultdict
+from collections.abc import Iterable
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 from rich.table import Table
 
@@ -22,22 +22,22 @@ from refgenie.db.queries import asset_group as group_queries
 from refgenie.db.tables import Asset, SeekKeyType, is_path_type, prefix_matches
 from refgenie.exceptions import MissingAssetError
 from refgenie.logger import logger
-from refgenie.models import AssetRegistryPathComponents, GenomeAlias, GenomeDigest, Page
-from refgenie.managers.base import ResourceManager
 from refgenie.managers.asset.alias_tree import AliasTree
 from refgenie.managers.asset.content import AssetContentManager
 from refgenie.managers.asset.group import AssetGroupManager
 from refgenie.managers.asset.links import AssetLinkManager
 from refgenie.managers.asset.seek_key import SeekKeyManager
 from refgenie.managers.asset.tables import asset_table
+from refgenie.managers.base import ResourceManager
+from refgenie.models import AssetRegistryPathComponents, GenomeAlias, GenomeDigest, Page
 from refgenie.plugins.events import NULL_EVENTS, EventSink, update_scope
 from refgenie.plugins.hooks import Change
 from refgenie.utils.search import Search
 
 if TYPE_CHECKING:
     from refgenie.managers.alias import AliasManager
-    from refgenie.managers.genome import GenomeManager
     from refgenie.managers.asset_class import AssetClassManager
+    from refgenie.managers.genome import GenomeManager
 
 
 class AssetManager(ResourceManager):
@@ -355,7 +355,7 @@ class AssetManager(ResourceManager):
         genome_digests: list[GenomeDigest] | None = None,
         asset_group_name: str | None = None,
         include_seek_keys: bool = False,
-    ) -> tuple[dict[str, list[str]], dict[str, str]]:
+    ) -> tuple[dict[str, list[str]], dict[str, list[str]]]:
         """
         List assets with formatted output.
 
@@ -365,7 +365,7 @@ class AssetManager(ResourceManager):
             include_seek_keys: Whether to include seek keys.
 
         Returns:
-            tuple[dict[str, list[str]], dict[str, str]]: Asset data and aliases data.
+            tuple[dict[str, list[str]], dict[str, list[str]]]: Asset data and aliases data.
         """
         assets = self.list_assets(genome_digests=genome_digests, asset_group_name=asset_group_name)
         return_dict = defaultdict(list)
@@ -393,7 +393,7 @@ class AssetManager(ResourceManager):
                 if alias.genome_digest in genome_digests_with_assets:
                     aliases_by_genome[alias.genome_digest].append(alias.name)
             for genome_digest, alias_names in aliases_by_genome.items():
-                aliases_dict[genome_digest] = ", ".join(alias_names)
+                aliases_dict[genome_digest] = alias_names
 
         return dict(return_dict), aliases_dict
 

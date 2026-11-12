@@ -103,9 +103,9 @@ server = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/refgenie/refgenie"
+Homepage = "https://refgenie.org"
 Repository = "https://github.com/refgenie/refgenie"
-Documentation = "https://github.com/refgenie/refgenie/tree/master/docs"
+Documentation = "https://docs.refgenie.org/refgenie/"
 Issues = "https://github.com/refgenie/refgenie/issues"
 Changelog = "https://github.com/refgenie/refgenie/blob/master/CHANGELOG.md"
 

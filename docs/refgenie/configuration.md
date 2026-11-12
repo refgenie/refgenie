@@ -15,7 +15,7 @@ This creates `~/.refgenie/` with a SQLite database, a `genomes/` folder, and a d
 | Variable | Default | Purpose |
 |---|---|---|
 | `REFGENIE_HOME_PATH` | `~/.refgenie` | Base directory for all refgenie files |
-| `REFGENIE_LOG_LEVEL` | `INFO` | Logging verbosity |
+| `REFGENIE_LOG_LEVEL` | `WARNING` | Logging verbosity |
 | `REFGENIE_GENOME_FOLDER` | `$REFGENIE_HOME_PATH/genomes` | Directory for genome assets |
 | `REFGENIE_GENOME_STAGE_FOLDER` | `$REFGENIE_HOME_PATH/archives` | Directory for staged assets |
 | `REFGENIE_DB_CONFIG_PATH` | `$REFGENIE_HOME_PATH/refgenie_db_config.yaml` | Path to the database config file |

@@ -6,46 +6,46 @@ import threading
 from pathlib import Path
 
 from refget.store import RefgetStore
-from refgenie.db.engine import Engine as SqlalchemyDatabaseEngine
 
 from refgenie.config import config
 from refgenie.config.settings import LogLevel
 from refgenie.const import ALIAS_DIR
+from refgenie.core.mode import LocalMode, RefgenieMode, ServerMode
 from refgenie.core.paths import AssetPaths
 from refgenie.core.populate import Populateable, populate_registry_paths
+from refgenie.core.store_router import RefgetStoreRouter
+from refgenie.db.engine import Engine as SqlalchemyDatabaseEngine
+from refgenie.db.engine import create_database_engine
 from refgenie.db.events import register_events
 from refgenie.db.tables import Alias
 from refgenie.exceptions import MissingAliasError, MissingGenomeError
 from refgenie.logger import logger
 from refgenie.managers import (
-    StageManager,
     AssetClassManager,
     AssetManager,
     ConfigurationManager,
     GenomeManager,
     RecipeManager,
     RemoteManager,
+    StageManager,
 )
 from refgenie.managers.alias import AliasBackend
-from refgenie.db.engine import create_database_engine
-from refgenie.managers.database import DatabaseManager
-from refgenie.managers.sequence import SequenceManager
-from refgenie.managers.transfer import TransferManager
 from refgenie.managers.build import BuildManager
-from refgenie.managers.transfer.puller import AssetPuller
+from refgenie.managers.database import DatabaseManager
 from refgenie.managers.plugin_settings import PluginSettingsManager
+from refgenie.managers.sequence import SequenceManager
+from refgenie.managers.sources import RefgenieserverClient, ServerManager, SourceManager
 from refgenie.managers.species import SpeciesManager
 from refgenie.managers.store import StoreManager
-from refgenie.managers.sources import RefgenieserverClient, ServerManager, SourceManager
-from refgenie.core.mode import LocalMode, RefgenieMode, ServerMode
-from refgenie.core.store_router import RefgetStoreRouter
-from refgenie.plugins.events import EventSink, update_scope
-from refgenie.plugins.host import PluginHost
+from refgenie.managers.transfer import TransferManager
+from refgenie.managers.transfer.puller import AssetPuller
 from refgenie.models import (
     AssetRegistryPathComponents,
     GenomeAlias,
     GenomeDigest,
 )
+from refgenie.plugins.events import EventSink, update_scope
+from refgenie.plugins.host import PluginHost
 
 
 class Refgenie:
@@ -280,7 +280,6 @@ class Refgenie:
         if self._transfer_manager is None:
             self._transfer_manager = TransferManager(
                 servers=self.servers,
-                alias_manager=self.alias,
                 genome_manager=self.genome,
                 puller=AssetPuller(
                     database_engine=self.database_engine,
@@ -384,24 +383,12 @@ class Refgenie:
         Raises:
             MissingAliasError: genome_digest not provided and the alias is not found on the server
         """
-        # Make sure the genome exists locally. The alias is added below, so
-        # pass no alias_names to the genome layer.
+        # Make sure the genome exists locally.
         if genome_digest is None:
-            genome_digest = self.servers.resolve_alias(alias_name, server_urls)
-            if genome_digest is None:
+            result = self.genome.ensure_from_remote(alias_name, server_urls)
+            if result is None:
                 raise MissingAliasError(alias_name)
-            logger.info(f"Determined digest for {alias_name}: {genome_digest}")
-            source = self.servers.genome_source(server_urls)
-            if source is None:
-                raise ConnectionError(f"No server can serve as a genome source for '{alias_name}'.")
-
-            self.genome.initialize_genome(
-                source=source,
-                digest=genome_digest,
-                description=genome_description or "",
-                alias_names=[],
-                use_existing=True,
-            )
+            genome_digest = result.genome_digest
         else:
             try:
                 self.genome.get(genome_digest)

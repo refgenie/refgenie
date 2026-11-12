@@ -1,5 +1,7 @@
 # Set up your own refgenie server
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 ## Why
 
 We don't anticipate many people wanting to run their own servers. Typically, you'll only need to run refgenie either from the command-line or via the Python API. These clients can interact with existing refgenie servers to pull down genome assets. But what if you want to build your own server? There are a few use cases where this can make sense.

@@ -11,8 +11,8 @@ from typing import Literal
 
 from pydantic import AliasChoices, BaseModel, Field
 from pydantic_settings import CliSubCommand, get_subcommand
-from rich import print as rprint
 
+from refgenie.cli.commands.helpers import note, print_table
 from refgenie.cli.errors import EXIT_NOT_FOUND, fail
 from refgenie.logger import logger
 
@@ -136,11 +136,11 @@ def handle_store_apply(cmd, refgenie) -> None:
         fail(f"Invalid store declaration: {e}")
     rows = [(kind, name) for kind, names in changes.items() for name in names]
     if not rows:
-        logger.info("Stores already match the declaration; nothing changed.")
+        note("Stores already match the declaration; nothing changed.")
         return
     from refgenie.utils.tables import build_table
 
-    rprint(build_table("Store changes", ["Change", "Store"], rows))
+    print_table(build_table("Store changes", ["Change", "Store"], rows))
 
 
 def handle_store_remove(cmd, refgenie) -> None:
@@ -155,20 +155,20 @@ def handle_store_remove(cmd, refgenie) -> None:
 def handle_store_list(cmd, refgenie) -> None:
     stores = list(refgenie.store.list_all())
     if not stores:
-        logger.info("No stores registered.")
+        note("No stores registered.")
         return
-    rprint(refgenie.store.table())
+    print_table(refgenie.store.table())
 
 
 def handle_store_conflicts(cmd, refgenie) -> None:
     """List alias collisions, i.e. losers stored under qualified ``store::alias`` names."""
     rows = refgenie.store.conflicts()
     if not rows:
-        logger.info("No alias conflicts.")
+        note("No alias conflicts.")
         return
     from refgenie.utils.tables import build_table
 
-    rprint(
+    print_table(
         build_table(
             "Alias conflicts (loser mappings)",
             ["Alias", "Qualified store", "Genome digest"],
@@ -233,7 +233,7 @@ def handle_store_sync(cmd, refgenie) -> None:
     # Rebuild the router so a long-lived instance sees the freshly synced set.
     refgenie.reload_store_router()
 
-    logger.info(f"Synced {total} new genome(s) total")
+    note(f"Synced {total} new genome(s) total")
     if failures:
         fail(f"{failures} collection(s)/store(s) failed to sync")
 

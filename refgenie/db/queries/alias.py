@@ -1,6 +1,6 @@
 """Queries on the SQL ``alias`` table (server mode, and federated stores)."""
 
-from sqlmodel import Session, select
+from sqlmodel import Session, delete, select
 
 from refgenie.db.queries.common import one_or_raise
 from refgenie.db.tables import Alias
@@ -33,6 +33,17 @@ def list_all(session: Session, genome_digest: str | None = None) -> list[Alias]:
     if genome_digest:
         statement = statement.where(Alias.genome_digest == genome_digest)
     return list(session.exec(statement.order_by(Alias.name)).all())
+
+
+def list_by_store(session: Session, store_name: str) -> list[Alias]:
+    """The alias rows a federated store wrote (``store_name``), collision losers included."""
+    return list(session.exec(select(Alias).where(Alias.store_name == store_name)).all())
+
+
+def delete_names(session: Session, names: list[str]) -> None:
+    """Delete these alias rows. A bulk delete: no per-row events, so no files are touched."""
+    if names:
+        session.exec(delete(Alias).where(Alias.name.in_(names)))
 
 
 def names_by_genome(session: Session, digests: list[str] | None = None) -> dict[str, list[str]]:

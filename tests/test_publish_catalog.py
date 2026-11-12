@@ -26,7 +26,7 @@ from refgenie.publish_catalog import (
     import_publish_catalog,
     prune_publish_catalog,
 )
-from tests.support.factories import make_engine, register_fasta
+from tests.support.factories import make_engine, register_fasta, seed_alias_row
 from tests.support.server import make_server_client, requires_server
 
 pytestmark = pytest.mark.component
@@ -101,6 +101,56 @@ class TestAliasCoverage:
 
         with pytest.raises(RuntimeError, match="alias rows the catalog holds"):
             export_publish_catalog(rg, tmp_path / "publish.sqlite", HTTPS_PREFIX)
+
+
+def _server_aliases(server):
+    with server.database_engine.connect() as conn:
+        return {(a.name, a.genome_digest) for a in conn.execute(select(Alias.__table__))}
+
+
+class TestAliasImport:
+    """An import rewrites the alias set of each genome the catalog carries."""
+
+    def test_import_replaces_carried_aliases_and_skips_slash_names(self, build_node, tmp_path):
+        rg, local_digest = build_node
+        dest = tmp_path / "publish.sqlite"
+        export_publish_catalog(rg, dest, HTTPS_PREFIX, **CATALOG_STORE)
+        server = _new_server(tmp_path)
+        server.genome.add("S" * 32, "server only", [], store_name=None)
+        seed_alias_row(server, "kept", "S" * 32)
+        seed_alias_row(server, "rAllMis1", "S" * 32)  # the catalog assigns it to F
+        import_publish_catalog(server.database_engine, str(dest))
+        seed_alias_row(server, "renamed-upstream", FEDERATED_DIGEST)
+        with artifact_engine(dest).begin() as conn:
+            conn.execute(
+                Alias.__table__.insert().values(
+                    name="Homo_sapiens/NCBI/x", genome_digest=FEDERATED_DIGEST
+                )
+            )
+
+        summary = import_publish_catalog(server.database_engine, str(dest))
+
+        assert (summary["alias"], summary["alias_skipped"]) == (2, 1)
+        assert _server_aliases(server) == {
+            ("rCRSd", local_digest),
+            ("rAllMis1", FEDERATED_DIGEST),
+            ("kept", "S" * 32),
+        }
+        assert _genomes(server) == {local_digest, FEDERATED_DIGEST, "S" * 32}
+
+    def test_import_refuses_an_artifact_short_of_aliases(self, build_node, tmp_path):
+        rg, _local_digest = build_node
+        dest = tmp_path / "publish.sqlite"
+        export_publish_catalog(rg, dest, HTTPS_PREFIX, **CATALOG_STORE)
+        server = _new_server(tmp_path)
+        import_publish_catalog(server.database_engine, str(dest))
+        for name in ("old-1", "old-2", "old-3"):
+            seed_alias_row(server, name, FEDERATED_DIGEST)
+        before = _server_aliases(server)
+
+        with pytest.raises(ValueError, match="2 aliases for its genomes, down from 5"):
+            import_publish_catalog(server.database_engine, str(dest))
+        assert _server_aliases(server) == before
 
 
 class TestPluginSettings:
@@ -381,8 +431,28 @@ def test_reimport_with_new_group_id_keeps_server_id(tmp_path, artifacts):
     assert names == {("b" * 64, 129)}
 
 
+#: A prune result's genome keys when no genome left the artifact.
+NOTHING_ABSENT = {"genome": [], "alias": [], "store": [], "kept_genome": []}
+
+
+def _genomes(server):
+    with server.database_engine.connect() as conn:
+        return {g.digest for g in conn.execute(select(Genome.__table__))}
+
+
+def _alias_names(server):
+    with server.database_engine.connect() as conn:
+        return {a.name for a in conn.execute(select(Alias.__table__))}
+
+
+def _store_names(server):
+    with server.database_engine.connect() as conn:
+        return {s.name for s in conn.execute(select(Store.__table__))}
+
+
 class TestCatalogPrune:
-    """Import never deletes; ``catalog-prune`` removes what the artifact retracted."""
+    """Import never deletes genomes or assets; ``catalog-prune`` removes what the
+    artifact no longer has."""
 
     def test_prune_removes_retracted_asset(self, tmp_path, artifacts):
         from refgenie.db.tables import AssetGroup, AssetName
@@ -392,7 +462,7 @@ class TestCatalogPrune:
 
         removed = prune_publish_catalog(server.database_engine, str(artifacts[1]["second"]))
 
-        assert removed == {"asset": ["a" * 64], "assetgroup": []}
+        assert removed == {"asset": ["a" * 64], "assetgroup": [], **NOTHING_ABSENT}
         assert "a" * 64 not in _assets(server)
         assert "b" * 64 in _assets(server)
         with server.database_engine.connect() as conn:
@@ -417,16 +487,53 @@ class TestCatalogPrune:
 
         removed = prune_publish_catalog(server.database_engine, str(paths["bare"]))
 
-        assert removed == {"asset": ["a" * 64], "assetgroup": [f"{digest}/bowtie2_index"]}
+        assert removed == {
+            "asset": ["a" * 64],
+            "assetgroup": [f"{digest}/bowtie2_index"],
+            **NOTHING_ABSENT,
+        }
         with server.database_engine.connect() as conn:
             assert conn.execute(select(AssetGroup.__table__)).first() is None
 
-    def test_prune_leaves_genomes_outside_the_artifact(self, tmp_path, artifacts):
+    def test_an_artifact_without_genomes_deletes_nothing(self, tmp_path, artifacts):
         server = _imported(tmp_path, artifacts, "first", "second")
-        before = _assets(server)
+        before = _assets(server), _genomes(server)
         removed = prune_publish_catalog(server.database_engine, str(artifacts[1]["empty"]))
-        assert removed == {"asset": [], "assetgroup": []}
-        assert _assets(server) == before
+        assert removed == {"asset": [], "assetgroup": [], **NOTHING_ABSENT}
+        assert (_assets(server), _genomes(server)) == before
+
+    def test_prune_removes_genomes_the_artifact_dropped(self, tmp_path, artifacts):
+        """The retired plantref case: a genome with no assets goes, with its alias and
+        its now empty disabled store. One that still has assets is kept and listed."""
+        import shutil
+
+        digest, paths = artifacts
+        server = _imported(tmp_path, artifacts, "first")
+        server.store.add("plantref", "url://p", StoreType.remote, priority=50, enabled=False)
+        server.genome.add("P" * 32, "retired", [], store_name="plantref")
+        seed_alias_row(server, "athal", "P" * 32)
+        dropped = shutil.copy(paths["bare"], tmp_path / "dropped.sqlite")
+        with artifact_engine(dropped).begin() as conn:
+            conn.execute(Alias.__table__.delete().where(Alias.__table__.c.genome_digest == digest))
+            conn.execute(Genome.__table__.delete().where(Genome.__table__.c.digest == digest))
+        before = _genomes(server), _alias_names(server), _store_names(server)
+        expected = {
+            "asset": [],
+            "assetgroup": [],
+            "genome": ["P" * 32],
+            "alias": ["athal"],
+            "store": ["plantref"],
+            "kept_genome": [digest],
+        }
+
+        dry = prune_publish_catalog(server.database_engine, str(dropped), dry_run=True)
+        assert dry == expected
+        assert (_genomes(server), _alias_names(server), _store_names(server)) == before
+
+        assert prune_publish_catalog(server.database_engine, str(dropped)) == expected
+        assert _genomes(server) == before[0] - {"P" * 32}
+        assert _alias_names(server) == before[1] - {"athal"}
+        assert _store_names(server) == before[2] - {"plantref"}
 
 
 # ---------------------------------------------------------------------------

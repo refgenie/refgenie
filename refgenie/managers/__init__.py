@@ -8,26 +8,26 @@ in ``refgenie.db.queries`` and never write SQL themselves. Each module and
 subpackage describes its own manager.
 """
 
-from refgenie.managers.base import ResourceManager
 from refgenie.managers.alias import (
     AliasBackend,
     AliasManager,
     FederatedAliasManager,
 )
 from refgenie.managers.asset import AssetManager
-from refgenie.managers.genome import GenomeManager
-from refgenie.managers.stage import StageManager
 from refgenie.managers.asset_class import AssetClassManager
-from refgenie.managers.configuration import ConfigurationManager
-from refgenie.managers.remote import RemoteManager
-from refgenie.managers.sources import SourceManager
-from refgenie.managers.recipe import RecipeManager
-from refgenie.managers.store import StoreManager
-from refgenie.managers.species import SpeciesManager
-from refgenie.managers.database import DatabaseManager
-from refgenie.managers.sequence import SequenceManager
-from refgenie.managers.transfer import TransferManager
+from refgenie.managers.base import ResourceManager
 from refgenie.managers.build import BuildManager
+from refgenie.managers.configuration import ConfigurationManager
+from refgenie.managers.database import DatabaseManager
+from refgenie.managers.genome import GenomeManager
+from refgenie.managers.recipe import RecipeManager
+from refgenie.managers.remote import RemoteManager
+from refgenie.managers.sequence import SequenceManager
+from refgenie.managers.sources import SourceManager
+from refgenie.managers.species import SpeciesManager
+from refgenie.managers.stage import StageManager
+from refgenie.managers.store import StoreManager
+from refgenie.managers.transfer import TransferManager
 
 __all__ = [
     "ResourceManager",

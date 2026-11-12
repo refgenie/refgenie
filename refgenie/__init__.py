@@ -7,9 +7,9 @@ not pay about 0.6s to load SQLModel, alembic, refget and cryptography.
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
+    from .core import Refgenie
     from .managers.sources.manager import IndexFile
     from .models import BuildParams, GenomeAlias, GenomeDigest
-    from .core import Refgenie
 
 __all__ = [
     "Refgenie",

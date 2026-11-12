@@ -10,11 +10,7 @@ import { useCompareCandidates } from '../hooks/useCompareCandidates';
 import { useUiConfig } from '../hooks/useUiConfig';
 import { preferredAlias } from '../utils/genomes';
 import { formatDigest } from '../utils/format';
-import {
-  defaultGenomeTab,
-  fastaDownloadAvailable,
-  isGenomeTab,
-} from '../utils/genomePage';
+import { fastaDownloadAvailable, isGenomeTab } from '../utils/genomePage';
 import type { GenomeTab } from '../utils/genomePage';
 import { ApiError } from '../services/http';
 import { fastaDownloadEnabled } from '../services/config';
@@ -40,6 +36,9 @@ import {
 } from '../components/sequences/GenomeSequencePanels';
 import { CollectionDigests } from '../components/sequences/CollectionDigests';
 import { isExtractable } from '../services/regionExtract';
+import { assetRequestUrl } from '../services/projectLinks';
+import { ExternalLink } from '../components/common/ExternalLink';
+import { NoAssetsPanel } from '../components/genomes/NoAssetsPanel';
 
 const NO_SEQUENCES = 'No sequence data for this genome';
 const NO_SAME_SPECIES = 'No other genomes of this species';
@@ -50,6 +49,7 @@ export function GenomePage() {
   const { digest } = useParams<{ digest: string }>();
   const config = useUiConfig();
   const canReadArchives = useCapability('archives');
+  const canBuild = useCapability('build');
 
   const genome = useGenome(digest);
   const aliases = useAliases({ genome_digest: digest, pageSize: 100 });
@@ -151,12 +151,18 @@ export function GenomePage() {
     isGenomeTab(requested) && !tabs.find((tab) => tab.id === requested)?.disabled
       ? requested
       : null;
-  const activeTab = requestedTab ?? defaultGenomeTab({ assetCount, hasSequences });
+  const activeTab = requestedTab ?? 'assets';
   const selectTab = (id: GenomeTab) => {
     const next = new URLSearchParams(params);
     next.set('tab', id);
     setParams(next);
   };
+
+  // A short real range for the "Only need the sequence?" command.
+  const firstSequence = sequences.data?.sequences[0];
+  const region = firstSequence
+    ? `${firstSequence.name}:0-${Math.min(100, firstSequence.length)}`
+    : undefined;
 
   // The build form needs an alias; the digest is only for the job target.
   const buildHref =
@@ -224,7 +230,7 @@ export function GenomePage() {
             selected={record ? activeTab : null}
             onSelect={selectTab}
           />
-          {record && activeTab ? (
+          {record ? (
             <TabPanel idPrefix="genome" id={activeTab}>
               {activeTab === 'assets' && (
                 <GenomeAssetTable
@@ -234,16 +240,30 @@ export function GenomePage() {
                   error={assets.error}
                   onRetry={() => assets.refetch()}
                   empty={
-                    <div className="rg-state rg-state--empty">
-                      <p className="mb-4">No assets for this genome yet.</p>
-                      <CapabilityGate cap="build">
+                    canBuild ? (
+                      <div className="rg-state rg-state--empty">
+                        <p className="mb-4">No assets for this genome yet.</p>
                         <Link className="rg-btn rg-btn--primary" to={buildHref}>
                           Build the first one
                         </Link>
-                      </CapabilityGate>
-                    </div>
+                      </div>
+                    ) : (
+                      <NoAssetsPanel
+                        digest={record.digest}
+                        alias={primaryAlias}
+                        region={region}
+                      />
+                    )
                   }
                 />
+              )}
+              {activeTab === 'assets' && !canBuild && assetCount !== null && assetCount > 0 && (
+                <p className="mt-4 text-sm">
+                  Need an asset that is not listed?{' '}
+                  <ExternalLink href={assetRequestUrl(primaryAlias, record.digest)}>
+                    Request it
+                  </ExternalLink>
+                </p>
               )}
               {activeTab === 'sequences' && (
                 <SequencesPanel digest={record.digest} canExtract={!extractOff} />

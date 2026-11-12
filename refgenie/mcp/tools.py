@@ -10,7 +10,7 @@ transports.
 import difflib
 import functools
 import inspect
-from pathlib import Path
+from urllib.parse import quote
 
 try:
     from mcp.server.mcpserver import MCPServer
@@ -21,7 +21,7 @@ except ImportError as e:
     ) from e
 
 from refgenie import __version__ as _refgenie_version
-from refgenie.db.tables import Asset
+from refgenie.db.tables import Asset, SeekKeyType, is_path_type
 from refgenie.exceptions import (
     MissingAliasError,
     MissingAssetError,
@@ -37,21 +37,30 @@ from refgenie.mcp.schemas import (
     AssetRow,
     CatalogSummary,
     DigestLookup,
+    GenomeComparison,
     GenomeDetail,
     GenomeRow,
     RecipeDetail,
     RecipeRow,
+    SequencePage,
+    SequenceRow,
     SpeciesCount,
     SpeciesNames,
 )
-from refgenie.models import GenomeAlias, GenomeDigest
+from refgenie.models import GenomeAlias, GenomeDigest, Page
 from refgenie.utils.search import Search
+from refgenie.utils.seqcol import compare_level2, summarize_comparison
 
 INSTRUCTIONS = """\
 refgenie is a catalog of reference genomes and the assets built from them (FASTA files, aligner indexes, annotations).
 A genome has a 32-character digest and any number of aliases (names like hg38). Tools take either alias= or digest=, never a guess between them.
 Most genomes have no assets; pass has_assets=true to list only genomes with files.
-The usual path: search_genomes or list_genomes, then list_assets(alias=...), then get_asset(digest) for files and the pull command.
+Which tool for which job:
+- Find a genome: search_genomes or list_genomes (has_assets=true for genomes with files).
+- Same genome? compare_genomes; summary says what is shared, name_map maps renamed sequences.
+- Chromosome names and sizes: get_genome_sequences.
+- Bases of a region: get_sequence, 0-based half-open like BED, at most 100,000 bases.
+- Files: list_assets(alias=...), then get_asset(digest) for files, the archive URL and the pull command.
 search_genomes matches every name of a species, so other common names work: brown rat finds Rattus norvegicus even where its common name is listed as Norway rat.
 taxon_id= filters genomes by NCBI taxon id (9606 is human).
 List tools return 20 rows per page (page_size up to 100); pass pagination.next_page_token back as token for the next page.
@@ -95,8 +104,14 @@ class _RefgenieMCP(MCPServer):
 
 mcp = _RefgenieMCP("refgenie", version=_refgenie_version, instructions=INSTRUCTIONS)
 
+#: Longest region get_sequence returns; BRCA1, about 81 kb, fits.
+MAX_SEQUENCE_REGION = 100_000
+
+_REGISTRY_ISSUES = "https://github.com/refgenie/refgenie-registry/issues/new"
+
 _rgc = None
-_serves_downloads = False
+#: None in local mode; the server's base URL in server mode.
+_public_url: str | None = None
 
 #: What to try next, per error type, appended to the error the agent reads.
 _HINTS: tuple[tuple[type[Exception], str], ...] = (
@@ -109,31 +124,53 @@ _HINTS: tuple[tuple[type[Exception], str], ...] = (
 _NO_MATCH_HINT = (
     "No match. Search matches names, not meaning: try the scientific name (Rattus norvegicus) "
     "or another common name (brown rat), or taxon_id with the NCBI taxon id (10116). "
-    "has_assets=true shows only genomes with files."
+    "has_assets=true shows only genomes with files. If refgenie does not have the genome, "
+    f"request it: {_REGISTRY_ISSUES}?template=genome_proposal.yml&genome={{query}}."
+)
+
+_TAXON_HINT = (
+    "No genome is tagged with NCBI taxon {taxon_id}. Genomes carry their species' taxon id: "
+    "for a strain, use the species id (S. cerevisiae S288C is 4932, not 559292), "
+    "or search_genomes with the species name."
+)
+
+_NO_ASSETS_HINT = (
+    "No assets for {label} here. On the public server (https://api.refgenie.org/mcp) "
+    "list_assets shows what you can pull. To ask for builds, open "
+    f"{_REGISTRY_ISSUES}?template=asset_request.yml&genome={{alias}}&genome_digest={{digest}}."
 )
 
 
 def _get_refgenie():
-    """Lazy singleton. Overridden by set_refgenie() for server mode."""
-    global _rgc
-    if _rgc is None:
-        from refgenie import Refgenie
-
-        _rgc = Refgenie()
+    """The Refgenie the tools read, set by ``set_refgenie``."""
     return _rgc
 
 
-def set_refgenie(rgc, *, serves_downloads: bool = False):
-    """Inject an existing Refgenie instance (used by server/main.py).
+def _server_line() -> str:
+    """One sentence saying which server this is."""
+    if _public_url is not None:
+        return f"refgenie server at {_public_url}."
+    url = _rgc.database_engine.url.render_as_string(hide_password=True)
+    return (
+        f"Local refgenie, database {url}. It lists only what is on this machine; "
+        "refgenie's full catalog is at https://api.refgenie.org/mcp."
+    )
+
+
+def set_refgenie(rgc, *, public_url: str | None = None):
+    """Set the Refgenie the tools read, and the mode.
 
     Args:
         rgc: The Refgenie instance the tools read.
-        serves_downloads: Whether this process also serves the HTTP download
-            routes, so ``get_asset`` gives download URLs instead of a local path.
+        public_url: None for local mode. For a server, its base URL, which
+            ``get_asset`` uses for download URLs.
     """
-    global _rgc, _serves_downloads
-    _rgc = rgc
-    _serves_downloads = serves_downloads
+    global _rgc, _public_url
+    _rgc, _public_url = rgc, public_url
+    # The one private attribute used; test_initialize_names_the_server guards it.
+    mcp._lowlevel_server.instructions = (
+        f"{_server_line()}\n{INSTRUCTIONS}" if rgc is not None else INSTRUCTIONS
+    )
 
 
 def _tool(fn):
@@ -179,28 +216,46 @@ def _asset_detail(asset: Asset) -> AssetDetail:
     """An asset's full record, with how to get its files from here."""
     rgc = _get_refgenie()
     aliases = rgc.alias.get_for_genomes([asset.genome_digest]).get(asset.genome_digest, [])
-    downloads = local_path = None
-    if _serves_downloads:
-        downloads = {}
+    group, genome = asset.asset_group_name, asset.genome_digest
+    alias = min(
+        (a for a in aliases if "/" not in a and "::" not in a),
+        key=lambda a: (len(a), a),
+        default=None,
+    )
+    pull = (
+        f"refgenie pull {alias}/{group}:{asset.name}"
+        if alias
+        else f"refgenie pull {group}:{asset.name} --genome-digest {genome}"
+    )
+    archive_url = None
+    files: dict[str, str] = {}
+    if _public_url is None:
+        files = {
+            sk.name: rgc.asset.seek(genome, group, asset.name, sk.name)
+            for sk in asset.seek_keys
+            if is_path_type(sk.type)
+        }
+    else:
         if "archive" in asset.serving_modes:
-            downloads["archive"] = f"/v4/archives/{asset.digest}/download"
+            archive_url = f"{_public_url}/v4/archives/{asset.digest}/download"
         if "file" in asset.serving_modes:
-            downloads["file"] = f"/v4/assets/{asset.digest}/files"
-    elif asset.path is not None:
-        local_path = str(Path(rgc.genome_folder) / asset.path)
+            files = {
+                sk.name: f"{_public_url}/v4/assets/{asset.digest}/files/{quote(sk.value)}"
+                for sk in asset.seek_keys
+                if sk.type == SeekKeyType.file
+            }
+    asset_class = asset.asset_group.asset_class if asset.asset_group else None
     return AssetDetail(
         **AssetRow.of(asset).model_dump(),
-        asset_group=asset.asset_group_name,
+        asset_group=group,
         names=[n.name for n in asset.names],
-        description=asset.description,
+        description=asset.description or (asset_class.description if asset_class else None),
         seek_keys={sk.name: sk.value for sk in asset.seek_keys},
         parents=[AssetRow.of(p) for p in asset.parents],
         children=[AssetRow.of(c) for c in asset.children],
-        downloads=downloads,
-        local_path=local_path,
-        pull_command=f"refgenie pull {aliases[0]}/{asset.asset_group_name}:{asset.name}"
-        if aliases
-        else None,
+        archive_url=archive_url,
+        files=files,
+        pull_command=pull,
     )
 
 
@@ -234,7 +289,8 @@ def list_genomes(
         offset=paging.decode(token, fh),
         limit=size,
     )
-    return paging.result_page(page, [GenomeRow.of(g) for g in page.items], fh)
+    hint = _TAXON_HINT.format(taxon_id=taxon_id) if taxon_id and page.total == 0 else None
+    return paging.result_page(page, [GenomeRow.of(g) for g in page.items], fh, hint)
 
 
 @_tool
@@ -271,7 +327,13 @@ def search_genomes(
         offset=paging.decode(token, fh),
         limit=size,
     )
-    hint = _NO_MATCH_HINT if page.total == 0 else None
+    hint = None
+    if page.total == 0:
+        hint = (
+            _TAXON_HINT.format(taxon_id=taxon_id)
+            if taxon_id
+            else _NO_MATCH_HINT.format(query=quote(query))
+        )
     return paging.result_page(page, [GenomeRow.of(g) for g in page.items], fh, hint)
 
 
@@ -308,7 +370,7 @@ def list_assets(
     page_size: int | None = None,
     token: str | None = None,
 ) -> ResultPage[AssetRow]:
-    """List assets, optionally of one genome and/or one asset class.
+    """List the files you can get: assets, optionally of one genome and/or one asset class.
 
     Name the genome by alias or by digest, not both. Each row is small: digest,
     asset class, name, genome digest, size, serving modes. 20 rows per page by
@@ -331,14 +393,19 @@ def list_assets(
         offset=paging.decode(token, fh),
         limit=size,
     )
-    return paging.result_page(page, [AssetRow.of(a) for a in page.items], fh)
+    hint = None
+    if genome_digest is not None and page.total == 0:
+        hint = _NO_ASSETS_HINT.format(
+            label=alias or digest, alias=quote(alias or ""), digest=genome_digest
+        )
+    return paging.result_page(page, [AssetRow.of(a) for a in page.items], fh, hint)
 
 
 @_tool
 def get_asset(digest: str) -> AssetDetail:
-    """Get one asset's full record by its digest: names, seek keys, parents and
-    children, and how to get it (download URLs on a server, the local path
-    otherwise, and the refgenie pull command).
+    """Get an asset's files and how to pull it, by its digest: file paths or URLs,
+    the archive URL, the pull command, seek keys (relative to the asset folder),
+    parents and children.
 
     Args:
         digest: The asset digest.
@@ -427,43 +494,85 @@ def lookup_digest(digest: str) -> DigestLookup:
 
 @_tool
 def catalog_summary() -> CatalogSummary:
-    """Count the catalog: genomes, asset groups and assets, and the species that
-    have assets. A good first call to see what this server holds."""
+    """See what this server holds: which server it is, counts of genomes, asset
+    groups and assets, and the species that have assets. A good first call.
+    Next: list_genomes(has_assets=true) or search_genomes(query)."""
     database = _get_refgenie().database
     species = [
         SpeciesCount(species=name, **counts) for name, counts in database.species_summary().items()
     ]
     species.sort(key=lambda s: s.assets, reverse=True)
-    return CatalogSummary(**database.summary(), species_with_assets=species)
+    return CatalogSummary(server=_server_line(), **database.summary(), species_with_assets=species)
 
 
 # --- RefgetStore layer tools ---
 
 
 @_tool
-def get_genome_metadata(alias: str | None = None, digest: str | None = None) -> dict:
-    """Get sequence collection metadata: number of sequences, total length, source.
-
-    Give exactly one of alias or digest.
+def get_genome_sequences(
+    alias: str | None = None,
+    digest: str | None = None,
+    name_contains: str | None = None,
+    page_size: int | None = None,
+    token: str | None = None,
+) -> SequencePage:
+    """List a genome's sequences, its chromosome sizes: name, length and refget
+    digest, a page at a time. For a .chrom.sizes file, get_asset on the genome's
+    fasta_index asset gives a download URL.
 
     Args:
         alias: Genome alias, a name like 'hg38'.
         digest: Genome digest, 32 characters.
+        name_contains: Only sequences whose name contains this text (any case).
+        page_size: Rows per page (default 100, at most 100).
+        token: The pagination.next_page_token of the previous page.
     """
-    return _get_refgenie().genome.get_metadata(_genome_digest(alias, digest))
+    genome = _genome_digest(alias, digest)
+    level2 = _get_refgenie().genome.level2(genome)
+    needle = (name_contains or "").lower()
+    rows = [
+        SequenceRow(name=n, length=length, digest=d)
+        for n, length, d in zip(level2["names"], level2["lengths"], level2["sequences"])
+        if needle in n.lower()
+    ]
+    size = paging.clamp(page_size or 100)
+    fh = paging.filters_hash("get_genome_sequences", genome=genome, name_contains=name_contains)
+    offset = paging.decode(token, fh)
+    page = Page(items=rows[offset : offset + size], offset=offset, limit=size, total=len(rows))
+    result = paging.result_page(page, page.items, fh)
+    return SequencePage(
+        **result.model_dump(),
+        n_sequences=len(level2["names"]),
+        total_length=sum(level2["lengths"]),
+    )
 
 
 @_tool
-def get_genome_sequences(alias: str | None = None, digest: str | None = None) -> dict:
-    """Get sequence collection level2 data: names, lengths, and sequence digests.
+def get_sequence(
+    name: str, start: int, end: int, alias: str | None = None, digest: str | None = None
+) -> str:
+    """Get the DNA bases of one region of a genome, without downloading the genome.
 
-    Give exactly one of alias or digest.
+    Coordinates are 0-based and half-open, like BED: start=0, end=10 is the first
+    10 bases. For 1-based coordinates from a genome browser (chr17:43,044,295-43,125,483),
+    subtract 1 from the start only: start=43044294, end=43125483.
+    At most 100,000 bases per call.
+    name is the sequence name as this genome spells it (chr17 or 17);
+    get_genome_sequences lists them.
 
     Args:
+        name: Sequence name, as the genome spells it.
+        start: First base, 0-based.
+        end: End of the region, exclusive.
         alias: Genome alias, a name like 'hg38'.
         digest: Genome digest, 32 characters.
     """
-    return _get_refgenie().genome.level2(_genome_digest(alias, digest))
+    if end - start > MAX_SEQUENCE_REGION:
+        raise ValueError(
+            f"At most {MAX_SEQUENCE_REGION:,} bases per call; for longer regions run "
+            "refgenie getseq or pull the genome's fasta asset."
+        )
+    return _get_refgenie().sequence.get(_genome_digest(alias, digest), name, start, end)
 
 
 @_tool
@@ -472,12 +581,13 @@ def compare_genomes(
     digest_a: str | None = None,
     alias_b: str | None = None,
     digest_b: str | None = None,
-) -> dict:
-    """Compare two genomes using seqcol comparison.
+) -> GenomeComparison:
+    """Say whether two genomes are the same and how they differ, in one sentence,
+    with a map of renamed sequences (chrI->I).
 
-    Returns the GA4GH seqcol comparison object: digests, attributes (a_only,
-    b_only, a_and_b) and array_elements (a_count, b_count, a_and_b_count,
-    a_and_b_same_order, each keyed by attribute).
+    comparison holds the GA4GH seqcol comparison object: digests, attributes
+    (a_only, b_only, a_and_b) and array_elements (a_count, b_count,
+    a_and_b_count, a_and_b_same_order, each keyed by attribute).
 
     Name genome A with exactly one of alias_a or digest_a, and genome B with
     exactly one of alias_b or digest_b.
@@ -488,6 +598,9 @@ def compare_genomes(
         alias_b: Second genome's alias.
         digest_b: Second genome's digest.
     """
-    return _get_refgenie().genome.compare(
-        _genome_digest(alias_a, digest_a, "_a"), _genome_digest(alias_b, digest_b, "_b")
-    )
+    a = _genome_digest(alias_a, digest_a, "_a")
+    b = _genome_digest(alias_b, digest_b, "_b")
+    side_a, side_b = _get_refgenie().genome.compare_sides(a, b)
+    comparison = compare_level2(side_a, side_b, a, b)
+    summary, name_map = summarize_comparison(side_a, side_b, comparison, alias_a or a, alias_b or b)
+    return GenomeComparison(summary=summary, name_map=name_map, comparison=comparison)

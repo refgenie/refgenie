@@ -1,4 +1,5 @@
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from functools import partial
 from pathlib import Path
@@ -99,14 +100,25 @@ class GenomeAlias(str):
     qualified alias is allowed.
     """
 
+    @staticmethod
+    def is_valid(value: object) -> bool:
+        """Whether ``value`` can be a genome alias: a non-empty str with no '/'."""
+        return isinstance(value, str) and bool(value) and "/" not in value
+
     def __new__(cls, value: str) -> "GenomeAlias":
-        if not isinstance(value, str) or not value or "/" in value:
+        if not cls.is_valid(value):
             raise ValueError(f"'{value}' is not a genome alias (non-empty, no '/')")
         return super().__new__(cls, value)
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source: Any, handler: Any) -> core_schema.CoreSchema:
         return core_schema.no_info_after_validator_function(cls, core_schema.str_schema())
+
+
+def first_usable_alias(names: Iterable[str]) -> GenomeAlias | None:
+    """The first of ``names`` that is a valid alias here, skipping iGenomes paths
+    such as 'Homo_sapiens/NCBI/GRCh38'; None if there is none."""
+    return next((GenomeAlias(n) for n in names if GenomeAlias.is_valid(n)), None)
 
 
 class BuildParams(BaseModel):

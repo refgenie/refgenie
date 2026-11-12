@@ -6,7 +6,6 @@ surface: the v4 JSON API, the GA4GH DRS endpoints, and data-channel config.
 import datetime
 from enum import Enum
 from typing import Annotated, Any
-
 from urllib.parse import urlsplit
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, RootModel, model_validator

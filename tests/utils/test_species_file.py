@@ -51,7 +51,7 @@ class TestParse:
         ],
     )
     def test_bad_entries_are_skipped_and_logged(self, bad, caplog):
-        with caplog.at_level(logging.DEBUG):
+        with caplog.at_level(logging.DEBUG, logger="refgenie"):
             kept = parse_species({"species": [bad, RAT]}, "f")
         assert [e.taxon_id for e in kept] == [10116]
         assert "skipped species entry 0" in caplog.text

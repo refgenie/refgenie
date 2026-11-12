@@ -98,9 +98,11 @@ export interface EmptyStateProps {
   /** Shown when there is no data at all. Text only: buttons are the manage UI. */
   message: string;
   onClearSearch?: () => void;
+  /** Shown under the message, e.g. where to request what is missing. */
+  action?: React.ReactNode;
 }
 
-export function EmptyState({ query, message, onClearSearch }: EmptyStateProps) {
+export function EmptyState({ query, message, onClearSearch, action }: EmptyStateProps) {
   if (query) {
     return (
       <div className="rg-state rg-state--empty">
@@ -110,6 +112,7 @@ export function EmptyState({ query, message, onClearSearch }: EmptyStateProps) {
             Clear search
           </button>
         )}
+        {action}
       </div>
     );
   }

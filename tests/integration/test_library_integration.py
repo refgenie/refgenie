@@ -108,11 +108,11 @@ class TestLibraryReadOnlyOperations:
         assert Path(asset_path).exists(), f"FASTA asset file not found: {asset_path}"
 
         # -- Getseq basic (0-based, half-open) --
-        seq = rg.sequence.get(digest, "rCRSd:0-100")
+        seq = rg.sequence.get(digest, "rCRSd", 0, 100)
         assert len(seq) == 100
 
         # -- Getseq short --
-        seq10 = rg.sequence.get(genome_digest=digest, locus="rCRSd:0-10")
+        seq10 = rg.sequence.get(genome_digest=digest, name="rCRSd", start=0, end=10)
         assert isinstance(seq10, str)
         assert len(seq10) == 10
         assert seq10.upper() == seq10
@@ -134,12 +134,14 @@ class TestLibraryReadOnlyOperations:
         assert rg.asset_class.get("fasta") is not None
         assert rg.recipe.get("fasta") is not None
 
-    @pytest.mark.parametrize("locus", ["chr1:0-10", "blah"])
-    def test_getseq_raise_errors(self, shared_rcrsd_instance, locus):
-        """Scenario 7b: getseq raises errors for invalid loci."""
+    @pytest.mark.parametrize("name, end", [("chr1", 10), ("blah", None)])
+    def test_getseq_raise_errors(self, shared_rcrsd_instance, name, end):
+        """Scenario 7b: getseq raises errors for an unknown sequence name."""
+        from refgenie.exceptions import MissingSequenceError
+
         rg = shared_rcrsd_instance
-        with pytest.raises(ValueError):
-            rg.sequence.get(genome_digest=rg.alias.resolve("rCRSd"), locus=locus)
+        with pytest.raises(MissingSequenceError):
+            rg.sequence.get(genome_digest=rg.alias.resolve("rCRSd"), name=name, start=0, end=end)
 
     def test_self_cleaning_asset_rename(self, shared_rcrsd_instance):
         """Scenario 7d: Asset rename and rename-back (self-cleaning)."""

@@ -1,5 +1,5 @@
-"""``rgc.servers``: subscriptions, clients, the remote catalog, remote seek, pull
-size estimates, and ``GenomeManager.init_from_remote``.
+"""``rgc.servers``: subscriptions, clients, ``locate``, the remote catalog, remote
+seek, pull size estimates, and ``GenomeManager.init_from_remote``.
 """
 
 from unittest.mock import MagicMock, patch
@@ -8,7 +8,9 @@ import pytest
 
 from refgenie.managers.asset import AssetManager
 from refgenie.managers.sources import estimate_pull_size
-from tests.support.factories import OMIT, fake_digest
+from refgenie.managers.sources.genomes import collection_source
+from refgenie.models import GenomeAlias, GenomeDigest
+from tests.support.factories import GENOME, OMIT, fake_digest, seed_alias_row
 from tests.support.remotes import mock_server_client, mocked_puller
 from tests.support.server import make_server_client_world, serve_refgenie
 
@@ -78,36 +80,65 @@ class TestClients:
         assert servers.clients == {"http://a.example.com": first}
 
 
-def _genome_client(**get):
-    """A mock server client whose ``genome.get`` behaves as given."""
-    client = MagicMock()
-    client.genome.get = MagicMock(**get)
-    return client
+class TestLocateUnit:
+    """``rgc.servers.locate`` over mocked clients (unit tier)."""
 
-
-class TestGenomeAttrs:
-    """The first server that has a record of a genome wins (unit tier)."""
-
-    def test_skips_failing_and_empty_servers(self, refgenie_minimal):
-        clients = {
-            "http://down.example.com": _genome_client(side_effect=OSError("down")),
-            "http://empty.example.com": _genome_client(return_value={}),
-            "http://good.example.com": _genome_client(
-                return_value={"description": "hg", "species_name": "Homo sapiens"}
-            ),
-        }
+    def test_the_first_server_that_answers_wins(self, refgenie_minimal):
+        down, good = MagicMock(), MagicMock()
+        down.alias.resolve.side_effect = OSError("down")
+        good.alias.resolve.return_value = fake_digest("a")
+        good.genome.get.return_value = {"description": "hg"}
         servers = refgenie_minimal.servers
+        clients = {"http://down": down, "http://good": good}
         with patch.object(servers, "client", side_effect=clients.__getitem__):
-            assert servers.genome_attrs("abc", list(clients)) == {
-                "description": "hg",
-                "species_name": "Homo sapiens",
-            }
+            found = servers.locate(GenomeAlias("hg38"), list(clients))
+        assert found == ("http://good", fake_digest("a"), {"description": "hg"})
 
-    def test_empty_when_no_server_has_it(self, refgenie_minimal):
+    def test_a_server_that_cannot_be_reached_is_skipped(self, refgenie_minimal):
         servers = refgenie_minimal.servers
-        client = _genome_client(return_value={})
+        with patch.object(servers, "client", side_effect=ConnectionError("refused")):
+            assert servers.locate(GenomeDigest(fake_digest("a")), ["http://down"]) is None
+
+    def test_alias_names_is_empty_when_the_listing_fails(self, refgenie_minimal):
+        client = MagicMock()
+        client.alias.list.side_effect = OSError("down")
+        servers = refgenie_minimal.servers
         with patch.object(servers, "client", return_value=client):
-            assert servers.genome_attrs("abc", ["http://a.example.com"]) == {}
+            assert servers.alias_names(GenomeDigest(fake_digest("a")), "http://a") == []
+
+
+class TestCollectionSource:
+    """``collection_source``: where a located genome's collection is read (unit tier)."""
+
+    def test_reads_the_store_named_by_the_genome_record(self):
+        """A server serves several stores but advertises only one; a genome in
+        another store is read from the store its record names."""
+        store_url = "https://store.test/vgp/"
+        source = MagicMock()
+        with patch("refgenie.managers.sources.genomes.make_source", return_value=source) as make:
+            assert collection_source("http://server", {"refget_store_url": store_url}) is source
+        make.assert_called_once_with(store_url)
+
+    def test_with_no_store_url_it_uses_the_server(self):
+        source = MagicMock()
+        with patch("refgenie.managers.sources.genomes.make_source", return_value=source) as make:
+            assert collection_source("http://server", {"refget_store_url": None}) is source
+        make.assert_called_once_with("http://server")
+
+    def test_a_store_that_fails_to_open_falls_back_to_the_server(self):
+        source = MagicMock()
+        with patch(
+            "refgenie.managers.sources.genomes.make_source",
+            side_effect=[ConnectionError("no store"), source],
+        ) as make:
+            assert collection_source("http://server", {"refget_store_url": "https://s/"}) is source
+        assert [c.args[0] for c in make.call_args_list] == ["https://s/", "http://server"]
+
+    def test_none_when_nothing_opens(self):
+        with patch(
+            "refgenie.managers.sources.genomes.make_source", side_effect=ConnectionError("no")
+        ):
+            assert collection_source("http://server", {}) is None
 
 
 class TestEstimatePullSize:
@@ -129,6 +160,23 @@ class TestEstimatePullSize:
 # ===========================================================================
 # list-remote: querying subscribed servers for available assets
 # ===========================================================================
+
+
+class TestArchiveSizeChoice:
+    def test_file_record_listed_first_does_not_hide_the_archive_size(self, refgenie_minimal):
+        servers = refgenie_minimal.servers
+        servers.subscribe(["http://a.example"])
+        client = MagicMock()
+        client.asset_group.list.return_value = [{"id": 1, "name": "fasta"}]
+        client.asset.list.return_value = [{"digest": "ad", "name": "default"}]
+        client.staged_asset.list.return_value = [
+            {"mode": "file", "tarball_size": None, "tarball_digest": None},
+            {"mode": "archive", "tarball_size": 868, "tarball_digest": "td"},
+        ]
+        with patch.object(servers, "client", return_value=client):
+            [row] = servers.list_assets_for_genome(fake_digest("g"))
+        assert row["archive_size"] == 868
+        assert row["archive_digest"] == "td"
 
 
 class TestListAssets:
@@ -184,7 +232,7 @@ class TestListAssets:
         # Aliases: mapping that includes "rCRSd"
         assert mock_server_url in aliases_data
         server_aliases = aliases_data[mock_server_url]
-        alias_values = " ".join(server_aliases.values())
+        alias_values = " ".join(a for names in server_aliases.values() for a in names)
         assert "rCRSd" in alias_values
 
     def test_assets_table_remote(self, servers_world):
@@ -350,158 +398,107 @@ class TestSeekrFileMode:
                 )
 
 
-class TestFindCollection:
-    """``rgc.servers.find_collection``, behind ``refgenie id --remote`` (unit tier)."""
+@pytest.fixture
+def remote_world(engine, tmp_path, fixtures_path):
+    """A bare client subscribed to the real server app (component tier).
 
-    def test_returns_none_with_no_servers(self, refgenie_minimal):
-        assert refgenie_minimal.servers.find_collection(fake_digest("a"), server_urls=[]) is None
-
-    def test_returns_none_on_exception(self, refgenie_minimal):
-        with patch(
-            "refgenie.managers.sources.servers.make_source",
-            side_effect=ConnectionError("unreachable"),
-        ) as mock_make_source:
-            result = refgenie_minimal.servers.find_collection(
-                fake_digest("a"), server_urls=["http://fake.server"]
-            )
-        assert result is None
-        mock_make_source.assert_called_once_with("http://fake.server")
-
-    def test_returns_none_when_source_lacks_collection(self, refgenie_minimal):
-        source = MagicMock()
-        source.verify_collection.return_value = None
-        with patch("refgenie.managers.sources.servers.make_source", return_value=source):
-            result = refgenie_minimal.servers.find_collection(
-                fake_digest("a"), server_urls=["http://fake.server"]
-            )
-        assert result is None
-        source.verify_collection.assert_called_once_with(fake_digest("a"))
-
-    def test_returns_the_first_servers_collection(self, refgenie_minimal):
-        missing, found = MagicMock(), MagicMock()
-        missing.verify_collection.return_value = None
-        found.verify_collection.return_value = {"names": ["chrM"]}
-        with patch(
-            "refgenie.managers.sources.servers.make_source",
-            side_effect=lambda url: {"http://a": missing, "http://b": found}[url],
-        ):
-            result = refgenie_minimal.servers.find_collection(
-                fake_digest("a"), server_urls=["http://a", "http://b"]
-            )
-        assert result == {"names": ["chrM"]}
-
-
-class TestResolveAlias:
-    """``rgc.servers.resolve_alias``: the genome source first, then the v4 client (unit tier)."""
-
-    def test_source_answers_first(self, refgenie_minimal):
-        source = MagicMock()
-        source.resolve_alias.return_value = fake_digest("a")
-        client = MagicMock()
-        with (
-            patch("refgenie.managers.sources.servers.make_source", return_value=source),
-            patch.object(refgenie_minimal.servers, "client", return_value=client),
-        ):
-            assert refgenie_minimal.servers.resolve_alias("hg38", ["http://a"]) == fake_digest("a")
-        client.alias.resolve.assert_not_called()
-
-    def test_client_is_the_fallback(self, refgenie_minimal):
-        client = MagicMock()
-        client.alias.resolve.return_value = fake_digest("b")
-        with (
-            patch(
-                "refgenie.managers.sources.servers.make_source",
-                side_effect=ConnectionError("no"),
-            ),
-            patch.object(refgenie_minimal.servers, "client", return_value=client),
-        ):
-            assert refgenie_minimal.servers.resolve_alias("hg38", ["http://a"]) == fake_digest("b")
-
-    def test_unknown_everywhere_is_none(self, refgenie_minimal):
-        source = MagicMock()
-        source.resolve_alias.return_value = None
-        client = MagicMock()
-        client.alias.resolve.side_effect = ValueError("not found")
-        with (
-            patch("refgenie.managers.sources.servers.make_source", return_value=source),
-            patch.object(refgenie_minimal.servers, "client", return_value=client),
-        ):
-            assert refgenie_minimal.servers.resolve_alias("hg38", ["http://a"]) is None
-
-
-class TestInitFromRemote:
-    """``GenomeManager.init_from_remote`` against the real server app (component tier).
-
-    ``make_source`` is made to fail so the genome is resolved through the
-    server client's alias endpoint, which the in-process app answers.
+    ``make_source`` is made to fail, so no store opens and a registered genome
+    is added bare, with no collection in the client's store.
     """
+    server_rg, client_rg = make_server_client_world(
+        engine, tmp_path, fixtures_path, stage=False, register_client_fasta=False
+    )
+    url = "http://mock-refgenie-server"
+    client_rg.servers.subscribe(url)
+    with (
+        serve_refgenie(client_rg, server_rg, url),
+        patch("refgenie.managers.sources.genomes.make_source", side_effect=ConnectionError("no")),
+    ):
+        yield client_rg, server_rg, url
+
+
+class TestLocate:
+    """``rgc.servers.locate`` against the real server app (component tier)."""
 
     pytestmark = pytest.mark.component
 
-    @pytest.fixture
-    def world(self, engine, tmp_path, fixtures_path):
-        server_rg, client_rg = make_server_client_world(
-            engine, tmp_path, fixtures_path, stage=False, register_client_fasta=False
-        )
-        url = "http://mock-refgenie-server"
-        client_rg.servers.subscribe(url)
-        with (
-            serve_refgenie(client_rg, server_rg, url),
-            patch(
-                "refgenie.managers.sources.servers.make_source", side_effect=ConnectionError("no")
-            ),
-        ):
-            yield client_rg, server_rg
+    def test_an_alias_or_a_digest_the_server_knows(self, remote_world):
+        client_rg, server_rg, url = remote_world
+        digest = server_rg.alias.resolve(GENOME)
+        for genome in (GenomeAlias(GENOME), GenomeDigest(digest)):
+            found_url, found_digest, record = client_rg.servers.locate(genome)
+            assert (found_url, found_digest) == (url, digest)
+            assert record["digest"] == digest
+        # Read-only: nothing was written here.
+        assert not client_rg.genome.exists(digest)
 
-    def test_registers_genome_and_alias(self, world, caplog):
-        """The test server's store lacks rCRSd's collection, so require_collection
+    def test_an_unknown_alias_or_digest_is_none(self, remote_world):
+        client_rg, _, _ = remote_world
+        assert client_rg.servers.locate(GenomeAlias("no_such_genome")) is None
+        assert client_rg.servers.locate(GenomeDigest(fake_digest("nope"))) is None
+
+    def test_a_plain_string_is_refused(self, remote_world):
+        client_rg, _, _ = remote_world
+        with pytest.raises(TypeError, match="GenomeAlias or a GenomeDigest"):
+            client_rg.servers.locate(GENOME)
+
+
+class TestInitFromRemote:
+    """``GenomeManager.init_from_remote`` against the real server app (component tier)."""
+
+    pytestmark = pytest.mark.component
+
+    def test_registers_genome_and_alias(self, remote_world, caplog):
+        """The client's store lacks rCRSd's collection, so require_collection
         undoes what the call created and suggests a fasta pull (#299)."""
-        client_rg, server_rg = world
-        digest = server_rg.alias.resolve("rCRSd")
-        assert client_rg.genome.init_from_remote("rCRSd", require_collection=True) is False
+        client_rg, server_rg, _ = remote_world
+        digest = server_rg.alias.resolve(GENOME)
+        alias = GenomeAlias(GENOME)
+        assert client_rg.genome.init_from_remote(alias, require_collection=True) is None
         assert not client_rg.genome.exists(digest)
         assert "refgenie pull rCRSd/fasta" in caplog.text
 
-        assert client_rg.genome.init_from_remote("rCRSd") is True
-        assert client_rg.alias.resolve("rCRSd") == digest
+        assert client_rg.genome.init_from_remote(alias) == digest
+        assert client_rg.alias.resolve(alias) == digest
         assert client_rg.genome.exists(digest)
 
-        client_rg.alias.remove("rCRSd")  # genome exists, alias will be new
-        assert client_rg.genome.init_from_remote("rCRSd", require_collection=True) is False
+        client_rg.alias.remove(alias)  # genome exists, alias will be new
+        assert client_rg.genome.init_from_remote(alias, require_collection=True) is None
         assert client_rg.genome.exists(digest)
-        assert not client_rg.alias.exists("rCRSd")
+        assert not client_rg.alias.exists(alias)
 
-    def test_reads_the_store_named_by_the_genome_record(self, world):
-        """A server serves several stores but advertises only one; a genome in
-        another store is read from the store its record names."""
-        client_rg, server_rg = world
-        digest = server_rg.alias.resolve("rCRSd")
-        store_url = "https://store.test/vgp/"
-        source = MagicMock()
-        with (
-            patch.object(
-                client_rg.servers, "genome_attrs", return_value={"refget_store_url": store_url}
-            ),
-            patch("refgenie.managers.sources.genomes.make_source", return_value=source) as make,
-            patch.object(
-                client_rg.genome, "initialize_genome", return_value=(digest, True)
-            ) as init,
-        ):
-            result = client_rg.genome.ensure_from_remote("rCRSd")
-        assert result.success
-        make.assert_called_once_with(store_url)
-        assert init.call_args.kwargs["source"] is source
+    def test_a_digest_is_registered_under_the_servers_first_usable_alias(self, remote_world):
+        client_rg, server_rg, _ = remote_world
+        digest = server_rg.alias.resolve(GENOME)
+        seed_alias_row(server_rg, "Homo_sapiens/NCBI/GRCh38", digest)
+        assert client_rg.genome.init_from_remote(GenomeDigest(digest)) == digest
+        assert [str(a) for a in client_rg.alias.get_for_genome(digest)] == [GENOME]
 
-    def test_existing_alias_is_a_no_op(self, world):
-        client_rg, _ = world
-        client_rg.genome.add("d" * 32, "local", ["rCRSd"])
+    def test_a_digest_with_only_a_slash_alias_is_registered_under_its_digest(self, remote_world):
+        client_rg, server_rg, _ = remote_world
+        digest = server_rg.alias.resolve(GENOME)
+        seed_alias_row(server_rg, "Homo_sapiens/NCBI/GRCh38", digest)
+        server_rg.alias.remove(GENOME)
+        assert client_rg.genome.init_from_remote(GenomeDigest(digest)) == digest
+        assert [str(a) for a in client_rg.alias.get_for_genome(digest)] == [digest]
+
+    def test_a_digest_already_here_asks_no_server(self, remote_world):
+        client_rg, _, _ = remote_world
+        digest = GenomeDigest("d" * 32)
+        client_rg.genome.add(digest, "local", [])
+        with patch.object(client_rg.servers, "locate", side_effect=AssertionError("asked")):
+            assert client_rg.genome.init_from_remote(digest) == digest
+
+    def test_existing_alias_is_a_no_op(self, remote_world):
+        client_rg, _, _ = remote_world
+        client_rg.genome.add("d" * 32, "local", [GENOME])
         with patch.object(client_rg.genome, "ensure_from_remote") as ensure:
-            assert client_rg.genome.init_from_remote("rCRSd") is True
+            assert client_rg.genome.init_from_remote(GenomeAlias(GENOME)) == "d" * 32
         ensure.assert_not_called()
 
-    def test_unknown_alias_returns_false(self, world):
-        client_rg, _ = world
-        assert client_rg.genome.init_from_remote("no_such_genome") is False
+    def test_unknown_alias_returns_none(self, remote_world):
+        client_rg, _, _ = remote_world
+        assert client_rg.genome.init_from_remote(GenomeAlias("no_such_genome")) is None
         assert not client_rg.alias.exists("no_such_genome")
 
 

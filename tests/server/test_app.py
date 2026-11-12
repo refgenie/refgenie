@@ -210,6 +210,26 @@ class TestModeSurfaces:
         assert '"serverInfo"' in response.text
         assert nested.status_code != 200
 
+    def test_initialize_names_the_server(self, monkeypatch):
+        """The MCP instructions open with the server's public URL."""
+        monkeypatch.setattr("refgenie.server.main.REFGENIE_PUBLIC_URL", "https://rg.example")
+        initialize = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {
+                "protocolVersion": "2025-06-18",
+                "capabilities": {},
+                "clientInfo": {"name": "test", "version": "0"},
+            },
+        }
+        headers = {"accept": "application/json, text/event-stream"}
+        with make_server_client(stub_rgc()) as client:
+            response = client.post("/mcp", json=initialize, headers=headers)
+        data = next(x for x in response.text.splitlines() if x.startswith("data:"))
+        instructions = json.loads(data[len("data:") :])["result"]["instructions"]
+        assert instructions.startswith("refgenie server at https://rg.example.")
+
 
 class TestRootNamespaceIsReservedForTheSpa:
     """The JSON API lives at /v4 and /v1 -- never at the root, where a second
@@ -427,30 +447,30 @@ def test_skill_md_is_served_as_markdown(rgc, tmp_path):
     assert response.text.startswith("---")
 
 
-def test_server_mode_serves_llms_txt(server_client):
-    """/llms.txt is the agent index, not the SPA shell with a 200."""
-    response = server_client.get("/llms.txt")
-    assert response.status_code == 200
-    assert response.headers["content-type"] == "text/plain; charset=utf-8"
-    assert response.text.startswith("# refgenie")
-
-
 @requires_web_assets
-def test_built_bundle_carries_skill_md(server_client):
+@pytest.mark.parametrize(
+    ("name", "content_type", "marker"),
+    [
+        ("SKILL.md", "text/markdown", "name: refgenie-api"),
+        ("llms.txt", "text/plain", "## Requests"),
+        ("robots.txt", "text/plain", "User-agent: *"),
+    ],
+)
+def test_built_bundle_carries_public_files(server_client, name, content_type, marker):
     """``frontend/public/*`` ships at the bundle root, so a real build serves the
-    committed SKILL.md -- not the SPA shell with a 200.
+    committed files -- not the SPA shell with a 200.
 
     ``requires_web_assets`` proves a bundle exists, not that it is current, so a
     failure here is usually a stale bundle rather than a missing file.
     """
-    response = server_client.get("/SKILL.md")
+    response = server_client.get(f"/{name}")
     hint = "Rebuild it: npm --prefix frontend run build"
-    assert response.headers["content-type"].startswith("text/markdown"), (
-        f"/SKILL.md came back as {response.headers['content-type']}, which means the "
-        f"bundle in refgenie/server/webui/ has no SKILL.md and the SPA shell answered. {hint}"
+    assert response.headers["content-type"].startswith(content_type), (
+        f"/{name} came back as {response.headers['content-type']}, which means the "
+        f"bundle in refgenie/server/webui/ has no {name} and the SPA shell answered. {hint}"
     )
-    assert "name: refgenie-api" in response.text, (
-        f"The bundle's SKILL.md is not the one in frontend/public/. {hint}"
+    assert marker in response.text, (
+        f"The bundle's {name} is not the one in frontend/public/. {hint}"
     )
 
 
@@ -551,7 +571,6 @@ EXPECTED_PROPERTIES = {
         "build_commands",
         "download_count",
     },
-    "DatabaseSummaryResponse": {"genomes", "asset_groups", "assets"},
     "GenomeSequencesResponse": {
         "digest",
         "n_sequences",

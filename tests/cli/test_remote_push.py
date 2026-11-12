@@ -285,7 +285,7 @@ class TestHandlePush:
 
         from refgenie.cli.commands.push import handle_push
         from refgenie.cli.commands.stage import handle_stage_add
-        from tests.cli.test_cli import subcmd
+        from tests.support.cli import subcmd
 
         r = refgenie_built
         r.remote.add(
@@ -308,7 +308,7 @@ class TestHandlePush:
 
         from refgenie.cli.commands.stage import handle_stage_add
         from refgenie.cli.errors import EXIT_NOT_FOUND
-        from tests.cli.test_cli import subcmd
+        from tests.support.cli import subcmd
 
         staged = list(refgenie_built.stage.list_all())
         argv = ["stage", "add", "rCRSd/fasta:test", "--push-to", "no-such-remote"]

@@ -38,9 +38,6 @@ export const handlers = [
   http.get(`${API}/recipes`, () => HttpResponse.json(emptyPage)),
   http.get(`${API}/configurations`, () => HttpResponse.json(emptyPage)),
   // Server mode only (`archives`).
-  http.get(`${API}/summary`, () =>
-    HttpResponse.json({ genomes: 2, asset_groups: 3, assets: 4 }),
-  ),
   // Jobs: empty by default.
   http.get(`${LOCAL_API}/jobs`, () => HttpResponse.json(emptyPage)),
   http.get(`${LOCAL_API}/jobs/:id/log`, () =>

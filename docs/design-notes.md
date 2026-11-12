@@ -24,6 +24,22 @@ So one rule, enforced by `test_models_names_one_thing` in
   `server/jobs/manager.py` because every field is guarded by the manager's lock
   and nothing else may touch them.
 
+## MCP mode and the public URL
+
+`set_refgenie(rgc, public_url=)` in `refgenie/mcp/tools.py` is the one mode
+switch: `None` is local (stdio), a URL is a server. Every mode-dependent branch
+reads it.
+
+The URL comes from `REFGENIE_PUBLIC_URL` (default `https://api.refgenie.org`),
+not from the request's Host: behind Cloudflare and ECS, uvicorn sees `http`.
+
+The server sentence ("refgenie server at ...", or the local database URL) is
+put in front of the instructions through `mcp._lowlevel_server.instructions`,
+the one private attribute used; `test_initialize_names_the_server` guards it.
+
+`get_sequence` reuses the CLI's byte-range reader (`SequenceManager.get`),
+which never writes to a store, so it is safe in server mode.
+
 ## SQL lives only in refgenie/db
 
 Every SQL statement is written in `refgenie/db/`, and nowhere else. Services
@@ -171,11 +187,14 @@ would otherwise split.
 owns the subscription list, one client per server, the read-only catalog
 queries (`list_genomes`, `list_assets_for_genome`, `assets_table`) and remote
 seek. It matches the `refgenie servers` command. It is also the single place
-that asks servers what an alias or a collection is: `resolve_alias` (genome
-source first, then the v4 client), `find_collection` and `genome_source`.
-`set_genome_alias`, `GenomeManager.ensure_from_remote`, remote seek and
-`refgenie id --remote` all call these rather than looping over servers
-themselves. The word "remote" stays with
+that asks servers about a genome: `locate` (alias or digest to server, digest
+and genome record) and `alias_names`. Every remote lookup goes through
+`locate`: pull, remote seek, `set_genome_alias`, `genome init --server`,
+`listr -g`, `getseq`, `compare` and `refgenie id --remote`. None of them loops
+over servers itself. A genome's sequence collection is read through
+`collection_source`: the store its server record names (a server serves
+several stores but advertises only the first), else the server's advertised
+store. The word "remote" stays with
 push targets (`refgenie remote`, the `Remote` table), which are `rgc.remote`
 (see below). `rgc.sources` is data channels only. Creating a
 genome from server metadata is a genome job, so it is
@@ -239,14 +258,21 @@ spelled like a digest, and a guess then silently picks the alias. With typed arg
 cannot be confused: a digest-shaped alias is only ever read as an alias, and a
 digest only ever as a digest.
 
-**`pull` is the one exception.** A pull must end with an alias, because the
-alias tree it renders is keyed by one, but the genome may not exist locally
-yet. An alias is used as given, or resolved on the server and registered; a
-digest is registered under the aliases the server reports for it. So `pull`
-takes `GenomeAlias | GenomeDigest` and branches on `isinstance`, the way a
-Rust `enum GenomeRef { Alias, Digest }` would match. A plain `str` raises
-`TypeError`, so the caller must say which it means. `transfer.pull_genomes`
-follows it.
+**Remote lookups are the exception.** A genome that is not here yet can be
+named either way, so a few operations take `GenomeAlias | GenomeDigest` and
+branch on `isinstance`, the way a Rust `enum GenomeRef { Alias, Digest }`
+would match: `pull` (and `transfer.pull_genomes` / `init_genomes`),
+`ServerManager.locate`, `GenomeManager.ensure_from_remote` and
+`init_from_remote`. A plain `str` raises `TypeError`, so the caller must say
+which it means. A pull must end with an alias, because the alias tree it
+renders is keyed by one. An alias is used as given, or resolved on the server
+and registered. A genome already here is pulled under its local alias. A new
+genome found by digest is registered under the server's first alias that is
+valid here (names with '/' are skipped), or under its digest.
+
+Read commands (`listr`, `compare`, `id --remote`) locate a genome on the
+servers and write nothing. Content commands (`pull`, `getseq`) register it
+first, metadata only, as `pull --init` does.
 
 The types are notice for readers and callers, not enforcement: CI runs no type
 checker, and nothing is wrapped in `@validate_call`. Values read back from the
@@ -309,11 +335,10 @@ Subscribing stays a same-origin action. The bridge can read the list
 is a link to the local dash's `/servers?subscribe=<url>`, which fills the form
 and waits for a click.
 
-## A pull brings its asset class and its parents
+## A pull brings its asset class, and a parent only when it colocates one
 
-A fresh install has no asset classes, and a derived asset (`bwa_index`) links
-to a parent (`fasta`) the client may not have. The puller fetches both from
-the server it is pulling from, before downloading anything:
+A fresh install has no asset classes. The puller fetches the class from the
+server it is pulling from, before downloading anything:
 
 - **The class** is looked up by the server's `asset_class_name` (older servers:
   the group name) and, if no version of it is registered, fetched from
@@ -323,14 +348,18 @@ the server it is pulling from, before downloading anything:
   anyway with a warning, since the pulled asset carries its own seek keys
   from the server. A class registered this way is not rolled back if the pull
   fails: it is a definition, not data.
-- **Missing parents** (by digest) are pulled first with `force=False` from the
-  same server, each as a full pull of its own, so recursion and hooks come for
-  free. `required_by` carries the chain of digests to stop a cycle. A parent
-  that fails raises `ParentPullError` (a `PullFailedError`, so jobs report
-  `pull_failed`) naming the parent and the reason. A parent that arrives is a
-  complete asset and stays even if the child then fails; the child's
-  transaction releases the parent's genome (`PullTransaction.release_genome`)
-  so its rollback cannot remove the genome, and the parent with it.
+- **A parent is provenance, not a runtime need.** Seek keys point inside the
+  asset's own folder, and the registry's indexes run from their own files.
+  So a pull fetches only the asset that was asked for. The exception is a
+  parent named in the asset's `colocate` metadata. That parent is pulled
+  first from the same server, as a full pull of its own (cycle guard,
+  `release_genome`, `ParentPullError` unchanged), so that
+  `recreate_colocation_symlinks` can link its files.
+- **The cost:** a child pulled alone has no local parent link, and a parent
+  pulled later does not add one. Links are read only by the `remove` guard,
+  the relationships route and MCP `get_asset`.
+- **Why:** `pull hg38/fasta_index` (12 KB) used to fetch the 868 MB FASTA
+  archive (3.1 GB unpacked) without a word.
 
 In a bulk pull, an entry that is already present (often a parent an earlier
 entry pulled) is logged and skipped rather than counted as a failure.
@@ -431,7 +460,11 @@ a catalog whose genomes name a store the server lacks cannot be imported into
 Postgres at all. The catalog therefore exports the build node's store table,
 and the server takes its store list from it: an import adds or updates each
 store by name and disables, never deletes, any store the catalog does not
-list (genomes still point at it). Only enabled `remote` stores are exported;
+list (genomes still point at it). The import never deletes a genome either.
+Removing what the catalog no longer carries is `refgenie catalog-prune`, run by
+hand with `--dry-run` first: it deletes genomes the catalog dropped that have
+no assets, with their aliases, then disabled stores left with no genome. A
+dropped genome that still has assets is listed and kept. Only enabled `remote` stores are exported;
 an `on_disk` store's URL is a path on the build node, and an export that would
 publish a genome in such a store fails before writing anything. A disabled
 store is different: it is a deliberate "not now" (plantref, whose 1.57M
@@ -443,6 +476,20 @@ that decides what is published. An
 artifact with no store rows leaves the server's stores alone, so one empty
 table cannot switch every store off. On the build node, `refgenie store apply`
 sets the store table from a declaration file, disabling stores the file drops.
+
+Aliases are replaced, not only added, so a renamed or retired name goes
+away. `refgenie store sync` makes each store's alias rows the names the store
+offers now: a name it dropped is deleted, and a name it moved follows its
+collection (priority still settles names two stores share). The import does
+the same for each genome the catalog carries, deleting the server's rows for
+that genome, and rows holding a name the catalog assigns, before inserting the
+catalog's. Both skip names with '/', which refgenie reads as a genome/asset
+separator. Both have a size guard instead of a dry run, because they run every
+night: a store that offers under half the aliases it owns keeps them, and an
+import that would leave under half of the carried genomes' aliases is
+refused. A sync with any failure changes no aliases. Only a genome's owning
+store writes its FHR columns (description, species, assembly), so a
+lower-priority store cannot overwrite the owner's text.
 
 ## Background jobs in local mode
 
@@ -664,3 +711,12 @@ The public SPA may read a local instance (`bridge_mode=read`, the default) and, 
 ## A StagedAsset row is the publication record
 
 Byte-serving and DRS routes check for a `StagedAsset` row (written only after staging finishes) and the asset's serving modes, not for files on disk, so a leftover tarball from an interrupted stage is never served.
+
+## Output: stdout is the result
+
+A command's result goes to stdout. `note()` (in `cli/commands/helpers.py`)
+prints a message on stderr outside logging, for a result or hint that would
+otherwise leave a command silent, so the WARNING default never hides it. The
+console log handler filters at `REFGENIE_LOG_LEVEL` (WARNING by default), while
+the `refgenie` logger itself stays at INFO so the dash job log
+(`server/jobs/logcapture.py`) still receives its lines.

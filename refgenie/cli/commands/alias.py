@@ -4,10 +4,10 @@ from collections.abc import Callable
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 from pydantic_settings import CliSubCommand, get_subcommand
-from rich import print as rprint
 
-from refgenie.cli.framework import CliList
+from refgenie.cli.commands.helpers import print_table
 from refgenie.cli.errors import EXIT_INVALID_INPUT, EXIT_NOT_FOUND, fail
+from refgenie.cli.framework import CliList
 from refgenie.logger import logger
 
 
@@ -80,7 +80,7 @@ class AliasParser(BaseModel):
 
 
 def handle_alias_get(cmd, refgenie) -> None:
-    rprint(refgenie.alias.table(aliases=cmd.aliases, genome_digests=cmd.genome_digests))
+    print_table(refgenie.alias.table(aliases=cmd.aliases, genome_digests=cmd.genome_digests))
 
 
 def handle_alias_set(cmd, refgenie) -> None:

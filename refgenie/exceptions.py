@@ -20,6 +20,7 @@ __all__ = [
     "MissingRecipeError",
     "MissingRemoteError",
     "MissingSeekKeyError",
+    "MissingSequenceError",
     "MissingStagedAssetError",
     "MissingStoreError",
     "NoArchiveError",
@@ -123,6 +124,10 @@ class MissingGenomeError(RefgenieError):
 
     def __init__(self, genome):
         super(MissingGenomeError, self).__init__(f"Genome '{genome}' not found.")
+
+
+class MissingSequenceError(RefgenieError):
+    """A genome has no sequence of the requested name."""
 
 
 class UnservedStoreError(MissingGenomeError):

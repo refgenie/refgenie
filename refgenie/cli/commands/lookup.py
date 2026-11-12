@@ -6,7 +6,6 @@ from pydantic import AliasChoices, BaseModel, Field
 from pydantic_settings import CliPositionalArg
 from rich import print as rprint
 
-from refgenie.cli.framework import CliList
 from refgenie.cli.commands.helpers import (
     _APPEND_SERVER_DESCRIPTION,
     _ASSET_REGISTRY_PATHS_SEEK_DESCRIPTION,
@@ -15,9 +14,11 @@ from refgenie.cli.commands.helpers import (
     _lookup_one,
     genome_digest_from,
     genome_ref,
+    locate_genome,
     resolve_transient_servers,
 )
 from refgenie.cli.errors import EXIT_INVALID_INPUT, EXIT_NOT_FOUND, fail, run_over_paths
+from refgenie.cli.framework import CliList
 from refgenie.logger import logger
 
 
@@ -104,7 +105,8 @@ class CompareModel(BaseModel):
     genomes: CliPositionalArg[list[str]] = Field(
         default_factory=list,
         description="Genome aliases to compare. Together with --genome-digest, "
-        "exactly two genomes.",
+        "exactly two genomes. A genome not registered here is compared on the "
+        "subscribed server that has it.",
     )
     genome_digest: CliList | None = Field(
         default=None,
@@ -191,7 +193,7 @@ def _id_by_digest(cmd, refgenie) -> None:
     if refgenie.genome.exists(genome_digest):
         _print_genome_id(cmd, refgenie, genome_digest)
     elif cmd.remote:
-        if not refgenie.servers.find_collection(genome_digest):
+        if not refgenie.servers.locate(genome_digest):
             fail(
                 f"Digest '{genome_digest}' not found on any subscribed remote server.",
                 EXIT_NOT_FOUND,
@@ -278,7 +280,21 @@ def handle_compare(cmd, refgenie) -> None:
             f"got {count}.",
             EXIT_INVALID_INPUT,
         )
-    digests = [genome_digest_from(refgenie, alias, None) for alias in cmd.genomes] + [
-        genome_digest_from(refgenie, None, digest) for digest in cmd.genome_digest or []
+    refs = [genome_ref(a, None) for a in cmd.genomes] + [
+        genome_ref(None, d) for d in cmd.genome_digest or []
     ]
-    rprint(refgenie.genome.compare(*digests))
+    (digest_a, server_a), (digest_b, server_b) = (locate_genome(refgenie, r) for r in refs)
+    if server_a is None and server_b is None:
+        rprint(refgenie.genome.compare(digest_a, digest_b))
+        return
+    server_url = server_a or server_b
+    try:
+        rprint(refgenie.servers.client(server_url).genome.compare(digest_a, digest_b))
+    except Exception as e:
+        remote = [r for r, s in zip(refs, (server_a, server_b)) if s]
+        fail(
+            f"{server_url} could not compare them ({e}). Register "
+            + ", ".join(f"'{r}'" for r in remote)
+            + " here first (refgenie pull --init, metadata only), then compare again.",
+            EXIT_NOT_FOUND,
+        )

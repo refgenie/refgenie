@@ -4,11 +4,12 @@ backend, the remote fallback for metadata-only genomes, and locus parsing.
 """
 
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
 from refgenie import Refgenie
+from refgenie.exceptions import MissingSequenceError
 from refgenie.managers.sequence import parse_locus
 from tests.support.factories import make_engine
 
@@ -22,8 +23,8 @@ class TestGenomeSequence:
         Coordinate parsing and substring semantics are covered by the
         RefgetStore tests below.
         """
-        with pytest.raises(ValueError):
-            refgenie_session.sequence.get(refgenie_session.alias.resolve("rCRSd"), "chr999:0-10")
+        with pytest.raises(MissingSequenceError, match="chr999"):
+            refgenie_session.sequence.get(refgenie_session.alias.resolve("rCRSd"), "chr999", 0, 10)
 
 
 # ---------------------------------------------------------------------------
@@ -75,7 +76,7 @@ def test_getseq_substring_lazy_store(tmp_path, fixtures_path):
 
     digest = r.alias.resolve("rCRSd")
     whole = r.sequence.get(digest, name)
-    sub = r.sequence.get(digest, f"{name}:0-10")
+    sub = r.sequence.get(digest, name, 0, 10)
     assert len(sub) == 10
     assert whole.startswith(sub)
 
@@ -112,17 +113,33 @@ def test_getseq_metadata_only_routes_to_remote(tmp_path, fixtures_path):
         session.add(Alias(name="meta_only", genome_digest=digest))
         session.commit()
 
-    mock_record = MagicMock()
-    mock_record.decode.return_value = "ACGTACGT"
-    mock_record.metadata.sha512t24u = "fake_digest"
-    mock_record.metadata.length = 8
+    with patch("refgenie.managers.sequence.open_remote_store") as opener:
+        opener.return_value.__enter__.return_value = src
+        result = r.sequence.get(r.alias.resolve("meta_only"), "rCRSd", 0, 10)
 
-    with patch.object(r.sequence, "_fetch_remote", return_value=mock_record) as mock_fetch:
-        result = r.sequence.get(r.alias.resolve("meta_only"), "rCRSd")
+    opener.assert_called_once_with("https://x")
+    assert result == src.get_substring(src.get_collection_level2(digest)["sequences"][0][3:], 0, 10)
+    # Nothing was cached: the local store still has no bytes for the sequence.
+    with pytest.raises(KeyError):
+        tgt2 = RefgetStore.on_disk(str(store_path))
+        tgt2.get_substring(src.get_collection_level2(digest)["sequences"][0][3:], 0, 10)
 
-    # The bytes-less local record must NOT raise OSError; it routes to remote.
-    mock_fetch.assert_called_once()
-    assert result == "ACGTACGT"
+
+def test_getseq_server_mode(tmp_path, fixtures_path):
+    """Server mode serves a genome whose own store has the bytes, not a metadata-only one."""
+    r, digest, name = _local_refgenie_with_bytes(tmp_path, fixtures_path / "rCRSd.fa")
+    r.sequence._sequences_enabled = False
+    assert len(r.sequence.get(digest, name, 0, 10)) == 10
+
+
+def test_getseq_errors(tmp_path, fixtures_path):
+    r, digest, name = _local_refgenie_with_bytes(tmp_path, fixtures_path / "rCRSd.fa")
+    with pytest.raises(MissingSequenceError, match="chr999.*rCRSd"):
+        r.sequence.get(digest, "chr999")
+    with pytest.raises(ValueError, match="33,138 bases"):
+        r.sequence.get(digest, name, 0, RCRSD_LENGTH + 1)
+    with pytest.raises(ValueError):
+        r.sequence.get(digest, name, 10, 10)
 
 
 class TestParseLocus:
@@ -148,3 +165,9 @@ class TestParseLocus:
                 parse_locus(locus)
         else:
             assert parse_locus(locus) == expected
+
+    def test_one_based(self):
+        assert parse_locus("chr1:1-10", one_based=True) == ("chr1", 0, 10)
+        assert parse_locus("chr1:5", one_based=True) == ("chr1", 4, None)
+        with pytest.raises(ValueError, match="start at 1"):
+            parse_locus("chr1:0-10", one_based=True)

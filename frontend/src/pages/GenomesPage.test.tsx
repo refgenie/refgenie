@@ -6,7 +6,7 @@ import { GenomesPage } from './GenomesPage';
 import { server } from '../test/server';
 import { API } from '../test/handlers';
 import { emptyPage, genomesFixture } from '../test/fixtures';
-import { renderWithProviders } from '../test/renderWithProviders';
+import { renderWithProviders, serverConfig } from '../test/renderWithProviders';
 import type { GenomeResponse } from '../types/api';
 
 /** A registered genome with nothing built — 675 of the public server's 701. */
@@ -176,5 +176,47 @@ describe('GenomesPage', () => {
     expect(
       await screen.findByRole('link', { name: 'bare-genome' }),
     ).toBeInTheDocument();
+  });
+
+  it('reads the stat block from the list totals', async () => {
+    const page = (total: number) => ({
+      results: [],
+      pagination: { page: 0, page_size: 1, total },
+    });
+    server.use(
+      http.get(`${API}/genomes`, ({ request }) =>
+        HttpResponse.json(
+          page(new URL(request.url).searchParams.get('has_assets') ? 7 : 879),
+        ),
+      ),
+      http.get(`${API}/asset_groups`, () => HttpResponse.json(page(12))),
+      http.get(`${API}/assets`, () => HttpResponse.json(page(345))),
+    );
+    renderWithProviders(<GenomesPage />, { config: serverConfig });
+    const stats = (term: string) =>
+      screen.getByText(term, { selector: 'dt' }).nextElementSibling;
+    await waitFor(() => expect(stats('Genomes')).toHaveTextContent('879'));
+    await waitFor(() => expect(stats('Genomes')).toHaveTextContent('7 with built assets'));
+    expect(stats('Asset groups')).toHaveTextContent('12');
+    expect(stats('Assets')).toHaveTextContent('345');
+  });
+
+  it('on a server, an empty search offers to request the genome', async () => {
+    server.use(http.get(`${API}/genomes`, () => HttpResponse.json(emptyPage)));
+    renderWithProviders(<GenomesPage />, {
+      route: '/genomes?q=zzz',
+      config: serverConfig,
+    });
+    const link = await screen.findByRole('link', { name: /Request this genome/ });
+    expect(link.getAttribute('href')).toContain(
+      'template=genome_proposal.yml&genome=zzz',
+    );
+  });
+
+  it('on a local dash, an empty search has no request link', async () => {
+    server.use(http.get(`${API}/genomes`, () => HttpResponse.json(emptyPage)));
+    renderWithProviders(<GenomesPage />, { route: '/genomes?q=zzz' });
+    expect(await screen.findByText(/No results match/)).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Request this genome/ })).not.toBeInTheDocument();
   });
 });

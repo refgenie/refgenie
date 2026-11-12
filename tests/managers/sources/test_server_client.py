@@ -77,7 +77,12 @@ class TestRemoteStore:
             session.commit()
 
         mock_store = MagicMock()
-        mock_store.get_sequence_by_name.side_effect = KeyError("not found")
+        mock_store.get_collection_level2.return_value = {
+            "names": ["chr1"],
+            "lengths": [10],
+            "sequences": ["SQ.abc"],
+        }
+        mock_store.get_substring.side_effect = KeyError("no bytes")
 
         class _FakeRouter:
             names: list = []
@@ -91,7 +96,7 @@ class TestRemoteStore:
         r._store_router = _FakeRouter(mock_store)
 
         with pytest.raises(RuntimeError, match="not available in server mode"):
-            r.sequence.get("test_genome", "chr1")
+            r.sequence.get("testdigest1234567890abcdef123456", "chr1")
 
 
 # ===========================================================================

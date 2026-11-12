@@ -2,8 +2,8 @@
 
 from collections.abc import Iterable
 
-from sqlmodel import Session, delete, func, select
 from sqlalchemy.orm import selectinload
+from sqlmodel import Session, delete, func, select
 
 from refgenie.db.queries.search import RankPatterns, like_escape, padded_words
 from refgenie.db.tables import Species, SpeciesName

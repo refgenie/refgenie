@@ -131,7 +131,7 @@ Longer walkthroughs:
 
 - [Documentation](https://docs.refgenie.org/refgenie/)
 - [CLI reference](https://docs.refgenie.org/refgenie/refgenie-cli/)
-- [Tutorial notebook](https://docs.refgenie.org/refgenie/notebooks/refgenie/)
+- [Python tutorial](https://docs.refgenie.org/refgenie/refgenie_object/)
 
 ## Data Channels
 

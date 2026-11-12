@@ -23,7 +23,7 @@ Refgenie is a single Python package that manages, builds, serves, and distribute
 
 ### The `refgenie` command-line interface (CLI)
 
-`pip install "refgenie>=1.0.0a1"` provides the `refgenie` command, which you use to `pull` or `build` an asset. You can also use refgenie from Python through its API. See the [Python API reference](code/refgenie.md).
+`pip install "refgenie>=1.0.0a1"` provides the `refgenie` command, which you use to `pull` or `build` an asset. You can also use refgenie from Python through its API. See the [Python API page](refgenie_object.md).
 
 ### Built-in server
 

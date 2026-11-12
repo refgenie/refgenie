@@ -19,9 +19,15 @@ changes the list, the server starts serving the new stores and stops serving
 removed or disabled ones without a restart. To publish a store, add it in the
 registry (refgenie-registry `stores/`), not here.
 
+`REFGENIE_PUBLIC_URL` (default `https://api.refgenie.org`) is the base URL the MCP tools put in download links and in the server sentence.
+
 ## The web UI at refgenie.org
 
 refgenie.org serves the frontend as a static site on a Cloudflare Worker, and
 the app reads its data from api.refgenie.org. The Worker config is
 `frontend/site/` and the build settings are `frontend/.env.site`. Deploy from
 `frontend/` with `npm run deploy:site` (needs `wrangler login`).
+
+Cloudflare's Browser Integrity Check must stay off for the refgenie.org zone.
+With it on, Python's built-in urllib (and libwww-perl) gets a 403 with
+`error code: 1010` before the request reaches the origin.

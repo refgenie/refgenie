@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from pydantic_settings import CliPositionalArg, CliSubCommand, get_subcommand
 from rich import print as rprint
 
+from refgenie.cli.commands.helpers import print_table
 from refgenie.cli.errors import fail
 from refgenie.logger import logger
 
@@ -59,7 +60,7 @@ def handle_plugins_list(cmd, refgenie) -> None:
 
     installed = refgenie.plugins.installed()
     if installed:
-        rprint(
+        print_table(
             build_table(
                 "Refgenie plugins",
                 ["Hook", "Plugin", "Target", "Package", "Status"],
@@ -85,7 +86,7 @@ def handle_plugins_list(cmd, refgenie) -> None:
         for key, value in sorted(values.items())
     ]
     if rows:
-        rprint(build_table("Plugin settings", ["Plugin", "Key", "Value"], rows))
+        print_table(build_table("Plugin settings", ["Plugin", "Key", "Value"], rows))
 
     if (reason := _dispatch_off_reason(refgenie)) is not None:
         rprint(f"Plugins are not run here: {reason}")

@@ -390,6 +390,138 @@ class TestStoreSyncIntegration:
         _sync_one_store(rg, srow, priorities, 100)
         assert rg.genome.get(digest).synonyms is None
 
+    def test_lower_priority_store_does_not_overwrite_fhr_columns(self, tmp_path, fixtures_path):
+        """Only the owning store writes FHR columns, whatever the sync order."""
+        from refget.store import RefgetStore
+
+        from refgenie.cli.commands.store import StoreSyncModel, handle_store_sync
+        from refgenie.managers.genome import GenomeManager
+
+        for name in ("owner", "other"):
+            digest = build_on_disk_store(tmp_path / name, fixtures_path / "rCRSd.fa", "rCRSd")
+            fhr = {"genome": "rCRSd", "assemblySource": name, "documentation": f"from {name}"}
+            RefgetStore.on_disk(str(tmp_path / name)).set_fhr_metadata(
+                digest, GenomeManager._fhr_metadata_from_dict(fhr)
+            )
+        rg = _server_rgc()
+        rg.store.add("owner", str(tmp_path / "owner"), StoreType.on_disk, priority=10)
+        rg.store.add("other", str(tmp_path / "other"), StoreType.on_disk, priority=20)
+
+        handle_store_sync(StoreSyncModel(), rg)  # owner first, then other
+
+        genome = rg.genome.get(digest)
+        assert genome.store_name == "owner"
+        assert (genome.assembly_source, genome.description) == ("owner", "from owner")
+
+
+# ---------------------------------------------------------------------------
+# A store's aliases are replaced as a set at each sync
+# ---------------------------------------------------------------------------
+
+
+def _jungle(tmp_path, fixtures_path):
+    """A server with one on-disk store 'jungle': rCRSd (aliases a, b, c) and t7 (alias t7)."""
+    from refget.store import RefgetStore
+
+    path = tmp_path / "jungle"
+    rcrsd = build_on_disk_store(path, fixtures_path / "rCRSd.fa", "a")
+    t7 = build_on_disk_store(path, fixtures_path / "t7.fa", "t7")
+    store = RefgetStore.on_disk(str(path))
+    for name in ("b", "c"):
+        store.add_collection_alias("name", name, rcrsd)
+    rg = _server_rgc()
+    rg.store.add("jungle", str(path), StoreType.on_disk, priority=10)
+    return rg, store, rcrsd, t7
+
+
+def _sync(rg, name="jungle"):
+    from refgenie.cli.commands.store import _sync_one_store
+
+    return _sync_one_store(rg, rg.store.get(name), {"jungle": 10}, 100)
+
+
+def _owned(rg, store_name="jungle"):
+    """{alias: digest} of the SQL alias rows a store owns."""
+    rows = AliasManager(rg.database_engine).list_all()
+    return {a.name: a.genome_digest for a in rows if a.store_name == store_name}
+
+
+class TestStoreAliasReplacement:
+    def test_slash_alias_is_skipped_and_old_slash_rows_are_removed(
+        self, tmp_path, fixtures_path, caplog
+    ):
+        rg, store, rcrsd, t7 = _jungle(tmp_path, fixtures_path)
+        store.add_collection_alias("name", "Homo_sapiens/NCBI/rCRSd", rcrsd)
+        assert _sync(rg) == (2, 0)
+        # Rows written before refgenie skipped such names. More of them than the
+        # store's names: they do not count toward the half guard.
+        for n in range(5):
+            AliasManager(rg.database_engine).federated_sync(
+                f"Homo_sapiens/UCSC/old{n}", rcrsd, "jungle", {"jungle": 10}
+            )
+
+        with caplog.at_level(logging.WARNING):
+            assert _sync(rg) == (0, 0)
+
+        assert _owned(rg) == {"a": rcrsd, "b": rcrsd, "c": rcrsd, "t7": t7}
+        assert "skipped 1 alias(es) with '/'" in caplog.text
+
+    def test_store_moving_its_alias_to_another_collection_repoints_it(
+        self, tmp_path, fixtures_path
+    ):
+        rg, store, rcrsd, t7 = _jungle(tmp_path, fixtures_path)
+        _sync(rg)
+        store.remove_collection_alias("name", "b")
+        store.add_collection_alias("name", "b", t7)
+
+        _sync(rg)
+
+        assert rg.alias.resolve("b") == t7
+        assert _owned(rg) == {"a": rcrsd, "b": t7, "c": rcrsd, "t7": t7}
+
+    def test_dropped_alias_is_removed(self, tmp_path, fixtures_path):
+        rg, store, rcrsd, t7 = _jungle(tmp_path, fixtures_path)
+        _sync(rg)
+        store.remove_collection_alias("name", "c")
+
+        _sync(rg)
+
+        with pytest.raises(MissingAliasError):
+            rg.alias.resolve("c")
+        assert _owned(rg) == {"a": rcrsd, "b": rcrsd, "t7": t7}
+
+    def test_store_offering_under_half_its_aliases_keeps_them(
+        self, tmp_path, fixtures_path, caplog
+    ):
+        rg, store, rcrsd, t7 = _jungle(tmp_path, fixtures_path)
+        _sync(rg)
+        for name in ("a", "b", "c"):
+            store.remove_collection_alias("name", name)
+
+        with caplog.at_level(logging.ERROR):
+            _sync(rg)
+
+        assert _owned(rg) == {"a": rcrsd, "b": rcrsd, "c": rcrsd, "t7": t7}
+        assert "offers 1 aliases, down from 4; aliases left unchanged" in caplog.text
+
+    def test_failed_sync_changes_no_aliases(self, tmp_path, fixtures_path, monkeypatch):
+        from refgenie.managers import collection_sync
+
+        rg, store, rcrsd, t7 = _jungle(tmp_path, fixtures_path)
+        _sync(rg)
+        store.remove_collection_alias("name", "c")
+        claim = collection_sync._claim_genome
+
+        def failing_claim(rgc, digest, *args):
+            if digest == t7:
+                raise RuntimeError("store read failed")
+            return claim(rgc, digest, *args)
+
+        monkeypatch.setattr(collection_sync, "_claim_genome", failing_claim)
+
+        assert _sync(rg) == (0, 1)
+        assert _owned(rg) == {"a": rcrsd, "b": rcrsd, "c": rcrsd, "t7": t7}
+
 
 # ---------------------------------------------------------------------------
 # Comparing genomes that live in different stores
