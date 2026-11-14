@@ -184,7 +184,6 @@ export function GenomePage() {
               digest={record.digest}
               pullCommand={pullCommand}
               pullSize={hasFastaAsset ? fastaPullSize(assets.data?.results) : null}
-              hasFastaAsset={hasFastaAsset}
             />
           ) : undefined
         }

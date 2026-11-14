@@ -2036,12 +2036,6 @@
   color: rgb(var(--color-primary-dark));
 }
 
-.rg-genome-digest__connect,
-.rg-genome-digest__row--get .rg-pull-button {
-  align-self: flex-start;
-  margin-top: var(--space-1);
-}
-
 .rg-genome-digest__value {
   display: flex;
   align-items: center;
