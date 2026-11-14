@@ -798,7 +798,7 @@ class TestSharedReadonlyStores:
 
     @staticmethod
     def _mounts(app):
-        return {m.url: m.app for m in app.state.seqcol.mounts}
+        return {m.url: m.app for m in app.state.seqcol.services()}
 
     def test_seqcol_mounts_share_the_routers_readonly_stores(
         self, tmp_path, fixtures_path, monkeypatch

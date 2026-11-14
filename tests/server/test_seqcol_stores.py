@@ -86,7 +86,7 @@ def _serves_collection(client, prefix, digest):
 class TestNoStores:
     def test_db_mode_seqcol(self):
         with _client(server_with_stores()) as client:
-            assert client.app.state.seqcol.mounts == ()
+            assert client.app.state.seqcol.services() == ()
             info = client.get("/seqcol/service-info").json()
             assert info["id"] == "org.refgenie.seqcol"
             assert info["seqcol"]["refget_store"] == {"enabled": False}
@@ -169,7 +169,7 @@ class TestStoreSetChangesAtRuntime:
         with _client(rg) as client:
             rg.store.apply_declaration([stores.row("jungle", enabled=False)])
             assert client.app.state.seqcol.refresh() is True
-            assert client.app.state.seqcol.mounts == ()
+            assert client.app.state.seqcol.services() == ()
             info = client.get("/seqcol/service-info").json()
             assert info["seqcol"]["refget_store"] == {"enabled": False}
 
@@ -178,10 +178,10 @@ class TestStoreSetChangesAtRuntime:
         stores.register(rg, "jungle")
         with _client(rg) as client:
             router = rg.store_router
-            mounts = client.app.state.seqcol.mounts
+            mounts = client.app.state.seqcol.services()
             assert client.app.state.seqcol.refresh() is False
             assert rg.store_router is router
-            assert client.app.state.seqcol.mounts is mounts
+            assert client.app.state.seqcol.services() is mounts
 
     def test_a_store_that_fails_to_load_keeps_the_old_set(self, stores):
         rg = server_with_stores()
@@ -205,6 +205,7 @@ class TestStoreSetChangesAtRuntime:
                 raise RuntimeError("database went away")
 
             monkeypatch.setattr(rg.store, "enabled_stores", _fail)
-            assert client.app.state.seqcol.refresh() is False
+            with pytest.raises(RuntimeError):
+                client.app.state.seqcol.refresh()
             assert _served_stores(client) == ["jungle"]
             assert _serves_collection(client, "/seqcol", stores.digest["jungle"])

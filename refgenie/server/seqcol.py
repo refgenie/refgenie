@@ -15,12 +15,11 @@ DB-backed refget router is served at ``SEQCOL_MOUNT_PATH``.
 """
 
 import threading
-from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from fastapi import FastAPI
 from refget.router import create_refget_router, setup_backend
-from starlette.types import ASGIApp, Receive, Scope, Send
+from starlette.types import Receive, Scope, Send
 
 from refgenie.db.tables import Store, StoreType
 from refgenie.logger import logger
@@ -32,14 +31,6 @@ from refgenie.server.const import (
     SERVICE_DOCUMENTATION_URL,
     SERVICE_ORGANIZATION,
 )
-
-#: What identifies a served store: a change to any of these rebuilds serving.
-StoreKey = tuple[str, str, str, int]
-
-
-def store_key(row: Store) -> StoreKey:
-    """The fields of a store row that decide how it is served."""
-    return (row.name, row.url, StoreType(row.type).value, row.priority)
 
 
 @dataclass(frozen=True)
@@ -77,14 +68,11 @@ class SeqcolMount(SeqcolService):
 class SeqcolTable:
     """One store set's seqcol sub-apps. Never mutated; replaced whole."""
 
-    #: The enabled stores this table serves, in priority order.
-    stores: tuple[StoreKey, ...]
-    #: The sub-app at ``SEQCOL_MOUNT_PATH``.
-    default: ASGIApp
+    #: (name, url, type, priority) of each enabled store, in priority order;
+    #: a change to any of them rebuilds the table.
+    stores: tuple[tuple[str, str, str, int], ...]
     #: One per store, default first. Empty in DB mode.
-    mounts: tuple[SeqcolMount, ...] = ()
-    #: Name-qualified sub-apps, by the path segment that selects them.
-    qualified: Mapping[str, ASGIApp] = field(default_factory=dict)
+    mounts: tuple[SeqcolMount, ...]
 
 
 def _db_seqcol_app(engine) -> FastAPI:
@@ -150,52 +138,27 @@ class SeqcolServing:
     def __init__(self, rg):
         self._rg = rg
         self._table: SeqcolTable | None = None
-        # Serializes refreshes; requests never take it once a table exists.
+        # Serializes refreshes; requests never take it.
         self._lock = threading.Lock()
         self._db_app: FastAPI | None = None
 
-    @property
-    def table(self) -> SeqcolTable:
-        """The current table, built on first use if no refresh has run yet."""
-        table = self._table
-        if table is None:
-            self.refresh()
-            table = self._table
-        return table
-
-    @property
-    def mounts(self) -> tuple[SeqcolMount, ...]:
-        """The store sub-apps now served; empty in DB mode."""
-        return self.table.mounts
-
     def services(self) -> tuple[SeqcolService, ...]:
-        """The store services to advertise; empty in DB mode.
-
-        Before the first refresh (the lifespan has not run) this describes the
-        registry without loading any store.
-        """
-        table = self._table
-        if table is not None:
-            return table.mounts
-        rows = self._enabled_rows() or []
-        return tuple(SeqcolService.for_row(r, default=i == 0) for i, r in enumerate(rows))
+        """The store services to advertise; empty in DB mode."""
+        return self._table.mounts
 
     def refresh(self) -> bool:
         """Serve the registry's current enabled stores. Returns whether anything changed.
 
         A changed store set reloads the store router (the v4 API reads it too)
         and builds a new table bound to its stores, then swaps both in. Until
-        the swap, requests keep using the old ones. A store that fails to load
-        raises, and the old router and table stay in place.
+        the swap, requests keep using the old ones. A store that fails to load,
+        or a registry that cannot be read, raises, and the old router and
+        table stay in place.
         """
         with self._lock:
             current = self._table
-            rows = self._enabled_rows()
-            if rows is None:
-                if current is not None:
-                    return False  # keep serving what we have
-                rows = []
-            keys = tuple(store_key(r) for r in rows)
+            rows = list(self._rg.store.enabled_stores())
+            keys = tuple((r.name, r.url, StoreType(r.type).value, r.priority) for r in rows)
             if current is not None and current.stores == keys:
                 return False
             if rows:
@@ -208,45 +171,28 @@ class SeqcolServing:
                     _store_mount(row, router.get_store(row.name), default=idx == 0)
                     for idx, row in enumerate(rows)
                 )
-                table = SeqcolTable(
-                    stores=keys,
-                    default=mounts[0].app,
-                    mounts=mounts,
-                    qualified={m.store: m.app for m in mounts[1:]},
-                )
+                self._table = SeqcolTable(stores=keys, mounts=mounts)
             else:
                 if current is not None:
                     # The router must stop holding the dropped stores, too.
                     self._rg.reload_store_router()
                 if self._db_app is None:
                     self._db_app = _db_seqcol_app(self._rg.database_engine)
-                table = SeqcolTable(stores=keys, default=self._db_app)
-            self._table = table
+                self._table = SeqcolTable(stores=keys, mounts=())
         names = ", ".join(k[0] for k in keys) or "none; DB-backed seqcol"
         logger.info(f"Serving seqcol for stores: {names}")
         return True
 
-    def _enabled_rows(self) -> list[Store] | None:
-        """The enabled store rows in priority order, or ``None`` if the registry can't be read.
-
-        At startup an unreadable registry means DB-mode seqcol; later, a refresh
-        that cannot read it keeps the current stores.
-        """
-        try:
-            return list(self._rg.store.enabled_stores())
-        except Exception:  # noqa: BLE001 - logged; the caller picks the fallback
-            logger.exception("Could not read the store registry")
-            return None
-
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        table = self.table  # read once: one request, one store set
+        mounts = self._table.mounts  # read once: one request, one store set
         if scope["type"] in ("http", "websocket"):
             name = _qualifier(scope)
-            app = table.qualified.get(name)
-            if app is not None:
-                # As a Mount would: the store's segment joins root_path. The
-                # scope is updated in place so the hit counter sees the route.
-                scope["root_path"] = scope.get("root_path", "") + "/" + name
-                await app(scope, receive, send)
-                return
-        await table.default(scope, receive, send)
+            for mount in mounts[1:]:
+                if mount.store == name:
+                    # As a Mount would: the store's segment joins root_path. The
+                    # scope is updated in place so the hit counter sees the route.
+                    scope["root_path"] = scope.get("root_path", "") + "/" + name
+                    await mount.app(scope, receive, send)
+                    return
+        # The default store's sub-app, or the DB-backed one with no stores.
+        await (mounts[0].app if mounts else self._db_app)(scope, receive, send)
