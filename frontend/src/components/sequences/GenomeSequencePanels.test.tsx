@@ -35,6 +35,7 @@ describe('SequencesPanel', () => {
     expect(figure).toHaveTextContent('dna3bit');
     expect(figure).toHaveTextContent('dna2bit');
     expect(screen.getByRole('table', { name: 'Sequences' })).toBeInTheDocument();
+    expect(screen.getByText(/SHA-512\/24u, the GA4GH refget ID/)).toBeInTheDocument();
   });
 });
 

@@ -50,6 +50,11 @@ export function SequencesPanel({
   return (
     <div className="flex flex-col gap-4">
       <h2 className="sr-only">Sequences</h2>
+      <p className="rg-muted text-sm">
+        Digests (SHA-512/24u, the GA4GH refget ID, and MD5) are IDs computed from a
+        sequence&apos;s bases: the same digest means exactly the same sequence. Alphabet:
+        dna2bit holds only A, C, G and T; dna3bit adds N; dnaio allows any IUPAC letter.
+      </p>
       {data ? (
         <SequenceTable
           sequences={data.sequences}

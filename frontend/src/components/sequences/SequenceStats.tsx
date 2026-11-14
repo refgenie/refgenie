@@ -1,7 +1,7 @@
 // Ported from repos/refget/frontend/src/pages/StoreCollection.tsx (summary stats) @ c0d3e09; keep the two in step.
 // The sequence count is on the Sequences tab, so this shows the total size and the alphabets.
 
-import { alphabetCounts } from './alphabets';
+import { alphabetCounts, alphabetTitle } from './alphabets';
 import type { AlphabetPart } from './alphabets';
 import { formatBp } from '../../utils/format';
 import type { SequenceRow } from './types';
@@ -57,7 +57,7 @@ function Alphabets({ sequences }: SequenceStatsProps) {
     return (
       <p className="rg-seq-summary__item">
         <span className="rg-seq-summary__label">Alphabet</span>
-        <code>{parts[0].alphabet}</code>
+        <code title={alphabetTitle(parts[0].alphabet)}>{parts[0].alphabet}</code>
       </p>
     );
   }
@@ -98,7 +98,12 @@ function Alphabets({ sequences }: SequenceStatsProps) {
             <li
               key={part.alphabet}
               className="rg-alphabets__item"
-              title={`${plural(part.count)}, ${part.bases.toLocaleString()} bp`}
+              title={[
+                alphabetTitle(part.alphabet),
+                `${plural(part.count)}, ${part.bases.toLocaleString()} bp`,
+              ]
+                .filter(Boolean)
+                .join('\n')}
             >
               <span className={`rg-alphabets__swatch rg-series-${i + 1}`} aria-hidden="true" />
               <code>{part.alphabet}</code>
