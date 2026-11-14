@@ -9,7 +9,7 @@ import { Pagination } from '../common/Pagination';
 import { SearchBox } from '../common/SearchBox';
 import { cn } from '../../utils/cn';
 import { preferredAlias } from './aliases';
-import type { SequenceRow } from './types';
+import type { SequenceResponse } from '../../types/api';
 import { isExtractable } from '../../services/regionExtract';
 
 export const SEQUENCE_PAGE_SIZE = 50;
@@ -18,26 +18,26 @@ type SortColumn = 'name' | 'length';
 type SortState = { column: SortColumn; ascending: boolean } | null;
 
 export interface SequenceTableProps {
-  sequences: SequenceRow[];
+  sequences: SequenceResponse[];
   /** Shows a per-row "Extract…" link, to this href, for rows whose bases can be read. */
-  extractHref?: (row: SequenceRow) => string;
+  extractHref?: (row: SequenceResponse) => string;
   /** Shown to the right of the filter box, e.g. the alphabet summary. */
   aside?: ReactNode;
 }
 
-function matches(row: SequenceRow, needle: string): boolean {
+function matches(row: SequenceResponse, needle: string): boolean {
   if (row.name.toLowerCase().includes(needle)) return true;
   return row.aliases.some((a) => a.alias.toLowerCase().includes(needle));
 }
 
-function compareRows(a: SequenceRow, b: SequenceRow, column: SortColumn): number {
+function compareRows(a: SequenceResponse, b: SequenceResponse, column: SortColumn): number {
   return column === 'length' ? a.length - b.length : a.name.localeCompare(b.name);
 }
 
 const NO_ALIAS =
   'No alias: no public record, such as RefSeq, has exactly these bases. Masked or edited sequences often have none.';
 
-function AliasCell({ row }: { row: SequenceRow }) {
+function AliasCell({ row }: { row: SequenceResponse }) {
   const { primary, all } = preferredAlias(row.aliases);
   if (!primary) {
     // Not an error: masked or edited sequences match no public record.

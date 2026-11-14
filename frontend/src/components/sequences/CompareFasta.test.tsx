@@ -8,11 +8,11 @@ import { API } from '../../test/handlers';
 import { renderWithProviders } from '../../test/renderWithProviders';
 import type { DigestWorkerReply, WorkerLike } from '../../vendor/fastaDigest/fastaDigestClient.ts';
 import type { FastaDigestResult } from '../../vendor/fastaDigest/fastaDigest.ts';
-import type { SequenceRow } from './types';
+import type { SequenceResponse } from '../../types/api';
 
 const DIGEST = 'GenomeDigestGenomeDigestGenomeDi';
 
-function seq(name: string, length: number, sha512t24u: string): SequenceRow {
+function seq(name: string, length: number, sha512t24u: string): SequenceResponse {
   return {
     name,
     length,
@@ -30,7 +30,7 @@ const SEQUENCES = [
   seq('chrM', 16, 'sM'),
 ];
 
-function result(digest: string, rows: SequenceRow[]): FastaDigestResult {
+function result(digest: string, rows: SequenceResponse[]): FastaDigestResult {
   return {
     digest,
     n_sequences: rows.length,

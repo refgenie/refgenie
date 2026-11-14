@@ -2078,15 +2078,7 @@
   color: rgb(var(--color-text-muted));
 }
 
-.rg-genome-head__ph--sm {
-  width: 6rem;
-}
-
-.rg-genome-head__ph--md {
-  width: 14rem;
-}
-
-.rg-genome-head__ph--lg {
+.rg-genome-head__ph {
   width: 22rem;
 }
 

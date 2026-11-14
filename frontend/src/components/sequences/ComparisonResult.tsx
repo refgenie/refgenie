@@ -8,7 +8,7 @@ import {
 } from '../../utils/seqcolCompare';
 import type { BadgeVariant } from '../common/Badge';
 import type { CompareLevel } from '../../utils/seqcolCompare';
-import type { SeqcolComparison } from './types';
+import type { SeqcolComparison } from '../../types/api';
 
 const LEVEL_BADGE: Record<CompareLevel, { variant: BadgeVariant; label: string }> = {
   same: { variant: 'archive', label: 'Same coordinates' },

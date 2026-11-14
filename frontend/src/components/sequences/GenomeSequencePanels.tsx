@@ -19,7 +19,7 @@ import {
   DEFAULT_SEQ_TEMPLATE,
   seqUrl,
 } from '../../services/fastaExport';
-import type { SequenceRow } from './types';
+import type { SequenceResponse } from '../../types/api';
 
 export interface GenomePanelProps {
   digest: string;
@@ -62,7 +62,7 @@ export function SequencesPanel({
 
 const NO_LIMIT = Number.POSITIVE_INFINITY;
 
-function tryParse(text: string, sequences: SequenceRow[]): ParsedRegion | null {
+function tryParse(text: string, sequences: SequenceResponse[]): ParsedRegion | null {
   try {
     return parseRegion(text, sequences, NO_LIMIT);
   } catch {

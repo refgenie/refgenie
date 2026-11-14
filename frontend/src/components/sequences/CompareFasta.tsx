@@ -18,7 +18,7 @@ import {
 import { formatBytes, formatDigest } from '../../utils/format';
 import { preferredAlias } from '../../utils/genomes';
 import { listAliases } from '../../services/resources/aliases';
-import type { SequenceRow } from './types';
+import type { SequenceResponse } from '../../types/api';
 
 type State =
   | { kind: 'idle' }
@@ -30,7 +30,7 @@ export interface CompareFastaProps {
   /** This genome's digest. */
   digest: string;
   /** This genome's sequences, in collection order; undefined while loading. */
-  sequences: SequenceRow[] | undefined;
+  sequences: SequenceResponse[] | undefined;
   /** Tests pass a fake worker. */
   workerFactory?: WorkerFactory;
 }

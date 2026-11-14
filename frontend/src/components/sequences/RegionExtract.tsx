@@ -10,14 +10,14 @@ import {
   regionFileName,
   type ParsedRegion,
 } from '../../utils/parseRegion';
-import type { SequenceRow } from './types';
+import type { SequenceResponse } from '../../types/api';
 
 const REGION_PARAM = 'region';
 
 export interface RegionExtractProps {
   storeUrl: string;
   /** All of the genome's sequences, to match names and aliases against. */
-  sequences: SequenceRow[];
+  sequences: SequenceResponse[];
   value: string;
   onChange: (value: string) => void;
 }
@@ -59,7 +59,7 @@ export function RegionExtract({
         setResult({ kind: 'error', message: messageOf(error) });
         return;
       }
-      const seq = sequences.find((row) => row.name === region.name) as SequenceRow;
+      const seq = sequences.find((row) => row.name === region.name) as SequenceResponse;
       lastRun.current = region.label;
       setParams(
         (previous) => {

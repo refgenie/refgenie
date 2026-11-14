@@ -1,6 +1,6 @@
 // Ported from repos/refget/frontend/src/services/aliases.ts @ c0d3e09; keep the two in step.
 
-import type { AliasEntry } from './types';
+import type { AliasEntry } from '../../types/api';
 
 /**
  * Display preference when a sequence or collection has aliases in several

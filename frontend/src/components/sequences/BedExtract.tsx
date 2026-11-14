@@ -11,14 +11,14 @@ import {
   parseBed,
   readBedFile,
 } from '../../utils/parseBed';
-import type { SequenceRow } from './types';
+import type { SequenceResponse } from '../../types/api';
 
 /** How many problem lines to list. */
 const SHOWN_PROBLEMS = 20;
 
 export interface BedExtractProps {
   storeUrl: string;
-  sequences: SequenceRow[];
+  sequences: SequenceResponse[];
 }
 
 type Source = { kind: 'paste' } | { kind: 'file'; name: string; text: string };
