@@ -213,6 +213,11 @@ conda install -c bioconda bowtie2=2.5.5           # or any installer; match the 
 bowtie2 -x "$(refgenie seek yeast_s288c/bowtie2_index)" -U reads.fq -S out.sam
 ```
 
+`refgenie seek <genome>/bowtie2_index.version` prints the version to match. No
+conda? Download the prebuilt binary for that version from the tool's GitHub
+releases (bowtie2: <https://github.com/BenLangmead/bowtie2/releases>), unzip
+it, and put its folder on your `PATH`.
+
 ### Chromosome sizes without the genome
 
 ```bash
