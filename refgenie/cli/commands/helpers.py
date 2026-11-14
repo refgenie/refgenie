@@ -208,11 +208,14 @@ def resolve_transient_servers(cmd, refgenie) -> list[str] | None:
     return list(dict.fromkeys(urls))
 
 
-def _lookup_one(refgenie, raw: str, lookup, genome_digest: str | None = None) -> int:
+def _lookup_one(
+    refgenie, raw: str, lookup, genome_digest: str | None = None, pull_hint: bool = False
+) -> int:
     """Resolve one registry path with ``lookup`` and print the result.
 
     With ``genome_digest`` (the ``--genome-digest`` flag), the path names no
-    genome; the flag does.
+    genome; the flag does. With ``pull_hint`` (local seek), a genome or asset
+    that is not here comes with the `refgenie pull` command that gets it.
 
     Returns an exit code: EXIT_INVALID_INPUT, EXIT_NOT_FOUND, EXIT_GENERAL_ERROR
     or EXIT_OK.
@@ -241,8 +244,14 @@ def _lookup_one(refgenie, raw: str, lookup, genome_digest: str | None = None) ->
         MissingGenomeError,
         MissingAssetGroupError,
         MissingAssetError,
-        MissingSeekKeyError,
     ) as e:
+        logger.error(f"{raw}: {e}")
+        if pull_hint and not genome_digest:
+            target = f"{parsed.genome}/{parsed.asset_group}"
+            target += f":{parsed.asset}" if parsed.asset else ""
+            note(f"It is not pulled here. If a subscribed server has it: refgenie pull {target}")
+        return EXIT_NOT_FOUND
+    except MissingSeekKeyError as e:
         logger.error(f"{raw}: {e}")
         return EXIT_NOT_FOUND
     except (ValueError, FileNotFoundError, RefgenieError) as e:

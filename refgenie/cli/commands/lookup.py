@@ -133,7 +133,7 @@ def handle_seek(cmd, refgenie) -> None:
 
     run_over_paths(
         cmd.asset_registry_paths,
-        lambda raw: _lookup_one(refgenie, raw, lookup, cmd.genome_digest),
+        lambda raw: _lookup_one(refgenie, raw, lookup, cmd.genome_digest, pull_hint=True),
     )
 
 
