@@ -18,7 +18,7 @@ ENV REFGENIE_BUILD_COMMIT=${REFGENIE_BUILD_COMMIT}
 # Writes /build/refgenie/server/webui/ (index.html, hashed _app/*, build-info.json).
 RUN cd frontend && npm run build
 
-FROM python:3.14-slim
+FROM python:3.15-slim
 LABEL authors="Nathan Sheffield, Michal Stolarczyk, Oleksandr Khoroshevskyi"
 
 RUN apt-get update && apt-get install -y \
