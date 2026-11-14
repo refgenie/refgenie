@@ -220,8 +220,6 @@ class TestAliasPriority:
 
 class TestStoreSyncIntegration:
     def test_two_stores_sync_dedup_and_route(self, tmp_path, fixtures_path):
-        from refgenie.cli.commands.store import _sync_one_store
-
         # Two stores share the alias 'shared' for DIFFERENT genomes, and each
         # has one unique genome.
         jungle_shared = build_on_disk_store(
@@ -229,14 +227,7 @@ class TestStoreSyncIntegration:
         )
         vgp_shared = build_on_disk_store(tmp_path / "vgp", fixtures_path / "t7.fa", "shared")
 
-        rg = server_with_stores()
-        rg.store.add("jungle", str(tmp_path / "jungle"), StoreType.on_disk, priority=10)
-        rg.store.add("vgp", str(tmp_path / "vgp"), StoreType.on_disk, priority=20)
-
-        priorities = {s.name: s.priority for s in rg.store.list_all()}
-        for srow in rg.store.enabled_stores():
-            _registered, failures = _sync_one_store(rg, srow, priorities, 100)
-            assert failures == 0
+        rg = server_with_stores(("jungle", tmp_path / "jungle", 10), ("vgp", tmp_path / "vgp", 20))
 
         # Both genomes registered, each owned by its store.
         assert rg.genome.get(jungle_shared).store_name == "jungle"
@@ -301,18 +292,11 @@ class TestStoreSyncIntegration:
 
     def test_identical_genome_across_stores_dedups(self, tmp_path, fixtures_path):
         """The same FASTA in two stores yields one Genome row (digest dedup)."""
-        from refgenie.cli.commands.store import _sync_one_store
-
         digest_a = build_on_disk_store(tmp_path / "a", fixtures_path / "rCRSd.fa", "rCRSd")
         digest_b = build_on_disk_store(tmp_path / "b", fixtures_path / "rCRSd.fa", "rCRSd")
         assert digest_a == digest_b  # content-addressed: identical
 
-        rg = server_with_stores()
-        rg.store.add("a", str(tmp_path / "a"), StoreType.on_disk, priority=10)
-        rg.store.add("b", str(tmp_path / "b"), StoreType.on_disk, priority=20)
-        priorities = {s.name: s.priority for s in rg.store.list_all()}
-        for srow in rg.store.enabled_stores():
-            _sync_one_store(rg, srow, priorities, 100)
+        rg = server_with_stores(("a", tmp_path / "a", 10), ("b", tmp_path / "b", 20))
 
         # One genome row, owned by the higher-priority store.
         genomes = list(rg.genome.list_all())
@@ -802,7 +786,6 @@ class TestSharedReadonlyStores:
     def _served(self, tmp_path, fixtures_path):
         from refget.store import RefgetStore
 
-        from refgenie.cli.commands.store import _sync_one_store
         from refgenie.managers.genome import GenomeManager
 
         human = build_on_disk_store(tmp_path / "jungle", fixtures_path / "rCRSd.fa", "rCRSd")
@@ -810,12 +793,7 @@ class TestSharedReadonlyStores:
         RefgetStore.on_disk(str(tmp_path / "jungle")).set_fhr_metadata(
             human, GenomeManager._fhr_metadata_from_dict(self.FHR)
         )
-        rg = server_with_stores()
-        rg.store.add("jungle", str(tmp_path / "jungle"), StoreType.on_disk, priority=10)
-        rg.store.add("vgp", str(tmp_path / "vgp"), StoreType.on_disk, priority=20)
-        priorities = {"jungle": 10, "vgp": 20}
-        for srow in rg.store.enabled_stores():
-            _sync_one_store(rg, srow, priorities, 100)
+        rg = server_with_stores(("jungle", tmp_path / "jungle", 10), ("vgp", tmp_path / "vgp", 20))
         return rg, human, phage
 
     @staticmethod
