@@ -209,7 +209,7 @@ class TestStores:
         rg, local_digest = build_node
         dest = tmp_path / "publish.sqlite"
 
-        export_publish_catalog(rg, dest, HTTPS_PREFIX, catalog_store_priority=15, **CATALOG_STORE)
+        export_publish_catalog(rg, dest, HTTPS_PREFIX, **CATALOG_STORE)
 
         stores = _exported_stores(dest)
         assert set(stores) == {"vgp", "refgenie-main"}
@@ -217,7 +217,7 @@ class TestStores:
         assert (main.url, main.type, main.priority, main.enabled) == (
             CATALOG_STORE["catalog_store_url"],
             StoreType.remote,
-            15,
+            30,
             True,
         )
         assert _exported_genome_stores(dest) == {

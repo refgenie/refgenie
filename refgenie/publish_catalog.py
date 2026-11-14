@@ -54,7 +54,6 @@ def _publishable_stores(
     store_rows: list[dict],
     catalog_store_name: str | None,
     catalog_store_url: str | None,
-    catalog_store_priority: int,
 ) -> list[dict]:
     """The store rows to publish: the remote ones, plus the catalog's own store.
 
@@ -80,7 +79,7 @@ def _publishable_stores(
                 name=catalog_store_name,
                 url=catalog_store_url,
                 type=StoreType.remote,
-                priority=catalog_store_priority,
+                priority=30,  # lower wins alias ties
                 enabled=True,
                 description="Genomes built for this catalog",
             ).model_dump()
@@ -159,7 +158,6 @@ def export_publish_catalog(
     https_prefix: str,
     catalog_store_name: str | None = None,
     catalog_store_url: str | None = None,
-    catalog_store_priority: int = 30,
 ) -> dict[str, int]:
     """
     Write the publishable subset of ``rg``'s catalog to a fresh SQLite file.
@@ -178,7 +176,6 @@ def export_publish_catalog(
             built itself (those with no store). When given, it is published
             and those genomes are exported as living in it.
         catalog_store_url: That store's public root URL. Required with the name.
-        catalog_store_priority: That store's priority (lower wins alias ties).
 
     Returns a table -> row-count summary.
 
@@ -189,9 +186,7 @@ def export_publish_catalog(
     """
     pushed_pairs, rows = publish.read_publishable(rg.database_engine)
     pushed_pairs, _ = _omit_disabled_store_genomes(rows, pushed_pairs)
-    stores = _publishable_stores(
-        rows["store"], catalog_store_name, catalog_store_url, catalog_store_priority
-    )
+    stores = _publishable_stores(rows["store"], catalog_store_name, catalog_store_url)
     if catalog_store_name:
         for g in rows["genome"]:
             if g["store_name"] is None:
