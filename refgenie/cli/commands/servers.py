@@ -60,6 +60,11 @@ class CatalogExportModel(BaseModel):
         description="Public root URL of the catalog store. Required with --catalog-store-name.",
         validation_alias=AliasChoices("catalog-store-url"),
     )
+    catalog_store_priority: int = Field(
+        default=30,
+        description="Priority of the catalog store (lower wins alias ties).",
+        validation_alias=AliasChoices("catalog-store-priority"),
+    )
 
 
 class CatalogPruneModel(BaseModel):
@@ -96,6 +101,8 @@ def handle_catalog_export(cmd, refgenie) -> None:
         fail("--dest is required: path for the publish-catalog artifact")
     if not cmd.https_prefix:
         fail("--https-prefix is required: public https base URL for the pushed assets")
+    if bool(cmd.catalog_store_name) != bool(cmd.catalog_store_url):
+        fail("--catalog-store-name and --catalog-store-url must be given together")
     from refgenie.publish_catalog import export_publish_catalog
 
     try:
@@ -105,6 +112,7 @@ def handle_catalog_export(cmd, refgenie) -> None:
             cmd.https_prefix,
             catalog_store_name=cmd.catalog_store_name,
             catalog_store_url=cmd.catalog_store_url,
+            catalog_store_priority=cmd.catalog_store_priority,
         )
     except (ValueError, RuntimeError) as e:
         fail(f"Catalog export failed: {e}")

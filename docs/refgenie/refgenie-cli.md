@@ -615,7 +615,7 @@ Export a publish catalog covering pushed assets only, for a server to import.
 
 ```
 refgenie catalog-export [--dest PATH] [--https-prefix URL]
-    [--catalog-store-name NAME --catalog-store-url URL]
+    [--catalog-store-name NAME --catalog-store-url URL [--catalog-store-priority N]]
 ```
 
 | Option | Description |
@@ -624,6 +624,7 @@ refgenie catalog-export [--dest PATH] [--https-prefix URL]
 | `--https-prefix` | Public https base URL mirroring the stage folder that `refgenie push` uploaded to, e.g. `https://<bucket>.s3.amazonaws.com/assets`. Download links are served from here. |
 | `--catalog-store-name` | Name of the public store that holds the genomes this node built itself, e.g. `refgenie-main`. Those genomes belong to no registered store; the catalog lists them under this one. |
 | `--catalog-store-url` | Public root URL of that store. Required with `--catalog-store-name`. |
+| `--catalog-store-priority` | Priority of that store. Defaults to `30`. |
 
 The catalog carries the [store list](#store): every enabled `remote` store,
 plus the catalog store if one is named. Disabled stores are left out with their
