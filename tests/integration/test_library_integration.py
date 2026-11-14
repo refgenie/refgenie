@@ -724,8 +724,6 @@ class TestCatalogImportPostgres:
         self, refgenie_instance, fixtures_path, tmp_path
     ):
         """Without its store row, the genome's store check fails the whole import."""
-        from refgenie.db.publish import CatalogStoreError
-
         from refgenie.db.tables import Genome, Store
         from refgenie.publish_catalog import export_publish_catalog, import_publish_catalog
         from tests.test_publish_catalog import artifact_engine
@@ -736,7 +734,7 @@ class TestCatalogImportPostgres:
         with artifact_engine(artifact).begin() as conn:
             conn.execute(Store.__table__.delete())
 
-        with pytest.raises(CatalogStoreError):
+        with pytest.raises(ValueError, match="stores it does not list"):
             import_publish_catalog(refgenie_instance.database_engine, str(artifact))
         with refgenie_instance.database_engine.connect() as conn:
             assert conn.execute(Genome.__table__.select()).first() is None

@@ -270,38 +270,19 @@ def _check_stamp(src, action: str) -> None:
         )
 
 
-class CatalogStoreError(ValueError):
-    """A publish catalog has genomes whose store it does not carry."""
-
-
-def _check_genome_stores(src, dest) -> None:
+def _check_genome_stores(src) -> None:
     """Refuse an artifact with a genome that names no store, or one it does not list.
 
     A server reads each genome from the store its ``store_name`` names, so a
-    genome without one could never be served. The stores are the artifact's,
-    or the server's own when the artifact carries none.
+    genome without one could never be served.
 
     Raises:
-        CatalogStoreError: Naming the counts of offending genomes.
+        ValueError: If any genome's store is missing from the artifact.
     """
-    store = Store.__table__
-    known = {r.name for r in src.execute(select(store.c.name))}
-    if not known:
-        known = {r.name for r in dest.execute(select(store.c.name))}
-    genome = Genome.__table__
-    counts: dict[str | None, int] = {}
-    for row in src.execute(select(genome.c.store_name)):
-        if row.store_name is None or row.store_name not in known:
-            counts[row.store_name] = counts.get(row.store_name, 0) + 1
-    if counts:
-        detail = "; ".join(
-            f"{n} with {'no store' if name is None else f'unknown store {name!r}'}"
-            for name, n in sorted(counts.items(), key=lambda kv: str(kv[0]))
-        )
-        raise CatalogStoreError(
-            f"Refusing to import a publish catalog with genomes the server could not serve: "
-            f"{detail}. Every genome must name a store the catalog lists."
-        )
+    known = {r.name for r in src.execute(select(Store.__table__.c.name))}
+    named = {r.store_name for r in src.execute(select(Genome.__table__.c.store_name))}
+    if named - known:
+        raise ValueError("Refusing to import a catalog with genomes in stores it does not list")
 
 
 def import_catalog(
@@ -316,24 +297,24 @@ def import_catalog(
     ``valid_alias`` rejects are skipped). Genomes and stores are never deleted;
     ``prune_catalog`` removes those the catalog no longer carries. Stores are
     matched by name, and a server store the artifact does not carry is disabled.
-    Every genome must name a store the artifact lists (or, if it lists none,
-    one the server has); otherwise nothing is imported.
+    Every genome must name a store the artifact lists; otherwise nothing is
+    imported.
 
     Returns:
         A table -> row-count summary.
 
     Raises:
-        ValueError: If the file's schema stamp is not this code's, or the
-            artifact would remove more than half the carried genomes' aliases.
-        CatalogStoreError: If a genome has no store, or one the catalog does not list.
+        ValueError: If the file's schema stamp is not this code's, a genome
+            names no store or one the artifact does not list, or the artifact
+            would remove more than half the carried genomes' aliases.
     """
     src_engine = create_engine(f"sqlite:///{local_path}")
     summary: dict[str, int] = {}
     try:
         with src_engine.connect() as src:
             _check_stamp(src, "import")
+            _check_genome_stores(src)
             with engine.begin() as dest:
-                _check_genome_stores(src, dest)
                 # {table: {artifact id: server id}} for _REMAPPED_KEYS tables.
                 id_maps: dict[str, dict[int, int]] = {t: {} for t in _REMAPPED_KEYS}
                 for model in ORDERED_MODELS:

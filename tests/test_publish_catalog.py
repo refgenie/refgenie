@@ -264,24 +264,8 @@ class TestStores:
         assert not server.store.get("retired").enabled
         assert server.genome.get(local_digest).store_name == "refgenie-main"
 
-    def test_import_of_an_artifact_without_stores_leaves_stores_alone(self, build_node, tmp_path):
-        rg, _ = build_node
-        dest = tmp_path / "publish.sqlite"
-        export_publish_catalog(rg, dest, HTTPS_PREFIX)
-        with artifact_engine(dest).begin() as conn:
-            conn.execute(Genome.__table__.update().values(store_name="jungle"))
-            conn.execute(Store.__table__.delete())
-        server = _new_server(tmp_path)
-        server.store.add("jungle", "url://j", StoreType.remote, priority=10)
-
-        import_publish_catalog(server.database_engine, str(dest))
-
-        assert [s.name for s in server.store.enabled_stores()] == ["jungle"]
-
     @pytest.mark.parametrize("store_name", [None, "plantref"])
     def test_import_refuses_genomes_without_a_listed_store(self, build_node, tmp_path, store_name):
-        from refgenie.db.publish import CatalogStoreError
-
         rg, _ = build_node
         dest = tmp_path / "publish.sqlite"
         export_publish_catalog(rg, dest, HTTPS_PREFIX, **CATALOG_STORE)
@@ -289,7 +273,7 @@ class TestStores:
             conn.execute(Genome.__table__.update().values(store_name=store_name))
         server = _new_server(tmp_path)
 
-        with pytest.raises(CatalogStoreError, match="could not serve"):
+        with pytest.raises(ValueError, match="stores it does not list"):
             import_publish_catalog(server.database_engine, str(dest))
         assert list(server.genome.list_all()) == []
         assert list(server.store.enabled_stores()) == []
