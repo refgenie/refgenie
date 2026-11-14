@@ -5,7 +5,7 @@ import { assetRequestUrl } from '../../services/projectLinks';
 export interface NoAssetsPanelProps {
   digest: string;
   alias?: string;
-  /** A short real range of this genome's first sequence, e.g. `chr1:0-100`. */
+  /** A short real range of this genome's first sequence, e.g. `chr1:1-100`. */
   region?: string;
 }
 

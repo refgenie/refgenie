@@ -167,7 +167,7 @@ export function GenomePage() {
   // A short real range for the "Only need the sequence?" command.
   const firstSequence = sequences.data?.sequences[0];
   const region = firstSequence
-    ? `${firstSequence.name}:0-${Math.min(100, firstSequence.length)}`
+    ? `${firstSequence.name}:1-${Math.min(100, firstSequence.length)}`
     : undefined;
 
   // The build form needs an alias; the digest is only for the job target.
