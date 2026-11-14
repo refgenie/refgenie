@@ -42,13 +42,20 @@ const NEWLINE = 0x0a;
 /** Alphabets whose `.seq` bytes are bit-packed and can be decoded by range. */
 const DECODABLE = new Set(['dna2bit', 'dna3bit', 'dnaio', 'dnaiupac']);
 
-/** Expand a refget store path template, the same rules as gtars `expand_template`. */
-export function expandTemplate(template: string, digest: string): string {
+/**
+ * Expand a refget store path template, the same rules as gtars
+ * `expand_template`. `prefix(n)` writes the digest's first `n` characters.
+ */
+export function expandTemplate(
+  template: string,
+  digest: string,
+  prefix = (n: number) => digest.slice(0, n),
+): string {
   return template
     .split('%s2')
-    .join(digest.slice(0, 2))
+    .join(prefix(2))
     .split('%s4')
-    .join(digest.slice(0, 4))
+    .join(prefix(4))
     .split('%s')
     .join(digest);
 }
