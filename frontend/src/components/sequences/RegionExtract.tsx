@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import type { RefObject } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { FastaResult } from './FastaResult';
 import { extractRegion } from '../../services/regionExtract';
@@ -21,7 +20,6 @@ export interface RegionExtractProps {
   sequences: SequenceRow[];
   value: string;
   onChange: (value: string) => void;
-  inputRef: RefObject<HTMLInputElement | null>;
 }
 
 type Result =
@@ -40,7 +38,6 @@ export function RegionExtract({
   sequences,
   value,
   onChange,
-  inputRef,
 }: RegionExtractProps) {
   const inputId = useId();
   const hintId = useId();
@@ -132,7 +129,6 @@ export function RegionExtract({
         </label>
         <input
           id={inputId}
-          ref={inputRef}
           className="rg-search__input rg-region__input"
           type="text"
           spellCheck={false}

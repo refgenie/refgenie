@@ -108,9 +108,6 @@ describe('ExtractPanel', () => {
     await userEvent.clear(input);
     await userEvent.type(input, 'rCRSd:11-20');
     expect(screen.getByText(/--start 10 --end 20 /)).toBeInTheDocument();
-    // Half-typed text keeps the last region that parsed.
-    await userEvent.type(input, ':');
-    expect(screen.getByText(/--start 10 --end 20 /)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('tab', { name: 'Python' }));
     expect(screen.getByText(/get_substring\(".*", 10, 20\)/)).toBeInTheDocument();
   });

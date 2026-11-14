@@ -96,15 +96,6 @@ export async function extractRegion({
   });
 }
 
-/** The URL of one sequence's `.seq` file, by the store's own path template. */
-export async function sequenceFileUrl(
-  baseUrl: string,
-  digest: string,
-  fetchImpl: typeof fetch = fetch,
-): Promise<string> {
-  return seqUrl(baseUrl, await seqTemplateFor(baseUrl, fetchImpl), digest);
-}
-
 /** The store's `.seq` path template, from its manifest. */
 export function sequenceTemplate(
   baseUrl: string,

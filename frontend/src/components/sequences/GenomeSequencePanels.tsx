@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   useGenomeComparison,
@@ -17,11 +17,7 @@ import { defaultRegion, parseRegion, type ParsedRegion } from '../../utils/parse
 import { bedSnippets, regionSnippets } from '../../utils/codeSnippets';
 import { cn } from '../../utils/cn';
 import { extractHref } from '../../utils/genomePage';
-import {
-  isExtractable,
-  sequenceFileUrl,
-  sequenceTemplate,
-} from '../../services/regionExtract';
+import { isExtractable, sequenceTemplate } from '../../services/regionExtract';
 import {
   DEFAULT_COLLECTION_TEMPLATE,
   DEFAULT_SEQ_TEMPLATE,
@@ -101,45 +97,24 @@ export function ExtractPanel({
   const data = sequences.data;
   const [params] = useSearchParams();
   const [region, setRegion] = useState(() => params.get('region') ?? '');
-  const regionInput = useRef<HTMLInputElement | null>(null);
   const [mode, setMode] = useState<ExtractMode>('one');
 
-  // The snippets follow the box: the region typed, else the last one that
-  // parsed, else the first readable sequence's first 1,000 bases.
+  // The snippets follow the box: the region typed, else the first readable
+  // sequence's first 1,000 bases.
   const parsed = useMemo(
     () => (data ? tryParse(region, data.sequences) : null),
     [region, data],
   );
-  const [lastGood, setLastGood] = useState<ParsedRegion | null>(null);
-  if (parsed && parsed.label !== lastGood?.label) setLastGood(parsed);
   const fallback = useMemo(() => {
     const first = data?.sequences.find((row) => isExtractable(row.alphabet));
     return first && data ? tryParse(defaultRegion(first), data.sequences) : null;
   }, [data]);
-  const shown = parsed ?? lastGood ?? fallback;
+  const shown = parsed ?? fallback;
   const seq = shown ? data?.sequences.find((row) => row.name === shown.name) : undefined;
 
-  // The `.seq` URL by the store's own path template, when the browser may read
-  // the store's manifest; else the usual template.
-  const seqDigest = seq?.sha512t24u;
-  const [fileUrls, setFileUrls] = useState<Record<string, string>>({});
-  useEffect(() => {
-    if (!seqDigest) return;
-    let stale = false;
-    sequenceFileUrl(storeUrl, seqDigest)
-      .then((url) => {
-        if (!stale) setFileUrls((known) => ({ ...known, [seqDigest]: url }));
-      })
-      .catch(() => {});
-    return () => {
-      stale = true;
-    };
-  }, [storeUrl, seqDigest]);
-
-  // The store's own `.seq` template, for the BED code; else the usual one.
+  // The store's own `.seq` path template, for the code; else the usual one.
   const [seqTemplate, setSeqTemplate] = useState(DEFAULT_SEQ_TEMPLATE);
   useEffect(() => {
-    if (mode !== 'bed') return;
     let stale = false;
     sequenceTemplate(storeUrl)
       .then((template) => {
@@ -149,7 +124,7 @@ export function ExtractPanel({
     return () => {
       stale = true;
     };
-  }, [storeUrl, mode]);
+  }, [storeUrl]);
 
   if (sequences.error) {
     return <ErrorState error={sequences.error} onRetry={() => sequences.refetch()} />;
@@ -180,7 +155,6 @@ export function ExtractPanel({
             sequences={data.sequences}
             value={region}
             onChange={setRegion}
-            inputRef={regionInput}
           />
         </div>
         <div hidden={mode !== 'bed'}>
@@ -223,9 +197,7 @@ export function ExtractPanel({
               storeUrl,
               region: shown,
               seq: { sha512t24u: seq.sha512t24u, alphabet: seq.alphabet ?? '' },
-              seqFileUrl:
-                fileUrls[seq.sha512t24u] ??
-                seqUrl(storeUrl, DEFAULT_SEQ_TEMPLATE, seq.sha512t24u),
+              seqFileUrl: seqUrl(storeUrl, seqTemplate, seq.sha512t24u),
             })}
           />
         </section>
