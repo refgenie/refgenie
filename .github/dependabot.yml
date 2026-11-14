@@ -1,46 +1,26 @@
 version: 2
+
+# One bundled PR per month covering every package type.
+multi-ecosystem-groups:
+  monthly:
+    schedule:
+      interval: "monthly"
+
 updates:
   - package-ecosystem: "pip"
     directory: "/"
-    schedule:
-      interval: "weekly"
+    patterns: ["*"]
     ignore:
       # Pinned to 9.16.x; moved by hand in the snakemake 10 upgrade.
       - dependency-name: "snakemake"
-    groups:
-      all-pip:
-        applies-to: version-updates
-        patterns:
-          - "*"
-      security-fixes:
-        applies-to: security-updates
-        patterns:
-          - "*"
+    multi-ecosystem-group: "monthly"
 
   - package-ecosystem: "github-actions"
     directory: "/"
-    schedule:
-      interval: "weekly"
-    groups:
-      all-actions:
-        applies-to: version-updates
-        patterns:
-          - "*"
-      security-fixes:
-        applies-to: security-updates
-        patterns:
-          - "*"
+    patterns: ["*"]
+    multi-ecosystem-group: "monthly"
 
   - package-ecosystem: "docker"
     directory: "/"
-    schedule:
-      interval: "weekly"
-    groups:
-      all-docker:
-        applies-to: version-updates
-        patterns:
-          - "*"
-      security-fixes:
-        applies-to: security-updates
-        patterns:
-          - "*"
+    patterns: ["*"]
+    multi-ecosystem-group: "monthly"
