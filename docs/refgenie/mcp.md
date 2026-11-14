@@ -49,12 +49,18 @@ env = { REFGENIE_HOME_PATH = "/data/refgenie" }
 
 The public server offers the same tools over Streamable HTTP at <https://api.refgenie.org/mcp>, for questions about its catalog rather than your own:
 
+Claude Code:
+
 ```console
 claude mcp add --transport http refgenie-public https://api.refgenie.org/mcp
 ```
 
+Other clients that take an `mcpServers` JSON block. Nothing needs to be installed:
+
 ```json
-{ "mcpServers": { "refgenie-public": { "type": "http", "url": "https://api.refgenie.org/mcp" } } }
+{ "mcpServers": { "refgenie-public": {
+    "type": "http",
+    "url": "https://api.refgenie.org/mcp" } } }
 ```
 
 Register both servers under different names; they have the same tools.
