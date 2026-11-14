@@ -422,16 +422,9 @@ def create_app(
 
     app.include_router(ping_router)
 
-    # Collections are validated against the served stores, which can change at
-    # each catalog import; validate once per store set, not per request.
-    collections_by_stores: dict[tuple[str, ...], list[dict]] = {}
-
-    def _collections(services: tuple[SeqcolService, ...]) -> list[dict]:
-        names = tuple(s.store for s in services)
-        if names not in collections_by_stores:
-            collections_by_stores.clear()
-            collections_by_stores[names] = load_collections_from_env(names)
-        return collections_by_stores[names]
+    # A bad REFGENIE_COLLECTIONS stops startup. The served stores can change at
+    # each catalog import, so each request lists the collections they cover.
+    collections = [] if is_local else load_collections_from_env()
 
     @app.get("/service-info", tags=["Default"])
     async def service_info():
@@ -439,9 +432,9 @@ def create_app(
         if is_local:
             return _service_info_doc(mode, root_path, build_info, capabilities, (), [])
         services = seqcol.services()
-        return _service_info_doc(
-            mode, root_path, build_info, capabilities, services, _collections(services)
-        )
+        served = {s.store for s in services}
+        shown = [c.model_dump(mode="json") for c in collections if set(c.stores) <= served]
+        return _service_info_doc(mode, root_path, build_info, capabilities, services, shown)
 
     if not is_local:
         _mount_mcp(app, rg)
