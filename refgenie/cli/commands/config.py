@@ -18,17 +18,10 @@ class ConfigGetModel(BaseModel):
     pass
 
 
-class ConfigSetModel(BaseModel):
-    """config set: modify configuration (not yet implemented)."""
-
-    pass
-
-
 class ConfigParser(BaseModel):
     """Intermediate parser for config subcommands."""
 
     get: CliSubCommand[ConfigGetModel] = Field(description="Get config.")
-    set: CliSubCommand[ConfigSetModel] = Field(description="Set config. [not implemented]")
 
 
 def handle_config_get(cmd, refgenie) -> None:
@@ -49,18 +42,15 @@ def handle_config_get(cmd, refgenie) -> None:
     )
 
 
-def handle_config_set(cmd, refgenie) -> None:
-    fail("Setting configuration is not implemented yet.")
-
-
 CONFIG_DISPATCH: dict[type, Callable] = {
     ConfigGetModel: handle_config_get,
-    ConfigSetModel: handle_config_set,
 }
 
 
 def handle_config_group(cmd, refgenie) -> None:
-    leaf = get_subcommand(cmd, is_required=True)
+    leaf = get_subcommand(cmd, is_required=False)
+    if leaf is None:  # bare `refgenie config` prints it, like `config get`
+        leaf = ConfigGetModel()
     handler = CONFIG_DISPATCH.get(type(leaf))
     if handler is None:
         fail(f"Unknown config subcommand: {type(leaf).__name__}")

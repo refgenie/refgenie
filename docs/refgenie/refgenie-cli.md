@@ -691,15 +691,14 @@ refgenie purge
 | --- | --- |
 | `-f, --force` | Do not prompt before purging. |
 
-#### `config get` / `config set`
+#### `config get`
 
 ```
 refgenie config get
 ```
 
-`config get` prints the current configuration, including the database
-connection and the environment-derived settings, as YAML. `config set` is not yet
-implemented.
+`config get` (or plain `refgenie config`) prints the current configuration,
+including the database connection and the environment-derived settings, as YAML.
 
 #### `plugins list` / `plugins set` / `plugins unset`
 

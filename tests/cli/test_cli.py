@@ -421,7 +421,6 @@ class TestSubcommandHelp:
             ["alias", "set", "--help"],
             ["alias", "remove", "--help"],
             ["config", "get", "--help"],
-            ["config", "set", "--help"],
             ["recipe", "list", "--help"],
             ["recipe", "show", "--help"],
             ["recipe", "add", "--help"],
@@ -512,7 +511,6 @@ class TestErrorExitCodes:
             (("data-channel", "validate", "nosuchchannel"), 1, ["'nosuchchannel' is invalid"]),
             (("data-channel", "add", "bad__name", "http", "http://x.com/i.yaml"), 1, ["'__'"]),
             (("remote", "remove", "no-such-remote"), 2, ["'no-such-remote' not found"]),
-            (("config", "set"), 1, ["not implemented"]),
             # Incomplete argument combinations.
             (("getseq", "-l", "chr1:1-10"), 3, []),
             (("getseq", "-g", "rCRSd"), 1, []),
