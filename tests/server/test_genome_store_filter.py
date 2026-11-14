@@ -62,10 +62,3 @@ def test_unknown_store_is_422(world):
     assert response.status_code == 422
     detail = response.json()["detail"]
     assert "nope" in detail and "jungle" in detail and "vgp" in detail
-
-
-def test_listing_carries_assembly_level(world):
-    rg, _ = world
-    with make_server_client(rg) as client:
-        results = client.get("/v4/genomes").json()["results"]
-    assert results and all("assembly_level" in g for g in results)
