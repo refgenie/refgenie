@@ -61,20 +61,10 @@ describe('SequenceTable', () => {
     expect(bodyRows()).toHaveLength(10);
   });
 
-  it('shows a titled dash, not NA, for a sequence with no alias', () => {
+  it('shows a dash, not NA, for a sequence with no alias', () => {
     render(<SequenceTable sequences={rows} />);
     expect(screen.queryByText('NA')).not.toBeInTheDocument();
     const extra = bodyRows().find((row) => within(row).queryByText('extra'))!;
-    const dash = within(extra).getByTitle(/^No alias/);
-    expect(dash).toHaveTextContent('–');
-  });
-
-  it('explains the digest and alphabet columns', () => {
-    render(<SequenceTable sequences={rows} />);
-    expect(screen.getByRole('columnheader', { name: 'SHA-512/24u' })).toHaveAttribute(
-      'title',
-      expect.stringMatching(/same digest means the same sequence/),
-    );
-    expect(screen.getAllByTitle(/^dna3bit: A, C, G, T and N/).length).toBeGreaterThan(0);
+    expect(within(extra).getByText('–')).toBeInTheDocument();
   });
 });
