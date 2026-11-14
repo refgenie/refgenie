@@ -4,6 +4,8 @@ The public server at <https://api.refgenie.org> holds about three dozen genomes 
 
 `hg38` is NCBI's "no-alt analysis set" (`GCA_000001405.15`). It has no ALT contigs, it has the most pre-built assets, and it is the version most short-read pipelines use.
 
+If "hg38" means the `hg38.fa` file you download from UCSC, that file is `hg38_initial` in refgenie, not `hg38`.
+
 Two facts make the choice easier:
 
 1. **The main chromosomes match everywhere.** The GRCh38 genomes in the catalog all share the same lengths for chr1-22, X, Y and M. Only the names change (`chr1`, `1`, `NC_000001.11`).
