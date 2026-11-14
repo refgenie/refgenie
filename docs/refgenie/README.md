@@ -31,52 +31,25 @@ Refgenie manages storage, access, and transfer of reference genome resources. It
 
 7. **It scales**. Refgenie keeps its records in a database. It uses a local SQLite file by default and can use PostgreSQL, including on a remote server, for multi-user and distributed setups.
 
-## Quick example
+## Quick start
 
-### Install
-
-Refgenie is a Python package. Version 1.0 is a pre-release, so install it from [PyPI](https://pypi.org/project/refgenie/) by version:
+Four commands install refgenie, set it up, download a small asset, and print its path:
 
 ```console
 pip install "refgenie>=1.0.0a2"
-```
-
-### Initialize
-
-`refgenie init` creates the local database and genome folder, and subscribes to the public server at `https://api.refgenie.org`:
-
-```console
 refgenie init
+refgenie pull hg38/fasta_index
+refgenie seek hg38/fasta_index.chrom_sizes
 ```
 
-See [Configure](configuration.md) for other locations and database options.
+1. **Install.** Version 1.0 is a pre-release, so ask [PyPI](https://pypi.org/project/refgenie/) for it by version. See [Install](install.md).
+2. **Initialize.** `refgenie init` creates the local database and genome folder, and subscribes to the public server at `https://api.refgenie.org`. See [Configure](configuration.md) for other locations and database options.
+3. **Pull.** `hg38/fasta_index` is about 12 KB: the FASTA index and chromosome sizes for hg38, without the 3 GB FASTA. Not sure which hg38 you need? See [Which hg38 should I use?](choosing_hg38.md).
+4. **Seek.** `refgenie seek` prints the local path to a file in the asset, so your scripts work on any computer. See [Retrieve paths to assets](seek.md).
 
-### Download assets from a server
+To see everything you can pull, run `refgenie listr`, or browse [refgenie.org](https://refgenie.org). See [Download pre-built assets](pull.md).
 
-View the assets available on your subscribed servers with `listr`:
-
-```console
-refgenie listr
-```
-
-```console
-                         Refgenie assets. Source: https://api.refgenie.org
-┏━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┓
-┃ Aliases          ┃ Genome digest                    ┃ Asset group        ┃ Asset   ┃
-┡━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━┩
-│ rCRSd            │ jthDpfNIgzM5AGJlOkRtfnky4rXMBIUP │ bowtie2_index      │ 2.5.5   │
-│ rCRSd            │ jthDpfNIgzM5AGJlOkRtfnky4rXMBIUP │ bwa_index          │ 0.7.19  │
-│ rCRSd            │ jthDpfNIgzM5AGJlOkRtfnky4rXMBIUP │ fasta              │ default │
-...
-```
-
-Then pull one:
-
-```console
-refgenie pull rCRSd/bowtie2_index
-```
-
-See [Download pre-built assets](pull.md).
+## Next steps
 
 ### Build assets for a custom genome
 
@@ -91,22 +64,12 @@ refgenie build mygenome/bwa_index
 
 See [Build assets](build.md).
 
-### Get paths to local assets
-
-Use `seek` to get the local path to an asset:
-
-```console
-refgenie seek rCRSd/bowtie2_index
-```
-
-This returns the path in any computing environment, so scripts that use it are portable. See [Retrieve paths to assets](seek.md).
-
 ### Get paths to remote assets
 
-Use `seekr` ("seek remote") to get the URL of a file on a server, here the FASTA index inside the `rCRSd/fasta` asset:
+Use `seekr` ("seek remote") to get the URL of a file on a server, here the FASTA index inside the `hg38/fasta` asset:
 
 ```console
-refgenie seekr rCRSd/fasta.fai
+refgenie seekr hg38/fasta.fai
 ```
 
 See [Configure remote storage](remotes.md).
@@ -115,10 +78,10 @@ See [Configure remote storage](remotes.md).
 
 ```python
 from refgenie import Refgenie
-from refgenie.models import GenomeAlias
 
 rgc = Refgenie()
-rgc.asset.seek(rgc.alias.resolve(GenomeAlias("rCRSd")), "bowtie2_index")
+digest = rgc.alias.resolve("hg38")  # seek takes a genome digest, not an alias
+rgc.asset.seek(digest, "fasta_index", seek_key_name="chrom_sizes")
 ```
 
 The `Refgenie` object connects to the configured database and does everything the CLI does. See [the Refgenie Python object](refgenie_object.md).

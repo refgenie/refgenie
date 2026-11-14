@@ -39,7 +39,7 @@ Refgenie 1.0 is a pre-release, so tell `pip` to accept it:
 pip install "refgenie>=1.0.0a2"
 ```
 
-Without `--pre`, `pip` installs the legacy 0.13 release.
+Without the version, `pip install refgenie` installs the legacy 0.13 release.
 
 ### Optional extras
 
@@ -61,29 +61,28 @@ install.
 ## Quick Start
 
 ```bash
-# 1. Create the refgenie home, database, and genome folders
-refgenie init
+pip install "refgenie>=1.0.0a2"
+refgenie init                                # create the database; subscribe to api.refgenie.org
+refgenie pull hg38/fasta_index               # about 12 KB: hg38's .fai and chrom sizes
+refgenie seek hg38/fasta_index.chrom_sizes   # print the local path
+```
 
-# 2. Register and sync a data channel, which supplies asset classes and
-#    recipes (including the 'fasta' recipe)
+`refgenie listr` lists everything you can pull, and `refgenie seek` gives your
+pipelines a path that works on any machine.
+
+### Build assets for your own genome
+
+Building needs recipes from a data channel:
+
+```bash
 refgenie data-channel add refgenie https https://refgenie.github.io/refgenie-registry/index.yaml
 refgenie data-channel sync refgenie --exists-ok
-
-# 3. Register a genome from a FASTA file. This also builds its fasta asset.
-refgenie genome init --fasta genome.fa.gz --name genome_name
-
-# 4. Build another asset for that genome (needs bowtie2 installed)
-refgenie build genome_name/bowtie2_index
-
-# 5. Inspect what you have, and get a path to it
-refgenie list
+refgenie genome init --fasta genome.fa.gz --name genome_name   # also builds its fasta asset
+refgenie build genome_name/bowtie2_index                       # needs bowtie2 installed
 refgenie seek genome_name/fasta
 ```
 
-To download pre-built assets instead of building them, run
-`refgenie pull hg38/fasta` after `refgenie init`.
-
-`refgenie list` prints something like:
+`refgenie list` then prints something like:
 
 ```
                       Refgenie assets. Source: local

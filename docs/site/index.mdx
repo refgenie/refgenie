@@ -21,6 +21,17 @@ editUrl: false
   </span>
 </div>
 
+## What refgenie does
+
+Refgenie downloads pre-built reference genome files by name, such as FASTA files and bwa, bowtie2 and hisat2 indexes, and prints their local paths for your pipelines. It builds the same files for any other genome. It identifies each genome by a digest of its sequences, so a mismatched reference gets caught.
+
+```bash
+pip install "refgenie>=1.0.0a2"
+refgenie init
+refgenie pull hg38/fasta_index               # about 12 KB
+refgenie seek hg38/fasta_index.chrom_sizes   # prints the local path
+```
+
 <div class="project-cards">
   <a class="project-card" href="/refgenie/">
     <span class="project-card-logo">
