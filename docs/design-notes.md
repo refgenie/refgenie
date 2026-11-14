@@ -27,18 +27,11 @@ So one rule, enforced by `test_models_names_one_thing` in
 ## MCP mode and the public URL
 
 `set_refgenie(rgc, public_url=)` in `refgenie/mcp/tools.py` is the one mode
-switch: `None` is local (stdio), a URL is a server. Every mode-dependent branch
-reads it.
-
-The URL comes from `REFGENIE_PUBLIC_URL` (default `https://api.refgenie.org`),
-not from the request's Host: behind Cloudflare and ECS, uvicorn sees `http`.
-
-The server sentence ("refgenie server at ...", or the local database URL) is
-put in front of the instructions through `mcp._lowlevel_server.instructions`,
-the one private attribute used; `test_initialize_names_the_server` guards it.
-
-`get_sequence` reuses the CLI's byte-range reader (`SequenceManager.get`),
-which never writes to a store, so it is safe in server mode.
+switch: `None` is local (stdio), a URL is a server. The server sentence is put
+in front of the instructions through `mcp._lowlevel_server.instructions`, the
+one private attribute used; `test_initialize_names_the_server` guards it.
+`get_sequence` uses the CLI's byte-range reader, which never writes to a store,
+so it is safe in server mode.
 
 ## SQL lives only in refgenie/db
 
@@ -397,37 +390,37 @@ is used instead of each built genome's registry store, because loading a whole
 registry store for a few genomes costs a lot of memory, and each new store
 would have to be added by hand.
 
-## The server learns its stores from the catalog
+## Stores come from the publish catalog
 
-Which RefgetStores are published is decided in one place: the registry
-(refgenie-registry `stores/*/project_config.yaml`, a `publish:` block per
-store). The nightly writes that list into the build catalog's `store` table,
-the publish catalog carries the table, and the server's catalog import makes
-its own `store` table match it (a store missing from the catalog is disabled,
-not deleted, since genomes keep a foreign key to it). There is no server-side
-store list: the `REFGENIE_STORES` variable and its boot-time bootstrap are
-gone. Two lists, one on the build node and one in the ECS task definition,
-drifted apart and dropped whole stores' genomes without an error.
+One place decides which RefgetStores are published: the registry's `publish:`
+blocks. The nightly writes them into the build catalog's `store` table, the
+publish catalog carries that table, and each server's catalog import makes its
+own table match. There is no server-side store list (`REFGENIE_STORES` is gone):
+two lists, one on the build node and one in the task definition, drifted apart
+and silently dropped whole stores.
 
-So the store list is runtime data, and two things follow:
+- **Disable, never delete.** Genomes and aliases have foreign keys to
+  `store.name`, so an import adds or updates stores by name and disables any the
+  catalog no longer lists. It never deletes a genome; `refgenie catalog-prune`
+  does that, by hand, with `--dry-run` first. An artifact with no store rows
+  leaves the stores alone, so one empty table cannot switch every store off.
+- **Only publishable stores are exported.** An `on_disk` store's URL is a path on
+  the build node, so exporting a genome in one fails. A disabled store (plantref,
+  too big for the server's memory) is left out with its genomes, at the source,
+  so one place still decides what is published.
+- **No restart for a new store set.** The first import runs in `create_app`,
+  before anything reads the store table. After each scheduled import,
+  `SeqcolServing.refresh()` rebuilds the store router and the per-store seqcol
+  sub-apps if the enabled stores changed, and swaps them in (refget binds one
+  backend per app). A store with new contents at the same URL still needs a
+  restart, since loaded stores are frozen.
+- **Aliases are replaced, with a size guard.** `store sync` and the import make
+  each genome's aliases match their source, so retired names go away, and skip
+  names with '/'. Both run nightly, so instead of a dry run they refuse a change
+  that would drop more than half of the aliases. Only a genome's owning store
+  writes its FHR columns.
 
-- **The first import runs in `create_app`**, before anything reads the store
-  table, so a fresh container serves the right stores from its first request.
-  A failed import is logged and the server starts with whatever its database
-  already holds.
-- **A store-set change needs no restart.** After each scheduled import,
-  `SeqcolServing.refresh()` (`refgenie/server/seqcol.py`) compares the enabled
-  stores' name, URL, type and priority with what it serves. If they changed, it
-  rebuilds the store router and a new table of per-store seqcol sub-apps, then
-  swaps both in. One ASGI app is mounted at `/seqcol` for the life of the
-  process and sends each request to the sub-app its path names (default store
-  at `/seqcol`, others at `/seqcol/<name>`), reading the table once per
-  request. refget binds one backend per app, which is why each store keeps its
-  own sub-app rather than one router with a store parameter. A store that fails
-  to load leaves the old router and table in place. While the new stores load,
-  the old ones stay in memory, so a refresh briefly needs room for both. A
-  change to a store's contents with the same URL still needs a restart (or a
-  store-set change), since loaded stores are frozen.
+Command details are in the [CLI reference](refgenie/refgenie-cli.md).
 
 ## A genome's store_name picks its store
 
@@ -452,44 +445,6 @@ built. Genomes `refgenie store sync` registered keep their federated
 the one store (`sole_store=True`). Built genomes keep `store_name` unset: the
 `local` row is synthetic, not a `store` table row, and the export assigns them
 the catalog store.
-
-## The store list travels in the publish catalog
-
-`genome.store_name` and `alias.store_name` are foreign keys to `store.name`, so
-a catalog whose genomes name a store the server lacks cannot be imported into
-Postgres at all. The catalog therefore exports the build node's store table,
-and the server takes its store list from it: an import adds or updates each
-store by name and disables, never deletes, any store the catalog does not
-list (genomes still point at it). The import never deletes a genome either.
-Removing what the catalog no longer carries is `refgenie catalog-prune`, run by
-hand with `--dry-run` first: it deletes genomes the catalog dropped that have
-no assets, with their aliases, then disabled stores left with no genome. A
-dropped genome that still has assets is listed and kept. Only enabled `remote` stores are exported;
-an `on_disk` store's URL is a path on the build node, and an export that would
-publish a genome in such a store fails before writing anything. A disabled
-store is different: it is a deliberate "not now" (plantref, whose 1.57M
-sequences do not fit in the server's memory), so its genomes, with their
-aliases, asset groups, assets and staged records, are left out of the export
-rather than failing it, and the export logs how many per store. Leaving them
-out at the source, rather than having the server skip a store, keeps one place
-that decides what is published. An
-artifact with no store rows leaves the server's stores alone, so one empty
-table cannot switch every store off. On the build node, `refgenie store apply`
-sets the store table from a declaration file, disabling stores the file drops.
-
-Aliases are replaced, not only added, so a renamed or retired name goes
-away. `refgenie store sync` makes each store's alias rows the names the store
-offers now: a name it dropped is deleted, and a name it moved follows its
-collection (priority still settles names two stores share). The import does
-the same for each genome the catalog carries, deleting the server's rows for
-that genome, and rows holding a name the catalog assigns, before inserting the
-catalog's. Both skip names with '/', which refgenie reads as a genome/asset
-separator. Both have a size guard instead of a dry run, because they run every
-night: a store that offers under half the aliases it owns keeps them, and an
-import that would leave under half of the carried genomes' aliases is
-refused. A sync with any failure changes no aliases. Only a genome's owning
-store writes its FHR columns (description, species, assembly), so a
-lower-priority store cannot overwrite the owner's text.
 
 ## Background jobs in local mode
 
