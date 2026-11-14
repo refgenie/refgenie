@@ -415,8 +415,9 @@ page; it is `null` on the last page. A token from other filters is refused.
 `search_genomes` fills `hint` when nothing matched.
 
 **Getting files.** `get_asset` returns `files` (local paths over stdio, URLs on
-a server), `archive_url` for archive-served assets, and `pull_command`, the
-`refgenie pull` line for the asset.
+a server), `archive_url` for archive-served assets, and the command for it:
+`pull_command` on a server, or `seek_command` over stdio, where the asset is
+already local.
 
 **Errors** come back as tool errors with a next step, for example "Genome
 alias 'hg39' not found. Find genomes with search_genomes(query) or

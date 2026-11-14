@@ -105,7 +105,7 @@ To get the next page, call the tool again with the same filters and `token` set 
 
 ### Getting the files
 
-`get_asset` returns `files`, one entry per file (local paths over stdio, URLs on a server), `archive_url` for archive-served assets, and `pull_command`, the `refgenie pull` line for the asset.
+`get_asset` returns `files`, one entry per file (local paths over stdio, URLs on a server), `archive_url` for archive-served assets, and the command for it: `pull_command` (the `refgenie pull` line) on a server, or `seek_command` (the `refgenie seek` line) over stdio, where the asset is already local.
 
 ### Errors
 

@@ -78,7 +78,7 @@ claude mcp add --transport http refgenie-public https://api.refgenie.org/mcp
 | `search_genomes` | substring search over digest, alias, species names, other genome names, description, accession |
 | `get_genome` | one genome by `alias` or `digest`, with its FHR metadata |
 | `list_assets` | assets, optionally of one genome and/or `asset_class` |
-| `get_asset` | one asset by digest: seek keys, parents, children, local path, `pull_command` |
+| `get_asset` | one asset by digest: seek keys, parents, children, local path, `pull_command` (server) or `seek_command` (stdio) |
 | `list_asset_classes` | asset classes and their seek key names |
 | `list_recipes` | recipes, optionally by `output_asset_class` |
 | `get_recipe` | one recipe in full: inputs, command templates, docker image |

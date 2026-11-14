@@ -18,7 +18,7 @@ Refgenie manages storage, access, and transfer of reference genome resources. It
 
 2. **It's scripted**. If you need resources that are not on a server, such as for a custom genome, you can `build` your own: `refgenie build custom_genome/bowtie2_index`.
 
-3. **It finds local asset locations**. When you need a path to an asset, you `seek` it, so your pipelines are portable across computing environments: `refgenie seek hg38/salmon_index`.
+3. **It finds local asset locations**. When you need a path to an asset, you `seek` it, so your pipelines are portable across computing environments: `refgenie seek hg38/bowtie2_index`.
 
 4. **It works with remote files**, which is useful for cloud applications. Get the URL of an asset file on a server without downloading it: `refgenie seekr hg38/fasta`.
 
