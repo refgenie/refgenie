@@ -9,7 +9,7 @@ For budding yeast (*Saccharomyces cerevisiae*, strain S288C), two genomes on the
 
 ```bash
 refgenie pull R64-1-1/bowtie2_index
-refgenie compare sacCer3 R64-1-1   # prints every rename: chrI -> I, ..., chrM -> Mito
+refgenie compare sacCer3 R64-1-1   # lists each rename, e.g. chrM -> Mito
 ```
 
 ## sacCer3 from UCSC is not the same file
