@@ -7,7 +7,12 @@ import { GenomePage } from './GenomePage';
 import { server } from '../test/server';
 import { API } from '../test/handlers';
 import { renderWithProviders, serverConfig } from '../test/renderWithProviders';
-import { emptyPage, genomeDetailFixture, genomesFixture } from '../test/fixtures';
+import {
+  emptyPage,
+  genomeDetailFixture,
+  genomeSequencesFixture,
+  genomesFixture,
+} from '../test/fixtures';
 
 const flags = vi.hoisted(() => ({ fasta: true }));
 vi.mock('../services/config', async (importOriginal) => ({
@@ -160,6 +165,25 @@ describe('GenomePage', () => {
     expect(await screen.findByText('refgenie pull hg38/fasta')).toBeInTheDocument();
     // 3,273,481,150 bytes in the assets fixture.
     expect(screen.getByTitle('Size of the asset once pulled')).toHaveTextContent('3.0 GB');
+  });
+
+  it('badges the naming style of its sequences in the head', async () => {
+    const row = genomeSequencesFixture.sequences[0];
+    server.use(
+      http.get(`${API}/genomes/:digest/sequences`, () =>
+        HttpResponse.json({
+          ...genomeSequencesFixture,
+          sequences: [
+            { ...row, name: '1', length: 2000 },
+            { ...row, name: 'X', length: 1000 },
+            { ...row, name: 'MT', length: 16 },
+          ],
+        }),
+      ),
+    );
+    renderGenome();
+    const badge = await screen.findByText('Ensembl-style names (1, MT)');
+    expect(badge).toHaveAttribute('title', expect.stringMatching(/1, not chr1/));
   });
 
   it('keeps the alias list off the head; Details has it, each with a copy button', async () => {

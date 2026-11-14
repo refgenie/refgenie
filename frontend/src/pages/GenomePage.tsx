@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useGenome } from '../hooks/queries/useGenomes';
 import { useAssets } from '../hooks/queries/useAssets';
@@ -9,6 +10,7 @@ import { useFastaDownload } from '../hooks/useFastaDownload';
 import { useCompareCandidates } from '../hooks/useCompareCandidates';
 import { useUiConfig } from '../hooks/useUiConfig';
 import { preferredAlias } from '../utils/genomes';
+import { namingStyle } from '../utils/namingStyle';
 import { formatDigest } from '../utils/format';
 import { fastaDownloadAvailable, fastaPullSize, isGenomeTab } from '../utils/genomePage';
 import type { GenomeTab } from '../utils/genomePage';
@@ -97,6 +99,10 @@ export function GenomePage() {
     : hasSequences === false || sequences.error
       ? (false as const)
       : null;
+  const naming = useMemo(
+    () => (sequences.data ? namingStyle(sequences.data.sequences) : null),
+    [sequences.data],
+  );
   const assetCount = assets.data ? assets.data.results.length : null;
   const hasFastaAsset = !!assets.data?.results.some(
     (asset) => asset.asset_class_name === 'fasta',
@@ -209,7 +215,7 @@ export function GenomePage() {
         }
       >
         {!genome.error && (
-          <GenomeHeader genome={record} />
+          <GenomeHeader genome={record} naming={naming} />
         )}
       </MiniHero>
 

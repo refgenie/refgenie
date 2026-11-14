@@ -1,10 +1,15 @@
 import { ExternalLink } from '../common/ExternalLink';
+import { Badge } from '../common/Badge';
 import { accessionUrl } from '../../utils/links';
+import { namingLabel, namingTitle } from '../../utils/namingStyle';
+import type { Naming } from '../../utils/namingStyle';
 import type { GenomeDetailResponse } from '../../types/api';
 
 export interface GenomeHeaderProps {
   /** Undefined while loading: every line shows a placeholder of the same height. */
   genome: GenomeDetailResponse | undefined;
+  /** How its sequences are named (`chr1` or `1`), once they load. */
+  naming?: Naming | null;
 }
 
 function Placeholder({ width }: { width: 'sm' | 'md' | 'lg' }) {
@@ -18,12 +23,12 @@ function Placeholder({ width }: { width: 'sm' | 'md' | 'lg' }) {
  * the left. The digest is in the head's corner; counts and size are on the tabs.
  * Aliases are listed in full on the Details tab.
  */
-export function GenomeHeader({ genome }: GenomeHeaderProps) {
+export function GenomeHeader({ genome, naming }: GenomeHeaderProps) {
   return (
     <div className="rg-genome-head" aria-busy={genome ? undefined : true}>
       <div className="rg-genome-head__facts">
       <p className="rg-genome-head__line">
-        {genome ? <Subtitle genome={genome} /> : <Placeholder width="lg" />}
+        {genome ? <Subtitle genome={genome} naming={naming} /> : <Placeholder width="lg" />}
       </p>
       {genome ? (
         genome.description && <Description text={genome.description} />
@@ -37,7 +42,13 @@ export function GenomeHeader({ genome }: GenomeHeaderProps) {
   );
 }
 
-function Subtitle({ genome }: { genome: GenomeDetailResponse }) {
+function Subtitle({
+  genome,
+  naming,
+}: {
+  genome: GenomeDetailResponse;
+  naming?: Naming | null;
+}) {
   const accession = genome.assembly_accession;
   const href = accessionUrl(
     accession,
@@ -67,7 +78,20 @@ function Subtitle({ genome }: { genome: GenomeDetailResponse }) {
       ),
     );
   }
-  if (parts.length === 0) return <span className="rg-muted">Species not recorded</span>;
+  if (parts.length === 0) {
+    parts.push(
+      <span key="none" className="rg-muted">
+        Species not recorded
+      </span>,
+    );
+  }
+  if (naming) {
+    parts.push(
+      <Badge key="naming" title={namingTitle(naming)}>
+        {namingLabel(naming)}
+      </Badge>,
+    );
+  }
   return (
     <>
       {parts.map((part, i) => (
