@@ -1511,6 +1511,18 @@ class TestQuietScriptableOutput:
         assert header == ">rCRSd"
         assert all(len(x) == 60 for x in lines[:-1]) and sum(map(len, lines)) == 33138
 
+    def test_seek_suggests_a_seek_key_named_like_the_group(self, cli, capsys):
+        assert cli("seek", "rCRSd/chrom_sizes") == EXIT_NOT_FOUND
+        err = capsys.readouterr().err
+        assert "Did you mean: rCRSd/fasta.chrom_sizes?" in err
+        assert "refgenie pull" not in err
+
+    def test_seek_of_an_asset_not_here_names_the_pull_command(self, cli, capsys):
+        assert cli("seek", "rCRSd/bwa_index") == EXIT_NOT_FOUND
+        err = capsys.readouterr().err
+        assert "refgenie pull rCRSd/bwa_index" in err
+        assert "Did you mean" not in err
+
     def test_getseq_zero_based(self, cli, capsys):
         """The same 10 bases, as a 1-based text region or with --zero-based;
         stderr says how the region was read."""

@@ -209,23 +209,23 @@ def resolve_transient_servers(cmd, refgenie) -> list[str] | None:
     return list(dict.fromkeys(urls))
 
 
-def _pull_target(parsed) -> str:
-    """The `refgenie pull` argument for a parsed registry path: no seek key."""
-    return f"{parsed.genome}/{parsed.asset_group}" + (f":{parsed.asset}" if parsed.asset else "")
-
-
-def _seek_paths_here(refgenie, parsed, genome_digest: str | None) -> list[str]:
-    """The asset groups and seek keys of a genome pulled here (``fasta_index``,
-    ``fasta_index.chrom_sizes``), to suggest from; empty when it is not here."""
+def _close_matches(refgenie, parsed) -> list[str]:
+    """Paths pulled here for this genome that are close to the one asked for: a
+    seek key named like the group typed (hg38/chrom_sizes finds
+    hg38/fasta_index.chrom_sizes), or a near miss."""
     from refgenie.exceptions import RefgenieError
 
     try:
-        digest = genome_digest or refgenie.alias.resolve(parsed.genome)
+        digest = refgenie.alias.resolve(parsed.genome)
         listing, _ = refgenie.asset.list_all(genome_digests=[digest], include_seek_keys=True)
-    except (RefgenieError, KeyError):
+    except RefgenieError:
         return []
     keys = {p.split(":")[0] for p in listing.get(digest, [])}
-    return sorted(keys | {k.split(".")[0] for k in keys})
+    keys |= {k.split(".")[0] for k in keys}
+    pairs = [(k, k) for k in keys] + [(k.rsplit(".", 1)[1], k) for k in keys if "." in k]
+    wanted = parsed.asset_group + (f".{parsed.seek_key}" if parsed.seek_key else "")
+    hits = difflib.get_close_matches(wanted, [name for name, _ in pairs], n=3, cutoff=0.75)
+    return sorted({f"{parsed.genome}/{k}" for name, k in pairs if name in hits})
 
 
 def _lookup_one(
@@ -234,8 +234,8 @@ def _lookup_one(
     """Resolve one registry path with ``lookup`` and print the result.
 
     With ``genome_digest`` (the ``--genome-digest`` flag), the path names no
-    genome; the flag does. With ``pull_hint`` (local seek), a genome or asset
-    that is not here comes with the `refgenie pull` command that gets it.
+    genome; the flag does. With ``pull_hint`` (local seek), a missing path gets
+    close matches pulled here, or else the `refgenie pull` command.
 
     Returns an exit code: EXIT_INVALID_INPUT, EXIT_NOT_FOUND, EXIT_GENERAL_ERROR
     or EXIT_OK.
@@ -259,30 +259,21 @@ def _lookup_one(
     genome_ref(parsed.genome, genome_digest)
     try:
         sys.stdout.write(str(lookup(parsed)) + "\n")
-    except (MissingAliasError, MissingGenomeError) as e:
+    except (
+        MissingAliasError,
+        MissingGenomeError,
+        MissingAssetGroupError,
+        MissingAssetError,
+        MissingSeekKeyError,
+    ) as e:
         logger.error(f"{raw}: {e}")
         if pull_hint and not genome_digest:
-            note(
-                f"Genome '{parsed.genome}' is not here. `refgenie pull {_pull_target(parsed)}` gets it."
-            )
-        return EXIT_NOT_FOUND
-    except (MissingAssetGroupError, MissingAssetError, MissingSeekKeyError) as e:
-        genome = parsed.genome or genome_digest
-        if not pull_hint:
-            logger.error(f"{raw}: {e}")
-            return EXIT_NOT_FOUND
-        logger.error(f"{raw}: not found here.")
-        keys = _seek_paths_here(refgenie, parsed, genome_digest)
-        wanted = (
-            f"{parsed.asset_group}.{parsed.seek_key}" if parsed.seek_key else parsed.asset_group
-        )
-        # A seek key named like what was typed (hg38/chrom_sizes), else a near miss.
-        exact = [k for k in keys if k.split(".", 1)[-1] == wanted]
-        close = exact or difflib.get_close_matches(wanted, keys, n=3, cutoff=0.75)
-        if close:
-            note("Did you mean: " + ", ".join(f"{genome}/{k}" for k in close) + "?")
-        if not exact and not isinstance(e, MissingSeekKeyError) and not genome_digest:
-            note(f"If a subscribed server has it: refgenie pull {_pull_target(parsed)}")
+            if close := _close_matches(refgenie, parsed):
+                note("Did you mean: " + ", ".join(close) + "?")
+            elif not isinstance(e, MissingSeekKeyError):
+                target = f"{parsed.genome}/{parsed.asset_group}"
+                target += f":{parsed.asset}" if parsed.asset else ""
+                note(f"If a subscribed server has it: refgenie pull {target}")
         return EXIT_NOT_FOUND
     except (ValueError, FileNotFoundError, RefgenieError) as e:
         logger.error(f"{raw}: {e}")

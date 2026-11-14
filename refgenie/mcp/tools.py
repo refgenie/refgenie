@@ -227,7 +227,7 @@ def _asset_detail(asset: Asset) -> AssetDetail:
     local = _public_url is None
     archive_url = None
     files: dict[str, str] = {}
-    if _public_url is None:
+    if local:
         files = {
             sk.name: rgc.asset.seek(genome, group, asset.name, sk.name)
             for sk in asset.seek_keys

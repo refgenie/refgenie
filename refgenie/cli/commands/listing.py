@@ -80,13 +80,14 @@ def handle_list(cmd, refgenie) -> None:
         listing = _listing_json("local", *refgenie.asset.list_all(genome_digests=genome_digests))
         print(json.dumps([listing], indent=2))
         return
-    if not refgenie.asset.list_all(genome_digests=genome_digests)[0]:
+    tables = refgenie.asset.table(genome_digests=genome_digests)
+    if not any(table.row_count for table in tables):
         note(
             "No assets here yet. `refgenie listr` shows what the server has; "
             "`refgenie pull <genome>/<asset>` gets one."
         )
         return
-    for table in refgenie.asset.table(genome_digests=genome_digests):
+    for table in tables:
         print_table(table)
 
 
