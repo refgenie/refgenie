@@ -22,12 +22,19 @@ import { absoluteServerRoot } from '../services/instanceLinks';
 /** Count-only request: one row per page. */
 const COUNT_ONLY = { pageSize: 1 } as const;
 
-const STEPS = [
-  {
-    label: 'Install',
-    command: 'pip install "refgenie>=1.0.0a1"',
-    note: 'Needs Python 3.11 or newer.',
-  },
+/** Used when the server does not report its version. */
+const FALLBACK_VERSION = '1.0.0a2';
+
+/**
+ * The install line for the version this server runs, so it never goes stale.
+ * The `>=` floor also lets pip pick a pre-release without `--pre`.
+ */
+function installCommand(version: string): string {
+  const floor = version && version !== 'unknown' ? version : FALLBACK_VERSION;
+  return `pip install "refgenie>=${floor}"`;
+}
+
+const LATER_STEPS = [
   {
     label: 'Pull an asset',
     command: 'refgenie pull hg38/fasta',
@@ -122,7 +129,14 @@ export function LandingPage() {
       <section className="flex flex-col gap-4">
         <h2 className="text-xl font-semibold">Get started</h2>
         <ol className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {STEPS.map((step, index) => (
+          {[
+            {
+              label: 'Install',
+              command: installCommand(config.refgenie_version),
+              note: 'Needs Python 3.11 or newer.',
+            },
+            ...LATER_STEPS,
+          ].map((step, index) => (
             <li className="rg-step flex flex-col gap-2" key={step.command}>
               <span className="flex items-center gap-2">
                 <span className="rg-step__index">{index + 1}</span>

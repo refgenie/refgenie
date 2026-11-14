@@ -8,7 +8,7 @@ const PAYLOAD = {
     mode: 'local',
     api_base: '/v4',
     root_path: '',
-    refgenie_version: '1.0.0a1',
+    refgenie_version: '1.0.0a2',
     service_name: 'refgenie local dashboard',
     capabilities: { pull: true, remote_browse: true, downloads: false },
   },

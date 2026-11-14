@@ -68,7 +68,8 @@ describe('LandingPage', () => {
 
   it('shows the same install steps in both modes', () => {
     renderWithProviders(<LandingPage />, { config: localConfig });
-    expect(screen.getByText('pip install "refgenie>=1.0.0a1"')).toBeInTheDocument();
+    // The install line follows the version the server reports.
+    expect(screen.getByText('pip install "refgenie>=1.0.0a2"')).toBeInTheDocument();
     expect(screen.getByText('refgenie pull hg38/fasta')).toBeInTheDocument();
   });
 
