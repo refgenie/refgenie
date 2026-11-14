@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- refgenie uses httpx2, the maintained successor of httpx, for HTTP.
 - `refgenie pull` brings a parent asset only when the asset colocates its files
   (such as `bismark_bt2_index`). `refgenie pull hg38/fasta_index` now downloads
   12 KB, not the FASTA.
@@ -58,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `SKILL.md` is served as `text/markdown` on macOS and on Python before 3.13.
 - `genome init --server`, `alias set` and `id --remote` read a genome from the
   store that holds it, not only from the server's first store.
 - Pulling a child asset (bwa_index, fasta_index, ...) of hg38, celegans and similar genomes no longer fails and deletes the genome when the server lists an alias containing '/'. A parent lands under the child's alias and adds none of the server's other aliases.
