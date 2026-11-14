@@ -66,3 +66,5 @@ To check how two genomes differ, use [`refgenie compare`](compare.md):
 ```bash
 refgenie compare hg38 hg38_primary
 ```
+
+For mouse and yeast, see [Which mm39 should I use?](choosing_mm39.md) and [Which yeast genome should I use?](choosing_yeast.md).

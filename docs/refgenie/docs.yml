@@ -26,6 +26,8 @@ nav:
       - "Coordinates: 1-based or 0-based": coordinates.md
       - Compare genomes: compare.md
       - Choose an hg38 genome: choosing_hg38.md
+      - Choose an mm39 genome: choosing_mm39.md
+      - Choose a yeast genome: choosing_yeast.md
       - Add custom assets: custom_assets.md
       - Manage aliases: alias.md
       - Managing asset groups and naming: naming_assets.md
