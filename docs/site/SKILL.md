@@ -313,8 +313,8 @@ rgc.asset.seek(genome_digest, asset_group_name, asset_name=None,
 - `abs_path=True` returns the digest-named content path instead of the
   alias path.
 
-`rgc.alias.resolve(name)` raises `MissingAliasError` for an alias not
-registered here. `rgc.asset.seek_components(...)` takes the same
+`rgc.alias.resolve(name)` raises `refgenie.exceptions.MissingAliasError` for
+an alias not registered here. `rgc.asset.seek_components(...)` takes the same
 `force_exists` and `abs_path` keywords.
 
 ---
