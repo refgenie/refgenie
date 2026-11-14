@@ -134,56 +134,42 @@ describe('fallbackConfig', () => {
   });
 });
 
-describe('collections in the bootstrap config', () => {
-  const valid = {
-    id: 'vgp',
-    name: 'VGP',
-    blurb: 'Assemblies.',
-    accent_color: '#2b7a78',
-    stores: ['vgp'],
-  };
-
-  function parse(collections: unknown) {
-    return parseServiceInfo({ refgenie: { ...PAYLOAD.refgenie, collections } })
-      .collections;
-  }
-
-  it('keeps a valid collection and defaults its optional fields', () => {
-    expect(parse([valid])).toEqual([
-      {
-        ...valid,
-        short_name: null,
-        note: null,
-        logo_url: null,
-        links: [],
-        genome_links: [],
-        columns: [],
-      },
-    ]);
-  });
-
-  it('drops entries with a bad color or no stores', () => {
-    expect(
-      parse([
-        { ...valid, id: 'a', accent_color: 'teal' },
-        { ...valid, id: 'b', stores: [] },
-        valid,
-      ]),
-    ).toHaveLength(1);
-  });
-
-  it('drops unknown columns', () => {
-    expect(parse([{ ...valid, columns: ['haplotype', 'bogus'] }])[0].columns).toEqual([
-      'haplotype',
-    ]);
-  });
-
-  it('is empty when the block has no collections', () => {
+describe('collections and seqcol services in the bootstrap config', () => {
+  it('takes the collections the server validated, else none', () => {
+    const vgp = {
+      id: 'vgp',
+      name: 'VGP',
+      short_name: null,
+      blurb: 'Assemblies.',
+      note: null,
+      accent_color: '#2b7a78',
+      logo_url: null,
+      stores: ['vgp'],
+      links: [],
+      genome_links: [],
+      columns: [],
+    };
+    const wire = { refgenie: { ...PAYLOAD.refgenie, collections: [vgp] } };
+    expect(parseServiceInfo(wire).collections).toEqual([vgp]);
     expect(parseServiceInfo(PAYLOAD).collections).toEqual([]);
-    expect(parse('nope')).toEqual([]);
   });
 
-  it('is empty in the fallback config', () => {
-    expect(fallbackConfig().collections).toEqual([]);
+  it('reads seqcol.services, skipping the placeholder with no store', () => {
+    const config = parseServiceInfo({
+      ...PAYLOAD,
+      seqcol: {
+        services: [
+          {
+            store: 'vgp',
+            url: '/seqcol/vgp',
+            refget_store: { url: 'https://s3/vgp/' },
+          },
+          { url: '/seqcol' },
+        ],
+      },
+    });
+    expect(config.seqcol_services).toEqual([
+      { store: 'vgp', url: '/seqcol/vgp', refget_store_url: 'https://s3/vgp/' },
+    ]);
   });
 });

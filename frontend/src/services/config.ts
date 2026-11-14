@@ -5,14 +5,7 @@
 
 import { ApiError } from './http';
 import { coerceCapabilities, noCapabilities } from './capabilities';
-import { coerceCollections } from './collections';
-import type {
-  Capabilities,
-  Mode,
-  SeqcolServiceInfo,
-  ServiceInfoResponse,
-  UiConfig,
-} from '../types/ui';
+import type { Capabilities, Mode, ServiceInfoResponse, UiConfig } from '../types/ui';
 
 export const SERVICE_INFO_PATH = '/service-info';
 
@@ -60,30 +53,21 @@ export function parseServiceInfo(payload: ServiceInfoResponse): UiConfig {
     service_name: block.service_name ?? 'refgenie',
     capabilities: coerceCapabilities(block.capabilities),
     web_ui: block.web_ui ?? null,
-    collections: coerceCollections(block.collections),
+    collections: block.collections ?? [],
     degraded: false,
-    seqcol_services: coerceSeqcolServices(payload.seqcol),
+    // A server with no stores lists one placeholder service with no `store`.
+    seqcol_services: (payload.seqcol?.services ?? []).flatMap((s) =>
+      s.store
+        ? [
+            {
+              store: s.store,
+              url: s.url,
+              refget_store_url: s.refget_store?.url ?? null,
+            },
+          ]
+        : [],
+    ),
   };
-}
-
-/** `seqcol.services` from service-info; malformed entries are dropped. */
-export function coerceSeqcolServices(seqcol: unknown): SeqcolServiceInfo[] {
-  if (!seqcol || typeof seqcol !== 'object') return [];
-  const services = (seqcol as { services?: unknown }).services;
-  if (!Array.isArray(services)) return [];
-  return services.flatMap((raw) => {
-    if (!raw || typeof raw !== 'object') return [];
-    const s = raw as Record<string, unknown>;
-    if (typeof s.url !== 'string' || typeof s.store !== 'string') return [];
-    const store = s.refget_store as { url?: unknown } | undefined;
-    return [
-      {
-        store: s.store,
-        url: s.url,
-        refget_store_url: typeof store?.url === 'string' ? store.url : null,
-      },
-    ];
-  });
 }
 
 /**
