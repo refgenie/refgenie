@@ -7,10 +7,10 @@
 
 > ## ⚠️ This is an alpha release
 >
-> Refgenie 1.0 is **pre-release software**. The CLI, the Python API, the REST
-> API, and the database schema can all change without a deprecation period, and
-> a future alpha may require you to rebuild your assets. Do not depend on it in
-> production pipelines yet. Please do try it and
+> Refgenie 1.0 is an alpha. It works, but commands and data can still change,
+> so pin the version in production pipelines (for example,
+> `refgenie==1.0.0a2`). A future alpha may require you to rebuild your assets.
+> Please do try it and
 > [report what breaks](https://github.com/refgenie/refgenie/issues).
 
 Refgenie is a reference genome asset manager. It organizes, builds, and serves

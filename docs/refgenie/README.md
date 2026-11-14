@@ -12,6 +12,9 @@
 
 Refgenie manages storage, access, and transfer of reference genome resources. It provides command-line and Python interfaces to *download* pre-built reference genome "assets", like indexes used by bioinformatics tools. It can also *build* assets for custom genome assemblies. Refgenie provides programmatic access to a standard genome folder structure, so software can swap from one genome to another.
 
+!!! warning "Alpha"
+    Refgenie 1.0 is an alpha. It works, but commands and data can still change, so pin the version in production pipelines (for example, `refgenie==1.0.0a2`).
+
 ## What makes refgenie better?
 
 1. **It downloads individual resources from the command line**. Think of it as `GitHub` for reference genomes: `refgenie pull hg38/bwa_index`.
