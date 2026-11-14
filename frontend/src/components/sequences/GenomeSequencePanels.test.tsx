@@ -24,8 +24,8 @@ const DIGEST = '5cb5b9d2d1e2b5e5e2f0a3c4d5e6f708';
 const OTHER = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
 const THIRD = 'ffffffffffffffffffffffffffffffff';
 const CANDIDATES = [
-  { digest: OTHER, label: 'rCRSd · GenBank', name: 'rCRSd' },
-  { digest: THIRD, label: 'hg38_primary · UCSC', name: 'hg38_primary' },
+  { digest: OTHER, label: 'rCRSd · GenBank' },
+  { digest: THIRD, label: 'hg38_primary · UCSC' },
 ];
 
 describe('SequencesPanel', () => {
@@ -274,32 +274,26 @@ describe('ComparePanel', () => {
     );
   });
 
-  it('leads with the server summary, naming genomes, and lists renames', async () => {
+  it('shows the server summary in place of its own sentences, and lists renames', async () => {
+    const summary =
+      'All 1 sequences of hg38 are in rCRSd, which has 1 more; 1 names differ: chrM->MT.';
     server.use(
       http.get(`${API}/genomes/:digest/compare/:other`, () =>
         HttpResponse.json({
           ...genomeComparisonFixture,
-          digests: { a: DIGEST, b: OTHER },
-          summary: `All 1 sequences of ${DIGEST} are in ${OTHER}, which has 1 more; 1 names differ: chrM->MT.`,
+          summary,
           name_map: { chrM: 'MT' },
         }),
       ),
     );
-    renderWithProviders(
-      <ComparePanel digest={DIGEST} name="hg38" candidates={CANDIDATES} />,
-    );
+    renderWithProviders(<ComparePanel digest={DIGEST} candidates={CANDIDATES} />);
     await userEvent.type(
       await screen.findByRole('combobox', { name: /Other genome/ }),
       'rCRSd · GenBank',
     );
-    expect(
-      await screen.findByText(
-        'All 1 sequences of hg38 are in rCRSd, which has 1 more; 1 names differ: chrM->MT.',
-      ),
-    ).toBeInTheDocument();
+    expect(await screen.findByText(summary)).toBeInTheDocument();
+    expect(screen.queryByText(/coordinate system is a subset/)).toBeNull();
     const renames = screen.getByRole('table', { name: '1 sequence has another name' });
-    expect(within(renames).getByRole('columnheader', { name: 'Name in hg38' })).toBeInTheDocument();
-    expect(within(renames).getByRole('columnheader', { name: 'Name in rCRSd' })).toBeInTheDocument();
     expect(within(renames).getByText('MT')).toBeInTheDocument();
   });
 });

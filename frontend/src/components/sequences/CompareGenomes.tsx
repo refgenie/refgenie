@@ -9,8 +9,6 @@ import type { CompareCandidate } from '../../utils/compareCandidates';
 
 export interface CompareGenomesProps {
   digest: string;
-  /** This genome's name, for the summary sentence; "this genome" if none. */
-  name?: string;
   candidates: CompareCandidate[];
   comparison?: SeqcolComparison;
   loading: boolean;
@@ -22,7 +20,6 @@ export interface CompareGenomesProps {
 /** Pick another genome and read how its sequence collection relates to this one. */
 export function CompareGenomes({
   digest,
-  name,
   candidates,
   comparison,
   loading,
@@ -71,7 +68,6 @@ export function CompareGenomes({
         {selected && comparison && (
           <ComparisonResult
             comparison={comparison}
-            names={{ a: name ?? 'this genome', b: other?.name ?? 'the other genome' }}
             caption={
               <>
                 Compared with{' '}

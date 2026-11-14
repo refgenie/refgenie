@@ -19,8 +19,6 @@ export interface CompareCandidate {
   digest: string;
   /** The name and its accession or source, e.g. `hg38_primary · UCSC`. */
   label: string;
-  /** The name alone, for sentences. */
-  name: string;
 }
 
 /** `GCA_000001405.15` -> `{ base: '000001405', version: '15' }`; GCA and GCF share a base. */
@@ -48,12 +46,8 @@ function tier(self: GenomeFacts, other: GenomeFacts): number {
   return 3;
 }
 
-function candidateName(genome: CandidateGenome): string {
-  return preferredAlias(genome.aliases) ?? formatDigest(genome.digest);
-}
-
 export function candidateLabel(genome: CandidateGenome): string {
-  const name = candidateName(genome);
+  const name = preferredAlias(genome.aliases) ?? formatDigest(genome.digest);
   const detail = genome.assembly_accession || genome.assembly_source;
   return detail ? `${name} · ${detail}` : name;
 }
@@ -69,10 +63,7 @@ export function rankCompareCandidates(
 ): CompareCandidate[] {
   return genomes
     .filter((g) => g.digest !== self.digest && sameSpecies(self, g))
-    .map((g) => ({
-      candidate: { digest: g.digest, label: candidateLabel(g), name: candidateName(g) },
-      tier: tier(self, g),
-    }))
-    .sort((x, y) => x.tier - y.tier || x.candidate.label.localeCompare(y.candidate.label))
-    .map(({ candidate }) => candidate);
+    .map((g) => ({ digest: g.digest, label: candidateLabel(g), tier: tier(self, g) }))
+    .sort((x, y) => x.tier - y.tier || x.label.localeCompare(y.label))
+    .map(({ digest, label }) => ({ digest, label }));
 }

@@ -246,15 +246,9 @@ export function ExtractPanel({
  */
 export function ComparePanel({
   digest,
-  name,
   candidates,
   canCompareFile = false,
-}: GenomePanelProps & {
-  /** This genome's name, for sentences. */
-  name?: string;
-  candidates: CompareCandidate[] | null;
-  canCompareFile?: boolean;
-}) {
+}: GenomePanelProps & { candidates: CompareCandidate[] | null; canCompareFile?: boolean }) {
   const sequences = useGenomeSequences(digest);
   const [compareWith, setCompareWith] = useState<string>('');
   const comparison = useGenomeComparison(digest, compareWith || undefined);
@@ -267,7 +261,6 @@ export function ComparePanel({
     <div>
       <CompareGenomes
         digest={digest}
-        name={name}
         candidates={candidates ?? []}
         comparison={comparison.data}
         loading={comparison.isPending}

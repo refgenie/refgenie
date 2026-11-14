@@ -370,7 +370,7 @@ export interface SeqcolComparison {
   };
   /**
    * refgenie's `/genomes/{a}/compare/{b}` only: one sentence on how the two
-   * differ, naming each genome by its digest. Absent from older servers.
+   * differ, ready to show. Absent from older servers.
    */
   summary?: string;
   /** With `summary`: A's sequence name -> B's, for sequences B has under another name. */

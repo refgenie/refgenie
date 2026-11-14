@@ -32,29 +32,15 @@ export interface ComparisonResultProps {
   otherName?: string;
   /** The other side's column heading. */
   otherColumn?: string;
-  /** Both genomes' names, for the server's summary and the rename table. */
-  names?: { a: string; b: string };
-}
-
-/** The server's summary names each genome by its digest; swap in the names shown here. */
-function nameSummary(
-  summary: string,
-  digests: { a: string; b: string } | undefined,
-  names: { a: string; b: string },
-): string {
-  let text = summary;
-  if (digests?.a) text = text.split(digests.a).join(names.a);
-  if (digests?.b) text = text.split(digests.b).join(names.b);
-  return text;
 }
 
 /** A's name -> B's name for each sequence B has under another name. */
 function Renames({
   map,
-  names,
+  otherName,
 }: {
   map: Record<string, string>;
-  names: { a: string; b: string };
+  otherName: string;
 }) {
   const pairs = Object.entries(map);
   if (pairs.length === 0) return null;
@@ -68,10 +54,10 @@ function Renames({
         <thead className="rg-table__head">
           <tr>
             <th scope="col" className="rg-table__cell">
-              Name in {names.a}
+              Name in this genome
             </th>
             <th scope="col" className="rg-table__cell">
-              Name in {names.b}
+              Name in {otherName}
             </th>
           </tr>
         </thead>
@@ -98,13 +84,10 @@ export function ComparisonResult({
   caption,
   otherName = 'the other genome',
   otherColumn = 'In other',
-  names = { a: 'this genome', b: otherName },
 }: ComparisonResultProps) {
   const verdict = interpretCoordinateSystem(comparison, otherName);
   const counts = comparison.array_elements;
-  const summary = comparison.summary
-    ? nameSummary(comparison.summary, comparison.digests, names)
-    : null;
+  const { summary } = comparison;
   return (
     <>
       <div className="flex flex-col gap-2">
@@ -114,13 +97,15 @@ export function ComparisonResult({
           </Badge>
           <span className="text-sm">{caption}</span>
         </p>
-        {summary && <p className="rg-compare__summary">{summary}</p>}
-        {comparison.name_map && <Renames map={comparison.name_map} names={names} />}
-        {verdict.messages.map((message) => (
-          <p key={message} className={summary ? 'rg-muted text-sm' : undefined}>
-            {message}
-          </p>
-        ))}
+        {/* The server's summary, when it sends one, says it better. */}
+        {summary ? (
+          <p className="rg-compare__summary">{summary}</p>
+        ) : (
+          verdict.messages.map((message) => <p key={message}>{message}</p>)
+        )}
+        {comparison.name_map && (
+          <Renames map={comparison.name_map} otherName={otherName} />
+        )}
       </div>
       <div className="rg-table__wrap">
         <table className="rg-table rg-table--compact rg-table--stack">
