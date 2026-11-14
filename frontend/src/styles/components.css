@@ -2104,6 +2104,11 @@
   flex: none;
 }
 
+.rg-genome-head__naming {
+  display: inline-block;
+  margin-left: var(--space-2);
+}
+
 .rg-genome-head__desc {
   max-width: 60rem;
   margin-top: var(--space-2);

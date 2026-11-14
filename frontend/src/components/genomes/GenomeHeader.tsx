@@ -85,13 +85,6 @@ function Subtitle({
       </span>,
     );
   }
-  if (naming) {
-    parts.push(
-      <Badge key="naming" title={namingTitle(naming)}>
-        {namingLabel(naming)}
-      </Badge>,
-    );
-  }
   return (
     <>
       {parts.map((part, i) => (
@@ -100,6 +93,12 @@ function Subtitle({
           {part}
         </span>
       ))}
+      {/* No dot before it: it may wrap to a line of its own. */}
+      {naming && (
+        <span className="rg-genome-head__naming">
+          <Badge title={namingTitle(naming)}>{namingLabel(naming)}</Badge>
+        </span>
+      )}
     </>
   );
 }
