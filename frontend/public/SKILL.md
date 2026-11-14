@@ -486,6 +486,6 @@ Rules for an agent:
 ## Where to read more
 
 - The refgenie CLI and Python API: <https://docs.refgenie.org/SKILL.md>
-- Human documentation: <https://docs.refgenie.org>
+- Human documentation: <https://docs.refgenie.org/>
 - This instance's OpenAPI schema: `GET /openapi.json`
 - Source: <https://github.com/refgenie/refgenie>

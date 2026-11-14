@@ -27,7 +27,7 @@ Refgenie stores its catalog in a database (SQLite by default, PostgreSQL for
 large servers) and identifies genomes by **GA4GH digests computed from their
 sequences**, so you can check that two genomes are the same.
 
-Full documentation: <https://docs.refgenie.org>. To use a refgenie server over
+Full documentation: <https://docs.refgenie.org/>. To use a refgenie server over
 HTTP with nothing installed, read <https://api.refgenie.org/SKILL.md>.
 
 ---
@@ -243,7 +243,7 @@ refgenie compare hg38 hg38_noalt_decoy   # works for genomes you have not pulled
 Same `sequences` and `names`: the same genome. Same `sequences`, different
 `names`: renamed. Shared `name_length_pairs`: the same coordinates.
 
-Not sure which hg38 to pull? See the [choosing hg38 page](https://docs.refgenie.org/refgenie/choosing_hg38).
+Not sure which hg38 to pull? See the [choosing hg38 page](https://docs.refgenie.org/refgenie/choosing_hg38/).
 
 ---
 
@@ -294,7 +294,7 @@ refgenie dash                   # start the local dashboard on port 8080
 ```
 
 `serve` needs `pip install "refgenie[server]>=1.0.0a2"`; `dash` needs
-`"refgenie[dash]"`. See <https://docs.refgenie.org/refgenie/building_tutorial>
+`"refgenie[dash]"`. See <https://docs.refgenie.org/refgenie/building_tutorial/>
 for the full build, stage, push, and serve steps.
 
 ---
@@ -320,10 +320,10 @@ Every command takes `--help`. Start with `refgenie --help`.
 
 ## Where to read more
 
-- CLI tutorial: <https://docs.refgenie.org/refgenie/cli_tutorial>
-- Genomes and the RefgetStore: <https://docs.refgenie.org/refgenie/genome_tutorial>
-- Connecting AI assistants (MCP): <https://docs.refgenie.org/refgenie/mcp>
-- Building and serving: <https://docs.refgenie.org/refgenie/building_tutorial>
-- Refget Python package (sequences and seqcol): <https://docs.refgenie.org/refget>
+- CLI tutorial: <https://docs.refgenie.org/refgenie/cli_tutorial/>
+- Genomes and the RefgetStore: <https://docs.refgenie.org/refgenie/genome_tutorial/>
+- Connecting AI assistants (MCP): <https://docs.refgenie.org/refgenie/mcp/>
+- Building and serving: <https://docs.refgenie.org/refgenie/building_tutorial/>
+- Refget Python package (sequences and seqcol): <https://docs.refgenie.org/refget/>
 - Using a refgenie server over HTTP, with nothing installed: <https://api.refgenie.org/SKILL.md>
 - Source: <https://github.com/refgenie/refgenie>
