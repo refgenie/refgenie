@@ -71,7 +71,7 @@ dependencies = [
     # psycopg2-binary for its PostgreSQL app -- is deliberately not requested.
     "refget>=0.13.0",
     "rich>=15.0.0",
-    "sqlmodel>=0.0.48",
+    "sqlmodel>=0.0.49",
     "ubiquerg>=0.9.3",
     "yacman>=1.0.0",
     "pydantic-settings>=2.16.2",
@@ -89,7 +89,7 @@ dash = [
     # routes, since 0.137 include_router no longer flattens child routes onto
     # app.routes. The guards import that walker defensively and skip if it is
     # absent, so a version drift never crashes test collection.
-    "fastapi>=0.162.2",
+    "fastapi>=0.162.4",
     "uvicorn>=0.54.0",
 ]
 # Requires mcp 2.x: refgenie/mcp/tools.py imports MCPServer from
