@@ -1609,6 +1609,35 @@
   background: rgb(var(--color-surface));
 }
 
+/* The alpha notice under the lede: one quiet line, the badge leading. */
+.rg-hero__note {
+  max-width: var(--hero-measure);
+  color: rgb(var(--color-text-muted));
+}
+
+.rg-hero__note .rg-badge {
+  margin-right: var(--space-1);
+  vertical-align: 0.1em;
+}
+
+/* The MCP command keeps its own width instead of spanning the page. */
+.rg-landing__ai-command {
+  display: flex;
+  max-width: 100%;
+}
+
+.rg-landing__ai-command .rg-command {
+  min-width: 0;
+}
+
+.rg-landing__prompt {
+  white-space: nowrap;
+}
+
+.rg-landing__prompt .rg-btn {
+  vertical-align: middle;
+}
+
 /* === TREE EXPLORER === */
 
 /* The canvas fills whatever box its parent gives it. Nothing here knows the
