@@ -36,10 +36,6 @@
   text-decoration: underline;
 }
 
-.rg-link--plain {
-  color: inherit;
-}
-
 /* A link that should not outshine what is next to it. */
 .rg-link--quiet {
   color: rgb(var(--color-text-muted));
@@ -1851,25 +1847,10 @@
   margin-bottom: var(--space-3);
 }
 
-.rg-stat-line {
-  min-height: 1.5rem;
-  line-height: 1.5rem;
-  color: rgb(var(--color-text-muted));
-  font-variant-numeric: tabular-nums;
-}
-
 .rg-skeleton--inline {
   display: inline-block;
   max-width: 100%;
   vertical-align: middle;
-}
-
-.rg-skeleton--w12 {
-  width: 12rem;
-}
-
-.rg-skeleton--w24 {
-  width: 24rem;
 }
 
 .rg-flat-section.flex > h2 {
