@@ -1160,6 +1160,13 @@ REMOTE_DIGEST = GenomeDigest("r" * 32)
 SERVER = "http://server.test"
 
 
+# Two genomes with the same two sequences under different names.
+_SIDES = (
+    {"names": ["chr1", "chr2"], "lengths": [10, 20], "sequences": ["SQ.a", "SQ.b"]},
+    {"names": ["1", "2"], "lengths": [10, 20], "sequences": ["SQ.a", "SQ.b"]},
+)
+
+
 class TestRemoteGenomeByName:
     """Commands that reach a genome only a server knows, through ``locate``."""
 
@@ -1206,25 +1213,41 @@ class TestRemoteGenomeByName:
         cli_rg.genome.add("a" * 32, "a", [])
         cli_rg.genome.add("b" * 32, "b", [])
         with (
-            patch.object(type(cli_rg.genome), "compare", return_value={"local": True}) as cmp,
+            patch.object(type(cli_rg.genome), "compare_sides", return_value=_SIDES) as sides,
             patch.object(ServerManager, "client") as client,
         ):
             assert cli("compare", "--genome-digest", f"{'a' * 32},{'b' * 32}") == 0
-        assert cmp.call_args.args == ("a" * 32, "b" * 32)
+        assert sides.call_args.args == ("a" * 32, "b" * 32)
         client.assert_not_called()
+        out = capsys.readouterr().out
+        assert "Same 2 sequences in the same order; all 2 names differ" in out
+        assert "chr1 -> 1" in out
 
     def test_compare_with_a_remote_genome_asks_its_server(self, cli, cli_rg, capsys):
         cli_rg.genome.add("a" * 32, "a", [])
+        from refgenie.utils.seqcol import compare_level2
+
         client = MagicMock()
-        client.genome.compare.return_value = {"digests": {"a": REMOTE_DIGEST, "b": "a" * 32}}
+        comparison = compare_level2(*_SIDES, REMOTE_DIGEST, "a" * 32)
+        client.genome.compare.return_value = {
+            **comparison,
+            "summary": "worded by the server",
+            "name_map": {"chr1": "1", "chr2": "2"},
+        }
         with (
             patch.object(ServerManager, "locate", return_value=(SERVER, REMOTE_DIGEST, {})),
             patch.object(ServerManager, "client", return_value=client) as get_client,
         ):
-            assert cli("compare", "hg38", "--genome-digest", "a" * 32) == 0
+            assert cli("compare", "hg38", "--genome-digest", "a" * 32, "--json") == 0
         get_client.assert_called_once_with(SERVER)
         client.genome.compare.assert_called_once_with(REMOTE_DIGEST, "a" * 32)
-        assert REMOTE_DIGEST in capsys.readouterr().out
+        import json
+
+        payload = json.loads(capsys.readouterr().out)
+        # Worded here, with the names the user typed.
+        assert payload["summary"].startswith("Same 2 sequences in the same order")
+        assert payload["name_map"] == {"chr1": "1", "chr2": "2"}
+        assert payload["comparison"]["digests"]["a"] == REMOTE_DIGEST
 
     def test_compare_the_server_cannot_answer_suggests_registering(self, cli, cli_rg, caplog):
         cli_rg.genome.add("a" * 32, "a", [])

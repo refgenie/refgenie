@@ -1416,6 +1416,8 @@ class TestGenomeSequences:
         counts = data["array_elements"]
         assert counts["a_and_b_count"]["names"] == counts["a_count"]["names"]
         assert all(data["array_elements"]["a_and_b_same_order"].values())
+        assert data["summary"] == "Identical."
+        assert data["name_map"] == {}
 
     def test_compare_two_genomes(self, world, client):
         _, digest, other = world
@@ -1426,6 +1428,9 @@ class TestGenomeSequences:
         assert counts["a_count"]["sequences"] == 1
         assert counts["b_count"]["sequences"] == 2
         assert counts["a_and_b_count"]["sequences"] == 1
+        # One sentence and the renames, so clients need not fetch both collections.
+        assert data["summary"].startswith("All 1 sequences of")
+        assert isinstance(data["name_map"], dict)
 
     def test_compare_unknown_is_404(self, world, client):
         _, digest, _ = world
@@ -1440,6 +1445,8 @@ class TestGenomeSequences:
         url = "http://mock-refgenie-server"
         with serve_refgenie(client_rg, server_rg, url):
             remote = client_rg.servers.client(url).genome.compare(digest, other)
+        # The server adds its wording; the GA4GH comparison underneath is the same.
+        assert remote.pop("summary") and isinstance(remote.pop("name_map"), dict)
         assert remote == server_rg.genome.compare(digest, other)
 
     def test_sequences_in_local_mode(self, world):

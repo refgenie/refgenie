@@ -185,16 +185,26 @@ def get_genome_sequences(digest: str, rgc: Refgenie = Depends(get_refgenie)):
 
 @router.get("/genomes/{digest}/compare/{other}", response_model=dict[str, Any])
 def compare_genomes(digest: str, other: str, rgc: Refgenie = Depends(get_refgenie)):
-    """Compare two genomes' sequence collections (GA4GH seqcol comparison)."""
+    """Compare two genomes' sequence collections (GA4GH seqcol comparison).
+
+    Adds ``summary``, one sentence on how they differ, and ``name_map``, A's
+    name to B's for each sequence they share under another name, so a client
+    can word the result without fetching both collections.
+    """
+    from refgenie.utils.seqcol import compare_level2, seqcol_level2, summarize_comparison
+
     try:
         a = rgc.genome.get_served(digest)
         b = rgc.genome.get_served(other)
         # The loaded stores, never a genome's remote_url; the same comparison
-        # `refgenie genome compare` and MCP return.
-        result = rgc.store_router.compare_collections(digest, a.store_name, other, b.store_name)
+        # `refgenie compare` and MCP return.
+        side_a = seqcol_level2(rgc.store_router.store_for_genome(digest, a.store_name), digest)
+        side_b = seqcol_level2(rgc.store_router.store_for_genome(other, b.store_name), other)
     except MissingGenomeError as e:
         raise _no_collection(e, f"{digest} or {other}") from None
-    return result
+    result = compare_level2(side_a, side_b, digest, other)
+    summary, name_map = summarize_comparison(side_a, side_b, result, digest, other)
+    return {**result, "summary": summary, "name_map": name_map}
 
 
 @router.get("/asset_groups", response_model=PageResponse[AssetGroupPublic])

@@ -2,6 +2,9 @@
 `compare`: models and handlers.
 """
 
+import json
+import sys
+
 from pydantic import AliasChoices, BaseModel, Field
 from pydantic_settings import CliPositionalArg
 from rich import print as rprint
@@ -15,6 +18,7 @@ from refgenie.cli.commands.helpers import (
     genome_digest_from,
     genome_ref,
     locate_genome,
+    note,
     resolve_transient_servers,
 )
 from refgenie.cli.errors import EXIT_INVALID_INPUT, EXIT_NOT_FOUND, fail, run_over_paths
@@ -112,6 +116,11 @@ class CompareModel(BaseModel):
         default=None,
         description="Genome digests to compare, in place of aliases.",
         validation_alias=AliasChoices("genome-digest"),
+    )
+    as_json: bool = Field(
+        default=False,
+        description="Print the summary, the rename map and the GA4GH comparison as JSON.",
+        validation_alias=AliasChoices("json"),
     )
 
 
@@ -273,6 +282,8 @@ def handle_id(cmd, refgenie) -> None:
 
 
 def handle_compare(cmd, refgenie) -> None:
+    from refgenie.utils.seqcol import compare_level2, describe_comparison, rename_map
+
     count = len(cmd.genomes) + len(cmd.genome_digest or [])
     if count != 2:
         fail(
@@ -285,16 +296,30 @@ def handle_compare(cmd, refgenie) -> None:
     ]
     (digest_a, server_a), (digest_b, server_b) = (locate_genome(refgenie, r) for r in refs)
     if server_a is None and server_b is None:
-        rprint(refgenie.genome.compare(digest_a, digest_b))
+        side_a, side_b = refgenie.genome.compare_sides(digest_a, digest_b)
+        comparison = compare_level2(side_a, side_b, digest_a, digest_b)
+        name_map = {} if side_a == side_b else rename_map(side_a, side_b)
+    else:
+        server_url = server_a or server_b
+        try:
+            comparison = refgenie.servers.client(server_url).genome.compare(digest_a, digest_b)
+        except Exception as e:
+            remote = [r for r, s in zip(refs, (server_a, server_b)) if s]
+            fail(
+                f"{server_url} could not compare them ({e}). Register "
+                + ", ".join(f"'{r}'" for r in remote)
+                + " here first (refgenie pull --init, metadata only), then compare again.",
+                EXIT_NOT_FOUND,
+            )
+        comparison.pop("summary", None)
+        name_map = comparison.pop("name_map", None)
+    summary = describe_comparison(comparison, name_map, str(refs[0]), str(refs[1]))
+    if name_map is None or summary in ("Identical.", "No sequences in common."):
+        name_map = {}
+    if cmd.as_json:
+        payload = {"summary": summary, "name_map": name_map, "comparison": comparison}
+        sys.stdout.write(json.dumps(payload, indent=2) + "\n")
         return
-    server_url = server_a or server_b
-    try:
-        rprint(refgenie.servers.client(server_url).genome.compare(digest_a, digest_b))
-    except Exception as e:
-        remote = [r for r, s in zip(refs, (server_a, server_b)) if s]
-        fail(
-            f"{server_url} could not compare them ({e}). Register "
-            + ", ".join(f"'{r}'" for r in remote)
-            + " here first (refgenie pull --init, metadata only), then compare again.",
-            EXIT_NOT_FOUND,
-        )
+    lines = [summary] + [f"  {a} -> {b}" for a, b in name_map.items()]
+    sys.stdout.write("\n".join(lines) + "\n")
+    note("`refgenie compare --json` prints the full GA4GH comparison.")
