@@ -1,4 +1,4 @@
-import { Copyable } from '../common/Copyable';
+import { Command } from '../common/Copyable';
 import { ExternalLink } from '../common/ExternalLink';
 import { assetRequestUrl } from '../../services/projectLinks';
 
@@ -7,14 +7,6 @@ export interface NoAssetsPanelProps {
   alias?: string;
   /** A short real range of this genome's first sequence, e.g. `chr1:1-100`. */
   region?: string;
-}
-
-function Command({ value }: { value: string }) {
-  return (
-    <Copyable value={value} label={`Copy: ${value}`} className="rg-command">
-      <code className="rg-code rg-code--inline">{value}</code>
-    </Copyable>
-  );
 }
 
 /** What a visitor can do on a genome that has no built assets yet. */

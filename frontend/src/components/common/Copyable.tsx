@@ -59,3 +59,12 @@ export function Copyable({
     </span>
   );
 }
+
+/** A shell command to copy, shown as inline code. */
+export function Command({ value }: { value: string }) {
+  return (
+    <Copyable value={value} label={`Copy: ${value}`} className="rg-command">
+      <code className="rg-code rg-code--inline">{value}</code>
+    </Copyable>
+  );
+}
