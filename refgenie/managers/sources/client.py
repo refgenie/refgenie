@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import logging
 import os
 import time
 from functools import cached_property
@@ -13,7 +12,6 @@ import httpx2
 from rich.progress import Progress
 
 from refgenie import progress
-from refgenie.config import config
 from refgenie.const import API_VERSION, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from refgenie.logger import logger
 from refgenie.managers.sources.api_ids import (
@@ -33,13 +31,6 @@ from refgenie.managers.sources.api_ids import (
 from refgenie.managers.sources.openapi import RefgenieserverOpenApiSpec
 from refgenie.utils.console import CONSOLE, RICH_PROGRESS_COLUMNS
 from refgenie.utils.http import make_client
-
-# One INFO line per HTTP request drowns refgenie's own INFO progress; show
-# them only when debugging.
-logging.getLogger("httpx2").setLevel(
-    logging.DEBUG if config.log_level.value == "DEBUG" else logging.WARNING
-)
-
 
 #: Report to a progress sink at most this often, in seconds...
 _SINK_MIN_INTERVAL_SECONDS = 0.2
