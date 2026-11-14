@@ -187,11 +187,10 @@ class RefgetStoreRouter:
         """Whether a genome whose ``store_name`` is this is read through this router.
 
         ``None`` means a genome this node built itself, held by its own
-        ``local`` store.
+        ``local`` store. Every genome is served when
+        :meth:`served_store_names` is ``None``.
         """
-        if self._sole_store:
-            return True
-        return (store_name or LOCAL_STORE_NAME) in self._stores
+        return self.served_store_names() is None or (store_name or LOCAL_STORE_NAME) in self._stores
 
     def served_store_names(self) -> tuple[list[str], bool] | None:
         """The ``store_name`` values of the genomes this router serves.
@@ -217,16 +216,17 @@ class RefgetStoreRouter:
 
         Raises:
             UnservedStoreError: If this router does not serve that store.
-            MissingGenomeError: If the store does not hold the collection.
+            MissingGenomeError: If the store does not hold the collection, or
+                there are no stores.
         """
         return self._stores[self._owner(genome_digest, store_name)]
 
     def _owner(self, genome_digest: GenomeDigest, store_name: str | None) -> str:
         """The name of the store :meth:`store_for_genome` returns."""
-        name = self._order[0] if self._sole_store else store_name or LOCAL_STORE_NAME
-        if name not in self._stores:
+        if not self.serves(store_name):
             raise UnservedStoreError(genome_digest, store_name)
-        if not self._stores[name].is_collection_loaded(genome_digest):
+        name = self._order[0] if self._sole_store else store_name or LOCAL_STORE_NAME
+        if name not in self._stores or not self._stores[name].is_collection_loaded(genome_digest):
             raise MissingGenomeError(genome_digest)
         return name
 

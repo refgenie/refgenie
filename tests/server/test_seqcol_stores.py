@@ -12,7 +12,7 @@ import pytest
 
 from refgenie.db.tables import StoreType
 
-from tests.support.factories import build_on_disk_store, server_with_stores
+from tests.support.factories import build_on_disk_store, fake_digest, server_with_stores
 from tests.support.server import make_server_app, needs_server
 
 pytestmark = [pytest.mark.component, needs_server]
@@ -93,6 +93,18 @@ class TestNoStores:
             assert _served_stores(client) == [None]
             # The DB-backed router answers; the collection simply is not there.
             assert client.get("/seqcol/list/collection").status_code == 200
+
+    def test_db_genomes_are_listed_and_served(self):
+        """With no stores, the server serves every genome in its database."""
+        rg = server_with_stores()
+        digest = fake_digest("db_genome")
+        rg.genome.add(digest, "a database genome", [])
+        with _client(rg) as client:
+            assert digest in [g["digest"] for g in client.get("/v4/genomes").json()["results"]]
+            assert client.get(f"/v4/genomes/{digest}").status_code == 200
+            sequences = client.get(f"/v4/genomes/{digest}/sequences")
+            assert sequences.status_code == 404
+            assert "No sequence collection" in sequences.json()["detail"]["message"]
 
 
 class TestStoresAreServed:
