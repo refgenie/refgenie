@@ -208,5 +208,7 @@ describe('Download tab', () => {
     expect(screen.getByRole('button', { name: 'Copy the refget CLI code' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('tab', { name: 'refgenie CLI' }));
     expect(screen.getByText(/refgenie pull hg38\/fasta/)).toBeInTheDocument();
+    // The same install line as the landing page, for the server's version.
+    expect(screen.getByText('pip install "refgenie>=1.0.0a2"')).toBeInTheDocument();
   });
 });

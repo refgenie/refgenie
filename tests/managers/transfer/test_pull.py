@@ -972,6 +972,26 @@ class TestResolvePullGenome:
         # An alias is never tried as a digest.
         mock_puller._servers.client.return_value.alias.list.assert_not_called()
 
+    def test_a_new_name_for_a_genome_here_reaches_all_its_assets(self, mock_puller):
+        """Pulling by a second alias links every existing asset under it, as
+        `alias set` does; otherwise seek prints paths that do not exist."""
+        from refgenie.exceptions import MissingAliasError
+        from refgenie.managers.genome import GenomeCreationResult
+
+        digest = fake_digest("d")
+        mock_puller._alias_manager.resolve.side_effect = MissingAliasError("second")
+        mock_puller._genome_manager.ensure_from_remote.return_value = GenomeCreationResult(
+            genome_digest=digest,
+            alias_name=GenomeAlias("second"),
+            created_genome=False,
+            created_alias=True,
+            genome_attrs={},
+        )
+        self._resolve(mock_puller, GenomeAlias("second"))
+        mock_puller._asset.tree.render_genome.assert_called_once_with(
+            digest, aliases=[GenomeAlias("second")]
+        )
+
     def test_an_alias_the_server_does_not_know_cannot_be_served(self, mock_puller):
         from refgenie.exceptions import MissingAliasError, ServerCannotServe
 

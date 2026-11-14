@@ -985,6 +985,10 @@ class AssetPuller(ResourceManager):
                 result.genome_digest,
                 result.genome_attrs,
             )
+            if result.created_alias and not result.created_genome:
+                # A new name for a genome already here must reach every asset
+                # it has, as `alias set` does, or seek prints missing paths.
+                self._asset.tree.render_genome(genome_digest, aliases=[alias_name])
         self._genome_manager.fill_from_server(genome_digest, attrs)
         return alias_name, genome_digest, attrs
 

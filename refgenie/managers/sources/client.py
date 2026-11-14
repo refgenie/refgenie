@@ -34,7 +34,11 @@ from refgenie.managers.sources.openapi import RefgenieserverOpenApiSpec
 from refgenie.utils.console import CONSOLE, RICH_PROGRESS_COLUMNS
 from refgenie.utils.http import make_client
 
-logging.getLogger("httpx2").setLevel(config.log_level.value)
+# One INFO line per HTTP request drowns refgenie's own INFO progress; show
+# them only when debugging.
+logging.getLogger("httpx2").setLevel(
+    logging.DEBUG if config.log_level.value == "DEBUG" else logging.WARNING
+)
 
 
 #: Report to a progress sink at most this often, in seconds...

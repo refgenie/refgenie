@@ -124,6 +124,8 @@ For aligner indexes, `seek` returns the index prefix that the aligner expects:
 bowtie2 -x $(refgenie seek rCRSd/bowtie2_index) -U reads.fq
 ```
 
+Use the bowtie2 version that built the index: `refgenie seek rCRSd/bowtie2_index.version` prints it (`2.5.5`). Install that version with conda (`conda install -c bioconda bowtie2=2.5.5`), or, without conda, download the prebuilt binary from the [bowtie2 GitHub releases](https://github.com/BenLangmead/bowtie2/releases).
+
 Using `seek` in scripts, instead of fixed paths, makes them work on any computer.
 
 ### Remote paths

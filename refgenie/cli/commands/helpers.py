@@ -1,5 +1,6 @@
 """Field descriptions and handler helpers shared across command families."""
 
+import difflib
 import sys
 
 from refgenie.cli.errors import (
@@ -208,11 +209,33 @@ def resolve_transient_servers(cmd, refgenie) -> list[str] | None:
     return list(dict.fromkeys(urls))
 
 
-def _lookup_one(refgenie, raw: str, lookup, genome_digest: str | None = None) -> int:
+def _pull_target(parsed) -> str:
+    """The `refgenie pull` argument for a parsed registry path: no seek key."""
+    return f"{parsed.genome}/{parsed.asset_group}" + (f":{parsed.asset}" if parsed.asset else "")
+
+
+def _seek_paths_here(refgenie, parsed, genome_digest: str | None) -> list[str]:
+    """The asset groups and seek keys of a genome pulled here (``fasta_index``,
+    ``fasta_index.chrom_sizes``), to suggest from; empty when it is not here."""
+    from refgenie.exceptions import RefgenieError
+
+    try:
+        digest = genome_digest or refgenie.alias.resolve(parsed.genome)
+        listing, _ = refgenie.asset.list_all(genome_digests=[digest], include_seek_keys=True)
+    except (RefgenieError, KeyError):
+        return []
+    keys = {p.split(":")[0] for p in listing.get(digest, [])}
+    return sorted(keys | {k.split(".")[0] for k in keys})
+
+
+def _lookup_one(
+    refgenie, raw: str, lookup, genome_digest: str | None = None, pull_hint: bool = False
+) -> int:
     """Resolve one registry path with ``lookup`` and print the result.
 
     With ``genome_digest`` (the ``--genome-digest`` flag), the path names no
-    genome; the flag does.
+    genome; the flag does. With ``pull_hint`` (local seek), a genome or asset
+    that is not here comes with the `refgenie pull` command that gets it.
 
     Returns an exit code: EXIT_INVALID_INPUT, EXIT_NOT_FOUND, EXIT_GENERAL_ERROR
     or EXIT_OK.
@@ -236,14 +259,30 @@ def _lookup_one(refgenie, raw: str, lookup, genome_digest: str | None = None) ->
     genome_ref(parsed.genome, genome_digest)
     try:
         sys.stdout.write(str(lookup(parsed)) + "\n")
-    except (
-        MissingAliasError,
-        MissingGenomeError,
-        MissingAssetGroupError,
-        MissingAssetError,
-        MissingSeekKeyError,
-    ) as e:
+    except (MissingAliasError, MissingGenomeError) as e:
         logger.error(f"{raw}: {e}")
+        if pull_hint and not genome_digest:
+            note(
+                f"Genome '{parsed.genome}' is not here. `refgenie pull {_pull_target(parsed)}` gets it."
+            )
+        return EXIT_NOT_FOUND
+    except (MissingAssetGroupError, MissingAssetError, MissingSeekKeyError) as e:
+        genome = parsed.genome or genome_digest
+        if not pull_hint:
+            logger.error(f"{raw}: {e}")
+            return EXIT_NOT_FOUND
+        logger.error(f"{raw}: not found here.")
+        keys = _seek_paths_here(refgenie, parsed, genome_digest)
+        wanted = (
+            f"{parsed.asset_group}.{parsed.seek_key}" if parsed.seek_key else parsed.asset_group
+        )
+        # A seek key named like what was typed (hg38/chrom_sizes), else a near miss.
+        exact = [k for k in keys if k.split(".", 1)[-1] == wanted]
+        close = exact or difflib.get_close_matches(wanted, keys, n=3, cutoff=0.75)
+        if close:
+            note("Did you mean: " + ", ".join(f"{genome}/{k}" for k in close) + "?")
+        if not exact and not isinstance(e, MissingSeekKeyError) and not genome_digest:
+            note(f"If a subscribed server has it: refgenie pull {_pull_target(parsed)}")
         return EXIT_NOT_FOUND
     except (ValueError, FileNotFoundError, RefgenieError) as e:
         logger.error(f"{raw}: {e}")

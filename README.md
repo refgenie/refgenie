@@ -7,10 +7,10 @@
 
 > ## ⚠️ This is an alpha release
 >
-> Refgenie 1.0 is **pre-release software**. The CLI, the Python API, the REST
-> API, and the database schema can all change without a deprecation period, and
-> a future alpha may require you to rebuild your assets. Do not depend on it in
-> production pipelines yet. Please do try it and
+> Refgenie 1.0 is an alpha. It works, but commands and data can still change,
+> so pin the version in production pipelines (for example,
+> `refgenie==1.0.0a2`). A future alpha may require you to rebuild your assets.
+> Please do try it and
 > [report what breaks](https://github.com/refgenie/refgenie/issues).
 
 Refgenie is a reference genome asset manager. It organizes, builds, and serves
@@ -39,7 +39,7 @@ Refgenie 1.0 is a pre-release, so tell `pip` to accept it:
 pip install "refgenie>=1.0.0a2"
 ```
 
-Without `--pre`, `pip` installs the legacy 0.13 release.
+Without the version, `pip install refgenie` installs the legacy 0.13 release.
 
 ### Optional extras
 
@@ -50,9 +50,9 @@ extra:
 | --- | --- | --- | --- |
 | *(none)* | `pip install "refgenie>=1.0.0a2"` | CLI, Python API, building, pulling, staging | — |
 | `dash` | `pip install "refgenie[dash]>=1.0.0a2"` | `refgenie dash`, the local web UI | fastapi, uvicorn |
-| `server` | `pip install "refgenie[server]>=1.0.0a2"` | `refgenie serve`, the public REST API + DRS + `/mcp` endpoint (includes `dash`) | apscheduler, mcp |
+| `server` | `pip install "refgenie[server]>=1.0.0a2"` | `refgenie serve`, the public REST API + DRS + `/mcp` endpoint (includes `dash` and `mcp`) | apscheduler, mcp |
 | `mcp` | `pip install "refgenie[mcp]>=1.0.0a2"` | `refgenie-mcp`, the stdio MCP server for LLM agents | mcp |
-| `snakemake` | `pip install "refgenie[snakemake]>=1.0.0a2"` | snakemake-based bulk asset building | snakemake |
+| `snakemake` | `pip install "refgenie[snakemake]>=1.0.0a2"` | snakemake-based bulk asset building | snakemake, peppy |
 
 Running `refgenie serve`, `refgenie dash`, or `refgenie-mcp` without its extra
 prints which extra to install. PostgreSQL support is included in the base
@@ -61,29 +61,28 @@ install.
 ## Quick Start
 
 ```bash
-# 1. Create the refgenie home, database, and genome folders
-refgenie init
+pip install "refgenie>=1.0.0a2"
+refgenie init                                # create the database; subscribe to api.refgenie.org
+refgenie pull hg38/fasta_index               # about 12 KB: hg38's .fai and chrom sizes
+refgenie seek hg38/fasta_index.chrom_sizes   # print the local path
+```
 
-# 2. Register and sync a data channel, which supplies asset classes and
-#    recipes (including the 'fasta' recipe)
+`refgenie listr` lists everything you can pull, and `refgenie seek` gives your
+pipelines a path that works on any machine.
+
+### Build assets for your own genome
+
+Building needs recipes from a data channel:
+
+```bash
 refgenie data-channel add refgenie https https://refgenie.github.io/refgenie-registry/index.yaml
 refgenie data-channel sync refgenie --exists-ok
-
-# 3. Register a genome from a FASTA file. This also builds its fasta asset.
-refgenie genome init --fasta genome.fa.gz --name genome_name
-
-# 4. Build another asset for that genome (needs bowtie2 installed)
-refgenie build genome_name/bowtie2_index
-
-# 5. Inspect what you have, and get a path to it
-refgenie list
+refgenie genome init --fasta genome.fa.gz --name genome_name   # also builds its fasta asset
+refgenie build genome_name/bowtie2_index                       # needs bowtie2 installed
 refgenie seek genome_name/fasta
 ```
 
-To download pre-built assets instead of building them, run
-`refgenie pull hg38/fasta` after `refgenie init`.
-
-`refgenie list` prints something like:
+`refgenie list` then prints something like:
 
 ```
                       Refgenie assets. Source: local
@@ -110,7 +109,7 @@ All are optional. Refgenie uses defaults under `~/.refgenie/` when they are unse
 | `REFGENIE_BRIDGE_ORIGIN_REGEX` | unset | Origin regex, for SPA dev servers and preview deployments only. Wildcard-equivalent patterns are refused at startup. |
 | `REFGENIE_BRIDGE_EXPOSE_PATHS` | `false` | Whether `/ping` may report the genome folder path. Off by default: a home-directory path leaks the OS username to every allowlisted origin. |
 | `REFGENIE_WEB_DIST` | unset | Override the built web UI directory. Default is the packaged `refgenie/server/webui/`. |
-| `REFGENIE_LOG_LEVEL` | `INFO` | Python logging level. |
+| `REFGENIE_LOG_LEVEL` | `WARNING` | Python logging level. |
 | `REFGENIE_ENCRYPTION_KEY` | (auto-generated, dev only) | Fernet key for encrypting credentials. **Set explicitly in production.** |
 | `REFGENIE_DISABLE_PLUGINS` | unset | `1`/`true`/`all` turns off every plugin; a comma-separated list of plugin names turns off those. Wins over everything else. |
 | `REFGENIE_SERVER_PLUGINS` | `false` | Run plugins in server mode (`refgenie serve`). Off by default; local mode and `refgenie dash` always run them. |

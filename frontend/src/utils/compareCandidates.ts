@@ -17,7 +17,12 @@ export type GenomeFacts = Omit<CandidateGenome, 'aliases'>;
 
 export interface CompareCandidate {
   digest: string;
+  /** The name and its accession or source, e.g. `hg38_primary · UCSC`. */
   label: string;
+  /** The name alone, for sentences. */
+  name: string;
+  /** Every alias, for type-to-filter. */
+  aliases: string[];
 }
 
 /** `GCA_000001405.15` -> `{ base: '000001405', version: '15' }`; GCA and GCF share a base. */
@@ -45,24 +50,57 @@ function tier(self: GenomeFacts, other: GenomeFacts): number {
   return 3;
 }
 
+function candidateName(genome: CandidateGenome): string {
+  return preferredAlias(genome.aliases) ?? formatDigest(genome.digest);
+}
+
 export function candidateLabel(genome: CandidateGenome): string {
-  const name = preferredAlias(genome.aliases) ?? formatDigest(genome.digest);
+  const name = candidateName(genome);
   const detail = genome.assembly_accession || genome.assembly_source;
   return detail ? `${name} · ${detail}` : name;
 }
 
+/** An alias's leading letters and digits, lowercased: `hg38_primary` and `hg38-ddbj` give `hg38`. */
+export function nameStem(alias: string): string | null {
+  const match = /^[a-z]+\d+/i.exec(alias);
+  return match ? match[0].toLowerCase() : null;
+}
+
+function stems(aliases: readonly string[]): Set<string> {
+  return new Set(aliases.map(nameStem).filter((stem): stem is string => stem !== null));
+}
+
 /**
- * The other genomes of `self`'s species, ordered: same accession, same
- * assembly (any version, GCA or GCF), same source, then the rest; by label
- * within each group.
+ * The other genomes of `self`'s species, ordered. First, by name, those whose
+ * name shares a stem with any alias of `self` (for hg38: every `hg38_*`,
+ * `GRCh38-*` and `hs38*`). Then the rest: same accession, same assembly (any version, GCA or
+ * GCF), same source, then the others; by label within each group. `self`'s
+ * aliases come from its own entry in `genomes` when it has none.
  */
 export function rankCompareCandidates(
-  self: GenomeFacts,
+  self: GenomeFacts & { aliases?: readonly string[] },
   genomes: readonly CandidateGenome[],
 ): CompareCandidate[] {
+  const selfAliases = self.aliases ?? genomes.find((g) => g.digest === self.digest)?.aliases ?? [];
+  const selfStems = stems(selfAliases);
   return genomes
     .filter((g) => g.digest !== self.digest && sameSpecies(self, g))
-    .map((g) => ({ digest: g.digest, label: candidateLabel(g), tier: tier(self, g) }))
-    .sort((x, y) => x.tier - y.tier || x.label.localeCompare(y.label))
-    .map(({ digest, label }) => ({ digest, label }));
+    .map((g) => {
+      // By the name shown, not every alias: some carry wrong ones (an hg19
+      // with a GRCh38-* alias), and the group should look right at a glance.
+      const name = candidateName(g);
+      const stem = nameStem(name);
+      return {
+        candidate: { digest: g.digest, label: candidateLabel(g), name, aliases: g.aliases },
+        // Within the family, by name alone: tiers would sink hg38_primary.
+        rank: stem !== null && selfStems.has(stem) ? 0 : 1 + tier(self, g),
+      };
+    })
+    .sort(
+      (x, y) =>
+        x.rank - y.rank ||
+        x.candidate.name.localeCompare(y.candidate.name) ||
+        x.candidate.label.localeCompare(y.candidate.label),
+    )
+    .map(({ candidate }) => candidate);
 }

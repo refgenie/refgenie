@@ -12,6 +12,7 @@ import type { CodeSnippet } from '../components/common/CodeSnippets';
 import type { ParsedRegion } from './parseRegion';
 import { refgetExportCommand } from './fastaDownload';
 import { expandTemplate } from '../services/fastaExport';
+import { installCommand } from './install';
 
 /**
  * gtars for R builds from a clone: its Rust code uses the other gtars crates
@@ -158,6 +159,8 @@ export interface DownloadSnippetArgs {
   names?: string[];
   /** True if the genome has a built `fasta` asset that refgenie can pull. */
   hasFastaAsset?: boolean;
+  /** The refgenie install line (`installCommand`), for this server's version. */
+  refgenieInstall?: string;
 }
 
 const DESCRIPTIONS =
@@ -170,6 +173,7 @@ export function downloadSnippets({
   alias,
   names,
   hasFastaAsset = false,
+  refgenieInstall = installCommand(undefined),
 }: DownloadSnippetArgs): CodeSnippet[] {
   const output = `${alias ?? digest}.fa.gz`;
   const snippets: CodeSnippet[] = [
@@ -206,7 +210,7 @@ export function downloadSnippets({
     snippets.push({
       id: 'refgenie',
       label: 'refgenie CLI',
-      install: 'pip install --pre refgenie',
+      install: refgenieInstall,
       code: ['refgenie init', `refgenie pull ${target}`, `refgenie seek ${target}`].join(
         '\n',
       ),

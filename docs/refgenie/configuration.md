@@ -53,14 +53,26 @@ refgenie unsubscribe -s https://my-lab-server.example.org
 refgenie config get
 ```
 
-This prints a table of the stored settings (genome folder, stage folder, subscribed servers, plugin settings), then the settings that come from environment variables:
+This prints YAML in two blocks. `configuration` holds the settings stored in the database (genome folder, stage folder, subscribed servers, plugin settings). `environment` holds the settings that come from environment variables, or their defaults:
 
-```
-log_level: LogLevel.INFO
-genome_folder: /home/user/.refgenie/genomes
-genome_stage_folder: /home/user/.refgenie/archives
-database_config_path: /home/user/.refgenie/refgenie_db_config.yaml
-...
+```yaml
+configuration:
+  version: 1
+  genome_folder: /home/user/.refgenie/genomes
+  servers:
+  - https://api.refgenie.org
+  genome_stage_folder: /home/user/.refgenie/archives
+  plugin_settings: {}
+environment:
+  log_level: WARNING
+  genome_folder: /home/user/.refgenie/genomes
+  genome_stage_folder: /home/user/.refgenie/archives
+  database_config_path: /home/user/.refgenie/refgenie_db_config.yaml
+  disable_plugins: ''
+  server_plugins: false
+  subscribe_default_server: true
+  container_engine: auto
+  apptainer_cachedir: null
 ```
 
 ## Configure from Python

@@ -37,8 +37,10 @@ Refgenie includes an **MCP server** that gives an assistant read-only access to 
 
 ```bash
 pip install "refgenie[mcp]>=1.0.0a2"
-claude mcp add refgenie refgenie-mcp
+claude mcp add refgenie "$(which refgenie-mcp)"
 ```
+
+`"$(which refgenie-mcp)"` saves the full path to the command, so Claude Code can start it even when refgenie's virtual environment is not active. Run the line with the environment active. To use a refgenie folder other than `~/.refgenie`, see [Connect AI assistants (MCP)](mcp.md).
 
 Then ask things like:
 

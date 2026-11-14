@@ -20,9 +20,12 @@ function plural(n: number, word: string): string {
 
 function CollectionRow({ collection }: { collection: CollectionConfig }) {
   const count = useCollectionCount(collection);
+  // Live, like the Genomes page, so no blurb has to state a count that drifts.
+  const built = useCollectionCount(collection, true);
   const accentRef = useAccent<HTMLLIElement>(collection.accent_color);
   const genomes =
     count.data === undefined ? '… genomes' : plural(count.data, 'genome');
+  const withAssets = built.data === undefined ? '…' : built.data.toLocaleString();
   return (
     <li className="rg-collection-row" ref={accentRef}>
       <CollectionLogo collection={collection} />
@@ -34,7 +37,8 @@ function CollectionRow({ collection }: { collection: CollectionConfig }) {
         </h2>
         <p className="text-sm">{firstSentence(collection.blurb)}</p>
         <p className="rg-muted text-sm">
-          {genomes} · {plural(collection.stores.length, 'store')}
+          {genomes} · {withAssets} with built assets ·{' '}
+          {plural(collection.stores.length, 'store')}
         </p>
       </div>
     </li>

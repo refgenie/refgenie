@@ -153,7 +153,7 @@ refgenie build rCRSd/bwa_index -q
 ### Retrieve sequence
 
 ```bash
-$ refgenie getseq -g rCRSd -l 'rCRSd:0-30'
+$ refgenie getseq -g rCRSd -l rCRSd:1-30
 GATCACAGGTCTATCACCCTATTAACCACT
 ```
 
@@ -691,15 +691,14 @@ refgenie purge
 | --- | --- |
 | `-f, --force` | Do not prompt before purging. |
 
-#### `config get` / `config set`
+#### `config get`
 
 ```
 refgenie config get
 ```
 
-`config get` prints the current configuration, including the database
-connection and the environment-derived settings, as YAML. `config set` is not yet
-implemented.
+`config get` (or plain `refgenie config`) prints the current configuration,
+including the database connection and the environment-derived settings, as YAML.
 
 #### `plugins list` / `plugins set` / `plugins unset`
 
@@ -915,25 +914,29 @@ refgenie store conflicts
 
 #### `getseq`
 
-Retrieve a sequence region from a genome. Coordinates are 0-based and half-open
-unless you pass `--one-based`. It reads only the bases you ask for and caches
-nothing locally.
+Retrieve a sequence region from a genome. A region is 1-based and inclusive,
+like samtools, UCSC and IGV, and may contain commas
+(`chr17:43,044,295-43,044,394`). `--zero-based` reads it as 0-based and
+half-open instead, like a BED file. `getseq` prints how it read the region on
+stderr. It reads only the bases you ask for and caches nothing locally. See
+[Coordinates](coordinates.md).
 
 ```
-refgenie getseq (-g ALIAS | --genome-digest DIGEST) -l LOCUS [--one-based] [--fasta]
+refgenie getseq (-g ALIAS | --genome-digest DIGEST) -l LOCUS [--zero-based] [--fasta]
 ```
 
 | Option | Description |
 | --- | --- |
 | `-g, --genome` | Genome alias, e.g. `mm10`. A genome not registered here is first registered from the subscribed servers (metadata only, like `pull --init`). |
 | `--genome-digest` | Genome digest, in place of an alias. One of `-g` or `--genome-digest` is required. |
-| `-l, --locus` | Coordinates of the desired sequence, e.g. `chr1:50000-50200`. **Required.** |
-| `--one-based` | Read the locus as 1-based, closed coordinates (samtools style). |
-| `--fasta` | Print a FASTA record: a header line with the locus, then 60 bases per line. |
+| `-l, --locus` | The region to read, 1-based and inclusive, e.g. `chr1:50,001-50,200`. **Required.** |
+| `--zero-based` | Read the region as 0-based and half-open, like a BED file. |
+| `--fasta` | Print a FASTA record: a header line with the region, 1-based (`>chrM:1-60`), then 60 bases per line. |
 
 ```bash
-refgenie getseq -g hg38 -l chrM:1-60 --one-based   # same bases as chrM:0-60
-refgenie getseq -g hg38 -l chrM:0-120 --fasta > chrM_start.fa
+refgenie getseq -g hg38 -l chrM:1-60                # the first 60 bases
+refgenie getseq -g hg38 -l chrM:0-60 --zero-based   # the same 60 bases
+refgenie getseq -g hg38 -l chrM:1-120 --fasta > chrM_start.fa
 ```
 
 ## Related documentation

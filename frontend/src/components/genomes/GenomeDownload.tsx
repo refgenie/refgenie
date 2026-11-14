@@ -1,6 +1,8 @@
 import { CodeSnippets } from '../common/CodeSnippets';
 import { FastaDownloadPanel } from './FastaDownload';
 import { downloadSnippets } from '../../utils/codeSnippets';
+import { installCommand } from '../../utils/install';
+import { useUiConfig } from '../../hooks/useUiConfig';
 import type { FastaDownloadState } from '../../hooks/useFastaDownload';
 
 export interface GenomeDownloadPanelProps {
@@ -23,6 +25,7 @@ export function GenomeDownloadPanel({
   download,
   hasFastaAsset,
 }: GenomeDownloadPanelProps) {
+  const version = useUiConfig().refgenie_version;
   return (
     <div>
       {download && (
@@ -45,6 +48,7 @@ export function GenomeDownloadPanel({
             alias,
             names: download?.names,
             hasFastaAsset,
+            refgenieInstall: installCommand(version),
           })}
         />
       </section>

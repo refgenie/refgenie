@@ -21,7 +21,6 @@ from refgenie.exceptions import MissingGenomeError, UnservedStoreError
 from refgenie.logger import logger
 from refgenie.managers.store import LOCAL_STORE_NAME
 from refgenie.models import AliasEntry, CollectionSequences, GenomeDigest, SequenceRow
-from refgenie.utils.seqcol import compare_in_stores
 
 #: A store the router holds: editable (local mode) or frozen (server mode).
 AnyRefgetStore = RefgetStore | ReadonlyRefgetStore
@@ -368,23 +367,4 @@ class RefgetStoreRouter:
             collection_aliases=[
                 AliasEntry(ns, a) for ns, a in store.get_aliases_for_collection(genome_digest)
             ],
-        )
-
-    def compare_collections(
-        self,
-        digest_a: GenomeDigest,
-        store_name_a: str | None,
-        digest_b: GenomeDigest,
-        store_name_b: str | None,
-    ) -> dict:
-        """The GA4GH seqcol comparison of two genomes, each in its own store.
-
-        Raises:
-            MissingGenomeError: If either genome's store is not served or lacks it.
-        """
-        return compare_in_stores(
-            self.store_for_genome(digest_a, store_name_a),
-            digest_a,
-            self.store_for_genome(digest_b, store_name_b),
-            digest_b,
         )

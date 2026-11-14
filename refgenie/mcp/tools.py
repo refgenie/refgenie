@@ -47,7 +47,7 @@ from refgenie.mcp.schemas import (
     SpeciesCount,
     SpeciesNames,
 )
-from refgenie.models import GenomeAlias, GenomeDigest, Page
+from refgenie.models import GenomeAlias, GenomeDigest, Page, display_alias
 from refgenie.utils.search import Search
 from refgenie.utils.seqcol import compare_level2, summarize_comparison
 
@@ -217,16 +217,14 @@ def _asset_detail(asset: Asset) -> AssetDetail:
     rgc = _get_refgenie()
     aliases = rgc.alias.get_for_genomes([asset.genome_digest]).get(asset.genome_digest, [])
     group, genome = asset.asset_group_name, asset.genome_digest
-    alias = min(
-        (a for a in aliases if "/" not in a and "::" not in a),
-        key=lambda a: (len(a), a),
-        default=None,
-    )
-    pull = (
-        f"refgenie pull {alias}/{group}:{asset.name}"
+    alias = display_alias(aliases)
+    target = (
+        f"{alias}/{group}:{asset.name}"
         if alias
-        else f"refgenie pull {group}:{asset.name} --genome-digest {genome}"
+        else f"{group}:{asset.name} --genome-digest {genome}"
     )
+    # Over stdio the asset is already here, so say how to find it, not how to pull it.
+    local = _public_url is None
     archive_url = None
     files: dict[str, str] = {}
     if _public_url is None:
@@ -255,7 +253,8 @@ def _asset_detail(asset: Asset) -> AssetDetail:
         children=[AssetRow.of(c) for c in asset.children],
         archive_url=archive_url,
         files=files,
-        pull_command=pull,
+        pull_command=None if local else f"refgenie pull {target}",
+        seek_command=f"refgenie seek {target}" if local else None,
     )
 
 

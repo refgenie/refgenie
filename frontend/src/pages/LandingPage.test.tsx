@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { RouterProvider, createMemoryRouter } from 'react-router-dom';
 import { LandingPage } from './LandingPage';
@@ -66,10 +66,37 @@ describe('LandingPage', () => {
     }
   });
 
-  it('shows the same install steps in both modes', () => {
+  it('shows the same four install steps in both modes', () => {
     renderWithProviders(<LandingPage />, { config: localConfig });
-    expect(screen.getByText('pip install "refgenie>=1.0.0a1"')).toBeInTheDocument();
-    expect(screen.getByText('refgenie pull hg38/fasta')).toBeInTheDocument();
+    const steps = within(
+      screen.getByRole('heading', { name: 'Get started' }).closest('section')!,
+    ).getAllByRole('listitem');
+    // The install line follows the version the server reports, and the
+    // first pull is the small FASTA index, not the multi-GB FASTA.
+    expect(steps.map((step) => step.querySelector('code')?.textContent)).toEqual([
+      'pip install "refgenie>=1.0.0a2"',
+      'refgenie init',
+      'refgenie pull hg38/fasta_index',
+      'refgenie seek hg38/fasta_index.chrom_sizes',
+    ]);
+    expect(screen.getByText(/About 12 KB/)).toBeInTheDocument();
+  });
+
+  it('says 1.0 is an alpha and links the details', () => {
+    renderWithProviders(<LandingPage />, { config: serverConfig });
+    expect(screen.getByText(/is an alpha release/)).toHaveTextContent(
+      /pin the version in production pipelines/,
+    );
+    expect(screen.getByRole('link', { name: /Details/ })).toHaveAttribute(
+      'href',
+      'https://docs.refgenie.org/refgenie/',
+    );
+  });
+
+  it('puts the AI section after Get started', () => {
+    renderWithProviders(<LandingPage />, { config: serverConfig });
+    const headings = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent);
+    expect(headings).toEqual(['Get started', 'Use it with an AI assistant']);
   });
 
   it('offers the AI section in both modes', () => {

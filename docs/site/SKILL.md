@@ -27,7 +27,7 @@ Refgenie stores its catalog in a database (SQLite by default, PostgreSQL for
 large servers) and identifies genomes by **GA4GH digests computed from their
 sequences**, so you can check that two genomes are the same.
 
-Full documentation: <https://docs.refgenie.org>. To use a refgenie server over
+Full documentation: <https://docs.refgenie.org/>. To use a refgenie server over
 HTTP with nothing installed, read <https://api.refgenie.org/SKILL.md>.
 
 ---
@@ -53,12 +53,18 @@ server instead of shelling out:
 
 ```bash
 pip install "refgenie[mcp]>=1.0.0a2"
-claude mcp add refgenie refgenie-mcp
+claude mcp add refgenie "$(which refgenie-mcp)"
 ```
 
-To use another refgenie folder (default `~/.refgenie`), set `REFGENIE_HOME_PATH`:
-`claude mcp add --env REFGENIE_HOME_PATH=/data/refgenie refgenie -- refgenie-mcp`.
-Other clients set it in the server's `env` block. The public server also offers the same tools over HTTP, with nothing
+`"$(which refgenie-mcp)"` saves the full path, so the server starts even when
+refgenie's virtual environment is not active; run the line with it active.
+`refgenie-mcp` reads the same `REFGENIE_*` variables as the CLI.
+`REFGENIE_HOME_PATH` picks the refgenie folder (default `~/.refgenie`). To use
+another folder, put `-e` after the server name and `--` before the command:
+`claude mcp add refgenie -e REFGENIE_HOME_PATH=/data/refgenie -- "$(which refgenie-mcp)"`.
+If you set `REFGENIE_DB_CONFIG_PATH` for the CLI, pass it the same way. Other
+clients take the full path as `command` and the variables in the server's `env`
+block. The public server also offers the same tools over HTTP, with nothing
 installed:
 
 ```bash
@@ -72,13 +78,13 @@ claude mcp add --transport http refgenie-public https://api.refgenie.org/mcp
 | `search_genomes` | substring search over digest, alias, species names, other genome names, description, accession |
 | `get_genome` | one genome by `alias` or `digest`, with its FHR metadata |
 | `list_assets` | assets, optionally of one genome and/or `asset_class` |
-| `get_asset` | one asset by digest: seek keys, parents, children, local path, `pull_command` |
+| `get_asset` | one asset by digest: seek keys, parents, children, local path, `pull_command` (server) or `seek_command` (stdio) |
 | `list_asset_classes` | asset classes and their seek key names |
 | `list_recipes` | recipes, optionally by `output_asset_class` |
 | `get_recipe` | one recipe in full: inputs, command templates, docker image |
 | `lookup_digest` | what a digest is: a genome, an asset, or nothing |
 | `get_genome_sequences` | a genome's sequences (name, length, digest), paged; filter with `name_contains` |
-| `get_sequence` | the bases of one region (`name`, `start`, `end`; 0-based, half-open; at most 100,000 bases) |
+| `get_sequence` | the bases of one region (`name`, `start`, `end`; 0-based, half-open, so subtract 1 from a text region's start; at most 100,000 bases) |
 | `compare_genomes` | seqcol comparison of two genomes, with a one-sentence summary and a map of renamed sequences |
 
 A tool that takes a genome has separate `alias` and `digest` parameters; give
@@ -207,6 +213,11 @@ conda install -c bioconda bowtie2=2.5.5           # or any installer; match the 
 bowtie2 -x "$(refgenie seek yeast_s288c/bowtie2_index)" -U reads.fq -S out.sam
 ```
 
+`refgenie seek <genome>/bowtie2_index.version` prints the version to match. No
+conda? Download the prebuilt binary for that version from the tool's GitHub
+releases (bowtie2: <https://github.com/BenLangmead/bowtie2/releases>), unzip
+it, and put its folder on your `PATH`.
+
 ### Chromosome sizes without the genome
 
 ```bash
@@ -220,24 +231,43 @@ without the 3 GB FASTA. Over MCP: page through `get_genome_sequences`.
 ### A region of a genome you have not downloaded
 
 ```bash
-refgenie getseq -g hg38 -l chr17:43044294-43044394   # first 100 bp of BRCA1; 0-based, half-open
-refgenie getseq -g hg38 -l chr17:43044295-43044394 --one-based   # same 100 bp, 1-based inclusive
-refgenie getseq -g hg38 -l chr17:43044294-43044394 --fasta > brca1_start.fa
+refgenie getseq -g hg38 -l chr17:43,044,295-43,044,394   # first 100 bp of BRCA1
+refgenie getseq -g hg38 -l chr17:43,044,295-43,044,394 --fasta > brca1_start.fa
 ```
 
 The first call registers hg38 from your server; no FASTA is downloaded. Over
 MCP: `get_sequence(alias="hg38", name="chr17", start=43044294, end=43044394)`.
+In Python: `rgc.sequence.get(rgc.alias.resolve("hg38"), "chr17", 43044294, 43044394)`.
+
+The coordinate rule:
+
+- A region written as text (`getseq -l`) is **1-based and inclusive**, like
+  samtools, UCSC and IGV. Commas are allowed.
+- Separate start and end numbers (MCP `get_sequence`, the Python API) are
+  **0-based and half-open**, like the GA4GH refget API and BED files. To get
+  them from a text region, subtract 1 from the start and keep the end.
+- `getseq --zero-based` reads a text region as 0-based and half-open, for
+  coordinates taken from a BED file. `getseq` prints how it read the region on
+  stderr.
+
+Details: <https://docs.refgenie.org/refgenie/coordinates/>.
 
 ### Check whether two genomes match
 
 ```bash
 refgenie compare hg38 hg38_noalt_decoy   # works for genomes you have not pulled
+refgenie compare sacCer3 R64-1-1 --json  # the full GA4GH comparison
 ```
 
-Same `sequences` and `names`: the same genome. Same `sequences`, different
-`names`: renamed. Shared `name_length_pairs`: the same coordinates.
+`compare` prints a one-line summary, for example
+`Same 17 sequences in the same order; all 17 names differ: chrI->I, ...`,
+then a rename map with one `old -> new` line for each sequence that has another
+name in the second genome. `--json` gives the summary, the rename map and the
+full GA4GH sequence-collection comparison. In that comparison: same `sequences`
+and `names` means the same genome; same `sequences` but different `names` means
+renamed; shared `name_length_pairs` means the same coordinates.
 
-Not sure which hg38 to pull? See the [choosing hg38 page](https://docs.refgenie.org/refgenie/choosing_hg38).
+Not sure which hg38 to pull? See the [choosing hg38 page](https://docs.refgenie.org/refgenie/choosing_hg38/).
 
 ---
 
@@ -260,9 +290,32 @@ configured database:
 from refgenie import Refgenie
 
 rgc = Refgenie()
-digest = rgc.alias.resolve("hg38")  # seek takes a genome digest
-rgc.asset.seek(digest, "bowtie2_index")  # local path to an asset
+digest = rgc.alias.resolve("hg38")  # alias -> genome digest
+rgc.asset.seek(digest, "bowtie2_index")  # local path to the default asset
+rgc.asset.seek(digest, "fasta", seek_key_name="fai")  # one file in an asset
+
+# Or pass a registry path, like the CLI; it resolves the alias for you:
+rgc.asset.seek_components(rgc.parse_asset_registry_path("hg38/fasta.fai"))
 ```
+
+`rgc.asset.seek` takes a **genome digest, not an alias**:
+
+```
+rgc.asset.seek(genome_digest, asset_group_name, asset_name=None,
+               seek_key_name=None, force_exists=False, abs_path=False) -> str
+```
+
+- `asset_name` defaults to the group's default asset (`"2.5.5"` picks
+  `bowtie2_index:2.5.5`).
+- `seek_key_name` defaults to the asset's default seek key (`"fai"`,
+  `"chrom_sizes"`).
+- `force_exists=True` raises `FileNotFoundError` if the file is missing on disk.
+- `abs_path=True` returns the digest-named content path instead of the
+  alias path.
+
+`rgc.alias.resolve(name)` raises `refgenie.exceptions.MissingAliasError` for
+an alias not registered here. `rgc.asset.seek_components(...)` takes the same
+`force_exists` and `abs_path` keywords.
 
 ---
 
@@ -288,7 +341,7 @@ refgenie dash                   # start the local dashboard on port 8080
 ```
 
 `serve` needs `pip install "refgenie[server]>=1.0.0a2"`; `dash` needs
-`"refgenie[dash]"`. See <https://docs.refgenie.org/refgenie/building_tutorial>
+`"refgenie[dash]"`. See <https://docs.refgenie.org/refgenie/building_tutorial/>
 for the full build, stage, push, and serve steps.
 
 ---
@@ -314,10 +367,10 @@ Every command takes `--help`. Start with `refgenie --help`.
 
 ## Where to read more
 
-- CLI tutorial: <https://docs.refgenie.org/refgenie/cli_tutorial>
-- Genomes and the RefgetStore: <https://docs.refgenie.org/refgenie/genome_tutorial>
-- Connecting AI assistants (MCP): <https://docs.refgenie.org/refgenie/mcp>
-- Building and serving: <https://docs.refgenie.org/refgenie/building_tutorial>
-- Refget Python package (sequences and seqcol): <https://docs.refgenie.org/refget>
+- CLI tutorial: <https://docs.refgenie.org/refgenie/cli_tutorial/>
+- Genomes and the RefgetStore: <https://docs.refgenie.org/refgenie/genome_tutorial/>
+- Connecting AI assistants (MCP): <https://docs.refgenie.org/refgenie/mcp/>
+- Building and serving: <https://docs.refgenie.org/refgenie/building_tutorial/>
+- Refget Python package (sequences and seqcol): <https://docs.refgenie.org/refget/>
 - Using a refgenie server over HTTP, with nothing installed: <https://api.refgenie.org/SKILL.md>
 - Source: <https://github.com/refgenie/refgenie>

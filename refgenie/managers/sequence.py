@@ -17,19 +17,24 @@ if TYPE_CHECKING:
     from refgenie.managers.genome import GenomeManager
 
 
-_LOCUS_REGEX = re.compile(r"^(?P<name>[A-Za-z0-9_.|-]+)(?::(?P<start>\d+)(?:-(?P<end>\d+))?)?$")
+_LOCUS_REGEX = re.compile(
+    r"^(?P<name>[A-Za-z0-9_.|-]+)(?::(?P<start>\d[\d,]*)(?:-(?P<end>\d[\d,]*))?)?$"
+)
 
 
-def parse_locus(locus: str, *, one_based: bool = False) -> tuple[str, int | None, int | None]:
+def parse_locus(locus: str, *, zero_based: bool = False) -> tuple[str, int | None, int | None]:
     """
-    Parse a genomic locus string into (name, start, end).
+    Parse a region written as text into (name, start, end), 0-based half-open.
 
-    Coordinates are 0-based, half-open [start, end), or with ``one_based``
-    1-based and closed (samtools style), which is returned as 0-based half-open.
+    Text regions are 1-based and inclusive, as in samtools, UCSC and IGV:
+    'chr17:43,044,295-43,044,394' is 100 bases. With ``zero_based`` the text is
+    read as 0-based half-open instead (BED style). Commas in numbers are fine.
+    Either way the result is 0-based half-open, as the GA4GH refget API and
+    :meth:`SequenceManager.get` take it.
 
     Args:
-        locus: Locus string, e.g. 'chr1', 'chr1:0-1000', 'V01146.1:100-200'.
-        one_based: Read the locus as 1-based, closed.
+        locus: e.g. 'chr1', 'chr1:1-1000', 'V01146.1:100-200'.
+        zero_based: Read the numbers as 0-based, half-open.
 
     Returns:
         Tuple of (name, start, end). start and end are None if not specified.
@@ -42,14 +47,18 @@ def parse_locus(locus: str, *, one_based: bool = False) -> tuple[str, int | None
             f"Invalid locus format: '{locus}'. Expected 'name', 'name:start', or 'name:start-end'."
         )
     name = match.group("name")
-    start_str = match.group("start")
-    end_str = match.group("end")
-    start = int(start_str) if start_str is not None else None
-    end = int(end_str) if end_str is not None else None
-    if one_based and start is not None:
+    start_str, end_str = match.group("start"), match.group("end")
+    start = int(start_str.replace(",", "")) if start_str is not None else None
+    end = int(end_str.replace(",", "")) if end_str is not None else None
+    if not zero_based and start is not None:
         if start < 1:
-            raise ValueError("1-based coordinates start at 1")
+            raise ValueError(
+                "Text regions are 1-based, so they start at 1; "
+                "use --zero-based for 0-based, half-open numbers."
+            )
         start -= 1
+    if start is not None and end is not None and end <= start:
+        raise ValueError(f"The region '{locus}' is empty: its end is not after its start.")
     return name, start, end
 
 

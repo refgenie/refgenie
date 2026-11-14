@@ -355,16 +355,6 @@ class TestTopLevelHelp:
         assert "subcommands:" not in help_output
 
 
-class TestPlaceholderHelp:
-    def test_placeholder_marked(self, capsys):
-        """A command that always fails says so in --help."""
-        with pytest.raises(SystemExit):
-            main(test_args=["config", "--help"])
-        out = capsys.readouterr().out
-        line = next((ln for ln in out.splitlines() if ln.strip().startswith("set")), None)
-        assert line is not None and "[not implemented]" in line, out
-
-
 class TestHelpTextRendering:
     def test_no_build_help_uses_short_form(self, capsys):
         """`refgenie genome init --help` shows `--no-build`, not the dotted
@@ -421,7 +411,6 @@ class TestSubcommandHelp:
             ["alias", "set", "--help"],
             ["alias", "remove", "--help"],
             ["config", "get", "--help"],
-            ["config", "set", "--help"],
             ["recipe", "list", "--help"],
             ["recipe", "show", "--help"],
             ["recipe", "add", "--help"],
@@ -512,7 +501,6 @@ class TestErrorExitCodes:
             (("data-channel", "validate", "nosuchchannel"), 1, ["'nosuchchannel' is invalid"]),
             (("data-channel", "add", "bad__name", "http", "http://x.com/i.yaml"), 1, ["'__'"]),
             (("remote", "remove", "no-such-remote"), 2, ["'no-such-remote' not found"]),
-            (("config", "set"), 1, ["not implemented"]),
             # Incomplete argument combinations.
             (("getseq", "-l", "chr1:1-10"), 3, []),
             (("getseq", "-g", "rCRSd"), 1, []),
@@ -949,11 +937,11 @@ class TestCommandsWithAssets:
         """`getseq --genome-digest <digest>` works like `getseq -g <alias>`;
         `-g <digest>` is an alias lookup and fails."""
         digest = cli_rg.alias.resolve("rCRSd")
-        assert cli("getseq", "-g", "rCRSd", "-l", "rCRSd:0-10") == 0
+        assert cli("getseq", "-g", "rCRSd", "-l", "rCRSd:1-10") == 0
         by_alias = capsys.readouterr().out.strip()
-        assert cli("getseq", "--genome-digest", digest, "-l", "rCRSd:0-10") == 0
+        assert cli("getseq", "--genome-digest", digest, "-l", "rCRSd:1-10") == 0
         assert capsys.readouterr().out.strip() == by_alias
-        assert cli("getseq", "-g", digest, "-l", "rCRSd:0-10") != 0
+        assert cli("getseq", "-g", digest, "-l", "rCRSd:1-10") != 0
 
     def test_build_takes_an_alias_only(self, cli, cli_rg):
         """`build <digest>/fasta` is an alias lookup: the build folder is named
@@ -1162,6 +1150,13 @@ REMOTE_DIGEST = GenomeDigest("r" * 32)
 SERVER = "http://server.test"
 
 
+# Two genomes with the same two sequences under different names.
+_SIDES = (
+    {"names": ["chr1", "chr2"], "lengths": [10, 20], "sequences": ["SQ.a", "SQ.b"]},
+    {"names": ["1", "2"], "lengths": [10, 20], "sequences": ["SQ.a", "SQ.b"]},
+)
+
+
 class TestRemoteGenomeByName:
     """Commands that reach a genome only a server knows, through ``locate``."""
 
@@ -1191,7 +1186,7 @@ class TestRemoteGenomeByName:
             ) as init,
             patch.object(SequenceManager, "get", return_value="ACGT") as get,
         ):
-            assert cli("getseq", "-g", "hg38", "-l", "chr1:0-4") == 0
+            assert cli("getseq", "-g", "hg38", "-l", "chr1:1-4") == 0
         assert init.call_args.args == (GenomeAlias("hg38"),)
         assert init.call_args.kwargs == {"require_collection": True}
         assert get.call_args.args == (REMOTE_DIGEST, "chr1", 0, 4)
@@ -1199,7 +1194,7 @@ class TestRemoteGenomeByName:
 
     def test_getseq_of_a_genome_no_one_can_provide_is_not_found(self, cli, cli_rg):
         with patch.object(type(cli_rg.genome), "init_from_remote", return_value=None):
-            assert cli("getseq", "-g", "hg38", "-l", "chr1:0-4") == EXIT_NOT_FOUND
+            assert cli("getseq", "-g", "hg38", "-l", "chr1:1-4") == EXIT_NOT_FOUND
 
     # Local genomes are named by digest: a bare genome's alias lives in this
     # process's alias cache only, so the CLI's own Refgenie would not see it.
@@ -1208,25 +1203,41 @@ class TestRemoteGenomeByName:
         cli_rg.genome.add("a" * 32, "a", [])
         cli_rg.genome.add("b" * 32, "b", [])
         with (
-            patch.object(type(cli_rg.genome), "compare", return_value={"local": True}) as cmp,
+            patch.object(type(cli_rg.genome), "compare_sides", return_value=_SIDES) as sides,
             patch.object(ServerManager, "client") as client,
         ):
             assert cli("compare", "--genome-digest", f"{'a' * 32},{'b' * 32}") == 0
-        assert cmp.call_args.args == ("a" * 32, "b" * 32)
+        assert sides.call_args.args == ("a" * 32, "b" * 32)
         client.assert_not_called()
+        out = capsys.readouterr().out
+        assert "Same 2 sequences in the same order; all 2 names differ" in out
+        assert "chr1 -> 1" in out
 
     def test_compare_with_a_remote_genome_asks_its_server(self, cli, cli_rg, capsys):
         cli_rg.genome.add("a" * 32, "a", [])
+        from refgenie.utils.seqcol import compare_level2
+
         client = MagicMock()
-        client.genome.compare.return_value = {"digests": {"a": REMOTE_DIGEST, "b": "a" * 32}}
+        comparison = compare_level2(*_SIDES, REMOTE_DIGEST, "a" * 32)
+        client.genome.compare.return_value = {
+            **comparison,
+            "summary": "worded by the server",
+            "name_map": {"chr1": "1", "chr2": "2"},
+        }
         with (
             patch.object(ServerManager, "locate", return_value=(SERVER, REMOTE_DIGEST, {})),
             patch.object(ServerManager, "client", return_value=client) as get_client,
         ):
-            assert cli("compare", "hg38", "--genome-digest", "a" * 32) == 0
+            assert cli("compare", "hg38", "--genome-digest", "a" * 32, "--json") == 0
         get_client.assert_called_once_with(SERVER)
         client.genome.compare.assert_called_once_with(REMOTE_DIGEST, "a" * 32)
-        assert REMOTE_DIGEST in capsys.readouterr().out
+        import json
+
+        payload = json.loads(capsys.readouterr().out)
+        # Worded here, with the names the user typed.
+        assert payload["summary"].startswith("Same 2 sequences in the same order")
+        assert payload["name_map"] == {"chr1": "1", "chr2": "2"}
+        assert payload["comparison"]["digests"]["a"] == REMOTE_DIGEST
 
     def test_compare_the_server_cannot_answer_suggests_registering(self, cli, cli_rg, caplog):
         cli_rg.genome.add("a" * 32, "a", [])
@@ -1493,18 +1504,23 @@ class TestQuietScriptableOutput:
         assert out.count("\n") == 1 and len(out.strip()) == 33138
 
     def test_getseq_fasta(self, cli, capsys):
-        assert cli("getseq", "-g", "rCRSd", "-l", "rCRSd:0-10", "--fasta") == 0
+        assert cli("getseq", "-g", "rCRSd", "-l", "rCRSd:1-10", "--fasta") == 0
         header, bases = capsys.readouterr().out.splitlines()
-        assert header == ">rCRSd:0-10" and len(bases) == 10
+        assert header == ">rCRSd:1-10" and len(bases) == 10
         assert cli("getseq", "-g", "rCRSd", "-l", "rCRSd", "--fasta") == 0
-        lines = capsys.readouterr().out.splitlines()[1:]
+        header, *lines = capsys.readouterr().out.splitlines()
+        assert header == ">rCRSd"
         assert all(len(x) == 60 for x in lines[:-1]) and sum(map(len, lines)) == 33138
 
-    def test_getseq_one_based(self, cli, capsys):
-        assert cli("getseq", "-g", "rCRSd", "-l", "rCRSd:0-10") == 0
-        zero = capsys.readouterr().out
-        assert cli("getseq", "-g", "rCRSd", "-l", "rCRSd:1-10", "--one-based") == 0
-        assert capsys.readouterr().out == zero
+    def test_getseq_zero_based(self, cli, capsys):
+        """The same 10 bases, as a 1-based text region or with --zero-based;
+        stderr says how the region was read."""
+        assert cli("getseq", "-g", "rCRSd", "-l", "rCRSd:1-10") == 0
+        one = capsys.readouterr()
+        assert cli("getseq", "-g", "rCRSd", "-l", "rCRSd:0-10", "--zero-based") == 0
+        assert capsys.readouterr().out == one.out
+        assert len(one.out.strip()) == 10
+        assert "rCRSd:1-10 (1-based, inclusive): 10 bases" in one.err
 
     def test_getseq_unknown_name(self, cli):
         assert cli("getseq", "-g", "rCRSd", "-l", "chr999") == EXIT_NOT_FOUND

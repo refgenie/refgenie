@@ -16,7 +16,7 @@ Yes. Register them with [refgenie add](custom_assets.md), and then use `seek`, t
 
 ## Where do I get the aligner for an index?
 
-Refgenie gives you the index, not the aligner. The asset name is the tool version that built it: `refgenie seek rCRSd/bowtie2_index.version` prints `2.5.5`, so install bowtie2 2.5.5 and match the version.
+Refgenie gives you the index, not the aligner. The asset name is the tool version that built it: `refgenie seek rCRSd/bowtie2_index.version` prints `2.5.5`, so install bowtie2 2.5.5 and match the version. Use conda (`conda install -c bioconda bowtie2=2.5.5`), or, without conda, the prebuilt binary from the tool's GitHub releases, such as the [bowtie2 releases](https://github.com/BenLangmead/bowtie2/releases).
 
 ## Can I keep several versions of an asset?
 

@@ -17,13 +17,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Collection pages (`REFGENIE_COLLECTIONS`) show a branded slice of the
   catalog, such as the VGP assemblies.
 - `GET /v4/genomes/{digest}/sequences` and `GET /v4/genomes/{digest}/compare/{other}`.
-- `list --json` and `listr --json`; `getseq --fasta` and `--one-based`.
+- `list --json` and `listr --json`; `getseq --fasta` and `--zero-based`.
 - MCP: a `get_sequence` tool; `compare_genomes` returns a one-sentence summary and
   a map of renamed sequences; `refgenie-mcp --help`; and the instructions and
   `catalog_summary` say which server this is.
+- `refgenie compare` and `GET /v4/genomes/{digest}/compare/{other}` give the same
+  one-sentence summary and rename map as MCP; `compare --json` adds the full
+  GA4GH comparison.
+- `refgenie init` says where assets go and which server it subscribed to; an
+  empty `list` says what to run next; `seek` suggests close matches (such as
+  `hg38/fasta_index.chrom_sizes` for `hg38/chrom_sizes`) and the `pull` command.
 
 ### Changed
 
+- `getseq` reads a text region as 1-based and inclusive, like samtools, UCSC
+  and IGV, and the website's Extract tab: `chr17:43,044,295-43,044,394` is 100
+  bases (commas are fine). `--zero-based` reads it as 0-based and half-open.
+  Separate start and end numbers (the HTTP API, MCP, Python) stay 0-based and
+  half-open, like GA4GH refget. getseq says on stderr how it read the region.
+- `list` and `listr` name each genome once, by its shortest plain alias;
+  `--json` has every alias and the digest.
+- MCP `get_asset` over stdio gives `seek_command` (the asset is already here);
+  on a server it gives `pull_command`.
+- `REFGENIE_LOG_LEVEL=INFO` no longer prints a line for every HTTP request;
+  `DEBUG` does.
+- refgenie.org's install line follows the server's version.
 - refgenie uses httpx2, the maintained successor of httpx, for HTTP.
 - `refgenie pull` brings a parent asset only when the asset colocates its files
   (such as `bismark_bt2_index`). `refgenie pull hg38/fasta_index` now downloads
@@ -59,6 +77,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Pulling a genome by a second alias links all its assets under that alias, so
+  `seek` no longer prints a path that does not exist.
 - `SKILL.md` is served as `text/markdown` on macOS and on Python before 3.13.
 - `genome init --server`, `alias set` and `id --remote` read a genome from the
   store that holds it, not only from the server's first store.
@@ -70,6 +90,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- `refgenie config set`, which was never implemented. `refgenie config` alone
+  prints the configuration.
 - `refgenie pull --asset-registry-paths`; pass registry paths as positional
   arguments.
 - MCP: the `get_genome_metadata` tool (`get_genome_sequences` pages carry

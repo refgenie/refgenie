@@ -4,6 +4,8 @@ The public server at <https://api.refgenie.org> holds about three dozen genomes 
 
 `hg38` is NCBI's "no-alt analysis set" (`GCA_000001405.15`). It has no ALT contigs, it has the most pre-built assets, and it is the version most short-read pipelines use.
 
+If "hg38" means the `hg38.fa` file you download from UCSC, that file is `hg38_initial` in refgenie, not `hg38`.
+
 Two facts make the choice easier:
 
 1. **The main chromosomes match everywhere.** The GRCh38 genomes in the catalog all share the same lengths for chr1-22, X, Y and M. Only the names change (`chr1`, `1`, `NC_000001.11`).
@@ -11,16 +13,16 @@ Two facts make the choice easier:
 
 ## What to pull
 
-| If you want to... | Pull | Why | Pre-built assets |
-|---|---|---|---|
-| Align short DNA reads and call variants (bwa, bowtie2) | `hg38` | No ALT contigs, so aligners that are not ALT-aware keep their mapping quality in duplicated regions. It includes chrEBV and the unplaced pieces. | FASTA and bwa, bowtie2, hisat2 and suffixerator indexes |
-| The same, with decoys | `hg38_noalt_decoy` | `hg38` plus the hs38d1 decoy contigs, which absorb reads from DNA missing in the reference. Same coordinates as `hg38`. | The same as `hg38` |
-| ALT-aware alignment (bwa-kit, GATK bundle) | `hs38DH` | `hg38` plus ALT contigs, decoys and HLA alleles. | None yet |
-| RNA-seq with GENCODE annotation | `hg38` | GENCODE uses the same `chr1` ... `chrM` names and lengths, so its GTF lines up on the main chromosomes. GENCODE's own FASTA is `hg38_primary_gencode`. | `hg38` has a hisat2 index; `hg38_primary_gencode` has none |
-| RNA-seq with Ensembl annotation (names `1`, `MT`) | `hg38_primary_ensembl` | Names match Ensembl GTFs. Same sequences as `hg38_primary_gencode`. | None |
-| UCSC Genome Browser tracks | `hg38` | Every `hg38` name and length is also in UCSC's hg38, except chrEBV. UCSC's own file with ALT contigs is `hg38_initial`. | `hg38_initial` has FASTA and the same indexes as `hg38` |
-| Only chromosome sizes, or one region | `hg38` | No need to download the genome. | `fasta_index`, or `refgenie getseq` |
-| Only the 25 main chromosomes | `hg38_primary` | chr1-22, X, Y and M, and nothing else. | FASTA and bwa and bowtie2 indexes |
+| If you want to... | Pull | Why |
+|---|---|---|
+| Align short DNA reads and call variants (bwa, bowtie2) | `hg38` | No ALT contigs, so aligners that are not ALT-aware keep their mapping quality in duplicated regions. It includes chrEBV and the unplaced pieces. Has FASTA and bwa, bowtie2, hisat2 and suffixerator indexes. |
+| The same, with decoys | `hg38_noalt_decoy` | `hg38` plus the hs38d1 decoy contigs, which absorb reads from DNA missing in the reference. Same coordinates as `hg38`, and the same indexes. |
+| ALT-aware alignment (bwa-kit, GATK bundle) | `hs38DH` | `hg38` plus ALT contigs, decoys and HLA alleles. No pre-built assets yet. |
+| RNA-seq with GENCODE annotation | `hg38` | GENCODE uses the same `chr1` ... `chrM` names and lengths, so its GTF lines up on the main chromosomes. Has a hisat2 index. GENCODE's own FASTA is `hg38_primary_gencode`, which has no assets yet. |
+| RNA-seq with Ensembl annotation (names `1`, `MT`) | `hg38_primary_ensembl` | Names match Ensembl GTFs. Same sequences as `hg38_primary_gencode`. No pre-built assets yet. |
+| UCSC Genome Browser tracks | `hg38` | Every `hg38` name and length is also in UCSC's hg38, except chrEBV. UCSC's own `hg38.fa`, with ALT contigs, is `hg38_initial`, which has FASTA and the same indexes as `hg38`. |
+| Only chromosome sizes, or one region | `hg38` | No need to download the genome: pull `fasta_index` (about 12 KB), or use `refgenie getseq`. |
+| Only the 25 main chromosomes | `hg38_primary` | chr1-22, X, Y and M, and nothing else. Has FASTA and bwa and bowtie2 indexes. |
 
 For example, to get the FASTA and a bwa index, or only the chromosome sizes, or one region:
 
@@ -28,30 +30,37 @@ For example, to get the FASTA and a bwa index, or only the chromosome sizes, or 
 refgenie pull hg38/fasta hg38/bwa_index
 refgenie pull hg38/fasta_index
 refgenie seek hg38/fasta_index.chrom_sizes
-refgenie getseq -g hg38 -l chr1:10000-10100
+refgenie getseq -g hg38 -l chr1:10,001-10,100
 ```
+
+A region is 1-based and inclusive, like in a genome browser. See [Coordinates](coordinates.md).
 
 Avoid for plain alignment any genome with ALT contigs or patches (`hg38_initial`, `hg38_p14`, `hg38_full_analysis`, `hg38_p14_genomic`, `hg38_p14_gencode`), unless your aligner is ALT-aware.
 
 ## How the hg38 genomes differ
 
-"Masked" means chr5, 14, 19, 21, 22 and Y carry N in some regions. "IUPAC kept" means ambiguity codes are kept, not turned into N. Asset availability changes as builds finish, so check with `refgenie listr -g <alias>`.
+Asset availability changes as builds finish, so check with `refgenie listr -g <alias>`.
 
-| Alias | What it is | Sequences | ALT | Decoy | HLA | EBV | IUPAC kept | Masked |
-|---|---|---|---|---|---|---|---|---|
-| `hg38` | NCBI no-alt analysis set; same as `GRCh38-igenomes-ncbi` | 195 | - | - | - | yes | yes | yes |
-| `hg38_analysis_set` | UCSC's copy of the same set; same as `hg38-igenomes-ucsc` | 195 | - | - | - | yes | no | yes |
-| `hg38_noalt_decoy` | no-alt set plus hs38d1 decoys; same as `hg38_decoy_igenomes` | 2,580 | - | 2,385 | - | yes | yes | yes |
-| `hg38_full_analysis` | NCBI full analysis set | 456 | 261 | - | - | yes | yes | yes |
-| `hg38_full_analysis_plus_decoy` | full analysis set plus decoys | 2,841 | 261 | 2,385 | - | yes | yes | yes |
-| `hs38DH` | 1000 Genomes / Broad GATK bundle | 3,366 | 261 | 2,385 | 525 | yes | yes | yes |
-| `hg38_initial` | UCSC `hg38.fa`, 2013 release | 455 | 261 | - | - | - | no | - |
-| `hg38_p14` | UCSC `hg38.p14.fa` | 711 | 261 + 256 patches | - | - | - | no | - |
-| `hg38_primary` | UCSC main chromosomes only | 25 | - | - | - | - | no | - |
-| `hg38_primary_gencode` | GENCODE / Ensembl 113 primary assembly; same as `hg38_primary_ensembl` | 194 | - | - | - | - | no | - |
-| `hg38_p14_gencode` | GENCODE all / Ensembl 113 toplevel; same as `hg38_toplevel_ensembl` | 706 | 261 + 251 patches | - | - | - | no | - |
-| `hg38_p14_genomic` | NCBI RefSeq, patch release 14 (`hg38_p0_genomic` is the first release) | 705 | 260-261 + patches | - | - | - | yes | - |
-| `hg38_mm10` | `hg38_primary` plus `mm10_primary`, names prefixed `hg38_` and `mm10_` | 47 | - | - | - | - | no | - |
+| Alias | What it is | Sequences |
+|---|---|---|
+| `hg38` | NCBI no-alt analysis set; same as `GRCh38-igenomes-ncbi` | 195, with EBV |
+| `hg38_analysis_set` | UCSC's copy of the same set; same as `hg38-igenomes-ucsc` | 195, with EBV |
+| `hg38_noalt_decoy` | no-alt set plus hs38d1 decoys; same as `hg38_decoy_igenomes` | 2,580, with 2,385 decoys and EBV |
+| `hg38_full_analysis` | NCBI full analysis set | 456, with 261 ALT and EBV |
+| `hg38_full_analysis_plus_decoy` | full analysis set plus decoys | 2,841, with 261 ALT, 2,385 decoys and EBV |
+| `hs38DH` | 1000 Genomes / Broad GATK bundle | 3,366, with 261 ALT, 2,385 decoys, 525 HLA and EBV |
+| `hg38_initial` | UCSC `hg38.fa`, 2013 release | 455, with 261 ALT |
+| `hg38_p14` | UCSC `hg38.p14.fa` | 711, with 261 ALT and 256 patches |
+| `hg38_primary` | UCSC main chromosomes only | 25 |
+| `hg38_primary_gencode` | GENCODE / Ensembl 113 primary assembly; same as `hg38_primary_ensembl` | 194 |
+| `hg38_p14_gencode` | GENCODE all / Ensembl 113 toplevel; same as `hg38_toplevel_ensembl` | 706, with 261 ALT and 251 patches |
+| `hg38_p14_genomic` | NCBI RefSeq, patch release 14 (`hg38_p0_genomic` is the first release) | 705, with 260-261 ALT and patches |
+| `hg38_mm10` | `hg38_primary` plus `mm10_primary`, names prefixed `hg38_` and `mm10_` | 47 |
+
+Two more differences change a few bases:
+
+- **Masked**: chr5, 14, 19, 21, 22 and Y carry N in some regions in `hg38`, `hg38_analysis_set`, `hg38_noalt_decoy`, `hg38_full_analysis`, `hg38_full_analysis_plus_decoy` and `hs38DH`. The others are not masked.
+- **IUPAC codes kept**: rare ambiguity codes (such as R or M) are kept in `hg38`, `hg38_noalt_decoy`, `hg38_full_analysis`, `hg38_full_analysis_plus_decoy`, `hs38DH` and `hg38_p14_genomic`. The others turn them into N.
 
 Every genome above except `hg38_primary` and `hg38_mm10` also has the 169 small unplaced and unlocalized pieces. Genomes marked "same as" hold the same sequences under different names or order. Soft-masked and unmasked files get the same digest, so they count as the same.
 
@@ -64,3 +73,5 @@ To check how two genomes differ, use [`refgenie compare`](compare.md):
 ```bash
 refgenie compare hg38 hg38_primary
 ```
+
+For mouse and yeast, see [Which mm39 should I use?](choosing_mm39.md) and [Which yeast genome should I use?](choosing_yeast.md).

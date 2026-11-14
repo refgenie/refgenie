@@ -56,6 +56,6 @@ The genome and its assets stay, reachable by digest or by any alias it still has
 ```console
 refgenie pull hg38/fasta
 refgenie list -g hg38
-refgenie getseq -g hg38 -l chrM:0-60
+refgenie getseq -g hg38 -l chrM:1-60
 refgenie compare hg38 mm10
 ```

@@ -9,6 +9,7 @@ import { Pagination } from '../common/Pagination';
 import { SearchBox } from '../common/SearchBox';
 import { cn } from '../../utils/cn';
 import { preferredAlias } from './aliases';
+import { alphabetTitle } from './alphabets';
 import type { SequenceRow } from './types';
 import { isExtractable } from '../../services/regionExtract';
 
@@ -34,9 +35,27 @@ function compareRows(a: SequenceRow, b: SequenceRow, column: SortColumn): number
   return column === 'length' ? a.length - b.length : a.name.localeCompare(b.name);
 }
 
+const NO_ALIAS =
+  'No alias: no public record, such as RefSeq, has exactly these bases. Masked or edited sequences often have none.';
+
+/** Header tooltips, for the terms the panel's hint explains. */
+const DIGEST_TITLE =
+  'GA4GH refget sequence digest (SHA-512 cut to 24 bytes): an ID computed from the bases, so the same digest means the same sequence.';
+const MD5_TITLE = 'MD5 digest of the bases: an older ID, used by some tools and databases.';
+const ALPHABET_TITLE =
+  'Which letters the sequence holds: dna2bit only A, C, G, T; dna3bit also N; dnaio any IUPAC letter.';
+
 function AliasCell({ row }: { row: SequenceRow }) {
   const { primary, all } = preferredAlias(row.aliases);
-  if (!primary) return <span className="rg-muted">NA</span>;
+  if (!primary) {
+    // Not an error: masked or edited sequences match no public record.
+    return (
+      <span className="rg-muted" title={NO_ALIAS}>
+        <span aria-hidden="true">–</span>
+        <span className="sr-only">{NO_ALIAS}</span>
+      </span>
+    );
+  }
   const tooltip = all.join('\n');
   return (
     <span title={tooltip}>
@@ -119,13 +138,13 @@ export function SequenceTable({ sequences, extractHref, aside }: SequenceTablePr
                 <th scope="col" className="rg-table__cell">
                   Aliases
                 </th>
-                <th scope="col" className="rg-table__cell">
+                <th scope="col" className="rg-table__cell" title={DIGEST_TITLE}>
                   SHA-512/24u
                 </th>
-                <th scope="col" className="rg-table__cell">
+                <th scope="col" className="rg-table__cell" title={MD5_TITLE}>
                   MD5
                 </th>
-                <th scope="col" className="rg-table__cell">
+                <th scope="col" className="rg-table__cell" title={ALPHABET_TITLE}>
                   Alphabet
                 </th>
                 {extractHref && (
@@ -152,7 +171,13 @@ export function SequenceTable({ sequences, extractHref, aside }: SequenceTablePr
                     <DigestChip digest={row.md5} />
                   </td>
                   <td className="rg-table__cell" data-label="Alphabet">
-                    {row.alphabet ?? <span className="rg-muted">NA</span>}
+                    {row.alphabet ? (
+                      <span title={alphabetTitle(row.alphabet)}>{row.alphabet}</span>
+                    ) : (
+                      <span className="rg-muted" title="Not recorded">
+                        –
+                      </span>
+                    )}
                   </td>
                   {extractHref && (
                     <td className="rg-table__cell" data-label="">

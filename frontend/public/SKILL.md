@@ -274,6 +274,13 @@ Step 3 reports each asset's `serving_modes`: `["file"]`, `["archive"]`, or
 both. Use 5a only for an asset staged as `file`, and 5b only for one staged as
 `archive`.
 
+**What `size` means.** An asset's `size` is the total bytes of every file in
+the asset, unpacked. For a `fasta` asset that is the `.fa` plus its `.fai` and
+`.chrom.sizes`. Each seek key in `seek_keys` has its own `size`: that file's
+bytes, the total for a folder, or `null` for a seek key that is a value rather
+than a file. An archive record's `size` (from `GET /v4/archives`) is the
+`.tgz` download, which is compressed and usually smaller.
+
 ## Workflow 2: find out what a server holds
 
 ```bash
@@ -319,12 +326,18 @@ curl -s "$BASE/v4/genomes/$D/sequences" | jq -r '.sequences[] | "\(.name)\t\(.le
 
 The HTTP API has no sequence endpoint. For the bases of a region over MCP, call
 `get_sequence(alias="hg38", name="chr17", start=43044294, end=43044394)`.
+`start` and `end` are 0-based and half-open, like the GA4GH refget API and BED
+files. A region written as text, such as `chr17:43,044,295-43,044,394` from a
+genome browser or the refgenie.org Extract tab, is 1-based and inclusive:
+subtract 1 from its start and keep its end. See
+<https://docs.refgenie.org/refgenie/coordinates/>.
 
 ---
 
 ## The MCP server
 
-Refgenie has a **read-only** Model Context Protocol X
+Refgenie has a **read-only** Model Context Protocol (MCP) server, available
+two ways:
 
 **Over HTTP, against a server-mode instance** (Streamable HTTP transport,
 nothing to install):
@@ -345,17 +358,24 @@ Use `/mcp` exactly, with no trailing slash. Only server mode has `/mcp`;
 check `"mode": "server"` in `/service-info` first.
 
 **Over stdio, against the user's own database**, with the `refgenie-mcp`
-command from the refgenie package:
+command from the refgenie package. It needs the `mcp` extra, or the `server`
+extra, which includes `dash` and `mcp`:
 
 ```bash
-pip install "refgenie[mcp]>=1.0.0a1"
-claude mcp add refgenie refgenie-mcp
+pip install "refgenie[mcp]>=1.0.0a2"
+claude mcp add refgenie "$(which refgenie-mcp)"
 ```
 
-It reads the user's config from `REFGENIE_HOME_PATH` (default `~/.refgenie`).
-To use another folder, run
-`claude mcp add --env REFGENIE_HOME_PATH=/data/refgenie refgenie -- refgenie-mcp`;
-other clients set it in the server's `env` block.
+`"$(which refgenie-mcp)"` saves the full path, so the server starts even when
+refgenie's virtual environment is not active; run the line with it active.
+`refgenie-mcp` reads the same `REFGENIE_*` variables as the refgenie CLI.
+`REFGENIE_HOME_PATH` picks the user's refgenie folder (default `~/.refgenie`).
+To use another folder, put `-e` after the server name and `--` before the
+command:
+`claude mcp add refgenie -e REFGENIE_HOME_PATH=/data/refgenie -- "$(which refgenie-mcp)"`.
+If `REFGENIE_DB_CONFIG_PATH` is set for the CLI, pass it the same way. Other
+clients take the full path as `command` and the variables in the server's `env`
+block.
 
 The tools:
 
@@ -372,7 +392,7 @@ The tools:
 | `get_recipe` | one recipe in full: inputs, command templates, docker image, the build command |
 | `lookup_digest` | what a digest is: a genome, an asset, or nothing |
 | `get_genome_sequences` | a genome's sequences (name, length, digest), paged; filter with `name_contains` |
-| `get_sequence` | the bases of one region (`name`, `start`, `end`; 0-based, half-open; at most 100,000 bases) |
+| `get_sequence` | the bases of one region (`name`, `start`, `end`; 0-based, half-open, so subtract 1 from a text region's start; at most 100,000 bases) |
 | `compare_genomes` | seqcol comparison of two genomes, with a one-sentence summary and a map of renamed sequences |
 
 A tool that takes a genome has separate `alias` and `digest` parameters; give
@@ -395,8 +415,9 @@ page; it is `null` on the last page. A token from other filters is refused.
 `search_genomes` fills `hint` when nothing matched.
 
 **Getting files.** `get_asset` returns `files` (local paths over stdio, URLs on
-a server), `archive_url` for archive-served assets, and `pull_command`, the
-`refgenie pull` line for the asset.
+a server), `archive_url` for archive-served assets, and the command for it:
+`pull_command` on a server, or `seek_command` over stdio, where the asset is
+already local.
 
 **Errors** come back as tool errors with a next step, for example "Genome
 alias 'hg39' not found. Find genomes with search_genomes(query) or
@@ -478,6 +499,6 @@ Rules for an agent:
 ## Where to read more
 
 - The refgenie CLI and Python API: <https://docs.refgenie.org/SKILL.md>
-- Human documentation: <https://docs.refgenie.org>
+- Human documentation: <https://docs.refgenie.org/>
 - This instance's OpenAPI schema: `GET /openapi.json`
 - Source: <https://github.com/refgenie/refgenie>
