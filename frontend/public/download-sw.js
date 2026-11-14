@@ -5,13 +5,13 @@
  * a large file without holding it in memory: the page registers a download
  * here over a MessageChannel, then opens a unique URL under this worker's
  * scope in a hidden iframe. The scope is the download path itself
- * (`<base>/rg-download/`), so the worker controls no other page. This worker answers that URL with a streamed
- * response marked as an attachment, and pulls each chunk from the page over
- * the channel only when the browser asks for more, so backpressure holds.
+ * (`<base>/rg-download/`), so the worker controls no other page. This worker
+ * answers that URL with a streamed response marked as an attachment, and pulls
+ * each chunk from the page over the channel only when the browser asks for
+ * more, so backpressure holds.
  *
  * Messages, page -> worker (on the worker): {type: 'register', id, filename}
- * with a MessagePort (sent again, with a new port, just before the iframe
- * opens; the newest one wins), and {type: 'ping'} to keep the worker alive.
+ * with a MessagePort, and {type: 'ping'} to keep the worker alive.
  * A registration the browser never fetches is dropped when the page sends
  * 'error' on its port, or after EXPIRE_MS.
  * On the port, worker -> page: 'registered', 'started', 'pull', 'cancel';
@@ -22,20 +22,13 @@
 
 /* global self */
 
-const PREFIX = 'rg-download/';
 const EXPIRE_MS = 60_000;
 const pending = new Map();
-
-/** The path this worker answers: its scope, or `rg-download/` under an older, wider one. */
-function downloadRoot() {
-  const scope = new URL(self.registration.scope).pathname;
-  return scope.endsWith('/' + PREFIX) ? scope : scope + PREFIX;
-}
 
 /** Drop a registration that was never fetched. */
 function forget(id, port) {
   const entry = pending.get(id);
-  if (entry && entry.port === port) {
+  if (entry) {
     clearTimeout(entry.timer);
     pending.delete(id);
   }
@@ -106,8 +99,6 @@ self.addEventListener('message', (event) => {
   if (msg.type === 'register' && event.ports && event.ports[0]) {
     const port = event.ports[0];
     const id = msg.id;
-    const old = pending.get(id);
-    if (old) forget(id, old.port);
     // Until the browser fetches the URL, the page only ever says it gave up.
     port.onmessage = (e) => {
       const m = e.data || {};
@@ -122,7 +113,7 @@ self.addEventListener('message', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
-  const root = downloadRoot();
+  const root = new URL(self.registration.scope).pathname;
   if (!url.pathname.startsWith(root)) return;
   const id = url.pathname.slice(root.length).split('/')[0];
   const entry = pending.get(id);

@@ -40,11 +40,6 @@ export interface PortLike {
 export interface PortServer {
   /** The worker has the download and its URL can be opened. */
   registered: Promise<void>;
-  /**
-   * Move to a fresh port, for registering the download again; resolves when
-   * the worker acknowledges it there. The old port is closed.
-   */
-  adopt(port: PortLike): Promise<void>;
   /** Give up: tell the worker, stop the source, and reject `done`. */
   stop(error: unknown): void;
   /** The browser has asked the worker for the URL: the download has begun. */
@@ -71,7 +66,6 @@ export function servePort(
   }: { signal?: AbortSignal; batchBytes?: number } = {},
 ): PortServer {
   const iterator = source[Symbol.asyncIterator]();
-  let current = port;
   let onRegistered!: () => void;
   let onStarted!: () => void;
   let resolveDone!: () => void;
@@ -92,18 +86,18 @@ export function servePort(
     finished = true;
     signal?.removeEventListener('abort', onAbort);
     if (error === undefined) {
-      current.postMessage({ type: 'end' });
+      port.postMessage({ type: 'end' });
       resolveDone();
     } else {
       if (tellWorker) {
         const message = error instanceof Error ? error.message : String(error);
-        current.postMessage({ type: 'error', message });
+        port.postMessage({ type: 'error', message });
       }
       iterator.return?.().catch(() => {});
       rejectDone(error);
     }
-    current.onmessage = null;
-    current.close();
+    port.onmessage = null;
+    port.close();
   };
 
   const onAbort = () => finish(signal?.reason ?? abortError('Cancelled'));
@@ -132,36 +126,19 @@ export function servePort(
     }
     // Always a fresh copy: the buffer is transferred, and a source may reuse its own.
     const batch = concat(parts, size);
-    current.postMessage({ type: 'chunk', chunk: batch }, [batch.buffer]);
+    port.postMessage({ type: 'chunk', chunk: batch }, [batch.buffer]);
   };
 
-  const listen = (target: PortLike) => {
-    target.onmessage = (event) => {
-      if (finished || target !== current) return;
-      const msg = event.data;
-      if (msg.type === 'registered') onRegistered();
-      else if (msg.type === 'started') onStarted();
-      else if (msg.type === 'pull') sendBatch().catch((error: unknown) => finish(error));
-      else if (msg.type === 'cancel')
-        finish(abortError('The download was cancelled'), false);
-    };
-  };
-  listen(port);
-
-  const adopt = (next: PortLike): Promise<void> => {
-    if (finished) {
-      next.close();
-      return done;
-    }
-    current.onmessage = null;
-    current.close();
-    current = next;
-    const again = new Promise<void>((resolve) => (onRegistered = resolve));
-    listen(next);
-    return again;
+  port.onmessage = (event) => {
+    if (finished) return;
+    const msg = event.data;
+    if (msg.type === 'registered') onRegistered();
+    else if (msg.type === 'started') onStarted();
+    else if (msg.type === 'pull') sendBatch().catch((error: unknown) => finish(error));
+    else if (msg.type === 'cancel') finish(abortError('The download was cancelled'), false);
   };
 
-  return { registered, started, done, adopt, stop: (error) => finish(error) };
+  return { registered, started, done, stop: (error) => finish(error) };
 }
 
 function concat(parts: Uint8Array[], size: number): Uint8Array {
@@ -224,28 +201,6 @@ function timeout(ms: number, message: string): Promise<never> {
   return new Promise((_, reject) => setTimeout(() => reject(new Error(message)), ms));
 }
 
-/**
- * Unregister a download worker left at the old site-wide scope, which an
- * earlier build registered. Safe to call on every load.
- */
-export async function removeLegacyDownloadWorker(): Promise<void> {
-  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
-  const script = new URL(WORKER_FILE, document.baseURI).href;
-  const scope = new URL(DOWNLOAD_PATH, document.baseURI).href;
-  const registrations = await navigator.serviceWorker.getRegistrations();
-  await Promise.all(
-    registrations
-      .filter(
-        (registration) =>
-          registration.scope !== scope &&
-          [registration.active, registration.waiting, registration.installing].some(
-            (worker) => worker?.scriptURL === script,
-          ),
-      )
-      .map((registration) => registration.unregister()),
-  );
-}
-
 export class StreamStartError extends Error {}
 
 /**
@@ -286,19 +241,6 @@ export async function streamDownload({
     try {
       await Promise.race([
         server.registered,
-        server.done,
-        timeout(START_TIMEOUT_MS, 'The download helper did not answer.'),
-      ]);
-      // The browser may have stopped and restarted the worker since, losing
-      // its in-memory list, so register again on a fresh channel right before
-      // the browser asks for the URL.
-      const again = new MessageChannel();
-      const reRegistered = server.adopt(again.port1 as unknown as PortLike);
-      (registration.active ?? worker).postMessage({ type: 'register', id, filename }, [
-        again.port2,
-      ]);
-      await Promise.race([
-        reRegistered,
         server.done,
         timeout(START_TIMEOUT_MS, 'The download helper did not answer.'),
       ]);

@@ -7,8 +7,10 @@ import { BLOB_FALLBACK_MAX, chooseSaveMethod } from './saveStream';
 
 type Handler = (event: unknown) => void;
 
+const SCOPE = 'http://localhost/app/rg-download/';
+
 /** Run public/download-sw.js against a fake worker global. */
-function loadWorker(scope = 'http://localhost/app/') {
+function loadWorker(scope = SCOPE) {
   const handlers: Record<string, Handler> = {};
   const self = {
     addEventListener: (type: string, fn: Handler) => (handlers[type] = fn),
@@ -151,8 +153,6 @@ describe('download worker and page', () => {
   });
 });
 
-const SCOPE = 'http://localhost/app/rg-download/';
-
 describe('download worker at its own narrow scope', () => {
   afterEach(() => {
     vi.useRealTimers();
@@ -169,19 +169,6 @@ describe('download worker at its own narrow scope', () => {
     await server.registered;
     expect(worker.fetch('http://localhost/app/genomes/abc')).toBeUndefined();
     const response = await worker.fetch(downloadUrl(SCOPE, 'abc', 'x.fa.gz'));
-    expect([...new Uint8Array(await response!.arrayBuffer())]).toEqual([1, 2, 3]);
-    await expect(server.done).resolves.toBeUndefined();
-  });
-
-  it('serves the newest registration after the page registers again', async () => {
-    const { worker, server } = start(bytes([[1, 2], [3]]), { scope: SCOPE });
-    await server.registered;
-    const again = new MessageChannel();
-    const reRegistered = server.adopt(again.port1 as unknown as PortLike);
-    worker.register('abc', 'x.fa.gz', again.port2);
-    await reRegistered;
-    const response = await worker.fetch(downloadUrl(SCOPE, 'abc', 'x.fa.gz'));
-    await server.started;
     expect([...new Uint8Array(await response!.arrayBuffer())]).toEqual([1, 2, 3]);
     await expect(server.done).resolves.toBeUndefined();
   });
