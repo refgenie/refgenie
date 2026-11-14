@@ -10,12 +10,13 @@ def main(argv=None):
         prog="refgenie-mcp",
         description=(
             "Serve your local refgenie database to AI assistants over MCP (stdio), "
-            "read-only. It reads REFGENIE_HOME_PATH (default ~/.refgenie), like the "
-            "refgenie CLI."
+            "read-only. It reads the same REFGENIE_* variables as the refgenie CLI; "
+            "REFGENIE_HOME_PATH (default ~/.refgenie) picks the folder."
         ),
         epilog=(
-            "Add it to Claude Code with:\n"
-            "  claude mcp add refgenie -e REFGENIE_HOME_PATH=$HOME/.refgenie -- refgenie-mcp\n"
+            "Add it to Claude Code with refgenie's virtual environment active, so the\n"
+            "full path is saved:\n"
+            '  claude mcp add refgenie -e REFGENIE_HOME_PATH=$HOME/.refgenie -- "$(which refgenie-mcp)"\n'
             "The public catalog is at https://api.refgenie.org/mcp."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,

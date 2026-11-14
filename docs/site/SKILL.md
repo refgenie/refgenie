@@ -27,7 +27,7 @@ Refgenie stores its catalog in a database (SQLite by default, PostgreSQL for
 large servers) and identifies genomes by **GA4GH digests computed from their
 sequences**, so you can check that two genomes are the same.
 
-Full documentation: <https://docs.refgenie.org>. To use a refgenie server over
+Full documentation: <https://docs.refgenie.org/>. To use a refgenie server over
 HTTP with nothing installed, read <https://api.refgenie.org/SKILL.md>.
 
 ---
@@ -53,12 +53,18 @@ server instead of shelling out:
 
 ```bash
 pip install "refgenie[mcp]>=1.0.0a2"
-claude mcp add refgenie refgenie-mcp
+claude mcp add refgenie "$(which refgenie-mcp)"
 ```
 
-To use another refgenie folder (default `~/.refgenie`), set `REFGENIE_HOME_PATH`:
-`claude mcp add --env REFGENIE_HOME_PATH=/data/refgenie refgenie -- refgenie-mcp`.
-Other clients set it in the server's `env` block. The public server also offers the same tools over HTTP, with nothing
+`"$(which refgenie-mcp)"` saves the full path, so the server starts even when
+refgenie's virtual environment is not active; run the line with it active.
+`refgenie-mcp` reads the same `REFGENIE_*` variables as the CLI.
+`REFGENIE_HOME_PATH` picks the refgenie folder (default `~/.refgenie`). To use
+another folder, put `-e` after the server name and `--` before the command:
+`claude mcp add refgenie -e REFGENIE_HOME_PATH=/data/refgenie -- "$(which refgenie-mcp)"`.
+If you set `REFGENIE_DB_CONFIG_PATH` for the CLI, pass it the same way. Other
+clients take the full path as `command` and the variables in the server's `env`
+block. The public server also offers the same tools over HTTP, with nothing
 installed:
 
 ```bash
@@ -207,6 +213,11 @@ conda install -c bioconda bowtie2=2.5.5           # or any installer; match the 
 bowtie2 -x "$(refgenie seek yeast_s288c/bowtie2_index)" -U reads.fq -S out.sam
 ```
 
+`refgenie seek <genome>/bowtie2_index.version` prints the version to match. No
+conda? Download the prebuilt binary for that version from the tool's GitHub
+releases (bowtie2: <https://github.com/BenLangmead/bowtie2/releases>), unzip
+it, and put its folder on your `PATH`.
+
 ### Chromosome sizes without the genome
 
 ```bash
@@ -228,6 +239,11 @@ refgenie getseq -g hg38 -l chr17:43044294-43044394 --fasta > brca1_start.fa
 The first call registers hg38 from your server; no FASTA is downloaded. Over
 MCP: `get_sequence(alias="hg38", name="chr17", start=43044294, end=43044394)`.
 
+Both default to 0-based, half-open coordinates. To convert the 1-based,
+inclusive coordinates biologists write (`chr17:43044295-43044394`), subtract 1
+from the start and keep the end the same. On the CLI you can pass
+`getseq --one-based` instead; `get_sequence` has no such option.
+
 ### Check whether two genomes match
 
 ```bash
@@ -237,7 +253,7 @@ refgenie compare hg38 hg38_noalt_decoy   # works for genomes you have not pulled
 Same `sequences` and `names`: the same genome. Same `sequences`, different
 `names`: renamed. Shared `name_length_pairs`: the same coordinates.
 
-Not sure which hg38 to pull? See the [choosing hg38 page](https://docs.refgenie.org/refgenie/choosing_hg38).
+Not sure which hg38 to pull? See the [choosing hg38 page](https://docs.refgenie.org/refgenie/choosing_hg38/).
 
 ---
 
@@ -288,7 +304,7 @@ refgenie dash                   # start the local dashboard on port 8080
 ```
 
 `serve` needs `pip install "refgenie[server]>=1.0.0a2"`; `dash` needs
-`"refgenie[dash]"`. See <https://docs.refgenie.org/refgenie/building_tutorial>
+`"refgenie[dash]"`. See <https://docs.refgenie.org/refgenie/building_tutorial/>
 for the full build, stage, push, and serve steps.
 
 ---
@@ -314,10 +330,10 @@ Every command takes `--help`. Start with `refgenie --help`.
 
 ## Where to read more
 
-- CLI tutorial: <https://docs.refgenie.org/refgenie/cli_tutorial>
-- Genomes and the RefgetStore: <https://docs.refgenie.org/refgenie/genome_tutorial>
-- Connecting AI assistants (MCP): <https://docs.refgenie.org/refgenie/mcp>
-- Building and serving: <https://docs.refgenie.org/refgenie/building_tutorial>
-- Refget Python package (sequences and seqcol): <https://docs.refgenie.org/refget>
+- CLI tutorial: <https://docs.refgenie.org/refgenie/cli_tutorial/>
+- Genomes and the RefgetStore: <https://docs.refgenie.org/refgenie/genome_tutorial/>
+- Connecting AI assistants (MCP): <https://docs.refgenie.org/refgenie/mcp/>
+- Building and serving: <https://docs.refgenie.org/refgenie/building_tutorial/>
+- Refget Python package (sequences and seqcol): <https://docs.refgenie.org/refget/>
 - Using a refgenie server over HTTP, with nothing installed: <https://api.refgenie.org/SKILL.md>
 - Source: <https://github.com/refgenie/refgenie>

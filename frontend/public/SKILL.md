@@ -324,7 +324,8 @@ The HTTP API has no sequence endpoint. For the bases of a region over MCP, call
 
 ## The MCP server
 
-Refgenie has a **read-only** Model Context Protocol X
+Refgenie has a **read-only** Model Context Protocol (MCP) server, available
+two ways:
 
 **Over HTTP, against a server-mode instance** (Streamable HTTP transport,
 nothing to install):
@@ -345,17 +346,24 @@ Use `/mcp` exactly, with no trailing slash. Only server mode has `/mcp`;
 check `"mode": "server"` in `/service-info` first.
 
 **Over stdio, against the user's own database**, with the `refgenie-mcp`
-command from the refgenie package:
+command from the refgenie package. It needs the `mcp` extra, or the `server`
+extra, which includes `dash` and `mcp`:
 
 ```bash
 pip install "refgenie[mcp]>=1.0.0a2"
-claude mcp add refgenie refgenie-mcp
+claude mcp add refgenie "$(which refgenie-mcp)"
 ```
 
-It reads the user's config from `REFGENIE_HOME_PATH` (default `~/.refgenie`).
-To use another folder, run
-`claude mcp add --env REFGENIE_HOME_PATH=/data/refgenie refgenie -- refgenie-mcp`;
-other clients set it in the server's `env` block.
+`"$(which refgenie-mcp)"` saves the full path, so the server starts even when
+refgenie's virtual environment is not active; run the line with it active.
+`refgenie-mcp` reads the same `REFGENIE_*` variables as the refgenie CLI.
+`REFGENIE_HOME_PATH` picks the user's refgenie folder (default `~/.refgenie`).
+To use another folder, put `-e` after the server name and `--` before the
+command:
+`claude mcp add refgenie -e REFGENIE_HOME_PATH=/data/refgenie -- "$(which refgenie-mcp)"`.
+If `REFGENIE_DB_CONFIG_PATH` is set for the CLI, pass it the same way. Other
+clients take the full path as `command` and the variables in the server's `env`
+block.
 
 The tools:
 
@@ -478,6 +486,6 @@ Rules for an agent:
 ## Where to read more
 
 - The refgenie CLI and Python API: <https://docs.refgenie.org/SKILL.md>
-- Human documentation: <https://docs.refgenie.org>
+- Human documentation: <https://docs.refgenie.org/>
 - This instance's OpenAPI schema: `GET /openapi.json`
 - Source: <https://github.com/refgenie/refgenie>
