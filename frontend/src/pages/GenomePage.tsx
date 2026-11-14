@@ -79,22 +79,8 @@ export function GenomePage() {
   });
 
   // A 404 means the genome has no sequence data here: a normal answer.
-  const noSequences = sequences.error instanceof ApiError && sequences.error.isNotFound;
-  const hasSequences = sequences.data
-    ? true
-    : noSequences
-      ? false
-      : sequences.error
-        ? true
-        : null;
-  const sequenceStats = sequences.data
-    ? {
-        count: sequences.data.sequences.length,
-        bases: sequences.data.sequences.reduce((sum, s) => sum + s.length, 0),
-      }
-    : hasSequences === false || sequences.error
-      ? (false as const)
-      : null;
+  const noSequences =
+    !sequences.data && sequences.error instanceof ApiError && sequences.error.isNotFound;
   const naming = useMemo(
     () => (sequences.data ? namingStyle(sequences.data.sequences) : null),
     [sequences.data],
@@ -111,23 +97,22 @@ export function GenomePage() {
   const candidates = useCompareCandidates(record);
   const noCandidates = candidates !== null && candidates.length === 0;
   // Comparing your own FASTA keeps Compare open without other genomes.
-  const compareOff = hasSequences === false ? NO_SEQUENCES : undefined;
+  const compareOff = noSequences ? NO_SEQUENCES : undefined;
   const readable = sequences.data
     ? sequences.data.sequences.some((row) => isExtractable(row.alphabet))
     : null;
   const downloadOff = record && !storeUrl ? NO_STORE : undefined;
   const extractOff =
     downloadOff ??
-    (hasSequences === false ? NO_SEQUENCES : readable === false ? NO_READABLE : undefined);
+    (noSequences ? NO_SEQUENCES : readable === false ? NO_READABLE : undefined);
 
   const tabs: TabItem<GenomeTab>[] = [
     {
       id: 'sequences',
       label: 'Sequences',
-      count:
-        hasSequences === false ? undefined : sequenceStats ? sequenceStats.count : null,
-      disabled: hasSequences === false,
-      title: hasSequences === false ? NO_SEQUENCES : undefined,
+      count: noSequences ? undefined : (sequences.data?.sequences.length ?? null),
+      disabled: noSequences,
+      title: noSequences ? NO_SEQUENCES : undefined,
     },
     { id: 'extract', label: 'Extract', disabled: !!extractOff, title: extractOff },
     { id: 'download', label: 'Download', disabled: !!downloadOff, title: downloadOff },
