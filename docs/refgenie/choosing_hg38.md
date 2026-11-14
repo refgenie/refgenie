@@ -28,8 +28,10 @@ For example, to get the FASTA and a bwa index, or only the chromosome sizes, or 
 refgenie pull hg38/fasta hg38/bwa_index
 refgenie pull hg38/fasta_index
 refgenie seek hg38/fasta_index.chrom_sizes
-refgenie getseq -g hg38 -l chr1:10000-10100
+refgenie getseq -g hg38 -l chr1:10,001-10,100
 ```
+
+A region is 1-based and inclusive, like in a genome browser. See [Coordinates](coordinates.md).
 
 Avoid for plain alignment any genome with ALT contigs or patches (`hg38_initial`, `hg38_p14`, `hg38_full_analysis`, `hg38_p14_genomic`, `hg38_p14_gencode`), unless your aligner is ALT-aware.
 

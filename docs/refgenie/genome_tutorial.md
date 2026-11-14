@@ -89,17 +89,17 @@ To rebuild the asset later, run `refgenie build hg38/fasta`.
 # Whole chromosome
 refgenie getseq -g hg38 -l chrM
 
-# Subsequence (0-based, half-open coordinates)
-refgenie getseq -g hg38 -l chrM:0-60
+# The first 60 bases (1-based, inclusive, like samtools)
+refgenie getseq -g hg38 -l chrM:1-60
 
 # From a position to the end of the chromosome
 refgenie getseq -g hg38 -l chrM:16500
 
 # Write FASTA instead of plain bases
-refgenie getseq -g hg38 -l chrM:0-60 --fasta
+refgenie getseq -g hg38 -l chrM:1-60 --fasta
 ```
 
-Refgenie resolves the alias `hg38` to its genome digest, looks up `chrM` in the sequence collection, and reads that sequence (or just the requested range) from the store. For a genome registered from a server, it reads only the bytes it needs. Add `--one-based` for samtools-style coordinates, for example `-l chrM:1-60`.
+Refgenie resolves the alias `hg38` to its genome digest, looks up `chrM` in the sequence collection, and reads that sequence (or just the requested range) from the store. For a genome registered from a server, it reads only the bytes it needs. A region is 1-based and inclusive; add `--zero-based` for 0-based, half-open coordinates such as those in a BED file. See [Coordinates](coordinates.md).
 
 ## Putting it all together
 
@@ -118,7 +118,7 @@ refgenie seek mygenome/fasta.fai
 refgenie seek mygenome/fasta.chrom_sizes
 
 # Read sequence straight from the store
-refgenie getseq -g mygenome -l chr1:0-500
+refgenie getseq -g mygenome -l chr1:1-500
 ```
 
 ## Key concepts

@@ -319,6 +319,11 @@ curl -s "$BASE/v4/genomes/$D/sequences" | jq -r '.sequences[] | "\(.name)\t\(.le
 
 The HTTP API has no sequence endpoint. For the bases of a region over MCP, call
 `get_sequence(alias="hg38", name="chr17", start=43044294, end=43044394)`.
+`start` and `end` are 0-based and half-open, like the GA4GH refget API and BED
+files. A region written as text, such as `chr17:43,044,295-43,044,394` from a
+genome browser or the refgenie.org Extract tab, is 1-based and inclusive:
+subtract 1 from its start and keep its end. See
+<https://docs.refgenie.org/refgenie/coordinates/>.
 
 ---
 
@@ -380,7 +385,7 @@ The tools:
 | `get_recipe` | one recipe in full: inputs, command templates, docker image, the build command |
 | `lookup_digest` | what a digest is: a genome, an asset, or nothing |
 | `get_genome_sequences` | a genome's sequences (name, length, digest), paged; filter with `name_contains` |
-| `get_sequence` | the bases of one region (`name`, `start`, `end`; 0-based, half-open; at most 100,000 bases) |
+| `get_sequence` | the bases of one region (`name`, `start`, `end`; 0-based, half-open, so subtract 1 from a text region's start; at most 100,000 bases) |
 | `compare_genomes` | seqcol comparison of two genomes, with a one-sentence summary and a map of renamed sequences |
 
 A tool that takes a genome has separate `alias` and `digest` parameters; give

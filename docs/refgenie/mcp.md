@@ -84,7 +84,7 @@ All tools are read-only. They give the same answers as the server's HTTP API.
 | `get_recipe` | Get one recipe in full: inputs, command templates, docker image, and the build command |
 | `lookup_digest` | Say what a digest is: a genome, an asset, or nothing |
 | `get_genome_sequences` | List a genome's sequences (name, length, digest), paged; filter with `name_contains` |
-| `get_sequence` | Get the bases of one region (`name`, `start`, `end`; 0-based, half-open; at most 100,000 bases) without downloading the genome |
+| `get_sequence` | Get the bases of one region (`name`, `start`, `end`; 0-based, half-open; at most 100,000 bases) without downloading the genome. See [Coordinates](coordinates.md). |
 | `compare_genomes` | Compare two genomes using seqcol comparison, with a one-sentence summary and a map of renamed sequences |
 
 A tool that takes a genome has two parameters, `alias` (a name like `hg38`) and `digest` (32 characters). Give exactly one.
@@ -143,7 +143,7 @@ The assistant calls `search_genomes` with `query="mouse"` and returns any genome
 
 > "Show me the first 100 bases of BRCA1 in hg38."
 
-The assistant calls `get_sequence` with `alias="hg38"`, `name="chr17"`, `start=43044294`, `end=43044394`.
+The assistant calls `get_sequence` with `alias="hg38"`, `name="chr17"`, `start=43044294`, `end=43044394`. These are 0-based, half-open numbers for the region a genome browser writes as `chr17:43,044,295-43,044,394` (see [Coordinates](coordinates.md)).
 
 **Comparing genomes:**
 
