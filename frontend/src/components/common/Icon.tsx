@@ -7,7 +7,15 @@
 import { cn } from '../../utils/cn';
 
 export type IconName =
-  'book' | 'check' | 'code' | 'copy' | 'download' | 'external' | 'plus' | 'wrench';
+  | 'book'
+  | 'check'
+  | 'code'
+  | 'copy'
+  | 'download'
+  | 'external'
+  | 'file'
+  | 'plus'
+  | 'wrench';
 
 const PATHS: Record<IconName, React.ReactNode> = {
   book: (
@@ -41,6 +49,12 @@ const PATHS: Record<IconName, React.ReactNode> = {
       <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
       <polyline points="15 3 21 3 21 9" />
       <line x1="10" y1="14" x2="21" y2="3" />
+    </>
+  ),
+  file: (
+    <>
+      <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+      <polyline points="13 2 13 9 20 9" />
     </>
   ),
   plus: (

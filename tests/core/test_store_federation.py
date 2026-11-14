@@ -23,7 +23,7 @@ from refgenie.managers.alias import AliasManager
 from refgenie.managers.store import LOCAL_STORE_NAME
 from refgenie.models import GenomeAlias
 
-from tests.support.factories import make_engine, seed_species
+from tests.support.factories import build_on_disk_store, make_engine, seed_species
 from tests.support.server import needs_server
 
 pytestmark = pytest.mark.component
@@ -38,16 +38,6 @@ def _server_rgc():
 def _write_species(store_dir, species):
     """Write a species.json at an on-disk store root."""
     (store_dir / "species.json").write_text(json.dumps({"species": species}))
-
-
-def _build_on_disk_store(path, fasta, alias, namespace="name"):
-    """Build an on-disk RefgetStore from a FASTA with one curated alias."""
-    from refget.store import RefgetStore
-
-    store = RefgetStore.on_disk(str(path))
-    meta, _ = store.add_sequence_collection_from_fasta(str(fasta))
-    store.add_collection_alias(namespace, alias, meta.digest)
-    return meta.digest
 
 
 # ---------------------------------------------------------------------------
@@ -83,6 +73,80 @@ class TestStoreRegistry:
         )
         assert [s.name for s in rg.store.list_all()] == ["vgp"]
         assert "reserved" in caplog.text
+
+    def test_apply_declaration_reports_changes(self):
+        rg = _server_rgc()
+        rg.store.add("jungle", "url://j", StoreType.remote, priority=10)
+        rg.store.add("vgp", "url://v", StoreType.remote, priority=20)
+        changes = rg.store.apply_declaration(
+            [
+                {"name": "jungle", "url": "url://j", "priority": 10},
+                {"name": "vgp", "url": "url://v2", "priority": 20},
+                {"name": "igenomes", "url": "url://i", "priority": 40},
+            ]
+        )
+        assert changes == {"added": ["igenomes"], "updated": ["vgp"], "disabled": []}
+        assert rg.store.get("vgp").url == "url://v2"
+
+    def test_apply_declaration_keeps_undeclared_stores_by_default(self):
+        rg = _server_rgc()
+        rg.store.add("jungle", "url://j", StoreType.remote, priority=10)
+        rg.store.apply_declaration([{"name": "vgp", "url": "url://v"}])
+        assert rg.store.get("jungle").enabled
+
+    def test_apply_declaration_disables_missing(self):
+        """Undeclared stores are disabled, never deleted: genomes keep their FK."""
+        rg = _server_rgc()
+        rg.store.add("jungle", "url://j", StoreType.remote, priority=10)
+        rg.store.add("old", "url://o", StoreType.remote, priority=50)
+        rg.genome.add("D" * 32, "owned by old", [], store_name="old")
+
+        changes = rg.store.apply_declaration(
+            [{"name": "jungle", "url": "url://j", "priority": 10}], disable_missing=True
+        )
+
+        assert changes == {"added": [], "updated": [], "disabled": ["old"]}
+        assert [s.name for s in rg.store.list_all()] == ["jungle", "old"]
+        assert [s.name for s in rg.store.enabled_stores()] == ["jungle"]
+        assert rg.genome.get("D" * 32).store_name == "old"
+        # Applying the same file again changes nothing.
+        again = rg.store.apply_declaration(
+            [{"name": "jungle", "url": "url://j", "priority": 10}], disable_missing=True
+        )
+        assert again == {"added": [], "updated": [], "disabled": []}
+
+    def test_apply_declaration_reenables_a_declared_store(self):
+        rg = _server_rgc()
+        rg.store.add("vgp", "url://v", StoreType.remote, priority=20, enabled=False)
+        changes = rg.store.apply_declaration(
+            [{"name": "vgp", "url": "url://v", "priority": 20}], disable_missing=True
+        )
+        assert changes["updated"] == ["vgp"]
+        assert rg.store.get("vgp").enabled
+
+    def test_store_apply_cli_reads_the_file(self, tmp_path, capsys):
+        from refgenie.cli.commands.store import StoreApplyModel, handle_store_apply
+
+        rg = _server_rgc()
+        rg.store.add("old", "url://o", StoreType.remote, priority=50)
+        declaration = tmp_path / "stores.json"
+        declaration.write_text(
+            json.dumps([{"name": "jungle", "url": "url://j", "priority": 10, "type": "remote"}])
+        )
+
+        handle_store_apply(StoreApplyModel(file=declaration), rg)
+
+        assert [s.name for s in rg.store.enabled_stores()] == ["jungle"]
+        out = capsys.readouterr().out
+        assert "added" in out and "disabled" in out
+
+    def test_store_apply_cli_rejects_a_non_array(self, tmp_path):
+        from refgenie.cli.commands.store import StoreApplyModel, handle_store_apply
+
+        declaration = tmp_path / "stores.json"
+        declaration.write_text(json.dumps({"name": "jungle", "url": "url://j"}))
+        with pytest.raises(SystemExit):
+            handle_store_apply(StoreApplyModel(file=declaration), _server_rgc())
 
     def test_remove_missing_raises(self):
         rg = _server_rgc()
@@ -172,10 +236,10 @@ class TestStoreSyncIntegration:
 
         # Two stores share the alias 'shared' for DIFFERENT genomes, and each
         # has one unique genome.
-        jungle_shared = _build_on_disk_store(
+        jungle_shared = build_on_disk_store(
             tmp_path / "jungle", fixtures_path / "rCRSd.fa", "shared"
         )
-        vgp_shared = _build_on_disk_store(tmp_path / "vgp", fixtures_path / "t7.fa", "shared")
+        vgp_shared = build_on_disk_store(tmp_path / "vgp", fixtures_path / "t7.fa", "shared")
 
         rg = _server_rgc()
         rg.store.add("jungle", str(tmp_path / "jungle"), StoreType.on_disk, priority=10)
@@ -205,7 +269,7 @@ class TestStoreSyncIntegration:
         is fetched. Its species.json is read from disk."""
         from refgenie.cli.commands.store import StoreSyncModel, handle_store_sync
 
-        digest = _build_on_disk_store(tmp_path / "jungle", fixtures_path / "rCRSd.fa", "rCRSd")
+        digest = build_on_disk_store(tmp_path / "jungle", fixtures_path / "rCRSd.fa", "rCRSd")
         _write_species(tmp_path / "jungle", [{"taxon_id": 10116, "scientific_name": "Rattus"}])
         rg = _server_rgc()
         rg.store.add("jungle", str(tmp_path / "jungle"), StoreType.on_disk, priority=10)
@@ -225,8 +289,8 @@ class TestStoreSyncIntegration:
     ):
         from refgenie.cli.commands.store import StoreSyncModel, handle_store_sync
 
-        _build_on_disk_store(tmp_path / "jungle", fixtures_path / "rCRSd.fa", "rCRSd")
-        _build_on_disk_store(tmp_path / "vgp", fixtures_path / "t7.fa", "t7")
+        build_on_disk_store(tmp_path / "jungle", fixtures_path / "rCRSd.fa", "rCRSd")
+        build_on_disk_store(tmp_path / "vgp", fixtures_path / "t7.fa", "t7")
         _write_species(
             tmp_path / "jungle",
             [{"taxon_id": 1, "scientific_name": "One", "common_name": "from jungle"}],
@@ -251,8 +315,8 @@ class TestStoreSyncIntegration:
         """The same FASTA in two stores yields one Genome row (digest dedup)."""
         from refgenie.cli.commands.store import _sync_one_store
 
-        digest_a = _build_on_disk_store(tmp_path / "a", fixtures_path / "rCRSd.fa", "rCRSd")
-        digest_b = _build_on_disk_store(tmp_path / "b", fixtures_path / "rCRSd.fa", "rCRSd")
+        digest_a = build_on_disk_store(tmp_path / "a", fixtures_path / "rCRSd.fa", "rCRSd")
+        digest_b = build_on_disk_store(tmp_path / "b", fixtures_path / "rCRSd.fa", "rCRSd")
         assert digest_a == digest_b  # content-addressed: identical
 
         rg = _server_rgc()
@@ -267,6 +331,20 @@ class TestStoreSyncIntegration:
         assert len(genomes) == 1
         assert genomes[0].store_name == "a"
 
+    def test_disabled_owner_loses_genome(self, tmp_path, fixtures_path):
+        """A genome owned by a disabled store moves to an enabled store that offers it."""
+        from refgenie.cli.commands.store import StoreSyncModel, handle_store_sync
+
+        digest = build_on_disk_store(tmp_path / "new", fixtures_path / "rCRSd.fa", "rCRSd")
+        rg = _server_rgc()
+        rg.store.add("old", "url://old", StoreType.remote, priority=10, enabled=False)
+        rg.store.add("new", str(tmp_path / "new"), StoreType.on_disk, priority=20)
+        rg.genome.add(digest=digest, description="", alias_names=[], store_name="old")
+
+        handle_store_sync(StoreSyncModel(), rg)
+
+        assert rg.genome.get(digest).store_name == "new"
+
     def test_resync_backfills_fhr_columns(self, tmp_path, fixtures_path):
         """A sidecar added to the store after the first sync lands on re-sync."""
         from refget.store import RefgetStore
@@ -274,7 +352,7 @@ class TestStoreSyncIntegration:
         from refgenie.cli.commands.store import _sync_one_store
         from refgenie.managers.genome import GenomeManager
 
-        digest = _build_on_disk_store(tmp_path / "vgp", fixtures_path / "rCRSd.fa", "rCRSd")
+        digest = build_on_disk_store(tmp_path / "vgp", fixtures_path / "rCRSd.fa", "rCRSd")
         rg = _server_rgc()
         rg.store.add("vgp", str(tmp_path / "vgp"), StoreType.on_disk, priority=10)
         srow = rg.store.get("vgp")
@@ -306,6 +384,210 @@ class TestStoreSyncIntegration:
         assert genome.assembly_level == "chromosome"
         seed_species(rg, 9606, "Homo sapiens", "human")
         assert rg.genome.detail(digest).common_name == "human"
+
+        del fhr["genomeSynonym"]
+        store.set_fhr_metadata(digest, GenomeManager._fhr_metadata_from_dict(fhr))
+        _sync_one_store(rg, srow, priorities, 100)
+        assert rg.genome.get(digest).synonyms is None
+
+    def test_lower_priority_store_does_not_overwrite_fhr_columns(self, tmp_path, fixtures_path):
+        """Only the owning store writes FHR columns, whatever the sync order."""
+        from refget.store import RefgetStore
+
+        from refgenie.cli.commands.store import StoreSyncModel, handle_store_sync
+        from refgenie.managers.genome import GenomeManager
+
+        for name in ("owner", "other"):
+            digest = build_on_disk_store(tmp_path / name, fixtures_path / "rCRSd.fa", "rCRSd")
+            fhr = {"genome": "rCRSd", "assemblySource": name, "documentation": f"from {name}"}
+            RefgetStore.on_disk(str(tmp_path / name)).set_fhr_metadata(
+                digest, GenomeManager._fhr_metadata_from_dict(fhr)
+            )
+        rg = _server_rgc()
+        rg.store.add("owner", str(tmp_path / "owner"), StoreType.on_disk, priority=10)
+        rg.store.add("other", str(tmp_path / "other"), StoreType.on_disk, priority=20)
+
+        handle_store_sync(StoreSyncModel(), rg)  # owner first, then other
+
+        genome = rg.genome.get(digest)
+        assert genome.store_name == "owner"
+        assert (genome.assembly_source, genome.description) == ("owner", "from owner")
+
+
+# ---------------------------------------------------------------------------
+# A store's aliases are replaced as a set at each sync
+# ---------------------------------------------------------------------------
+
+
+def _jungle(tmp_path, fixtures_path):
+    """A server with one on-disk store 'jungle': rCRSd (aliases a, b, c) and t7 (alias t7)."""
+    from refget.store import RefgetStore
+
+    path = tmp_path / "jungle"
+    rcrsd = build_on_disk_store(path, fixtures_path / "rCRSd.fa", "a")
+    t7 = build_on_disk_store(path, fixtures_path / "t7.fa", "t7")
+    store = RefgetStore.on_disk(str(path))
+    for name in ("b", "c"):
+        store.add_collection_alias("name", name, rcrsd)
+    rg = _server_rgc()
+    rg.store.add("jungle", str(path), StoreType.on_disk, priority=10)
+    return rg, store, rcrsd, t7
+
+
+def _sync(rg, name="jungle"):
+    from refgenie.cli.commands.store import _sync_one_store
+
+    return _sync_one_store(rg, rg.store.get(name), {"jungle": 10}, 100)
+
+
+def _owned(rg, store_name="jungle"):
+    """{alias: digest} of the SQL alias rows a store owns."""
+    rows = AliasManager(rg.database_engine).list_all()
+    return {a.name: a.genome_digest for a in rows if a.store_name == store_name}
+
+
+class TestStoreAliasReplacement:
+    def test_slash_alias_is_skipped_and_old_slash_rows_are_removed(
+        self, tmp_path, fixtures_path, caplog
+    ):
+        rg, store, rcrsd, t7 = _jungle(tmp_path, fixtures_path)
+        store.add_collection_alias("name", "Homo_sapiens/NCBI/rCRSd", rcrsd)
+        assert _sync(rg) == (2, 0)
+        # Rows written before refgenie skipped such names. More of them than the
+        # store's names: they do not count toward the half guard.
+        for n in range(5):
+            AliasManager(rg.database_engine).federated_sync(
+                f"Homo_sapiens/UCSC/old{n}", rcrsd, "jungle", {"jungle": 10}
+            )
+
+        with caplog.at_level(logging.WARNING):
+            assert _sync(rg) == (0, 0)
+
+        assert _owned(rg) == {"a": rcrsd, "b": rcrsd, "c": rcrsd, "t7": t7}
+        assert "skipped 1 alias(es) with '/'" in caplog.text
+
+    def test_store_moving_its_alias_to_another_collection_repoints_it(
+        self, tmp_path, fixtures_path
+    ):
+        rg, store, rcrsd, t7 = _jungle(tmp_path, fixtures_path)
+        _sync(rg)
+        store.remove_collection_alias("name", "b")
+        store.add_collection_alias("name", "b", t7)
+
+        _sync(rg)
+
+        assert rg.alias.resolve("b") == t7
+        assert _owned(rg) == {"a": rcrsd, "b": t7, "c": rcrsd, "t7": t7}
+
+    def test_dropped_alias_is_removed(self, tmp_path, fixtures_path):
+        rg, store, rcrsd, t7 = _jungle(tmp_path, fixtures_path)
+        _sync(rg)
+        store.remove_collection_alias("name", "c")
+
+        _sync(rg)
+
+        with pytest.raises(MissingAliasError):
+            rg.alias.resolve("c")
+        assert _owned(rg) == {"a": rcrsd, "b": rcrsd, "t7": t7}
+
+    def test_store_offering_under_half_its_aliases_keeps_them(
+        self, tmp_path, fixtures_path, caplog
+    ):
+        rg, store, rcrsd, t7 = _jungle(tmp_path, fixtures_path)
+        _sync(rg)
+        for name in ("a", "b", "c"):
+            store.remove_collection_alias("name", name)
+
+        with caplog.at_level(logging.ERROR):
+            _sync(rg)
+
+        assert _owned(rg) == {"a": rcrsd, "b": rcrsd, "c": rcrsd, "t7": t7}
+        assert "offers 1 aliases, down from 4; aliases left unchanged" in caplog.text
+
+    def test_failed_sync_changes_no_aliases(self, tmp_path, fixtures_path, monkeypatch):
+        from refgenie.managers import collection_sync
+
+        rg, store, rcrsd, t7 = _jungle(tmp_path, fixtures_path)
+        _sync(rg)
+        store.remove_collection_alias("name", "c")
+        claim = collection_sync._claim_genome
+
+        def failing_claim(rgc, digest, *args):
+            if digest == t7:
+                raise RuntimeError("store read failed")
+            return claim(rgc, digest, *args)
+
+        monkeypatch.setattr(collection_sync, "_claim_genome", failing_claim)
+
+        assert _sync(rg) == (0, 1)
+        assert _owned(rg) == {"a": rcrsd, "b": rcrsd, "c": rcrsd, "t7": t7}
+
+
+# ---------------------------------------------------------------------------
+# Comparing genomes that live in different stores
+# ---------------------------------------------------------------------------
+
+
+def _write_fasta(path, records):
+    path.write_text("".join(f">{name}\n{seq}\n" for name, seq in records))
+    return path
+
+
+def _synced_rgc(stores):
+    """A server-mode refgenie with the given (name, path) on-disk stores synced."""
+    from refgenie.cli.commands.store import _sync_one_store
+
+    rg = _server_rgc()
+    for priority, (name, path) in enumerate(stores):
+        rg.store.add(name, str(path), StoreType.on_disk, priority=priority)
+    priorities = {s.name: s.priority for s in rg.store.list_all()}
+    for srow in rg.store.enabled_stores():
+        _sync_one_store(rg, srow, priorities, 100)
+    return rg
+
+
+class TestCompareAcrossStores:
+    @pytest.fixture
+    def fastas(self, tmp_path):
+        # Two shared sequences in the same order, one unique to each genome.
+        a = _write_fasta(
+            tmp_path / "a.fa", [("chr1", "ACGTACGT"), ("chr2", "GGGGCCCC"), ("chr3", "TTTTAA")]
+        )
+        b = _write_fasta(
+            tmp_path / "b.fa", [("chr1", "ACGTACGT"), ("chr2", "GGGGCCCC"), ("chr4", "CA")]
+        )
+        return a, b
+
+    def test_cross_store_compare_returns_the_seqcol_comparison(self, tmp_path, fastas):
+        digest_a = build_on_disk_store(tmp_path / "s1", fastas[0], "a")
+        digest_b = build_on_disk_store(tmp_path / "s2", fastas[1], "b")
+        rg = _synced_rgc([("s1", tmp_path / "s1"), ("s2", tmp_path / "s2")])
+        assert rg.genome.get(digest_a).store_name == "s1"
+        assert rg.genome.get(digest_b).store_name == "s2"
+
+        result = rg.genome.compare(digest_a, digest_b)
+
+        assert result["digests"] == {"a": digest_a, "b": digest_b}
+        assert set(result["attributes"]) == {"a_only", "b_only", "a_and_b"}
+        assert {"names", "lengths", "sequences", "name_length_pairs"} <= set(
+            result["attributes"]["a_and_b"]
+        )
+        elements = result["array_elements"]
+        assert set(elements) == {"a_count", "b_count", "a_and_b_count", "a_and_b_same_order"}
+        assert elements["a_count"]["names"] == 3
+        assert elements["a_and_b_count"]["sequences"] == 2
+        assert elements["a_and_b_same_order"]["names"] is True
+
+    def test_same_store_and_cross_store_agree(self, tmp_path, fastas):
+        build_on_disk_store(tmp_path / "both", fastas[0], "a")
+        build_on_disk_store(tmp_path / "both", fastas[1], "b")
+        digest_a = build_on_disk_store(tmp_path / "s1", fastas[0], "a")
+        digest_b = build_on_disk_store(tmp_path / "s2", fastas[1], "b")
+
+        same = _synced_rgc([("both", tmp_path / "both")])
+        cross = _synced_rgc([("s1", tmp_path / "s1"), ("s2", tmp_path / "s2")])
+
+        assert same.genome.compare(digest_a, digest_b) == cross.genome.compare(digest_a, digest_b)
 
 
 # ---------------------------------------------------------------------------
@@ -477,8 +759,8 @@ class TestServingALocalBuild:
         )
         # A federated store names a different genome 'rCRSd', and one 'phage'.
         vgp = tmp_path / "vgp"
-        t7_digest = _build_on_disk_store(vgp, fixtures_path / "t7.fa", "rCRSd")
-        _build_on_disk_store(vgp, fixtures_path / "t7.fa", "phage")
+        t7_digest = build_on_disk_store(vgp, fixtures_path / "t7.fa", "rCRSd")
+        build_on_disk_store(vgp, fixtures_path / "t7.fa", "phage")
         built.store.add("vgp", str(vgp), StoreType.on_disk, priority=10)
         _sync_one_store(built, built.store.get("vgp"), {"vgp": 10}, 100)
 
@@ -546,8 +828,8 @@ class TestSharedReadonlyStores:
         from refgenie.cli.commands.store import _sync_one_store
         from refgenie.managers.genome import GenomeManager
 
-        human = _build_on_disk_store(tmp_path / "jungle", fixtures_path / "rCRSd.fa", "rCRSd")
-        phage = _build_on_disk_store(tmp_path / "vgp", fixtures_path / "t7.fa", "t7")
+        human = build_on_disk_store(tmp_path / "jungle", fixtures_path / "rCRSd.fa", "rCRSd")
+        phage = build_on_disk_store(tmp_path / "vgp", fixtures_path / "t7.fa", "t7")
         RefgetStore.on_disk(str(tmp_path / "jungle")).set_fhr_metadata(
             human, GenomeManager._fhr_metadata_from_dict(self.FHR)
         )
@@ -561,9 +843,7 @@ class TestSharedReadonlyStores:
 
     @staticmethod
     def _mounts(app):
-        from starlette.routing import Mount
-
-        return {r.path: r.app for r in app.routes if isinstance(r, Mount)}
+        return {m.url: m.app for m in app.state.seqcol.mounts}
 
     def test_seqcol_mounts_share_the_routers_readonly_stores(
         self, tmp_path, fixtures_path, monkeypatch

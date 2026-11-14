@@ -204,70 +204,6 @@ class TestStoreUrlParsing:
         assert store_url_from_service_info(info) is None
 
 
-@needs_server
-class TestResolveAlias:
-    """The alias path comes from the server's OpenAPI document by operationId,
-    so no discovered seqcol prefix can be concatenated onto it. Prepending one
-    produces https://host/seqcol/v4/aliases/hg38, which 404s.
-    """
-
-    def test_alias_request_has_no_seqcol_in_the_path(self, server_source):
-        source = server_source
-        client = MagicMock()
-        client.has_endpoint.return_value = True
-        client.alias.resolve.return_value = "DIGEST123"
-
-        with patch(
-            "refgenie.managers.sources.client.RefgenieserverClient", return_value=client
-        ) as MockClient:
-            assert source.resolve_alias("hg38") == "DIGEST123"
-
-        MockClient.assert_called_once_with(server_url="https://api.refgenie.org")
-        client.alias.resolve.assert_called_once_with("hg38")
-        # Nothing in the call carries a seqcol prefix.
-        assert "seqcol" not in repr(MockClient.call_args)
-
-    def test_missing_alias_operation_logs_a_warning_and_returns_none(self, server_source, caplog):
-        source = server_source
-        client = MagicMock()
-        client.has_endpoint.return_value = False
-
-        with caplog.at_level(logging.WARNING):
-            with patch(
-                "refgenie.managers.sources.client.RefgenieserverClient", return_value=client
-            ):
-                assert source.resolve_alias("hg38") is None
-        assert any("publishes no" in r.message for r in caplog.records)
-        client.alias.resolve.assert_not_called()
-
-    def test_alias_request_failure_logs_a_warning_and_returns_none(self, server_source, caplog):
-        source = server_source
-        client = MagicMock()
-        client.has_endpoint.return_value = True
-        client.alias.resolve.side_effect = RuntimeError("404 Not Found")
-
-        with caplog.at_level(logging.WARNING):
-            with patch(
-                "refgenie.managers.sources.client.RefgenieserverClient", return_value=client
-            ):
-                assert source.resolve_alias("hg38") is None
-        assert any("404 Not Found" in r.message for r in caplog.records)
-
-    def test_unreachable_openapi_spec_logs_a_warning_and_is_not_retried(
-        self, server_source, caplog
-    ):
-        source = server_source
-        with caplog.at_level(logging.WARNING):
-            with patch(
-                "refgenie.managers.sources.client.RefgenieserverClient",
-                side_effect=OSError("connection refused"),
-            ) as MockClient:
-                assert source.resolve_alias("hg38") is None
-                assert source.resolve_alias("hg19") is None
-        assert MockClient.call_count == 1
-        assert any("OpenAPI spec" in r.message for r in caplog.records)
-
-
 # ---------------------------------------------------------------------------
 # make_source: its cache and RefgetStore detection
 # ---------------------------------------------------------------------------
@@ -367,12 +303,9 @@ def mock_source(remote_digest, mock_collection_data):
 def make_remote_source(remote_digest, mock_collection_data):
     """Build a MockRemoteSource; defaults to one collection at `remote_digest`."""
 
-    def _make(*, digests=None, store_url="https://store.example.com", aliases=None):
+    def _make(*, digests=None, store_url="https://store.example.com"):
         collections = {d: mock_collection_data for d in (digests or [remote_digest])}
-        source = MockRemoteSource(collections=collections, store_url=store_url)
-        if aliases:
-            source._aliases = dict(aliases)
-        return source
+        return MockRemoteSource(collections=collections, store_url=store_url)
 
     return _make
 
@@ -435,29 +368,18 @@ class TestRemoteGenome:
         assert created is True
         assert refgenie_minimal.genome.get(digest).remote_url is None
 
-    def test_init_resolves_alias_when_no_digest(
-        self, refgenie_minimal, remote_digest, make_remote_source, init_remote
-    ):
-        """Remote init resolves the alias when a digest is not supplied."""
-        source = make_remote_source(aliases={"hg38": remote_digest})
-        digest, created = init_remote(source, "hg38", description="Resolved alias genome")
-        assert created is True
-        assert digest == remote_digest
-
-    def test_init_alias_not_found(self, refgenie_minimal):
-        """Remote init raises when the alias cannot be resolved and no digest given."""
-        source = MockRemoteSource(collections={})
-        with pytest.raises(ValueError, match="No digest provided"):
+    def test_init_needs_a_digest(self, refgenie_minimal, mock_source):
+        """A source without a digest raises; ``ServerManager.locate`` finds digests."""
+        with pytest.raises(ValueError, match="needs a source and a digest"):
             refgenie_minimal.genome.initialize_genome(
-                source=source,
-                digest=None,
-                description="Unresolvable",
-                alias_names=["unknown"],
+                source=mock_source,
+                description="No digest",
+                alias_names=["hg38"],
             )
 
     def test_init_missing_source(self, refgenie_minimal, remote_digest):
         """A digest without a source raises."""
-        with pytest.raises(ValueError, match="RemoteGenomeSource is required"):
+        with pytest.raises(ValueError, match="needs a source and a digest"):
             refgenie_minimal.genome.initialize_genome(
                 digest=remote_digest,
                 description="Missing source",
@@ -490,36 +412,27 @@ class TestRemoteGenome:
         with pytest.raises(ValueError, match="already exists"):
             init_remote(mock_source, "second_alias", digest=remote_digest, description="Second")
 
-    def test_getseq_remote_fallback(
-        self, refgenie_minimal, remote_digest, mock_source, init_remote
-    ):
-        """getseq falls back to a remote fetch when the sequence is not local."""
-        init_remote(mock_source, "remote_genome", digest=remote_digest, description="Remote genome")
-        mock_record = MagicMock()
-        mock_record.decode.return_value = "ACGTACGT"
-        mock_record.metadata.sha512t24u = "fake_digest"
-
-        with patch.object(refgenie_minimal.sequence, "_fetch_remote", return_value=mock_record):
-            result = refgenie_minimal.sequence.get(
-                refgenie_minimal.alias.resolve("remote_genome"), "chr1"
-            )
-        assert result == "ACGTACGT"
-
     def test_compare_both_remote_same_server(
         self, refgenie_minimal, make_remote_source, init_remote
     ):
-        """Two remote genomes on the same store use the store's compare."""
+        """Two remote genomes on the same store compare their level 2 from that store."""
         digest_a = "aaaaaaaaaaaabbbbbbbbbbbbcccccccc"
         digest_b = "ddddddddddddeeeeeeeeeeeeffffffff"
         source = make_remote_source(digests=[digest_a, digest_b])
         for d, name in ((digest_a, "genome_a"), (digest_b, "genome_b")):
             init_remote(source, name, digest=d)
 
-        expected = {"digests": {}, "attributes": {}, "array_elements": {}}
-        with patch("gtars.refget.RefgetStore") as MockStore:
-            MockStore.open_remote.return_value.compare.return_value = expected
+        level2 = {"names": ["chr1"], "lengths": [8], "sequences": ["SQ.x"]}
+        with patch.object(
+            refgenie_minimal.genome.__class__, "_get_remote_level2", return_value=level2
+        ) as remote:
             result = refgenie_minimal.genome.compare(digest_a, digest_b)
-        assert result == expected
+        assert {c.args for c in remote.call_args_list} == {
+            ("https://store.example.com", digest_a),
+            ("https://store.example.com", digest_b),
+        }
+        assert result["digests"] == {"a": digest_a, "b": digest_b}
+        assert result["attributes"]["a_and_b"] == ["lengths", "names", "sequences"]
 
     def test_compare_one_local_one_remote(
         self,
@@ -614,20 +527,20 @@ class TestRemoteGenome:
         assert "list_alias_test" in refgenie_minimal.alias.get_for_genome(remote_digest)
 
     def test_compare_level2_helper(self):
-        """_compare_level2 counts shared/unique names, lengths and sequences."""
-        from refgenie.managers.genome import _compare_level2
+        """compare_level2 returns the GA4GH seqcol comparison object."""
+        from refgenie.utils.seqcol import compare_level2 as _compare_level2
 
         level2_a = {"names": ["chr1", "chr2"], "lengths": [100, 200], "sequences": ["s1", "s2"]}
         level2_b = {"names": ["chr1", "chr3"], "lengths": [100, 300], "sequences": ["s1", "s3"]}
         result = _compare_level2(level2_a, level2_b, "digest_a", "digest_b")
 
         assert result["digests"] == {"a": "digest_a", "b": "digest_b"}
-        names = result["attributes"]["names"]
-        assert names["a_count"] == 2
-        assert names["b_count"] == 2
-        assert names["a_and_b"] == 1  # chr1
-        assert names["a_only"] == 1  # chr2
-        assert names["b_only"] == 1  # chr3
+        assert sorted(result["attributes"]["a_and_b"]) == ["lengths", "names", "sequences"]
+        elements = result["array_elements"]
+        assert set(elements) == {"a_count", "b_count", "a_and_b_count", "a_and_b_same_order"}
+        assert elements["a_count"]["names"] == 2
+        assert elements["b_count"]["names"] == 2
+        assert elements["a_and_b_count"]["names"] == 1  # chr1
 
 
 # ---------------------------------------------------------------------------
@@ -806,6 +719,20 @@ class TestGenomeSync:
         assert refgenie_minimal.alias.get_for_genome(digest) == ["hg38-broad"]
         assert not refgenie_minimal.alias.exists("hg38")
         assert not refgenie_minimal.alias.exists("GCA_000001405.15")
+
+    def test_skips_names_that_are_not_valid_aliases(self, refgenie_minimal, mock_collection_data):
+        """An iGenomes path such as 'Homo_sapiens/NCBI/GRCh38' is not an alias here."""
+        from refgenie.cli.commands import genome as handlers
+
+        digest = "aliasslash000000000000000000000x"
+        source = MockRemoteSource(
+            collections={digest: mock_collection_data},
+            collection_aliases={digest: [("name", "Homo_sapiens/NCBI/GRCh38"), ("name", "hg38")]},
+        )
+        with patch.object(handlers, "make_source", return_value=source):
+            handlers.handle_genome_sync(_sync_cmd(server_url="https://s"), refgenie_minimal)
+
+        assert refgenie_minimal.alias.get_for_genome(digest) == ["hg38"]
 
     def test_never_repoints_existing_alias(
         self, refgenie_minimal, rCRSd_fasta_file_path, mock_collection_data

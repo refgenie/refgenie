@@ -2,7 +2,7 @@
 ServerManager (``rgc.servers``): the refgenieservers this node pulls from.
 
 Owns subscriptions, one client per server URL, read-only catalog queries,
-server-side alias and collection lookups, and remote seek. Push targets
+server-side genome lookups (``locate``), and remote seek. Push targets
 (``refgenie remote``) are a separate concept, not handled here.
 """
 
@@ -11,8 +11,9 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from rich.table import Table
-from refgenie.db.engine import Engine
 
+from refgenie.db.engine import Engine
+from refgenie.db.queries import configuration as configuration_queries
 from refgenie.db.tables import is_path_type
 from refgenie.exceptions import (
     MissingAliasError,
@@ -24,18 +25,13 @@ from refgenie.logger import logger
 from refgenie.managers.asset.seek_key import default_seek_key_from_payload, payload_is_path_type
 from refgenie.managers.asset.tables import asset_table
 from refgenie.managers.base import ResourceManager
-from refgenie.db.queries import configuration as configuration_queries
 from refgenie.managers.sources.client import RefgenieserverClient
-from refgenie.managers.sources.genomes import (
-    RemoteGenomeSource,
-    make_source,
-    normalize_server_url,
-)
+from refgenie.managers.sources.genomes import normalize_server_url
 from refgenie.models import AssetRegistryPathComponents, GenomeAlias, GenomeDigest
 
 if TYPE_CHECKING:
-    from refgenie.managers.asset.seek_key import SeekKeyManager
     from refgenie.managers.alias import AliasBackend
+    from refgenie.managers.asset.seek_key import SeekKeyManager
 
 
 def estimate_pull_size(asset_list: list[dict]) -> tuple[int, int]:
@@ -69,7 +65,8 @@ class ServerManager(ResourceManager):
     """
     Refgenieservers this node pulls from: subscriptions, clients, catalog, remote seek.
 
-    The one place that asks servers what an alias or a collection is.
+    The one place that asks servers which genome an alias or a digest names
+    (``locate``).
     """
 
     def __init__(
@@ -186,110 +183,54 @@ class ServerManager(ResourceManager):
         return self._clients[url]
 
     # =========================================================================
-    # Server-side lookups: what an alias or a collection is
+    # Server-side lookups: which server knows a genome
     # =========================================================================
 
-    def resolve_alias(
-        self, alias: GenomeAlias, server_urls: list[str] | None = None
-    ) -> GenomeDigest | None:
+    def locate(
+        self, genome: GenomeAlias | GenomeDigest, server_urls: list[str] | None = None
+    ) -> tuple[str, GenomeDigest, dict] | None:
         """
-        Ask the servers which genome an alias names. Nothing is written locally.
+        The first server that knows a genome, by alias or digest. Writes nothing.
 
-        Each server is asked through its genome source first, then through the
-        v4 client, for servers not usable as a genome source.
+        Every remote genome lookup goes through here. An alias is resolved by
+        the server's alias endpoint; a digest is used as is.
 
         Args:
-            alias: The alias to resolve.
+            genome: The genome, as a ``GenomeAlias`` or a ``GenomeDigest``. A
+                plain ``str`` raises TypeError: say which one it is.
             server_urls: Servers to ask, in order. Defaults to the subscriptions.
 
         Returns:
-            The digest from the first server that knows the alias, or None.
+            (server_url, digest, the server's genome record), or None if no
+            server knows the genome.
         """
-        server_urls = server_urls or self.subscriptions()
-        for server_url in server_urls:
-            try:
-                digest = make_source(server_url).resolve_alias(alias)
-            except Exception as exc:
-                logger.debug(f"Failed to create source for {server_url}: {exc}")
-                continue
-            if digest is not None:
-                logger.info(f"Resolved alias '{alias}' to digest: {digest}")
-                return GenomeDigest(digest)
-            logger.debug(f"Alias '{alias}' not found on {server_url}")
-        for server_url in server_urls:
-            try:
-                digest = self.client(server_url).alias.resolve(alias)
-            except Exception as exc:
-                logger.debug(f"Alias resolution via server client failed for {server_url}: {exc}")
-                continue
-            if digest:
-                logger.info(f"Resolved alias '{alias}' via server client: {digest}")
-                return GenomeDigest(digest)
-        return None
-
-    def find_collection(
-        self, digest: GenomeDigest, server_urls: list[str] | None = None
-    ) -> dict | None:
-        """
-        Ask the servers for a sequence collection by its digest.
-
-        Args:
-            digest: The collection (genome) digest.
-            server_urls: Servers to ask, in order. Defaults to the subscriptions.
-
-        Returns:
-            The collection's level 2 data from the first server that has it, or None.
-        """
+        if not isinstance(genome, (GenomeAlias, GenomeDigest)):
+            raise TypeError(
+                f"locate needs a GenomeAlias or a GenomeDigest, not {type(genome).__name__}"
+            )
         for server_url in server_urls or self.subscriptions():
             try:
-                collection = make_source(server_url).verify_collection(digest)
-            except Exception as exc:
-                logger.debug(f"Collection lookup failed on {server_url}: {exc}")
+                client = self.client(server_url)
+                digest = (
+                    genome
+                    if isinstance(genome, GenomeDigest)
+                    else GenomeDigest(client.alias.resolve(genome))
+                )
+                attrs = client.genome.get(digest)
+            except Exception as exc:  # 404, an older server, a network error
+                logger.debug(f"{server_url} does not know genome '{genome}': {exc}")
                 continue
-            if collection is not None:
-                return collection
+            return server_url, digest, attrs
         return None
 
-    def genome_source(self, server_urls: list[str] | None = None) -> RemoteGenomeSource | None:
-        """
-        The first server usable as a genome source, to create genomes from.
-
-        Args:
-            server_urls: Servers to try, in order. Defaults to the subscriptions.
-
-        Returns:
-            The source, or None if no server is usable as one.
-        """
-        for server_url in server_urls or self.subscriptions():
-            try:
-                return make_source(server_url)
-            except Exception as exc:
-                logger.debug(f"Failed to create source for {server_url}: {exc}")
-        return None
-
-    def genome_attrs(
-        self, genome_digest: GenomeDigest, server_urls: list[str] | None = None
-    ) -> dict:
-        """
-        The first server's record of a genome: description, species, FHR, etc.
-
-        Args:
-            genome_digest: The genome to look up.
-            server_urls: Servers to ask, in order. Defaults to the subscriptions.
-
-        Returns:
-            The server's genome attributes (the ``/genomes/{digest}`` body), or
-            an empty dict if no server has the genome.
-        """
-        for server_url in server_urls or self.subscriptions():
-            try:
-                attrs = self.client(server_url).genome.get(genome_digest)
-            except Exception as exc:
-                logger.debug(f"No genome attributes from {server_url}: {exc}")
-                continue
-            if attrs:
-                return attrs
-        return {}
+    def alias_names(self, genome_digest: GenomeDigest, server_url: str) -> list[str]:
+        """The alias names one server holds for a genome, as it spells them; [] if it cannot list them."""
+        try:
+            listing = self.client(server_url).alias.list(params={"genome_digest": genome_digest})
+        except Exception as exc:
+            logger.debug(f"Could not list aliases of {genome_digest} on {server_url}: {exc}")
+            return []
+        return [str(a["name"]) for a in listing if a.get("name")]
 
     # =========================================================================
     # Catalog: what a server has
@@ -299,7 +240,7 @@ class ServerManager(ResourceManager):
         self,
         genome_digests: list[GenomeDigest] | None = None,
         server_urls: list[str] | None = None,
-    ) -> tuple[dict[str, dict[str, list[str]]], dict[str, dict[str, str]]]:
+    ) -> tuple[dict[str, dict[str, list[str]]], dict[str, dict[str, list[str]]]]:
         """
         List all assets available on the subscribed servers.
 
@@ -310,7 +251,7 @@ class ServerManager(ResourceManager):
         Returns:
             (assets by server URL, aliases by server URL). Asset data has the
             shape of ``AssetManager.list_all``: genome digest -> ``group:asset``
-            strings. Alias data is genome digest -> comma-separated aliases.
+            strings. Alias data is genome digest -> alias names.
         """
         server_urls = server_urls or self.subscriptions()
         if not server_urls:
@@ -350,13 +291,14 @@ class ServerManager(ResourceManager):
                     continue
                 if genome_digests and genome_digest not in genome_digests:
                     continue
-                server_assets.setdefault(genome_digest, []).append(
-                    f"{asset_group.get('name', 'unknown')}:{asset.get('name', 'unknown')}"
+                group_name = asset_group.get("name", "unknown")
+                server_assets.setdefault(genome_digest, []).extend(
+                    f"{group_name}:{n['name']}" for n in asset.get("names", [])
                 )
 
             result[server_url] = server_assets
             aliases_result[server_url] = {
-                digest: ", ".join(names)
+                digest: names
                 for digest, names in _aliases_by_genome(aliases_response).items()
                 if digest in server_assets
             }
@@ -412,10 +354,11 @@ class ServerManager(ResourceManager):
                     if asset_digest:
                         try:
                             staged = client.staged_asset.list(params={"asset_digest": asset_digest})
-                            if staged:
-                                # `digest` is the asset digest, not the archive's.
-                                archive_size = staged[0].get("tarball_size")
-                                archive_digest = staged[0].get("tarball_digest")
+                            # `digest` is the asset digest, not the archive's.
+                            archive = next((s for s in staged if s.get("mode") == "archive"), None)
+                            if archive:
+                                archive_size = archive.get("tarball_size")
+                                archive_digest = archive.get("tarball_digest")
                         except Exception as e:
                             logger.debug(f"Failed to fetch archive size for {asset_digest}: {e}")
 
@@ -595,7 +538,8 @@ class ServerManager(ResourceManager):
         def digest_on(server_url: str) -> GenomeDigest | None:
             if local_digest is not None:
                 return local_digest
-            return self.resolve_alias(genome_alias, [server_url])
+            found = self.locate(genome_alias, [server_url])
+            return None if found is None else found[1]
 
         return self._seek(components, digest_on, local_digest, server_urls)
 

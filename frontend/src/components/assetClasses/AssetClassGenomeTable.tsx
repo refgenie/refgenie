@@ -90,8 +90,8 @@ export function AssetClassGenomeTable({
         {groups.data && (
           <span className="rg-muted text-sm font-normal">
             {' '}
-            — {groups.data.pagination.total} with{' '}
-            <code className="rg-code rg-code--inline">{assetClassName}</code> built
+            ({groups.data.pagination.total} with{' '}
+            <code className="rg-code rg-code--inline">{assetClassName}</code> built)
           </span>
         )}
       </h2>

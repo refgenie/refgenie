@@ -5,8 +5,8 @@ Refgenieservers that assets are pulled from are ``ServerManager``'s job
 (``servers.py``), not this one's.
 """
 
-from pathlib import Path
 from collections.abc import Iterator
+from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
 import yaml
@@ -26,8 +26,8 @@ from refgenie.managers.sources.handlers import (
     HTTPChannelHandler,
     LocalChannelHandler,
 )
-from refgenie.utils.encryption import decrypt_credentials, encrypt_dict
 from refgenie.models import DataChannelSyncReport
+from refgenie.utils.encryption import decrypt_credentials, encrypt_dict
 from refgenie.utils.tables import build_table
 
 if TYPE_CHECKING:

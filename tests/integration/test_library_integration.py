@@ -108,11 +108,11 @@ class TestLibraryReadOnlyOperations:
         assert Path(asset_path).exists(), f"FASTA asset file not found: {asset_path}"
 
         # -- Getseq basic (0-based, half-open) --
-        seq = rg.sequence.get(digest, "rCRSd:0-100")
+        seq = rg.sequence.get(digest, "rCRSd", 0, 100)
         assert len(seq) == 100
 
         # -- Getseq short --
-        seq10 = rg.sequence.get(genome_digest=digest, locus="rCRSd:0-10")
+        seq10 = rg.sequence.get(genome_digest=digest, name="rCRSd", start=0, end=10)
         assert isinstance(seq10, str)
         assert len(seq10) == 10
         assert seq10.upper() == seq10
@@ -134,12 +134,14 @@ class TestLibraryReadOnlyOperations:
         assert rg.asset_class.get("fasta") is not None
         assert rg.recipe.get("fasta") is not None
 
-    @pytest.mark.parametrize("locus", ["chr1:0-10", "blah"])
-    def test_getseq_raise_errors(self, shared_rcrsd_instance, locus):
-        """Scenario 7b: getseq raises errors for invalid loci."""
+    @pytest.mark.parametrize("name, end", [("chr1", 10), ("blah", None)])
+    def test_getseq_raise_errors(self, shared_rcrsd_instance, name, end):
+        """Scenario 7b: getseq raises errors for an unknown sequence name."""
+        from refgenie.exceptions import MissingSequenceError
+
         rg = shared_rcrsd_instance
-        with pytest.raises(ValueError):
-            rg.sequence.get(genome_digest=rg.alias.resolve("rCRSd"), locus=locus)
+        with pytest.raises(MissingSequenceError):
+            rg.sequence.get(genome_digest=rg.alias.resolve("rCRSd"), name=name, start=0, end=end)
 
     def test_self_cleaning_asset_rename(self, shared_rcrsd_instance):
         """Scenario 7d: Asset rename and rename-back (self-cleaning)."""
@@ -645,7 +647,7 @@ class TestCatalogImportPostgres:
         from sqlalchemy import select, text
 
         from tests.support.factories import make_engine
-        from tests.test_publish_catalog import _add_group, artifact_engine
+        from tests.test_publish_catalog import CATALOG_STORE, _add_group, artifact_engine
         from refgenie.db.tables import AssetName
         from refgenie.publish_catalog import export_publish_catalog, import_publish_catalog
 
@@ -656,14 +658,14 @@ class TestCatalogImportPostgres:
         )
         server = refgenie_instance.database_engine
         first = tmp_path / "first.sqlite"
-        export_publish_catalog(node, first, "https://example.org/assets")
+        export_publish_catalog(node, first, "https://example.org/assets", **CATALOG_STORE)
         _add_group(first, digest, 129, "a" * 64)
         import_publish_catalog(server, str(first))
         with server.begin() as conn:
             conn.execute(text("ALTER SEQUENCE assetname_id_seq RESTART WITH 1"))
 
         second = tmp_path / "second.sqlite"
-        export_publish_catalog(node, second, "https://example.org/assets")
+        export_publish_catalog(node, second, "https://example.org/assets", **CATALOG_STORE)
         _add_group(second, digest, 129, "a" * 64)
         with artifact_engine(second).begin() as conn:
             conn.execute(
@@ -676,3 +678,64 @@ class TestCatalogImportPostgres:
         with server.connect() as conn:
             names = {n.name for n in conn.execute(select(AssetName.__table__))}
         assert names == {"default", "second"}
+
+    @staticmethod
+    def _node_with_store_genome(tmp_path, fixtures_path):
+        """A build node with one genome of its own and one in store 'igenomes'."""
+        from refgenie.db.tables import StoreType
+        from tests.support.factories import make_engine
+
+        node = Refgenie(database_engine=make_engine(), suppress_migrations=True)
+        node.database.init(genome_folder=tmp_path / "node_genomes")
+        node.genome.initialize_genome(
+            fasta_file_path=fixtures_path / "rCRSd.fa", alias_names=["rCRSd"], description="rCRSd"
+        )
+        node.store.add("igenomes", "https://example.org/igenomes/", StoreType.remote, priority=40)
+        node.genome.add("I" * 32, "an igenomes genome", [], store_name="igenomes")
+        return node
+
+    def test_import_brings_the_stores_its_genomes_name(
+        self, refgenie_instance, fixtures_path, tmp_path
+    ):
+        """Genomes in a store the server lacks import: the store row comes with them."""
+        from refgenie.publish_catalog import export_publish_catalog, import_publish_catalog
+
+        node = self._node_with_store_genome(tmp_path, fixtures_path)
+        server = refgenie_instance
+        server.store.add("retired", "https://example.org/retired/", priority=90)
+        artifact = tmp_path / "publish.sqlite"
+        export_publish_catalog(
+            node,
+            artifact,
+            "https://example.org/assets",
+            catalog_store_name="refgenie-main",
+            catalog_store_url="https://example.org/refgenie-main/",
+        )
+
+        import_publish_catalog(server.database_engine, str(artifact))
+
+        assert [s.name for s in server.store.enabled_stores()] == ["refgenie-main", "igenomes"]
+        assert not server.store.get("retired").enabled
+        assert server.genome.get("I" * 32).store_name == "igenomes"
+        assert server.genome.get(server.alias.resolve("rCRSd")).store_name == "refgenie-main"
+
+    def test_import_without_the_store_row_fails_and_rolls_back(
+        self, refgenie_instance, fixtures_path, tmp_path
+    ):
+        """Without its store row, the genome's store check fails the whole import."""
+        from refgenie.db.publish import CatalogStoreError
+
+        from refgenie.db.tables import Genome, Store
+        from refgenie.publish_catalog import export_publish_catalog, import_publish_catalog
+        from tests.test_publish_catalog import artifact_engine
+
+        node = self._node_with_store_genome(tmp_path, fixtures_path)
+        artifact = tmp_path / "publish.sqlite"
+        export_publish_catalog(node, artifact, "https://example.org/assets")
+        with artifact_engine(artifact).begin() as conn:
+            conn.execute(Store.__table__.delete())
+
+        with pytest.raises(CatalogStoreError):
+            import_publish_catalog(refgenie_instance.database_engine, str(artifact))
+        with refgenie_instance.database_engine.connect() as conn:
+            assert conn.execute(Genome.__table__.select()).first() is None

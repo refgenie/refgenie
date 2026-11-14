@@ -101,6 +101,30 @@ def genome_digest_from(refgenie, path_genome: str | None, genome_digest: str | N
     return ref if isinstance(ref, GenomeDigest) else refgenie.alias.resolve(ref)
 
 
+def locate_genome(refgenie, ref, server_urls: list[str] | None = None) -> tuple:
+    """(digest, None) for a genome here, (digest, server_url) for one only a server knows.
+
+    Writes nothing. Exits with EXIT_NOT_FOUND when no one knows it.
+    """
+    from refgenie.exceptions import MissingAliasError
+    from refgenie.models import GenomeAlias
+
+    if isinstance(ref, GenomeAlias):
+        try:
+            return refgenie.alias.resolve(ref), None
+        except MissingAliasError:
+            pass
+    elif refgenie.genome.exists(ref):
+        return ref, None
+    found = refgenie.servers.locate(ref, server_urls)
+    if found is None:
+        fail(
+            f"Genome '{ref}' is not registered here, and no subscribed server knows it.",
+            EXIT_NOT_FOUND,
+        )
+    return found[1], found[0]
+
+
 def check_push_remotes(refgenie, refs: list[str] | None) -> None:
     """Exit unless every ``--push-to`` remote exists, before any build or stage starts."""
     from refgenie.exceptions import MissingRemoteError
@@ -127,6 +151,18 @@ def genome_digests_from(
     return [genome_digest_from(refgenie, a, None) for a in aliases or []] + [
         genome_digest_from(refgenie, None, d) for d in genome_digests or []
     ]
+
+
+def note(msg: str) -> None:
+    """Tell the user something on stderr: a result or hint that must show at any log level."""
+    print(msg, file=sys.stderr)
+
+
+def print_table(table) -> None:
+    """Print a rich table to stdout, as wide as its content when stdout is not a terminal."""
+    from rich.console import Console
+
+    Console(file=sys.stdout, width=None if sys.stdout.isatty() else 10_000).print(table)
 
 
 def data_channel_hint(retry_command: str | None = None) -> str:

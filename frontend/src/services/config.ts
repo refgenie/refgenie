@@ -5,7 +5,14 @@
 
 import { ApiError } from './http';
 import { coerceCapabilities, noCapabilities } from './capabilities';
-import type { Capabilities, Mode, ServiceInfoResponse, UiConfig } from '../types/ui';
+import { coerceCollections } from './collections';
+import type {
+  Capabilities,
+  Mode,
+  SeqcolServiceInfo,
+  ServiceInfoResponse,
+  UiConfig,
+} from '../types/ui';
 
 export const SERVICE_INFO_PATH = '/service-info';
 
@@ -24,9 +31,16 @@ function coerceMode(raw: string | undefined): Mode {
   return raw === 'local' ? 'local' : 'server';
 }
 
-function envValue(name: 'VITE_SERVICE_INFO_URL' | 'VITE_API_BASE'): string | undefined {
+function envValue(
+  name: 'VITE_SERVICE_INFO_URL' | 'VITE_API_BASE' | 'VITE_FASTA_DOWNLOAD',
+): string | undefined {
   const value = import.meta.env?.[name];
   return typeof value === 'string' && value !== '' ? value : undefined;
+}
+
+/** Build-time flag for the genome page's "Download FASTA" control. Off unless `1`. */
+export function fastaDownloadEnabled(): boolean {
+  return envValue('VITE_FASTA_DOWNLOAD') === '1';
 }
 
 export function fallbackConfig(): UiConfig {
@@ -38,6 +52,7 @@ export function fallbackConfig(): UiConfig {
     service_name: 'refgenie',
     capabilities: staticFallbackCapabilities(),
     web_ui: null,
+    collections: [],
     degraded: true,
   };
 }
@@ -52,8 +67,30 @@ export function parseServiceInfo(payload: ServiceInfoResponse): UiConfig {
     service_name: block.service_name ?? 'refgenie',
     capabilities: coerceCapabilities(block.capabilities),
     web_ui: block.web_ui ?? null,
+    collections: coerceCollections(block.collections),
     degraded: false,
+    seqcol_services: coerceSeqcolServices(payload.seqcol),
   };
+}
+
+/** `seqcol.services` from service-info; malformed entries are dropped. */
+export function coerceSeqcolServices(seqcol: unknown): SeqcolServiceInfo[] {
+  if (!seqcol || typeof seqcol !== 'object') return [];
+  const services = (seqcol as { services?: unknown }).services;
+  if (!Array.isArray(services)) return [];
+  return services.flatMap((raw) => {
+    if (!raw || typeof raw !== 'object') return [];
+    const s = raw as Record<string, unknown>;
+    if (typeof s.url !== 'string' || typeof s.store !== 'string') return [];
+    const store = s.refget_store as { url?: unknown } | undefined;
+    return [
+      {
+        store: s.store,
+        url: s.url,
+        refget_store_url: typeof store?.url === 'string' ? store.url : null,
+      },
+    ];
+  });
 }
 
 /**

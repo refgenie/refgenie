@@ -20,6 +20,10 @@ from refgenie.server.errors import ErrorCode, error_response
 
 logger = logging.getLogger(__name__)
 
+# Python before 3.13 has no built-in type for .md, and macOS has no
+# /etc/mime.types to supply one, so SKILL.md would go out as octet-stream.
+_MEDIA_TYPES = {".md": "text/markdown"}
+
 #: Directory name of the built bundle inside the package.
 WEBUI_DIRNAME = "webui"
 #: Vite's ``build.assetsDir``: content-hashed files, safe to cache forever.
@@ -194,6 +198,7 @@ def mount_spa(app: FastAPI, dist: "Path | None", shell: bool = True) -> None:
                 immutable = full_path.startswith(f"{ASSETS_DIRNAME}/")
                 return FileResponse(
                     candidate,
+                    media_type=_MEDIA_TYPES.get(os.path.splitext(candidate)[1]),
                     headers={"Cache-Control": _IMMUTABLE if immutable else _NO_CACHE},
                 )
 

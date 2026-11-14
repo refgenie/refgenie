@@ -3,30 +3,46 @@ GenomeManager - handles genome CRUD operations.
 """
 
 import tempfile
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from collections.abc import Callable, Iterable
 from typing import TYPE_CHECKING, Any, Protocol
 
 from rich.table import Table
 
 from refgenie.db.engine import Engine
 from refgenie.db.queries import genome as queries
-from refgenie.db.tables import Genome
-from refgenie.exceptions import FastaDigestMismatchError, MissingAliasError
+from refgenie.db.tables import Genome, StoreType
+from refgenie.exceptions import (
+    FastaDigestMismatchError,
+    MissingAliasError,
+    MissingGenomeError,
+    UnknownStoreError,
+    UnservedStoreError,
+)
 from refgenie.logger import logger
 from refgenie.managers.base import ResourceManager
 from refgenie.managers.sequence import open_remote_store
-from refgenie.models import GenomeAlias, GenomeDetail, GenomeDigest, GenomeListing, Page
-from refgenie.utils.search import Search, alias_digests_matching
-from refgenie.utils.species_file import SpeciesEntry
-from refgenie.utils.tables import build_table
 from refgenie.managers.sources import RemoteGenomeSource
+from refgenie.managers.sources.genomes import collection_source
+from refgenie.models import (
+    GenomeAlias,
+    GenomeDetail,
+    GenomeDigest,
+    GenomeListing,
+    Page,
+    first_usable_alias,
+)
 from refgenie.plugins.events import NULL_EVENTS, EventSink, update_scope
 from refgenie.plugins.hooks import Change
+from refgenie.utils.search import Search, alias_digests_matching
+from refgenie.utils.seqcol import compare_level2, seqcol_level2
+from refgenie.utils.species_file import SpeciesEntry
+from refgenie.utils.tables import build_table
 
 if TYPE_CHECKING:
     from gtars.refget import RefgetStore
+
     from refgenie.managers.alias import AliasBackend
     from refgenie.managers.sources.servers import ServerManager
     from refgenie.managers.species import SpeciesManager
@@ -73,46 +89,12 @@ def _clean_synonyms(names: list) -> list[str] | None:
 class GenomeCreationResult:
     """What :meth:`GenomeManager.ensure_from_remote` did, so a pull can undo it."""
 
-    success: bool
-    genome_digest: GenomeDigest | None = None
-    alias_name: GenomeAlias | None = None
+    genome_digest: GenomeDigest
+    alias_name: GenomeAlias
     created_genome: bool = False
     created_alias: bool = False
-    #: The server's record of the genome, if this call fetched it, so the
-    #: caller need not ask the server again.
+    #: The server's record of the genome, so the caller need not ask again.
     genome_attrs: dict | None = None
-
-
-def _compare_level2(level2_a: dict, level2_b: dict, digest_a: str, digest_b: str) -> dict:
-    """Compare two level2 collection dicts locally using seqcol comparison logic."""
-    attributes = {}
-    array_elements = {}
-
-    for attr in ("names", "lengths", "sequences"):
-        arr_a = level2_a.get(attr, [])
-        arr_b = level2_b.get(attr, [])
-        set_a = set(arr_a) if isinstance(arr_a, list) else set()
-        set_b = set(arr_b) if isinstance(arr_b, list) else set()
-
-        attributes[attr] = {
-            "a_count": len(arr_a),
-            "b_count": len(arr_b),
-            "a_and_b": len(set_a & set_b),
-            "a_only": len(set_a - set_b),
-            "b_only": len(set_b - set_a),
-        }
-
-        array_elements[attr] = {
-            "a_and_b": sorted(set_a & set_b),
-            "a_only": sorted(set_a - set_b),
-            "b_only": sorted(set_b - set_a),
-        }
-
-    return {
-        "digests": {"a": digest_a, "b": digest_b},
-        "attributes": attributes,
-        "array_elements": array_elements,
-    }
 
 
 class GenomeStoreRouter(Protocol):
@@ -122,8 +104,34 @@ class GenomeStoreRouter(Protocol):
     structurally so this manager does not import up into ``refgenie.core``.
     """
 
-    def store_for_genome(self, genome_digest: str, store_name: str | None = None) -> Any: ...
-    def get_fhr_metadata(self, genome_digest: str, store_name: str | None = None) -> Any: ...
+    names: list[str]
+
+    def store_for_genome(self, genome_digest: str, store_name: str | None) -> Any: ...
+    def get_fhr_metadata(self, genome_digest: str, store_name: str | None) -> Any: ...
+    def get_collection_sequences(self, genome_digest: str, store_name: str | None) -> Any: ...
+    def serves(self, store_name: str | None) -> bool: ...
+    def served_store_names(self) -> tuple[list[str], bool] | None: ...
+    def collection_digests(self, name: str) -> frozenset[str]: ...
+    def store_configs(self) -> list[Any]: ...
+
+
+def _remote_store_url(router: GenomeStoreRouter, genome: Genome) -> str | None:
+    """The base URL of the remote store holding ``genome``, ending in ``/``.
+
+    None when the genome is in an on-disk store (its own ``local`` store, or
+    the one store of local mode).
+
+    Raises:
+        UnservedStoreError: If the router does not serve the genome's store.
+    """
+    if not router.serves(genome.store_name):
+        raise UnservedStoreError(genome.digest, genome.store_name)
+    for row in router.store_configs():
+        if row.name == genome.store_name:
+            if row.type != StoreType.remote:
+                return None
+            return row.url if row.url.endswith("/") else row.url + "/"
+    return None
 
 
 class GenomeManager(ResourceManager):
@@ -212,8 +220,9 @@ class GenomeManager(ResourceManager):
         Maps ``documentation``, ``taxon.name``, ``taxon.uri``, ``genomeSynonym``,
         ``assemblySource``, ``accessionID.name`` and ``assemblyLevel``. Only
         fields present in the record are written, so a partial record never
-        nulls existing columns. Federated ``store sync`` uses this directly,
-        since the owning store already holds the sidecar.
+        nulls existing columns. An empty ``genomeSynonym`` clears the
+        synonyms. Federated ``store sync`` uses this directly, since the
+        owning store already holds the sidecar.
         """
         taxon = fhr_dict.get("taxon") or {}
         synonyms = fhr_dict.get("genomeSynonym")
@@ -227,6 +236,9 @@ class GenomeManager(ResourceManager):
             "assembly_level": fhr_dict.get("assemblyLevel"),
         }
         updates = {column: value for column, value in values.items() if value is not None}
+        if synonyms is not None:
+            # A record that lists genomeSynonym, even empty, states the full set.
+            updates["synonyms"] = values["synonyms"]
 
         with self._database_session as session:
             genome = queries.get(session, digest)
@@ -342,6 +354,7 @@ class GenomeManager(ResourceManager):
         search: Search | None = None,
         has_assets: bool | None = None,
         taxon_id: int | None = None,
+        stores: Sequence[str] | None = None,
         offset: int,
         limit: int,
     ) -> Page[GenomeListing]:
@@ -349,6 +362,7 @@ class GenomeManager(ResourceManager):
         One page of genomes with their aliases, asset counts and species rows.
 
         Genomes with assets come first, then by species name, then digest.
+        With a search term, better matches come first (``MatchRank``).
         Aliases come from the mode-selected alias backend (the RefgetStore in
         local mode), read for the whole page at once, and so does an
         ``alias`` filter and the ``aliases`` search field.
@@ -360,12 +374,26 @@ class GenomeManager(ResourceManager):
             search: Match the genome search fields (``queries.SEARCH_FIELDS``).
             has_assets: Only genomes with (True) or without (False) assets.
             taxon_id: Only genomes of this NCBI taxon.
+            stores: Only genomes present in any of these stores. This is store
+                membership, not ownership: a genome held by several stores
+                matches each of them.
             offset: Rows to skip.
             limit: Most rows to return.
 
         Raises:
             ValueError: If the search names a field that is not searchable.
+            UnknownStoreError: If ``stores`` names a store the router lacks.
         """
+        router = self._store_router_getter()
+        served = router.served_store_names()
+        digest_in: set[str] | None = None
+        if stores:
+            digest_in = set()
+            for name in stores:
+                try:
+                    digest_in |= router.collection_digests(name)
+                except KeyError:
+                    raise UnknownStoreError(name, router.names) from None
         alias_mgr = self._alias_manager_getter()
         if alias is not None:
             try:
@@ -375,7 +403,7 @@ class GenomeManager(ResourceManager):
             if digest is not None and digest != resolved:
                 return Page(items=[], offset=offset, limit=limit, total=0)
             digest = resolved
-        alias_matches = []
+        alias_matches = {}
         if queries.searches_aliases(search):
             alias_matches = alias_digests_matching(alias_mgr, search.term.strip(), search.operator)
         with self._database_session as session:
@@ -386,6 +414,8 @@ class GenomeManager(ResourceManager):
                 alias_matches=alias_matches,
                 has_assets=has_assets,
                 taxon_id=taxon_id,
+                digest_in=digest_in,
+                served_stores=served,
                 offset=offset,
                 limit=limit,
             )
@@ -417,15 +447,18 @@ class GenomeManager(ResourceManager):
         with self._database_session as session:
             genome = queries.get(session, digest)
             count = queries.count_asset_groups(session, [digest]).get(digest, 0)
+        router = self._store_router_getter()
+        store_url = _remote_store_url(router, genome)
         aliases = self._alias_manager_getter().get_for_genomes([digest]).get(digest, [])
         species = self._species.get(genome.taxon_id) if genome.taxon_id is not None else None
-        fhr = self._store_router_getter().get_fhr_metadata(digest, store_name=genome.store_name)
+        fhr = router.get_fhr_metadata(digest, genome.store_name)
         return GenomeDetail(
             genome=genome,
             aliases=aliases,
             asset_count=count,
             species=species,
             fhr=fhr.to_dict() if fhr is not None else None,
+            store_url=store_url,
         )
 
     @update_scope
@@ -473,6 +506,13 @@ class GenomeManager(ResourceManager):
         with self._database_session as session:
             return queries.exists(session, digest)
 
+    def has_collection(self, digest: GenomeDigest) -> bool:
+        """Whether the genome's sequence collection is in the local RefgetStore."""
+        try:
+            return self._refget_store_getter().get_collection_metadata(digest) is not None
+        except Exception:  # noqa: BLE001 - a missing collection can raise
+            return False
+
     def table(self) -> Table:
         """Create a Rich table of all genomes."""
         genomes = self.list_all()
@@ -494,6 +534,38 @@ class GenomeManager(ResourceManager):
     def _owning_store(self, genome: Genome):
         """The store that owns ``genome``, with its collection loaded."""
         return self._store_router_getter().store_for_genome(genome.digest, genome.store_name)
+
+    def get_served(self, digest: GenomeDigest) -> Genome:
+        """The genome, if this refgenie serves the store it lives in.
+
+        Raises:
+            MissingGenomeError: If there is no such genome.
+            UnservedStoreError: If its store is not served here.
+        """
+        genome = self.get(digest)
+        if not self._store_router_getter().serves(genome.store_name):
+            raise UnservedStoreError(digest, genome.store_name)
+        return genome
+
+    def level2(self, digest: GenomeDigest) -> dict:
+        """A genome's level-2 collection, from the store its ``store_name`` names.
+
+        Raises:
+            MissingGenomeError: If there is no such genome, its store is not
+                served, or the store lacks the collection.
+        """
+        genome = self.get_served(digest)
+        return self._owning_store(genome).get_collection_level2(digest)
+
+    def sequences(self, digest: GenomeDigest):
+        """A genome's sequences with metadata and aliases (a ``CollectionSequences``).
+
+        Raises:
+            MissingGenomeError: If there is no such genome, its store is not
+                served, or the store lacks the collection.
+        """
+        genome = self.get_served(digest)
+        return self._store_router_getter().get_collection_sequences(digest, genome.store_name)
 
     def get_metadata(self, digest: GenomeDigest) -> dict:
         """Get metadata for a genome from the RefgetStore that owns it."""
@@ -519,43 +591,43 @@ class GenomeManager(ResourceManager):
         return result
 
     def compare(self, digest_a: GenomeDigest, digest_b: GenomeDigest) -> dict:
-        """Compare two genomes by their digests."""
-        genome_a = self.get(digest_a)
-        genome_b = self.get(digest_b)
+        """Compare two genomes by their digests.
 
-        if genome_a.remote_url or genome_b.remote_url:
-            return self._compare_with_remote(genome_a, genome_b)
-        # Each genome may live in a different store of the router; the store's
-        # own compare needs both collections in the same store.
-        store_a = self._owning_store(genome_a)
-        store_b = self._owning_store(genome_b)
-        if store_a is store_b:
-            return store_a.compare(digest_a, digest_b)
-        return _compare_level2(
-            store_a.get_collection_level2(digest_a),
-            store_b.get_collection_level2(digest_b),
-            digest_a,
-            digest_b,
+        Returns the GA4GH seqcol comparison object (``digests``, ``attributes``,
+        ``array_elements``), wherever the two genomes live. Every path builds
+        each side with :func:`refgenie.utils.seqcol.seqcol_level2`, so the
+        server, the CLI and MCP all return the same object.
+        """
+        return compare_level2(*self.compare_sides(digest_a, digest_b), digest_a, digest_b)
+
+    def compare_sides(self, digest_a: GenomeDigest, digest_b: GenomeDigest) -> tuple[dict, dict]:
+        """The level 2 of each of two genomes, as :meth:`compare` reads them."""
+        return (
+            self._compare_side(self.get(digest_a)),
+            self._compare_side(self.get(digest_b)),
         )
 
-    def _compare_with_remote(self, genome_a: Genome, genome_b: Genome) -> dict:
-        """Compare genomes where at least one is remote."""
-        if genome_a.remote_url and genome_a.remote_url == genome_b.remote_url:
-            with open_remote_store(genome_a.remote_url) as remote_store:
-                return remote_store.compare(genome_a.digest, genome_b.digest)
-        level2_a, level2_b = (
-            self._get_remote_level2(g.remote_url, g.digest)
-            if g.remote_url
-            else self._owning_store(g).get_collection_level2(g.digest)
-            for g in (genome_a, genome_b)
-        )
-        return _compare_level2(level2_a, level2_b, genome_a.digest, genome_b.digest)
+    def _compare_side(self, genome: Genome) -> dict:
+        """One side of a compare: from the genome's store, else from its ``remote_url``.
+
+        The remote is read only when the store that ``store_name`` picks does
+        not hold the collection (a metadata-only pull), never for a store this
+        refgenie does not serve.
+        """
+        try:
+            return seqcol_level2(self._owning_store(genome), genome.digest)
+        except UnservedStoreError:
+            raise
+        except MissingGenomeError:
+            if not genome.remote_url:
+                raise
+        return self._get_remote_level2(genome.remote_url, genome.digest)
 
     @staticmethod
     def _get_remote_level2(remote_url: str, digest: str) -> dict:
         """Fetch level2 data from a remote RefgetStore."""
         with open_remote_store(remote_url) as remote_store:
-            return remote_store.get_collection_level2(digest)
+            return seqcol_level2(remote_store, digest)
 
     @update_scope
     def initialize_genome(
@@ -580,8 +652,8 @@ class GenomeManager(ResourceManager):
             raise ValueError("Cannot specify both fasta_file_path and source/digest.")
         if not has_local and not has_remote:
             raise ValueError("Must specify either fasta_file_path or source + digest.")
-        if has_remote and source is None:
-            raise ValueError("A RemoteGenomeSource is required for remote init.")
+        if has_remote and (source is None or digest is None):
+            raise ValueError("Remote init needs a source and a digest.")
 
         if has_local:
             return self._initialize_genome_local(
@@ -676,23 +748,11 @@ class GenomeManager(ResourceManager):
         source: RemoteGenomeSource,
         description: str,
         alias_names: list[GenomeAlias],
-        digest: GenomeDigest | None = None,
+        digest: GenomeDigest,
         use_existing: bool = False,
         species_name: str | None = None,
     ) -> tuple[GenomeDigest, bool]:
         """Initialize a genome from a remote source."""
-        if digest is None:
-            if alias_names:
-                resolved = source.resolve_alias(alias_names[0])
-                if resolved is not None:
-                    digest = resolved
-                    logger.info(f"Resolved alias '{alias_names[0]}' to digest: {digest}")
-            if digest is None:
-                raise ValueError(
-                    "No digest provided and could not resolve alias. "
-                    "Provide --digest or use a source that supports alias resolution."
-                )
-
         try:
             collection_data = source.verify_collection(digest)
         except ConnectionError as e:
@@ -748,122 +808,109 @@ class GenomeManager(ResourceManager):
 
     @update_scope
     def ensure_from_remote(
-        self,
-        alias_name: GenomeAlias,
-        genome_digest: GenomeDigest | None = None,
-        genome_description: str | None = None,
-        server_urls: list[str] | None = None,
-        genome_attrs: dict | None = None,
-    ) -> GenomeCreationResult:
+        self, genome: GenomeAlias | GenomeDigest, server_urls: list[str] | None = None
+    ) -> GenomeCreationResult | None:
         """
-        Make a genome and its alias exist locally, asking the servers if needed.
+        Make a genome a server knows exist here, with an alias.
 
-        Resolves the alias against the servers, creates what is missing, and
-        reports what it created so a failed pull can roll it back. Where
-        possible the genome is created through a ``RemoteGenomeSource``, so
-        ``remote_url`` is set and sequences can be fetched lazily.
+        An alias is used as given. A digest gets the server's first alias that
+        is valid here, or the digest itself. The collection is read from the
+        store the server's record names, so ``remote_url`` is set and
+        sequences can be fetched lazily. Reports what it created, so a failed
+        pull can roll it back.
 
         Args:
-            alias_name: The name of the alias.
-            genome_digest: The digest of the genome, if already known.
-            genome_description: The description of the genome.
+            genome: The genome, as a ``GenomeAlias`` or a ``GenomeDigest``.
             server_urls: Servers to ask. Defaults to the subscriptions.
-            genome_attrs: The server's genome record, if the caller already
-                has it. Fetched here when needed and not given.
 
         Returns:
-            GenomeCreationResult: Success flag, what this call created, and
-            the server's genome record if it was fetched or given.
+            What this call created and the server's genome record, or None if
+            no server knows the genome.
         """
         servers = self._servers_getter()
         alias_manager = self._alias_manager_getter()
-
-        if genome_digest is None:
-            genome_digest = servers.resolve_alias(alias_name, server_urls)
-            if genome_digest is None:
-                return GenomeCreationResult(success=False)
-            logger.info(f"Determined digest for {alias_name}: {genome_digest}")
-
+        found = servers.locate(genome, server_urls)
+        if found is None:
+            return None
+        server_url, digest, attrs = found
+        alias_name = (
+            genome
+            if isinstance(genome, GenomeAlias)
+            else first_usable_alias(servers.alias_names(digest, server_url)) or GenomeAlias(digest)
+        )
         # Checked before any writes, so a rollback never deletes rows that
         # existed before the pull.
-        genome_existed = self.exists(genome_digest)
+        genome_existed = self.exists(digest)
         alias_existed = alias_manager.exists(alias_name)
-
         if genome_existed:
-            alias_manager.add(alias_name, genome_digest)
-            return GenomeCreationResult(
-                success=True,
-                genome_digest=genome_digest,
-                alias_name=alias_name,
-                created_genome=False,
-                created_alias=not alias_existed,
-                genome_attrs=genome_attrs,
-            )
-
-        if genome_attrs is None:
-            genome_attrs = servers.genome_attrs(genome_digest, server_urls)
-        genome_description = genome_description or genome_attrs.get("description") or NO_DESCRIPTION
-
-        created = True
-        source = servers.genome_source(server_urls)
-        initialized = False
-        if source is not None:
+            alias_manager.add(alias_name, digest)
+        else:
+            description = attrs.get("description") or NO_DESCRIPTION
+            source = collection_source(server_url, attrs)
             try:
-                _digest, created = self.initialize_genome(
+                if source is None:
+                    raise ValueError(f"No genome source on {server_url}")
+                self.initialize_genome(
                     source=source,
-                    digest=genome_digest,
-                    description=genome_description,
+                    digest=digest,
+                    description=description,
                     alias_names=[alias_name],
                     use_existing=True,
                 )
-                initialized = True
             except Exception as exc:
-                logger.debug(f"Source-based genome init failed, falling back: {exc}")
-        if not initialized:
-            self.add(genome_digest, genome_description, [alias_name])
+                logger.debug(f"Source-based genome init failed, adding a bare genome: {exc}")
+                self.add(digest, description, [alias_name])
         return GenomeCreationResult(
-            success=True,
-            genome_digest=genome_digest,
+            genome_digest=digest,
             alias_name=alias_name,
-            created_genome=created,
+            created_genome=not genome_existed,
             created_alias=not alias_existed,
-            genome_attrs=genome_attrs,
+            genome_attrs=attrs,
         )
 
     @update_scope
     def init_from_remote(
         self,
-        alias_name: GenomeAlias,
-        genome_digest: GenomeDigest | None = None,
-        genome_description: str | None = None,
+        genome: GenomeAlias | GenomeDigest,
         server_urls: list[str] | None = None,
-    ) -> bool:
+        require_collection: bool = False,
+    ) -> GenomeDigest | None:
         """
         Register a genome locally from remote metadata, downloading no assets.
 
+        A genome already here (by alias, or by digest) is returned without
+        asking a server.
+
         Args:
-            alias_name: The alias name to look up on remote servers.
-            genome_digest: The digest of the genome, if already known.
-            genome_description: The description of the genome.
-            server_urls: Optional list of server URLs to query.
+            genome: The genome, as a ``GenomeAlias`` or a ``GenomeDigest``.
+            server_urls: Servers to ask. Defaults to the subscriptions.
+            require_collection: If True, undo the registration and return None
+                when the genome's sequence collection is not in the local store.
 
         Returns:
-            True if the alias exists afterwards, False if no server knew it.
+            The genome's digest, or None if no server knew it, or the
+            collection was required and is missing.
         """
-        if self._alias_manager_getter().exists(alias_name):
-            logger.info(f"Alias '{alias_name}' already exists locally")
-            return True
-
-        result = self.ensure_from_remote(
-            alias_name=alias_name,
-            genome_digest=genome_digest,
-            genome_description=genome_description,
-            server_urls=server_urls,
-        )
-        if result.success:
-            if result.genome_attrs is not None:
-                self.fill_from_server(result.genome_digest, result.genome_attrs)
-            logger.info(f"Registered genome for alias '{alias_name}': {result.genome_digest}")
-            return True
-        logger.error(f"Could not find alias '{alias_name}' on remote servers")
-        return False
+        alias_manager = self._alias_manager_getter()
+        if isinstance(genome, GenomeAlias) and alias_manager.exists(genome):
+            return alias_manager.resolve(genome)
+        if isinstance(genome, GenomeDigest) and self.exists(genome):
+            return genome
+        result = self.ensure_from_remote(genome, server_urls)
+        if result is None:
+            logger.error(f"Could not find genome '{genome}' on remote servers")
+            return None
+        if require_collection and not self.has_collection(result.genome_digest):
+            if result.created_genome:
+                self.remove(result.genome_digest)  # also removes its aliases
+            elif result.created_alias:
+                alias_manager.remove(result.alias_name)
+            logger.error(
+                f"Could not register '{genome}': its sequence collection is not in "
+                f"the server's sequence store. If the genome has a fasta asset, "
+                f"'refgenie pull {result.alias_name}/fasta' downloads it with its sequences."
+            )
+            return None
+        self.fill_from_server(result.genome_digest, result.genome_attrs)
+        logger.info(f"Registered genome '{result.alias_name}': {result.genome_digest}")
+        return result.genome_digest

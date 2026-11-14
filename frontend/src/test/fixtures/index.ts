@@ -13,6 +13,9 @@ import remoteAssetsJson from './remoteAssets.json';
 import remoteGenomesJson from './remoteGenomes.json';
 import remoteServersJson from './remoteServers.json';
 import stagedAssetsJson from './stagedAssets.json';
+import genomeSequencesJson from './genomeSequences.json';
+import genomeComparisonJson from './genomeComparison.json';
+import type { GenomeSequencesResponse, SeqcolComparison } from '../../types/api';
 
 import type {
   AliasPublic,
@@ -49,3 +52,9 @@ export const remoteGenomesFixture = remoteGenomesJson as unknown as RemoteGenome
 export const remoteAssetsFixture = remoteAssetsJson as unknown as RemoteAsset[];
 
 export const emptyPage = { results: [], pagination: { page: 0, page_size: 50, total: 0 } };
+
+// === Genome sequences ===
+export const genomeSequencesFixture =
+  genomeSequencesJson as unknown as GenomeSequencesResponse;
+export const genomeComparisonFixture =
+  genomeComparisonJson as unknown as SeqcolComparison;

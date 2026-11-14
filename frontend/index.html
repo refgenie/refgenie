@@ -2,18 +2,38 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <!--
-      This literal <base href="/"> is rewritten to {root_path}/ by
-      refgenie/server/spa.py at app construction. Do not template it, and do not
-      remove it: it is what makes a sub-path deployment work without a rebuild.
-    -->
     <base href="/" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="favicon.ico" />
+    <meta name="description" content="Find reference genomes and get their FASTA files, aligner indexes and annotations, by name or by GA4GH sequence digest." />
+    <link rel="alternate" type="text/markdown" href="llms.txt" title="refgenie for AI agents" />
     <title>refgenie</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <main class="rg-static-fallback">
+        <h1>refgenie: reference genome data management</h1>
+        <p>refgenie is a catalog of reference genomes and the files built from them:
+        FASTA files, aligner indexes and annotations. Each genome is identified by a
+        GA4GH sequence collection digest computed from its sequences. The refgenie
+        command-line tool downloads these files and tells your pipeline where they
+        are. This page is a JavaScript app; without JavaScript, use these links.</p>
+        <ul>
+          <li><a href="llms.txt">llms.txt</a>: an index for AI agents.</li>
+          <li><a href="SKILL.md">SKILL.md for the HTTP API</a> and
+            <a href="https://docs.refgenie.org/SKILL.md">SKILL.md for the command line</a>.</li>
+          <li>MCP server: <code>https://api.refgenie.org/mcp</code> (Streamable HTTP, read-only).
+            <a href="https://docs.refgenie.org/refgenie/mcp/">Setup guide</a>.</li>
+          <li><a href="https://docs.refgenie.org">Documentation</a></li>
+        </ul>
+        <p>The data on these pages, as JSON: a search is
+        <code>https://api.refgenie.org/v4/genomes?q=hg38</code>, the page
+        <code>/genomes/{digest}</code> is <code>https://api.refgenie.org/v4/genomes/{digest}</code>,
+        and its assets are <code>https://api.refgenie.org/v4/assets?genome_digest={digest}</code>.</p>
+        <p>Missing a genome or an asset? Request it on
+        <a href="https://github.com/refgenie/refgenie-registry/issues">refgenie-registry</a>.</p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

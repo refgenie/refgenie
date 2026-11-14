@@ -1,0 +1,13 @@
+##seqcol_digest=EdIA6FmWjOgnH5kf6wPFPsVPZKcV_N5N
+##names_digest=-bsoDBD6kTKN1jjg0Lv7mSFkAXyexhpI
+##sequences_digest=EaXxCXx4NUzThfx7RMrJV4ci-F5_z_MV
+##lengths_digest=REGQahAoxb9W3YzIChqxMViKDH8MAt3f
+##name_length_pairs_digest=yJsY4tclibsUy5-nxT8zU-9ogtVpSwD_
+##sorted_name_length_pairs_digest=lNDSaZU8xCglm4ngQjp2QPsl0R-PRIJO
+##sorted_sequences_digest=4X2Q2CKEuAotuvhOMZJAcXg6oGRMUK8j
+#name	length	alphabet	sha512t24u	md5	description
+chrA	203	dna2bit	-YdTIx-7BHGG-SwIgibnGX3Ze5ckvvsW	22ad6ec17caa30188cb9afca20b2962d	
+chrB	160	dna3bit	r8p1Ai89F8W0bIfTc36HEZ-Bm_SUPqW2	457103b830e8e42bae94d88417eb6eb8	test contig B
+chrC	7	dnaio	ZtXLNJBhD6cXyML7cmO5je6OtFyvPUzc	01176237c8188ade4d97b196a5bdd5e1	
+chrD	1000	dna2bit	ucgZ85ROJOzFxp_RfYcvZuMKFjW_JIOh	328fb80195cb69fbe4a8b7045a178f43	long one
+chrE	81	dna3bit	AfiTNZBkBk7Xdl9TmxIZy3Z6W917ytmv	ba2cb36e25f65807145d47198406c423	

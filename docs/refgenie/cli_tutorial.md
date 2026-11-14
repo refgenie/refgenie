@@ -10,7 +10,7 @@ This tutorial covers common refgenie tasks on the command line: downloading asse
 ## Step 1: Install
 
 ```bash
-pip install "refgenie>=1.0.0a1"
+pip install "refgenie>=1.0.0a2"
 refgenie --version
 ```
 
@@ -68,7 +68,7 @@ refgenie listr
 ...
 ```
 
-Each row is one asset. The *asset group* is the kind of asset (`bowtie2_index`), and the *asset* is a named build within the group (`2.5.5`). To list only genomes you already have locally, use `refgenie listr -g rCRSd`.
+Each row is one asset. The *asset group* is the kind of asset (`bowtie2_index`), and the *asset* is a named build within the group (`2.5.5`). To list the assets for one genome, name it: `refgenie listr -g rCRSd`. It need not be on your machine yet.
 
 ## Step 6: Pull an asset
 

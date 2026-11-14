@@ -12,6 +12,7 @@ from refgenie.db.tables import Store, StoreType
 from refgenie.exceptions import MissingGenomeError
 from refgenie.logger import logger
 from refgenie.managers.alias import AliasManager
+from refgenie.models import GenomeAlias
 
 __all__ = [
     "SYNC_ALIAS_NAMESPACE",
@@ -110,11 +111,12 @@ def sync_source(rgc, source, label: str, page_size: int) -> SyncReport:
 def _syncable_alias_names(rgc, digest: str, alias_pairs: list[tuple[str, str]]) -> list[str]:
     """A collection's aliases in SYNC_ALIAS_NAMESPACE that no other genome holds.
 
-    Sync never repoints an alias; one owned by a different genome is skipped.
+    Sync never repoints an alias; one owned by a different genome is skipped,
+    and so is a name that is not a valid alias here (one with '/').
     """
     names = []
     for namespace, name in alias_pairs:
-        if namespace != SYNC_ALIAS_NAMESPACE or name in names:
+        if namespace != SYNC_ALIAS_NAMESPACE or name in names or not GenomeAlias.is_valid(name):
             continue
         try:
             existing = rgc.alias.resolve(name)
@@ -136,33 +138,54 @@ def sync_store(
     """Ingest one federated store's collections, aliases and FHR columns.
 
     ``store`` is the opened refget store for ``store_row``. A genome in several
-    stores is owned by the highest-priority one (lowest number); alias ties are
-    settled the same way by ``AliasManager.federated_sync``.
+    stores is owned by the highest-priority one (lowest number), and only its
+    owner writes its FHR columns. Once every collection is read, the store's
+    'name' aliases replace its alias rows as a set
+    (``AliasManager.replace_store_aliases``, which settles ties by priority);
+    names with '/' are skipped, and a sync with failures leaves the aliases alone.
     """
     # The SQL alias backend whatever the instance's mode: the federation
     # registry is a SQL concept the server reads.
     sql_alias = AliasManager(rgc.database_engine)
+    offered: set[tuple[str, str]] = set()
+    skipped: list[str] = []
 
     def register(digest: str, description: str, report: SyncReport) -> None:
-        _claim_genome(rgc, digest, description, store_row, priorities)
-        report.registered += _ingest_aliases(sql_alias, store, digest, store_row, priorities)
-        _ingest_fhr(rgc, store, digest, store_row)
+        added, owned = _claim_genome(rgc, digest, description, store_row, priorities)
+        report.registered += added
+        offered.update(_offered_aliases(store, digest, store_row, skipped))
+        if owned:
+            _ingest_fhr(rgc, store, digest, store_row)
 
-    return sync_collections(store, f"store '{store_row.name}'", page_size, register)
+    report = sync_collections(store, f"store '{store_row.name}'", page_size, register)
+    if skipped:
+        logger.warning(
+            f"Store '{store_row.name}': skipped {len(skipped)} alias(es) with '/', "
+            f"e.g. '{skipped[0]}'"
+        )
+    if report.failures:
+        logger.error(f"Store '{store_row.name}' had failures; its aliases are left unchanged.")
+    else:
+        sql_alias.replace_store_aliases(store_row.name, offered, priorities)
+    return report
 
 
-def _claim_genome(rgc, digest, description, store_row: Store, priorities) -> None:
-    """Add the genome owned by this store, or take ownership if this store outranks the owner."""
+def _claim_genome(rgc, digest, description, store_row: Store, priorities) -> tuple[bool, bool]:
+    """Add the genome owned by this store, or take ownership if this store outranks the owner.
+
+    Returns:
+        Whether the genome was added, and whether this store owns it now.
+    """
     try:
         genome = rgc.genome.get(digest)
     except MissingGenomeError:
         rgc.genome.add(
             digest=digest, description=description, alias_names=[], store_name=store_row.name
         )
-        return
+        return True, True
     current = genome.store_name
     if current == store_row.name:
-        return
+        return False, True
     if current is None or store_row.priority < priorities.get(current, float("inf")):
         if current is not None:
             logger.info(
@@ -170,30 +193,33 @@ def _claim_genome(rgc, digest, description, store_row: Store, priorities) -> Non
                 f"outranks owner '{current}'; repointing ownership."
             )
         rgc.genome.set_store_name(digest, store_row.name)
-    else:
-        logger.debug(
-            f"Genome {digest}: keeping owner '{current}'; '{store_row.name}' has lower priority."
-        )
+        return False, True
+    logger.debug(
+        f"Genome {digest}: keeping owner '{current}'; '{store_row.name}' has lower priority."
+    )
+    return False, False
 
 
-def _ingest_aliases(sql_alias, store, digest, store_row: Store, priorities) -> int:
-    """Apply the collision policy to each of a collection's 'name' aliases.
+def _offered_aliases(store, digest, store_row: Store, skipped: list[str]) -> set[tuple[str, str]]:
+    """A collection's 'name' aliases as ``(name, digest)`` pairs.
 
-    Returns 1 if any alias was newly inserted, else 0: a coarse count for the
-    summary line.
+    A name that is not a valid alias here (one with '/') is appended to
+    ``skipped`` instead.
     """
     try:
         alias_pairs = list(store.get_aliases_for_collection(digest))
     except Exception as e:  # noqa: BLE001 - a collection with no aliases is normal
         logger.debug(f"No aliases for {digest} in '{store_row.name}': {e}")
-        return 0
-    inserted = 0
+        return set()
+    offered = set()
     for namespace, name in alias_pairs:
         if namespace != SYNC_ALIAS_NAMESPACE:
             continue
-        if sql_alias.federated_sync(name, digest, store_row.name, priorities) == "inserted":
-            inserted = 1
-    return inserted
+        if GenomeAlias.is_valid(name):
+            offered.add((name, digest))
+        else:
+            skipped.append(name)
+    return offered
 
 
 def _ingest_fhr(rgc, store, digest, store_row: Store) -> None:
@@ -208,4 +234,7 @@ def _ingest_fhr(rgc, store, digest, store_row: Store) -> None:
             logger.debug(f"pull_fhr({digest}) failed on store '{store_row.name}': {e}")
     fhr = store.get_fhr_metadata(digest)
     if fhr is not None:
-        rgc.genome.apply_fhr_columns(digest, fhr.to_dict())
+        record = fhr.to_dict()
+        # The store's sidecar is the whole record: no synonyms there means none.
+        record.setdefault("genomeSynonym", [])
+        rgc.genome.apply_fhr_columns(digest, record)

@@ -1,5 +1,7 @@
 # Using refgenie with iGenomes
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 If you're already using iGenomes, it's easy to configure `refgenie` to use your existing folder structure. [iGenomes](https://support.illumina.com/sequencing/sequencing_software/igenome.html) is project that provides sequences and annotation files for commonly analyzed organisms. Each iGenome is available as a compressed file that contains sequences and annotation files for a single genomic build of an organism.
 
 Initialize a refgenie config file if you don't have one you want to use for your iGenomes assets:

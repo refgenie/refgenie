@@ -10,6 +10,7 @@ def paginate(
     session: Session,
     statement: Select[Any],
     *,
+    count_statement: Select[Any] | None = None,
     order_by: tuple[Any, ...],
     offset: int,
     limit: int,
@@ -20,6 +21,8 @@ def paginate(
     Args:
         session: The session to execute in.
         statement: The filtered SELECT, without ordering or slicing.
+        count_statement: A cheaper SELECT of the same rows to count, when
+            ``statement`` carries work only the ordering needs.
         order_by: The ORDER BY columns. Required, and must end in a unique
             column, so consecutive pages neither overlap nor skip rows.
         offset: Rows to skip.
@@ -28,6 +31,7 @@ def paginate(
     Returns:
         The page's rows and the total number of matching rows.
     """
-    total = session.exec(select(func.count()).select_from(statement.subquery())).one()
+    counted = statement if count_statement is None else count_statement
+    total = session.exec(select(func.count()).select_from(counted.subquery())).one()
     rows = session.exec(statement.order_by(*order_by).offset(offset).limit(limit)).unique().all()
     return list(rows), total

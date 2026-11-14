@@ -1,5 +1,7 @@
 # Make configuration files portable with refgenie populate
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 Use `refgenie populate` to replace registry paths (*e.g.* `refgenie://hg38/fasta`) in text files with asset file paths (*e.g.* `/home/johndoe/genomes/hg38/fasta/default/hg38.fa`). For use in an ephemeral compute environment, the remote version, `refgenie populatr`, will replace your registry path with a URI, like `s3://path/to/asset.xyz` or `http://path/to/asset.xyz`. This powerful feature allows you to write configuration files and scripts with maximum portability for anything you might need to configure with reference genome paths.
 
 # Motivation

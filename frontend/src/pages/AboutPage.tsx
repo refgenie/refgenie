@@ -12,7 +12,7 @@ import { MiniHero } from '../components/layout/MiniHero';
 import { DescriptionList } from '../components/common/DescriptionList';
 import { ApiLink } from '../components/common/ApiLink';
 import { ExternalLink } from '../components/common/ExternalLink';
-import { CopyButton } from '../components/common/CopyButton';
+import { Copyable } from '../components/common/Copyable';
 import { Icon } from '../components/common/Icon';
 import { instanceUrl } from '../services/instanceLinks';
 import { CITATIONS, PROJECT_LINKS } from '../services/projectLinks';
@@ -82,9 +82,9 @@ export function AboutPage() {
         documentTitle="About"
         lede={
           <>
-            Refgenie the open-source project — its documentation, its papers, its source
-            — and the particular instance serving you this page, with the version it
-            runs and the operations it will let you perform.
+            Refgenie the open-source project (its documentation, its papers, its source)
+            and the particular instance serving you this page, with the version it runs
+            and the operations it will let you perform.
           </>
         }
         actions={
@@ -174,27 +174,21 @@ export function AboutPage() {
           <p className="rg-muted text-sm">
             If refgenie helped with work you are publishing, please cite it.
           </p>
-          <ol className="flex flex-col gap-4">
+          <ol className="rg-divided-list">
             {CITATIONS.map((citation) => (
-              <li
-                className="rg-card rg-card__body flex flex-col gap-2"
-                key={citation.doi}
-              >
+              <li className="flex flex-col gap-2" key={citation.doi}>
                 <span>
                   {citation.authors} ({citation.year}).{' '}
                   <ExternalLink href={citation.doi}>{citation.title}</ExternalLink>.{' '}
                   <span className="rg-muted">{citation.venue}</span>
                 </span>
                 <span className="rg-muted text-sm">{citation.note}</span>
-                <span className="flex items-center gap-2">
-                  <code className="rg-code rg-code--inline flex-1 overflow-x-auto">
-                    {citation.doi}
-                  </code>
-                  <CopyButton
-                    value={citation.plain}
-                    label={`Copy citation: ${citation.title}`}
-                  />
-                </span>
+                <Copyable
+                  value={citation.plain}
+                  label={`Copy citation: ${citation.title}`}
+                >
+                  <code className="rg-code rg-code--inline">{citation.doi}</code>
+                </Copyable>
               </li>
             ))}
           </ol>

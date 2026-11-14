@@ -9,31 +9,32 @@ from pathlib import Path
 from typing import ClassVar
 from urllib.parse import urljoin
 
-import httpx
+import httpx2
 from rich.progress import Progress
 
 from refgenie import progress
 from refgenie.config import config
 from refgenie.const import API_VERSION, DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from refgenie.logger import logger
-from refgenie.utils.console import RICH_PROGRESS_COLUMNS
-from refgenie.utils.http import make_client
 from refgenie.managers.sources.api_ids import (
     API_ID_ALIAS_DIGEST,
     API_ID_ALIASES,
-    API_ID_ASSET_RELATIONSHIPS,
     API_ID_ASSET_CLASS,
     API_ID_ASSET_FILE_DOWNLOAD,
     API_ID_ASSET_FILES,
     API_ID_ASSET_GROUPS,
+    API_ID_ASSET_RELATIONSHIPS,
     API_ID_ASSETS,
     API_ID_GENOME_ATTRS,
+    API_ID_GENOME_COMPARE,
     API_ID_GENOMES,
     API_ID_STAGED_ASSETS,
 )
 from refgenie.managers.sources.openapi import RefgenieserverOpenApiSpec
+from refgenie.utils.console import CONSOLE, RICH_PROGRESS_COLUMNS
+from refgenie.utils.http import make_client
 
-logging.getLogger("httpx").setLevel(config.log_level.value)
+logging.getLogger("httpx2").setLevel(config.log_level.value)
 
 
 #: Report to a progress sink at most this often, in seconds...
@@ -41,9 +42,9 @@ _SINK_MIN_INTERVAL_SECONDS = 0.2
 #: ...or every this many bytes, whichever comes first.
 _SINK_MIN_BYTES = 1024 * 1024
 
-#: Timeout for archive/file downloads; httpx's 5s default read timeout is too
+#: Timeout for archive/file downloads; httpx2's 5s default read timeout is too
 #: short for large archive chunks under load.
-_DOWNLOAD_TIMEOUT = httpx.Timeout(connect=10, read=60, write=60, pool=None)
+_DOWNLOAD_TIMEOUT = httpx2.Timeout(connect=10, read=60, write=60, pool=None)
 
 
 class _RichDownloadReporter:
@@ -125,7 +126,7 @@ class RefgenieserverClient:
         server_url: str,
         api_version: str = API_VERSION,
         openapi_endpoint: str = "/openapi.json",
-        http_client: httpx.Client | None = None,
+        http_client: httpx2.Client | None = None,
     ):
         self.server_url = server_url
         self.openapi_endpoint = openapi_endpoint
@@ -197,7 +198,7 @@ class RefgenieserverClient:
             endpoint = endpoint.format(**url_format_params)
         return urljoin(self.server_url, endpoint)
 
-    def _send_request(self, url: str, params: dict | None = None) -> httpx.Response:
+    def _send_request(self, url: str, params: dict | None = None) -> httpx2.Response:
         """Send a GET request to ``url`` and raise on an error status."""
         if self._http_client:
             response = self._http_client.get(url, params=params)
@@ -287,7 +288,7 @@ class RefgenieserverClient:
                 ) as response:
                     _stream(response, reporter)
             else:
-                with httpx.stream(
+                with httpx2.stream(
                     "GET",
                     url,
                     follow_redirects=True,
@@ -300,7 +301,7 @@ class RefgenieserverClient:
             if progress.active_sink() is None:
                 with (
                     tmp_path.open("wb") as download_file,
-                    Progress(*RICH_PROGRESS_COLUMNS) as rich_progress,
+                    Progress(*RICH_PROGRESS_COLUMNS, console=CONSOLE) as rich_progress,
                 ):
                     _open_stream(_RichDownloadReporter(rich_progress, label))
             else:
@@ -439,6 +440,16 @@ class GenomeClient(_ListResourceClient):
             operation_id=API_ID_GENOME_ATTRS, url_format_params={"digest": digest}
         )
         return response if isinstance(response, dict) else {}
+
+    def compare(self, digest: str, other: str) -> dict:
+        """The server's GA4GH seqcol comparison of two genomes it serves."""
+        response = self._transport.get(
+            operation_id=API_ID_GENOME_COMPARE,
+            url_format_params={"digest": digest, "other": other},
+        )
+        if not isinstance(response, dict):
+            raise ValueError(f"Unexpected compare response from {self._transport.server_url}")
+        return response
 
 
 class AliasClient(_ListResourceClient):

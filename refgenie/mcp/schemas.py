@@ -9,6 +9,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from refgenie.mcp.paging import ResultPage
 from refgenie.db.tables import Asset, AssetClass, Recipe, Species
 from refgenie.models import GenomeListing
 
@@ -106,16 +107,17 @@ class AssetDetail(AssetRow):
     #: Every name this content has in its group.
     names: list[str]
     description: str | None
-    #: Seek key name -> value (a path relative to the asset, or a literal).
+    #: Seek key name -> raw value, relative to the asset's folder.
     seek_keys: dict[str, str]
     parents: list[AssetRow]
     children: list[AssetRow]
-    #: Server mode: download URLs by serving mode, relative to the API origin.
-    downloads: dict[str, str] | None = None
-    #: Local (stdio) mode: where the asset's files are on this machine.
-    local_path: str | None = None
-    #: The command that pulls this asset by name, if its genome has an alias.
-    pull_command: str | None = None
+    #: Server mode, archive-served assets: the URL of the .tgz archive.
+    archive_url: str | None = None
+    #: Path seek key -> where its file is: a local path, or a URL on a server
+    #: (file-served assets only).
+    files: dict[str, str]
+    #: The command that pulls this asset.
+    pull_command: str
 
 
 class RecipeRow(BaseModel):
@@ -206,8 +208,33 @@ class SpeciesCount(BaseModel):
 
 
 class CatalogSummary(BaseModel):
+    #: Which server this is: the local database, or the server's URL.
+    server: str
     genomes: int
     asset_groups: int
     assets: int
     #: Species with at least one asset, most assets first.
     species_with_assets: list[SpeciesCount]
+
+
+class SequenceRow(BaseModel):
+    name: str
+    length: int
+    #: The refget sequence id (``SQ.``...).
+    digest: str
+
+
+class SequencePage(ResultPage[SequenceRow]):
+    """A page of a genome's sequences, with totals for the whole genome."""
+
+    n_sequences: int
+    total_length: int
+
+
+class GenomeComparison(BaseModel):
+    #: One sentence: whether the genomes are the same and how they differ.
+    summary: str
+    #: A's sequence name -> B's name, for sequences that share content but not a name.
+    name_map: dict[str, str]
+    #: The GA4GH seqcol comparison object.
+    comparison: dict[str, Any]

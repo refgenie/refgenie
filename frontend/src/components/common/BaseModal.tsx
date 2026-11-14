@@ -1,6 +1,6 @@
 /** Modal dialog that closes on Escape or an outside click, locks body scroll, and focuses its first field. */
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import type { ReactNode } from 'react';
 
 interface BaseModalProps {
@@ -17,9 +17,10 @@ export function BaseModal({
   onClose,
   title,
   size = 'md',
-  children
+  children,
 }: BaseModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -48,7 +49,7 @@ export function BaseModal({
   useEffect(() => {
     if (isOpen && modalRef.current) {
       const focusable = modalRef.current.querySelector<HTMLElement>(
-        'input, textarea, select, button'
+        'input, textarea, select, button',
       );
       focusable?.focus();
     }
@@ -61,10 +62,15 @@ export function BaseModal({
       <div
         ref={modalRef}
         className={`modal modal--${size}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="modal__header">
-          <h2 className="modal__title">{title}</h2>
+          <h2 id={titleId} className="modal__title">
+            {title}
+          </h2>
           <button
             type="button"
             className="modal__close"
@@ -74,9 +80,7 @@ export function BaseModal({
             &times;
           </button>
         </div>
-        <div className="modal__body">
-          {children}
-        </div>
+        <div className="modal__body">{children}</div>
       </div>
     </div>
   );

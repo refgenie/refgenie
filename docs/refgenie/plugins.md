@@ -36,7 +36,7 @@ In your package's `pyproject.toml`:
 ```toml
 [project]
 name = "refgenie_myplugin"
-dependencies = ["refgenie>=1.0.0a1"]
+dependencies = ["refgenie>=1.0.0a2"]
 
 [project.entry-points."refgenie.hooks.post_update"]
 myplugin = "refgenie_myplugin:on_update"

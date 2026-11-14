@@ -1,5 +1,7 @@
 # Asset build output example
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 Command:
 ```
 $ refgenie build -c genomes.yaml hg38/fasta --fasta hg38.fa.gz

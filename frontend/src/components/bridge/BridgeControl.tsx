@@ -45,10 +45,11 @@ export function BridgeControl() {
         </>
       ) : bridge.status === 'blocked' ? (
         <p className="rg-muted">
-          Not available in Safari —{' '}
+          Not available in Safari. Instead,{' '}
           <ExternalLink href={`http://localhost:${bridge.port}`}>
             open local refgenie
           </ExternalLink>
+          .
         </p>
       ) : (
         <button

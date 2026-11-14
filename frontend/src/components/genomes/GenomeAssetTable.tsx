@@ -71,6 +71,7 @@ export function GenomeAssetTable({
       key: 'description',
       // The asset's own description, falling back to the group's.
       header: 'Description',
+      className: 'rg-table__cell--wrap',
       render: ({ asset }) => asset.description ?? <span className="rg-muted">NA</span>,
     },
     {

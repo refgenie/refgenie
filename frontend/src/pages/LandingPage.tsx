@@ -13,7 +13,7 @@ import { useRecipes } from '../hooks/queries/useRecipes';
 import { useUiConfig } from '../hooks/useUiConfig';
 import { useApiClient } from '../hooks/useApiClient';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
-import { CopyButton } from '../components/common/CopyButton';
+import { Copyable } from '../components/common/Copyable';
 import { ExternalLink } from '../components/common/ExternalLink';
 import { Icon } from '../components/common/Icon';
 import { PROJECT_LINKS } from '../services/projectLinks';
@@ -42,10 +42,9 @@ const STEPS = [
 
 function Command({ value, label }: { value: string; label?: string }) {
   return (
-    <span className="rg-command flex items-center gap-2">
-      <code className="rg-code rg-code--inline flex-1 overflow-x-auto">{value}</code>
-      <CopyButton value={value} label={label ?? `Copy: ${value}`} />
-    </span>
+    <Copyable value={value} label={label ?? `Copy: ${value}`} className="rg-command">
+      <code className="rg-code rg-code--inline">{value}</code>
+    </Copyable>
   );
 }
 
@@ -144,7 +143,7 @@ export function LandingPage() {
         <h2 className="text-xl font-semibold">Use it with an AI assistant</h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="rg-card rg-card__body flex flex-col gap-2">
+          <div className="rg-step flex flex-col gap-2">
             <span className="font-semibold">Connect the MCP server</span>
             <span className="rg-muted text-sm">
               {isLocal
@@ -154,7 +153,7 @@ export function LandingPage() {
             <Command value={mcpCommand} />
           </div>
 
-          <div className="rg-card rg-card__body flex flex-col gap-2">
+          <div className="rg-step flex flex-col gap-2">
             <span className="font-semibold">Or give it the API guide</span>
             <span className="rg-muted text-sm">
               {/* Plain <a>: /SKILL.md is a static file, not a client route. */}

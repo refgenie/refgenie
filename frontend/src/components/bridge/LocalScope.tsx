@@ -75,6 +75,7 @@ export function LocalScope({ children }: LocalScopeProps) {
         drs: ping?.capabilities.drs === true,
       },
       web_ui: null,
+      collections: [],
       degraded: false,
     }),
     [baseUrl, ping],
@@ -88,8 +89,8 @@ export function LocalScope({ children }: LocalScopeProps) {
 
   if (bridge.status !== 'connected' || !appValue) {
     return (
-      <div className="rg-card">
-        <div className="rg-card__body flex flex-col gap-3">
+      <div>
+        <section className="flex flex-col gap-3">
           <h2 className="text-xl font-semibold">Not connected to a local refgenie</h2>
           <p className="rg-muted text-sm">
             {bridge.status === 'connecting'
@@ -107,7 +108,7 @@ export function LocalScope({ children }: LocalScopeProps) {
               </button>
             </span>
           )}
-        </div>
+        </section>
         <ConnectDialog open={dialogOpen} onClose={() => setDialogOpen(false)} />
       </div>
     );
@@ -120,8 +121,7 @@ export function LocalScope({ children }: LocalScopeProps) {
           <div className="flex flex-col gap-6">
             <div className="rg-banner rg-banner--info" role="status">
               <span>
-                Browsing your <strong>local refgenie</strong> ({ping?.instance_label}) —
-                this data lives on your computer.
+                Browsing your <strong>local refgenie</strong> ({ping?.instance_label}). This data lives on your computer.
               </span>
             </div>
             <nav aria-label="Local refgenie">

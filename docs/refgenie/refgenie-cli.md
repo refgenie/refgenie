@@ -9,7 +9,7 @@ Install from [PyPI](https://pypi.org/project/refgenie/). Refgenie 1.0 is a
 pre-release, so ask for it by version:
 
 ```bash
-pip install "refgenie>=1.0.0a1"
+pip install "refgenie>=1.0.0a2"
 ```
 
 The base install provides the CLI and the Python API. `refgenie dash`,
@@ -33,10 +33,11 @@ creates the genome folder and the stage folder.
 
 ```bash
 $ refgenie init
-INFO     Database configuration file created at /home/user/.refgenie/refgenie_db_config.yaml.
+INFO     Database configuration file created at /home/user/.refgenie/refgenie_db_config.yaml. It uses SQLite by default; edit it only to switch to PostgreSQL.
 INFO     Genome folder ready: /home/user/.refgenie/genomes
 INFO     Genome stage folder ready: /home/user/.refgenie/archives
 INFO     Initialized refgenie backend: 'sqlite:////home/user/.refgenie/refgenie'
+INFO     Subscribed to the default server: https://api.refgenie.org
 ```
 
 Asset classes and recipes, including `fasta`, come from a data channel, so
@@ -183,6 +184,9 @@ an alias only, because the build folder is named after it.
 
 ## Command reference
 
+Results go to stdout; messages and logs go to stderr. Logs show warnings and
+errors by default; set `REFGENIE_LOG_LEVEL=INFO` for more.
+
 `refgenie --help` groups commands as follows.
 
 | Group | Commands |
@@ -196,6 +200,11 @@ an alias only, because the build folder is named after it.
 | Federation | `store` |
 | Sequences | `getseq` |
 
+Give several values to a list option comma-separated (`-a hg38,GRCh38`) or by
+repeating the option (`-a hg38 -a GRCh38`). Values separated by spaces are an
+error. Registry paths are positional and take spaces:
+`refgenie pull hg38/fasta hg38/bwa_index`.
+
 Boolean flags shown as `-f, --force` also accept the negated form
 (`--no-force`). Command names use hyphens (`asset-class`, `data-channel`,
 `catalog-export`).
@@ -207,13 +216,21 @@ Boolean flags shown as `-f, --force` also accept the negated form
 List available local assets.
 
 ```
-refgenie list [-g ALIAS ...] [--genome-digest DIGEST ...]
+refgenie list [-g ALIAS[,ALIAS...]] [--genome-digest DIGEST[,DIGEST...]]
 ```
 
 | Option | Description |
 | --- | --- |
 | `-g, --genome` | One or more genome aliases to restrict the listing to. |
 | `--genome-digest` | One or more genome digests to restrict the listing to. |
+| `--json` | Print JSON instead of a table. |
+
+With `--json`, `list` prints one entry per source, here `local`. The `assets`
+strings are `group:name`, so `<alias>/<asset>` is a registry path:
+
+```json
+[{"source": "local", "genomes": [{"digest": "AHyVecap0miRdrz6ZffizkZQUOJJBO2c", "aliases": ["athaliana"], "assets": ["fasta:default", "bowtie2_index:default"]}]}]
+```
 
 #### `asset list`
 
@@ -340,15 +357,16 @@ refgenie populate [-f FILE]
 List assets available on subscribed servers.
 
 ```
-refgenie listr [-g ALIAS ...] [--genome-digest DIGEST ...] [-s URL ...]
+refgenie listr [-g ALIAS[,ALIAS...]] [--genome-digest DIGEST[,DIGEST...]] [-s URL[,URL...]]
 ```
 
 | Option | Description |
 | --- | --- |
-| `-g, --genome` | One or more local genome aliases to restrict the listing to. |
+| `-g, --genome` | One or more genome aliases to restrict the listing to. A name not registered here is looked up on the servers. |
 | `--genome-digest` | One or more genome digests to restrict the listing to. The genomes need not exist locally. |
 | `-s, --genome-server` | One or more server URLs to use for this call only; not persisted to config. |
 | `-p, --append-server` | Append the provided servers to the configured list rather than replacing it. |
+| `--json` | Print JSON instead of a table: a list with one entry per server, in the shape `list --json` uses, with the server URL as `source`. |
 
 #### `seekr`
 
@@ -366,22 +384,20 @@ refgenie seekr ASSET-REGISTRY-PATHS [...]
 
 #### `pull`
 
-Download assets from subscribed servers. Registry paths may be given
-positionally or with `--asset-registry-paths`.
+Download assets from subscribed servers. Name assets by registry path.
 
 ```
-refgenie pull ASSET-REGISTRY-PATHS [...]
+refgenie pull GENOME/ASSET [...]
 ```
 
 | Option | Description |
 | --- | --- |
-| `--asset-registry-paths` | Registry paths to pull (equivalent to the positional form). |
 | `-g, --genome` | Genome alias(es), e.g. `mm10`; comma-separate several for `--all` or `--asset`. |
 | `--genome-digest` | Genome digest(s), in place of aliases. With registry paths, one digest, and leave the genome out of the path (`pull fasta --genome-digest DIGEST`). With `--all` or `--asset`, comma-separate several. |
 | `--all` | Pull all assets for the specified genome(s). |
 | `--all-genomes` | Apply the operation to all genomes available on subscribed servers. |
 | `--asset` | Pull one asset type across the specified genomes, e.g. `--asset fasta`. |
-| `--init` | Register genome(s) locally (aliases, metadata) without downloading asset files. |
+| `--init` | Register genome(s), named with `-g` or `--genome-digest`, without downloading asset files. |
 | `--skip-large` | Do not pull archives over the size cutoff. |
 | `--pull-large` | Pull all archives regardless of size. |
 | `--size-cutoff` | Maximum archive size, in GB, to pull without confirmation. Default `10`. |
@@ -437,7 +453,8 @@ refgenie populater [-f FILE]
 
 #### `compare`
 
-Compare two genomes for compatibility.
+Compare two genomes for compatibility. A genome not registered here is
+compared on the subscribed server that has it.
 
 ```
 refgenie compare ALIAS1 ALIAS2
@@ -465,7 +482,7 @@ refgenie genome init -n NAME [--fasta PATH | --server URL | --store URL]
 | --- | --- |
 | `-n, --name` | One or more alias names for the genome. **Required.** |
 | `--fasta` | Path to a local FASTA file. |
-| `--server` | URL of a refgenie server to initialize from. |
+| `--server` | URL of a refgenie server to initialize from. For a RefgetStore URL, use `--store`. |
 | `--store` | URL of a RefgetStore to initialize from; requires `--digest` or `--namespace`. |
 | `--namespace` | Namespace for alias lookup when using `--store`. |
 | `--digest` | Seqcol digest of the genome. |
@@ -503,7 +520,7 @@ refgenie genome list
 Remove a genome and all its assets.
 
 ```
-refgenie genome remove (--genome ALIAS [...] | --genome-digest DIGEST [...])
+refgenie genome remove (--genome ALIAS[,...] | --genome-digest DIGEST[,...])
 ```
 
 | Option | Description |
@@ -572,7 +589,7 @@ refgenie dash [-p PORT] [-b {off,read,full}]
 Add refgenie server URLs to the subscription list.
 
 ```
-refgenie subscribe -s URL [...]
+refgenie subscribe -s URL[,URL...]
 ```
 
 | Option | Description |
@@ -585,7 +602,7 @@ refgenie subscribe -s URL [...]
 Remove refgenie server URLs from the subscription list.
 
 ```
-refgenie unsubscribe -s URL [...]
+refgenie unsubscribe -s URL[,URL...]
 ```
 
 | Option | Description |
@@ -598,20 +615,43 @@ Export a publish catalog covering pushed assets only, for a server to import.
 
 ```
 refgenie catalog-export [--dest PATH] [--https-prefix URL]
+    [--catalog-store-name NAME --catalog-store-url URL [--catalog-store-priority N]]
 ```
 
 | Option | Description |
 | --- | --- |
 | `--dest` | Path to write the publish-catalog SQLite artifact to. |
 | `--https-prefix` | Public https base URL mirroring the stage folder that `refgenie push` uploaded to, e.g. `https://<bucket>.s3.amazonaws.com/assets`. Download links are served from here. |
+| `--catalog-store-name` | Name of the public store that holds the genomes this node built itself, e.g. `refgenie-main`. Those genomes belong to no registered store; the catalog lists them under this one. |
+| `--catalog-store-url` | Public root URL of that store. Required with `--catalog-store-name`. |
+| `--catalog-store-priority` | Priority of that store. Defaults to `30`. |
+
+The catalog carries the [store list](#store): every enabled `remote` store in
+the database, plus the catalog store if one is named. `on_disk` stores are left
+out, since their URL is a path on this machine. A disabled store is left out
+too, along with its genomes and their aliases, assets and download records; the
+export logs how many genomes it omitted for each such store. Enable the store
+again (`refgenie store apply`) and the next export carries them. A server that
+imports the catalog adds or updates the listed stores and disables any store
+the catalog does not list. The export fails if a genome belongs to any other
+store it does not publish (an `on_disk` store, or one missing from the store
+table), because the server could not import that genome.
 
 #### `catalog-prune`
 
-Delete the assets a server holds but its publish catalog no longer has, such
-as the old copy of an asset that was rebuilt on the build node. A catalog
-import only adds and updates rows, so run this on the server after it imports
-the catalog. It touches only genomes in the catalog, and removes each deleted
-asset's names, links and staged rows.
+Delete what a server holds but its publish catalog no longer has. A catalog
+import never deletes assets, genomes or stores, so run this on the server
+after it imports the catalog, with `--dry-run` first. It removes:
+
+- assets of genomes in the catalog that the catalog no longer lists, such as
+  the old copy of an asset rebuilt on the build node, with their names, links
+  and staged rows;
+- genomes the catalog no longer carries that have no assets, with their
+  aliases (such as the genomes of a retired store). A dropped genome that
+  still has assets is listed and kept;
+- disabled stores left with no genome.
+
+A catalog with no genomes deletes no genomes.
 
 ```
 refgenie catalog-prune [--source PATH_OR_URL] [--dry-run]
@@ -657,8 +697,8 @@ refgenie purge
 refgenie config get
 ```
 
-`config get` displays the current configuration, including the database
-connection and the environment-derived settings. `config set` is not yet
+`config get` prints the current configuration, including the database
+connection and the environment-derived settings, as YAML. `config set` is not yet
 implemented.
 
 #### `plugins list` / `plugins set` / `plugins unset`
@@ -683,7 +723,7 @@ Settings may be stored before the plugin is installed; refgenie warns and
 stores them anyway. `plugins unset` removes the given keys, or every setting
 for the plugin when no key is given.
 
-```
+```bash
 refgenie plugins set nfcore config_path=/abs/path/nf.config
 refgenie plugins unset nfcore config_path
 ```
@@ -691,9 +731,9 @@ refgenie plugins unset nfcore config_path
 #### `alias get` / `alias set` / `alias remove`
 
 ```
-refgenie alias get [-a ALIAS ...] [-g DIGEST ...]
-refgenie alias set -a ALIAS [...] [-d DIGEST]
-refgenie alias remove -a ALIAS [...]
+refgenie alias get [-a ALIAS[,ALIAS...]] [-g DIGEST[,DIGEST...]]
+refgenie alias set -a ALIAS[,ALIAS...] [-d DIGEST]
+refgenie alias remove -a ALIAS[,ALIAS...]
 ```
 
 `alias get` options (mutually exclusive):
@@ -757,7 +797,7 @@ refgenie asset-class remove ASSET-CLASS-NAME [--asset-class-version VERSION]
 Manage staged assets, the area that `refgenie push` uploads from.
 
 ```
-refgenie stage add ASSET-REGISTRY-PATHS [...] [--push-to REMOTE [...]]
+refgenie stage add ASSET-REGISTRY-PATHS [...] [--push-to REMOTE[,REMOTE...]]
 refgenie stage remove ASSET-REGISTRY-PATHS [...]
 refgenie stage list
 ```
@@ -855,6 +895,7 @@ priority number wins.
 
 ```
 refgenie store add --name NAME -u URL [-t {remote,on_disk}] [-p PRIORITY] [--description TEXT]
+refgenie store apply -f FILE
 refgenie store sync [--name NAME] [--page-size N]
 refgenie store list
 refgenie store remove --name NAME
@@ -864,7 +905,8 @@ refgenie store conflicts
 | Subcommand | Description |
 | --- | --- |
 | `add` | Register a store. `--name` (unique; `local` is reserved) and `-u, --url` (store root URL, or a local `.refget_store` path with `-t on_disk`) are **required**. `-p, --priority` defaults to `100`. |
-| `sync` | Load a store's collections and aliases into the database. With no `--name`, syncs every enabled store. `--page-size` defaults to `100`. |
+| `apply` | Make the store list match a JSON file. `-f, --file` is **required**: a JSON array of stores, each `{"name", "url", "type"?, "priority"?, "description"?, "enabled"?}`. Listed stores are added or updated; stores not listed are disabled, never deleted. Prints what was added, updated and disabled. |
+| `sync` | Load a store's collections and aliases into the database. With no `--name`, syncs every enabled store. `--page-size` defaults to `100`. A store's aliases are replaced as a set: names it no longer offers are removed, and names with '/' are skipped. A store that offers under half the aliases it holds, or a sync with failures, leaves its aliases unchanged. |
 | `list` | List registered stores. |
 | `remove` | Remove a store from the registry. `--name` is **required**. |
 | `conflicts` | Show aliases that different stores map to different genomes. |
@@ -873,17 +915,26 @@ refgenie store conflicts
 
 #### `getseq`
 
-Retrieve a sequence region from a genome. Coordinates are 0-based and half-open.
+Retrieve a sequence region from a genome. Coordinates are 0-based and half-open
+unless you pass `--one-based`. It reads only the bases you ask for and caches
+nothing locally.
 
 ```
-refgenie getseq (-g ALIAS | --genome-digest DIGEST) -l LOCUS
+refgenie getseq (-g ALIAS | --genome-digest DIGEST) -l LOCUS [--one-based] [--fasta]
 ```
 
 | Option | Description |
 | --- | --- |
-| `-g, --genome` | Genome alias, e.g. `mm10`. |
+| `-g, --genome` | Genome alias, e.g. `mm10`. A genome not registered here is first registered from the subscribed servers (metadata only, like `pull --init`). |
 | `--genome-digest` | Genome digest, in place of an alias. One of `-g` or `--genome-digest` is required. |
 | `-l, --locus` | Coordinates of the desired sequence, e.g. `chr1:50000-50200`. **Required.** |
+| `--one-based` | Read the locus as 1-based, closed coordinates (samtools style). |
+| `--fasta` | Print a FASTA record: a header line with the locus, then 60 bases per line. |
+
+```bash
+refgenie getseq -g hg38 -l chrM:1-60 --one-based   # same bases as chrM:0-60
+refgenie getseq -g hg38 -l chrM:0-120 --fasta > chrM_start.fa
+```
 
 ## Related documentation
 

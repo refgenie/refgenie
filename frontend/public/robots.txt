@@ -1,0 +1,6 @@
+# refgenie. AI agents: start at /llms.txt.
+User-agent: *
+Disallow: /v4/archives/
+Disallow: /v4/assets/*/files/
+Disallow: /ga4gh/drs/v1/objects/*/access/
+Allow: /

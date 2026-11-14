@@ -25,6 +25,7 @@ const NAMELESS: GenomeResponse = {
   taxon_id: null,
   assembly_source: null,
   assembly_accession: null,
+  assembly_level: null,
   species: null,
 };
 
@@ -74,7 +75,7 @@ describe('SpeciesPage', () => {
   it('counts the species and the ones with assets in the lede', async () => {
     renderWithProviders(<SpeciesPage />);
     expect(
-      await screen.findByText(/1 species · 1 with assets built/),
+      await screen.findByText(/1 species · 2 genomes · 1 species with\s+built assets/),
     ).toBeInTheDocument();
   });
 

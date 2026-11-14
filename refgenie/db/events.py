@@ -9,6 +9,7 @@ from pathlib import Path
 from sqlalchemy import Connection, event, func
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import select
+
 from refgenie.db.cleanup import (
     discard_pending_cleanups,
     enqueue_callable,
@@ -17,12 +18,13 @@ from refgenie.db.cleanup import (
 )
 from refgenie.db.tables import (
     Alias,
-    StagedAsset,
     Asset,
     AssetGroup,
     Configuration,
     SeekKey,
     SeekKeyType,
+    StagedAsset,
+    prefix_matches,
 )
 from refgenie.logger import logger
 from refgenie.utils.symlinks import alias_owned_paths
@@ -173,8 +175,7 @@ def _seek_key_before_insert_handler(_, connection: Connection, target: SeekKey):
     elif target.type == SeekKeyType.directory:
         size = sum(f.stat().st_size for f in seek_key_path.glob("**/*") if f.is_file())
     elif target.type == SeekKeyType.prefix:
-        matched_files = (Path(genome_folder) / target.asset.path).glob(f"{target.value}*")
-        size = sum(f.stat().st_size for f in matched_files if f.is_file())
+        size = sum(f.stat().st_size for f in prefix_matches(seek_key_path))
     else:
         raise ValueError(f"Seek key size calculation not supported for {target.type=}")
     target.size = size

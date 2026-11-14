@@ -33,7 +33,6 @@ _AMBIENT_ENV_VARS = (
     "REFGENIE_GENOME_FOLDER",
     "REFGENIE_GENOME_STAGE_FOLDER",
     "REFGENIE_HOME_PATH",
-    "REFGENIE_STORES",
 )
 _ALLOW_AMBIENT = "REFGENIE_ALLOW_AMBIENT_ENV"
 
@@ -356,8 +355,8 @@ def bare_client_world(engine, tmp_path, fixtures_path):
 
     That is a fresh install. The server has the rCRSd fasta built, not yet
     staged, plus a child asset (group ``child_index``, class
-    ``nested_seek_key``) that links to the fasta as its parent, also not
-    staged. Yields ``(client_rg, server_rg, url, parent, child)``; each test
+    ``nested_seek_key``) that links to the fasta as its parent and colocates
+    its files, also not staged. A pull brings a parent only for a colocating child. Yields ``(client_rg, server_rg, url, parent, child)``; each test
     stages what it wants pullable.
     """
     from tests.support.factories import GENOME, MOCK_SERVER_URL, add_asset_from_files
@@ -380,6 +379,7 @@ def bare_client_world(engine, tmp_path, fixtures_path):
         asset_class_name="nested_seek_key",
         asset_group_name="child_index",
         asset_name="v1",
+        colocate=[{"parent_asset_group": "fasta", "source_key": "fasta"}],
     )
     server_rg.asset.links.set_parents(
         genome_digest=genome_digest,

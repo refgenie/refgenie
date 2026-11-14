@@ -3,8 +3,8 @@ import shutil
 from pathlib import Path
 from subprocess import PIPE, CalledProcessError, Popen, run
 
-from refgenie.utils.console import CONSOLE
 from refgenie.logger import logger
+from refgenie.utils.console import CONSOLE
 
 
 def tar(path: Path, output: Path, exclude_files: list[str] | None = None) -> None:

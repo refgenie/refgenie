@@ -9,21 +9,24 @@ convention; ``refgenie stage`` (``cli/commands/stage.py``) is the CLI over this.
 
 import os
 import shutil
-from pathlib import Path
 from collections.abc import Iterable
+from pathlib import Path
 
 from rich.table import Table
+from ubiquerg import filesize_to_str as file_size
 
 from refgenie.db.engine import Engine
 from refgenie.db.queries import asset as asset_queries
 from refgenie.db.queries import stage as queries
-from refgenie.db.tables import StagedAsset, Asset
+from refgenie.db.tables import Asset, StagedAsset
 from refgenie.exceptions import MissingRemoteError, MissingStagedAssetError
 from refgenie.logger import logger
 from refgenie.managers.base import ResourceManager
 from refgenie.managers.remote import RemoteManager
 from refgenie.models import Page
+from refgenie.utils.digest import checksum
 from refgenie.utils.search import Search
+from refgenie.utils.staging import staged_archive_path
 from refgenie.utils.tables import build_table
 from refgenie.utils.tarball import (
     get_external_symlinks,
@@ -31,9 +34,6 @@ from refgenie.utils.tarball import (
     read_build_commands,
     tar,
 )
-from refgenie.utils.digest import checksum
-from refgenie.utils.staging import staged_archive_path
-from ubiquerg import filesize_to_str as file_size
 
 
 class StageManager(ResourceManager):

@@ -8,12 +8,12 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from pydantic import AliasChoices, Field, ValidationError
+from pydantic import ValidationError
 from pydantic_settings import get_subcommand
 
 from refgenie import Refgenie
 from refgenie.cli import main as cli_main
-from refgenie.cli.main import _make_cli_source, _preprocess_argv, main
+from refgenie.cli.main import main
 from refgenie.cli.commands import asset as cli_asset
 from refgenie.cli.commands import helpers as cli_helpers
 from refgenie.cli.commands import listing as cli_listing
@@ -25,25 +25,13 @@ from refgenie.managers.sources.servers import ServerManager
 from refgenie.managers.transfer import TransferManager
 from refgenie.managers.transfer.puller import BulkPullResult
 from refgenie.models import GenomeAlias, GenomeDigest
+from tests.support.cli import parse, subcmd
 from tests.support.factories import fake_digest, make_engine, register_fasta
 
 
 # ---------------------------------------------------------------------------
 # Fixtures and helpers
 # ---------------------------------------------------------------------------
-
-
-def parse(argv):
-    """Parse argv as ``main`` does, argv preprocessing included."""
-    from refgenie.cli.parser import TopLevelParser
-
-    source = _make_cli_source(TopLevelParser, _preprocess_argv(argv))
-    return TopLevelParser(_cli_settings_source=source)
-
-
-def subcmd(argv):
-    """Parse argv and return the active leaf subcommand model."""
-    return get_subcommand(parse(argv), is_required=True)
 
 
 @pytest.fixture
@@ -222,7 +210,7 @@ class TestPullArgParsing:
             (
                 ["pull", "-g", "hg38,mm10", "--all"],
                 PullModel,
-                {"genome": ["hg38", "mm10"], "all": True, "asset_registry_paths": None},
+                {"genome": ["hg38", "mm10"], "all": True, "asset_registry_paths": []},
             ),
             (
                 ["pull", "--all-genomes", "--asset", "fasta"],
@@ -230,8 +218,18 @@ class TestPullArgParsing:
                 {"all_genomes": True, "asset": "fasta"},
             ),
             (["pull", "-g", "hg38", "--init"], PullModel, {"genome": ["hg38"], "init": True}),
+            (
+                ["pull", "--genome-digest", "d" * 32, "--init"],
+                PullModel,
+                {"genome_digest": ["d" * 32], "init": True},
+            ),
             (["pull", "-g", "hg38", "--all", "--force"], PullModel, {"force": True}),
             (["pull", "--size-cutoff", "5.5"], PullModel, {"size_cutoff": 5.5}),
+            (
+                ["pull", "fasta", "--genome-digest", "D"],
+                PullModel,
+                {"asset_registry_paths": ["fasta"], "genome_digest": ["D"]},
+            ),
             (["pull", "--batch"], PullModel, {"batch": True, "pull_large": True}),
             (["mirror"], MirrorModel, {}),
             (["mirror", "--force"], MirrorModel, {"force": True}),
@@ -244,8 +242,10 @@ class TestPullArgParsing:
             "pull-all-comma-genomes",
             "pull-all-genomes-asset",
             "pull-init",
+            "pull-init-digest",
             "pull-all-force",
             "pull-size-cutoff",
+            "pull-positional-digest",
             "pull-batch",
             "mirror",
             "mirror-force",
@@ -257,32 +257,6 @@ class TestPullArgParsing:
         assert isinstance(parsed, model)
         for name, value in expected.items():
             assert getattr(parsed, name) == value, f"{name} mismatch for {' '.join(argv)}"
-
-
-# ---------------------------------------------------------------------------
-# argv preprocessing in refgenie.cli.main
-# ---------------------------------------------------------------------------
-
-
-class TestDerivedValueConsumingFlags:
-    """`refgenie pull <paths>` is rescued by rewriting argv, because
-    pydantic-settings rejects positional args that have defaults. The rewrite
-    must learn which options consume a following value from the model, not a
-    hand-maintained list."""
-
-    def test_new_value_taking_option_is_handled(self, monkeypatch):
-        """A value-taking option added to PullModel must not swallow its value
-        as a registry path."""
-        from refgenie.cli.commands import pull as commands_mod
-
-        class PullWithTag(commands_mod.PullModel):
-            tag: str | None = Field(None, validation_alias=AliasChoices("tag"))
-
-        monkeypatch.setattr(commands_mod, "PullModel", PullWithTag)
-
-        out = _preprocess_argv(["pull", "--tag", "default", "hg38/fasta"])
-        idx = out.index("--asset-registry-paths")
-        assert out[idx + 1] == "hg38/fasta"
 
 
 class TestAssetListAliasesTopLevelList:
@@ -403,6 +377,15 @@ class TestHelpTextRendering:
         assert "genome.init.no-build" not in text
 
 
+class TestPullHelp:
+    def test_pull_help_shows_the_positional(self, capsys):
+        with pytest.raises(SystemExit):
+            main(["pull", "--help"])
+        out = capsys.readouterr().out
+        assert "ASSET-REGISTRY-PATHS" in out
+        assert "--asset-registry-paths" not in out
+
+
 class TestSubcommandHelp:
     """Every command's --help exits 0 and produces output.
 
@@ -519,7 +502,11 @@ class TestErrorExitCodes:
             (("asset-class", "remove", "nonexistent"), 1, ["Asset class 'nonexistent'"]),
             (("alias", "remove", "-a", "nonexistent_alias"), 1, ["'nonexistent_alias' not found"]),
             (("list", "-g", "g1,g2"), 1, ["Genome alias 'g1' not found"]),
-            (("compare", "genome_a", "genome_b"), 1, ["Genome alias 'genome_a' not found"]),
+            (
+                ("compare", "genome_a", "genome_b"),
+                EXIT_NOT_FOUND,
+                ["Genome 'genome_a' is not registered here"],
+            ),
             (("data-channel", "show", "nosuchchannel"), 2, ["'nosuchchannel' not found"]),
             (("data-channel", "remove", "nosuchchannel"), 2, ["'nosuchchannel' not found"]),
             (("data-channel", "validate", "nosuchchannel"), 1, ["'nosuchchannel' is invalid"]),
@@ -781,20 +768,20 @@ class TestDataChannelHintOnError:
         msg = data_channel_hint()
         assert msg.count("\n") == 2
 
-    def test_pull_missing_asset_class_on_empty_db_shows_hint(self, cli, cli_rg, caplog):
+    def test_pull_missing_asset_class_on_empty_db_shows_hint(self, cli, cli_rg, capsys):
         """`pull` against a fresh, unsynced instance must show the same
         data-channel guidance genome init already gives."""
         from refgenie.exceptions import MissingAssetClassError
 
         with patch.object(TransferManager, "pull", side_effect=MissingAssetClassError("fasta")):
-            with caplog.at_level("INFO"):
-                assert cli("pull", "rCRSd/fasta") != 0
-        assert "refgenie data-channel add" in caplog.text
-        assert "refgenie data-channel sync" in caplog.text
-        assert "refgenie pull rCRSd/fasta" in caplog.text
+            assert cli("pull", "rCRSd/fasta") != 0
+        err = capsys.readouterr().err
+        assert "refgenie data-channel add" in err
+        assert "refgenie data-channel sync" in err
+        assert "refgenie pull rCRSd/fasta" in err
 
     def test_pull_missing_asset_class_with_channel_synced_omits_hint(
-        self, cli, cli_rg, fixtures_path, caplog
+        self, cli, cli_rg, fixtures_path, capsys
     ):
         """When recipes/asset classes ARE registered, a genuinely missing one
         must not be misdirected to 'sync a data channel'."""
@@ -804,30 +791,30 @@ class TestDataChannelHintOnError:
         with patch.object(
             TransferManager, "pull", side_effect=MissingAssetClassError("bowtie2_index")
         ):
-            with caplog.at_level("INFO"):
-                assert cli("pull", "rCRSd/bowtie2_index") != 0
-        assert "refgenie data-channel add" not in caplog.text
+            assert cli("pull", "rCRSd/bowtie2_index") != 0
+        err = capsys.readouterr().err
+        assert "refgenie data-channel add" not in err
 
-    def test_build_missing_recipe_on_empty_db_shows_hint(self, cli, cli_rg, caplog):
+    def test_build_missing_recipe_on_empty_db_shows_hint(self, cli, cli_rg, capsys):
         from refgenie.exceptions import MissingRecipeError
 
         with patch.object(BuildManager, "run", side_effect=MissingRecipeError("fasta")):
-            with caplog.at_level("INFO"):
-                assert cli("build", "rCRSd/fasta") != 0
-        assert "refgenie data-channel add" in caplog.text
-        assert "refgenie data-channel sync" in caplog.text
-        assert "refgenie build rCRSd/fasta" in caplog.text
+            assert cli("build", "rCRSd/fasta") != 0
+        err = capsys.readouterr().err
+        assert "refgenie data-channel add" in err
+        assert "refgenie data-channel sync" in err
+        assert "refgenie build rCRSd/fasta" in err
 
     def test_build_missing_recipe_with_channel_synced_omits_hint(
-        self, cli, cli_rg, fixtures_path, caplog
+        self, cli, cli_rg, fixtures_path, capsys
     ):
         from refgenie.exceptions import MissingRecipeError
 
         register_fasta(cli_rg, fixtures_path)
         with patch.object(BuildManager, "run", side_effect=MissingRecipeError("custom_recipe")):
-            with caplog.at_level("INFO"):
-                assert cli("build", "rCRSd/custom_recipe") != 0
-        assert "refgenie data-channel add" not in caplog.text
+            assert cli("build", "rCRSd/custom_recipe") != 0
+        err = capsys.readouterr().err
+        assert "refgenie data-channel add" not in err
 
 
 class TestSilentZeroPaths:
@@ -873,18 +860,24 @@ class TestBulkPullExitCode:
     @pytest.mark.parametrize("mode", [["--all"], ["--asset", "fasta"]])
     def test_bulk_pull_that_resolves_nothing_fails(self, cli, cli_rg, mode, caplog):
         """A bulk pull whose genome no server knows exits nonzero, not 0."""
-        with patch.object(type(cli_rg.genome), "init_from_remote", return_value=False):
+        with patch.object(type(cli_rg.genome), "init_from_remote", return_value=None):
             assert cli("pull", "-g", "nosuchgenome", *mode) == EXIT_NOT_FOUND
         assert "Pull failed" in caplog.text
 
     def test_pull_init_that_registers_nothing_fails(self, cli, cli_rg, caplog):
-        with patch.object(type(cli_rg.genome), "init_from_remote", return_value=False):
+        with patch.object(type(cli_rg.genome), "init_from_remote", return_value=None):
             assert cli("pull", "-g", "nosuchgenome", "--init") == EXIT_NOT_FOUND
         assert "Init failed" in caplog.text
 
     def test_pull_init_that_registers_something_succeeds(self, cli, cli_rg):
         with patch.object(TransferManager, "init_genomes", return_value=["a" * 32]):
             assert cli("pull", "-g", "rCRSd", "--init") == 0
+
+    def test_pull_init_takes_a_genome_digest(self, cli, cli_rg):
+        digest = "d" * 32
+        with patch.object(TransferManager, "init_genomes", return_value=[digest]) as init:
+            assert cli("pull", "--genome-digest", digest, "--init") == 0
+        assert init.call_args.kwargs == {"genomes": [GenomeDigest(digest)], "all_genomes": False}
 
     @pytest.mark.parametrize("mode", [["--all"], ["--asset", "fasta"]])
     def test_bulk_pull_that_pulls_something_succeeds(self, cli, cli_rg, mode):
@@ -1026,7 +1019,11 @@ class TestCommandsWithAssets:
     def test_pull_passes_the_typed_genome(self, cli, cli_rg):
         """pull hands the library a GenomeAlias from a path, a GenomeDigest from the flag."""
         digest = fake_digest("remote genome")
-        with patch.object(TransferManager, "pull", return_value=MagicMock()) as pull:
+        with (
+            patch.object(TransferManager, "pull", return_value=MagicMock()) as pull,
+            patch("refgenie.cli.commands.pull.genome_digest_from", return_value=digest),
+            patch("refgenie.managers.asset.manager.AssetManager.seek", return_value="/x"),
+        ):
             assert cli("pull", "hg38/fasta") == 0
             assert cli("pull", "fasta", "--genome-digest", digest) == 0
         by_alias, by_digest = (c.kwargs["genome"] for c in pull.call_args_list)
@@ -1130,20 +1127,21 @@ class TestIdFlags:
 class TestIdRemote:
     def test_remote_with_unknown_alias_suggests_genome_digest(self, cli, cli_genome, caplog):
         """A positional name is an alias, even when it is shaped like a digest."""
-        with patch.object(ServerManager, "find_collection") as find:
+        with patch.object(ServerManager, "locate") as locate:
             assert cli("id", "a" * 32, "--remote") == EXIT_INVALID_INPUT
         assert "--genome-digest" in caplog.text
-        find.assert_not_called()
+        locate.assert_not_called()
 
     def test_remote_with_digest_asks_the_servers(self, cli, cli_genome, capsys):
         digest = "a" * 32
-        with patch.object(ServerManager, "find_collection", return_value={"digest": digest}) as f:
+        with patch.object(ServerManager, "locate", return_value=("http://s", digest, {})) as loc:
             assert cli("id", "--genome-digest", digest, "--remote") == 0
-        f.assert_called_once_with(digest)
+        loc.assert_called_once_with(digest)
+        assert isinstance(loc.call_args.args[0], GenomeDigest)
         assert digest in capsys.readouterr().out
 
     def test_remote_with_digest_not_found_errors(self, cli, cli_genome):
-        with patch.object(ServerManager, "find_collection", return_value=None):
+        with patch.object(ServerManager, "locate", return_value=None):
             assert cli("id", "--genome-digest", "b" * 32, "--remote") == EXIT_NOT_FOUND
 
     def test_malformed_digest_is_invalid_input(self, cli, cli_genome):
@@ -1151,13 +1149,131 @@ class TestIdRemote:
 
     def test_known_digest_is_found_locally(self, cli, cli_genome, capsys):
         digest = cli_genome.alias.resolve("rCRSd")
-        with patch.object(ServerManager, "find_collection") as find:
+        with patch.object(ServerManager, "locate") as locate:
             assert cli("id", "--genome-digest", digest, "--remote") == 0
         assert capsys.readouterr().out.strip() == digest
-        find.assert_not_called()
+        locate.assert_not_called()
 
     def test_unknown_digest_without_remote_errors(self, cli, cli_genome):
         assert cli("id", "--genome-digest", "c" * 32) == EXIT_NOT_FOUND
+
+
+REMOTE_DIGEST = GenomeDigest("r" * 32)
+SERVER = "http://server.test"
+
+
+class TestRemoteGenomeByName:
+    """Commands that reach a genome only a server knows, through ``locate``."""
+
+    def test_listr_finds_an_alias_on_the_servers(self, cli, cli_rg):
+        with (
+            patch.object(ServerManager, "locate", return_value=(SERVER, REMOTE_DIGEST, {})) as loc,
+            patch.object(ServerManager, "assets_table", return_value=[]) as table,
+        ):
+            assert cli("listr", "-g", "hg38") == 0
+        assert loc.call_args.args == (GenomeAlias("hg38"), None)
+        assert table.call_args.kwargs["genome_digests"] == [REMOTE_DIGEST]
+
+    def test_listr_of_a_genome_no_one_knows_is_not_found(self, cli, cli_rg):
+        with (
+            patch.object(ServerManager, "locate", return_value=None),
+            patch.object(ServerManager, "assets_table", return_value=[]) as table,
+        ):
+            assert cli("listr", "-g", "hg38") == EXIT_NOT_FOUND
+        table.assert_not_called()
+
+    def test_getseq_registers_the_genome_first(self, cli, cli_rg, capsys):
+        from refgenie.managers.sequence import SequenceManager
+
+        with (
+            patch.object(
+                type(cli_rg.genome), "init_from_remote", return_value=REMOTE_DIGEST
+            ) as init,
+            patch.object(SequenceManager, "get", return_value="ACGT") as get,
+        ):
+            assert cli("getseq", "-g", "hg38", "-l", "chr1:0-4") == 0
+        assert init.call_args.args == (GenomeAlias("hg38"),)
+        assert init.call_args.kwargs == {"require_collection": True}
+        assert get.call_args.args == (REMOTE_DIGEST, "chr1", 0, 4)
+        assert "ACGT" in capsys.readouterr().out
+
+    def test_getseq_of_a_genome_no_one_can_provide_is_not_found(self, cli, cli_rg):
+        with patch.object(type(cli_rg.genome), "init_from_remote", return_value=None):
+            assert cli("getseq", "-g", "hg38", "-l", "chr1:0-4") == EXIT_NOT_FOUND
+
+    # Local genomes are named by digest: a bare genome's alias lives in this
+    # process's alias cache only, so the CLI's own Refgenie would not see it.
+
+    def test_compare_of_two_local_genomes_asks_no_server(self, cli, cli_rg, capsys):
+        cli_rg.genome.add("a" * 32, "a", [])
+        cli_rg.genome.add("b" * 32, "b", [])
+        with (
+            patch.object(type(cli_rg.genome), "compare", return_value={"local": True}) as cmp,
+            patch.object(ServerManager, "client") as client,
+        ):
+            assert cli("compare", "--genome-digest", f"{'a' * 32},{'b' * 32}") == 0
+        assert cmp.call_args.args == ("a" * 32, "b" * 32)
+        client.assert_not_called()
+
+    def test_compare_with_a_remote_genome_asks_its_server(self, cli, cli_rg, capsys):
+        cli_rg.genome.add("a" * 32, "a", [])
+        client = MagicMock()
+        client.genome.compare.return_value = {"digests": {"a": REMOTE_DIGEST, "b": "a" * 32}}
+        with (
+            patch.object(ServerManager, "locate", return_value=(SERVER, REMOTE_DIGEST, {})),
+            patch.object(ServerManager, "client", return_value=client) as get_client,
+        ):
+            assert cli("compare", "hg38", "--genome-digest", "a" * 32) == 0
+        get_client.assert_called_once_with(SERVER)
+        client.genome.compare.assert_called_once_with(REMOTE_DIGEST, "a" * 32)
+        assert REMOTE_DIGEST in capsys.readouterr().out
+
+    def test_compare_the_server_cannot_answer_suggests_registering(self, cli, cli_rg, caplog):
+        cli_rg.genome.add("a" * 32, "a", [])
+        client = MagicMock()
+        client.genome.compare.side_effect = ValueError("404")
+        with (
+            patch.object(ServerManager, "locate", return_value=(SERVER, REMOTE_DIGEST, {})),
+            patch.object(ServerManager, "client", return_value=client),
+        ):
+            assert cli("compare", "hg38", "--genome-digest", "a" * 32) == EXIT_NOT_FOUND
+        assert "Register 'hg38' here first (refgenie pull --init" in caplog.text
+
+    def test_genome_init_from_a_server_reads_the_located_store(self, cli, cli_rg):
+        import refgenie.cli.commands.genome as handlers_mod
+
+        attrs = {"refget_store_url": "https://store.test/igenomes/"}
+        source = MagicMock()
+        with (
+            patch.object(
+                ServerManager, "locate", return_value=(SERVER, REMOTE_DIGEST, attrs)
+            ) as loc,
+            patch.object(handlers_mod, "collection_source", return_value=source) as pick,
+            patch.object(
+                BuildManager, "initialize_and_build", return_value=(REMOTE_DIGEST, True)
+            ) as init,
+        ):
+            code = cli(
+                "genome",
+                "init",
+                "--server",
+                SERVER,
+                "--digest",
+                REMOTE_DIGEST,
+                "-n",
+                "x",
+                "--no-build",
+            )
+        assert code == 0
+        assert loc.call_args.args == (GenomeDigest(REMOTE_DIGEST), [SERVER])
+        pick.assert_called_once_with(SERVER, attrs)
+        assert init.call_args.kwargs["source"] is source
+        assert init.call_args.kwargs["digest"] == REMOTE_DIGEST
+
+    def test_genome_init_from_a_server_that_lacks_the_genome(self, cli, cli_rg):
+        with patch.object(ServerManager, "locate", return_value=None):
+            code = cli("genome", "init", "--server", SERVER, "-n", "x", "--no-build")
+        assert code == EXIT_NOT_FOUND
 
 
 # ---------------------------------------------------------------------------
@@ -1351,3 +1467,94 @@ class TestPluginsCommand:
         updates = [event for hook, event in fake_plugin.CALLS if hook == "post_update"]
         assert len(updates) == 1
         assert [c.action for c in updates[0].changes] == ["genome_added", "asset_added"]
+
+
+class TestQuietScriptableOutput:
+    """getseq, --json listings, YAML config and the log level."""
+
+    @pytest.fixture(autouse=True)
+    def setup_asset(self, cli_rg, fixtures_path):
+        register_fasta(cli_rg, fixtures_path)
+        cli_rg.genome.initialize_genome(
+            fasta_file_path=fixtures_path / "rCRSd.fa",
+            alias_names=["rCRSd"],
+            description="rCRSd mitochondrial reference",
+        )
+        cli_rg.build.run(
+            recipe_name="fasta",
+            genome_alias="rCRSd",
+            asset_group_name="fasta",
+            asset_name="default",
+        )
+
+    def test_getseq_plain_is_one_line(self, cli, capsys):
+        assert cli("getseq", "-g", "rCRSd", "-l", "rCRSd") == 0
+        out = capsys.readouterr().out
+        assert out.count("\n") == 1 and len(out.strip()) == 33138
+
+    def test_getseq_fasta(self, cli, capsys):
+        assert cli("getseq", "-g", "rCRSd", "-l", "rCRSd:0-10", "--fasta") == 0
+        header, bases = capsys.readouterr().out.splitlines()
+        assert header == ">rCRSd:0-10" and len(bases) == 10
+        assert cli("getseq", "-g", "rCRSd", "-l", "rCRSd", "--fasta") == 0
+        lines = capsys.readouterr().out.splitlines()[1:]
+        assert all(len(x) == 60 for x in lines[:-1]) and sum(map(len, lines)) == 33138
+
+    def test_getseq_one_based(self, cli, capsys):
+        assert cli("getseq", "-g", "rCRSd", "-l", "rCRSd:0-10") == 0
+        zero = capsys.readouterr().out
+        assert cli("getseq", "-g", "rCRSd", "-l", "rCRSd:1-10", "--one-based") == 0
+        assert capsys.readouterr().out == zero
+
+    def test_getseq_unknown_name(self, cli):
+        assert cli("getseq", "-g", "rCRSd", "-l", "chr999") == EXIT_NOT_FOUND
+
+    def test_list_json(self, cli, capsys):
+        import json
+
+        assert cli("list", "--json") == 0
+        data = json.loads(capsys.readouterr().out)
+        assert data[0]["source"] == "local"
+        genome = data[0]["genomes"][0]
+        assert genome["aliases"] == ["rCRSd"] and "fasta:default" in genome["assets"]
+
+    def test_listr_json(self, cli, capsys):
+        import json
+
+        listing = ({"http://s": {"d1": ["fasta:default"]}}, {"http://s": {"d1": ["a"]}})
+        with patch.object(ServerManager, "list_assets", return_value=listing):
+            assert cli("listr", "--json") == 0
+        data = json.loads(capsys.readouterr().out)
+        assert data == [
+            {
+                "source": "http://s",
+                "genomes": [{"digest": "d1", "aliases": ["a"], "assets": ["fasta:default"]}],
+            }
+        ]
+
+    def test_config_get_is_yaml(self, cli, capsys):
+        import yaml
+
+        assert cli("config", "get") == 0
+        data = yaml.safe_load(capsys.readouterr().out)
+        assert set(data) == {"configuration", "environment"}
+
+    def test_info_logs_hidden_but_reach_logger_handlers(self, capsys):
+        import logging
+
+        from refgenie.logger import logger
+
+        seen = []
+
+        class _H(logging.Handler):
+            def emit(self, record):
+                seen.append(record.getMessage())
+
+        h = _H(logging.INFO)
+        logger.addHandler(h)
+        try:
+            logger.info("quiet please")
+        finally:
+            logger.removeHandler(h)
+        assert seen == ["quiet please"]
+        assert "quiet please" not in capsys.readouterr().err

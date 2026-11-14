@@ -13,11 +13,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from refgenie.db.engine import Engine
+import httpx2
 from ubiquerg import untar  # type: ignore
 
 from refgenie import progress
 from refgenie.const import DEFAULT_PULL_SIZE_CUTOFF_GB
+from refgenie.db.engine import Engine
 from refgenie.db.tables import SeekKeyType
 from refgenie.exceptions import (
     AssetExistsError,
@@ -38,7 +39,7 @@ from refgenie.managers.asset.colocation import recreate_colocation_symlinks
 from refgenie.managers.base import ResourceManager
 from refgenie.managers.genome import GenomeCreationResult
 from refgenie.managers.sources.api_ids import API_ID_ARCHIVE
-from refgenie.models import GenomeAlias, GenomeDigest
+from refgenie.models import GenomeAlias, GenomeDigest, first_usable_alias
 from refgenie.plugins.events import NULL_EVENTS, EventSink
 from refgenie.plugins.hooks import POST_PULL, PRE_PULL, HookEvent
 from refgenie.utils.digest import BuildProvenance, checksum
@@ -104,10 +105,11 @@ def _unresolved_alias_reason(
     """
     try:
         client.alias.resolve(alias)
-    except Exception as e:  # noqa: BLE001 - reported to the user
-        # By status, not class: an injected test client raises httpx2's error.
-        if getattr(getattr(e, "response", None), "status_code", None) != 404:
+    except httpx2.HTTPStatusError as e:
+        if e.response.status_code != 404:
             return f"Could not resolve genome alias '{alias}' via server {server_url}: {e}"
+    except Exception as e:  # noqa: BLE001 - reported to the user
+        return f"Could not resolve genome alias '{alias}' via server {server_url}: {e}"
     else:
         return f"Could not resolve genome alias '{alias}' via server {server_url}."
     try:
@@ -155,14 +157,16 @@ def should_pull_large_archive(
     logger.debug(f"'{asset_registry_path}' archive size: {archive_size}")
     if not force and archive_size > size_cutoff_bytes:
         if force is False:
-            logger.info(f"Skipping pull of '{asset_registry_path}'; size: {archive_size}")
+            logger.warning(f"Skipping pull of '{asset_registry_path}'; size: {archive_size}")
             return False
         # force is None, ask
         if not resolve_confirmer(confirm)(
             f"This archive exceeds the size cutoff "
             f"({archive_size / 1000**3:.1f}GB > {size_cutoff_gb:.1f}GB). Do you want to proceed?"
         ):
-            logger.info(f"Skipping pull of '{asset_registry_path}'. Size too large: {archive_size}")
+            logger.warning(
+                f"Skipping pull of '{asset_registry_path}'. Size too large: {archive_size}"
+            )
             return False
     return True
 
@@ -625,10 +629,12 @@ class AssetPuller(ResourceManager):
 
             bundle_name = f"{alias_name}/{asset_group_name}:{asset_name}"
 
-            # The asset class and every parent must be here before downloading.
+            # The asset class, and any parent it colocates, must be here before downloading.
             meta.asset_class_name = self._ensure_asset_class(client, server_url, meta)
+            # Only a parent whose files the asset links into its own folder is needed here.
+            colocated = {entry.get("parent_asset_group") for entry in meta.colocate or []}
             self._pull_missing_parents(
-                parents=meta.asset_parents,
+                parents=[p for p in meta.asset_parents if p.get("asset_group_name") in colocated],
                 server_url=server_url,
                 child_label=f"{asset_group_name}:{asset_name}",
                 child_digest=asset_digest,
@@ -745,7 +751,7 @@ class AssetPuller(ResourceManager):
         options: PullOptions,
     ) -> None:
         """
-        Pull, from the same server, every parent of an asset that is not here yet.
+        Pull, from the same server, each colocated parent of an asset that is not here yet.
 
         Each parent is a full pull with its own transaction, so a pulled parent
         stays even if the child then fails.
@@ -773,9 +779,7 @@ class AssetPuller(ResourceManager):
                     f"Cannot pull parent {label} required by {child_label}: the server "
                     f"did not say which genome and asset group it belongs to."
                 )
-            self._refuse_conflicting_parent(
-                genome_digest, group, name, digest, label, child_label
-            )
+            self._refuse_conflicting_parent(genome_digest, group, name, digest, label, child_label)
             logger.info(
                 f"Pulling parent {group}:{name} (digest {digest}) required by {child_label}"
             )
@@ -949,95 +953,55 @@ class AssetPuller(ResourceManager):
         txn: PullTransaction,
     ) -> tuple[GenomeAlias, GenomeDigest, dict]:
         """
-        The alias, the digest and the server's genome record for a pull of ``genome``.
+        The alias, the digest and the server's genome record for a pull.
 
-        The alias tree is keyed by alias, so a pull needs both. An unknown
-        ``GenomeAlias`` is resolved by the server and registered locally; a
-        ``GenomeDigest`` is registered under the server's aliases for it.
-        Registrations are tracked on ``txn`` for rollback, and the server's
-        genome record fills any unset local genome fields.
+        A genome here is pulled under its local alias, so a parent lands under
+        the child's alias. One that is not here is registered from the server,
+        tracked on ``txn`` for rollback. The record fills unset local genome
+        fields.
 
         Raises:
-            ServerCannotServe: If this server cannot identify the genome.
-            PullFailedError: If the server's alias listing fails.
+            ServerCannotServe: This server does not know the genome.
         """
-        if isinstance(genome, GenomeAlias):
-            alias_name, genome_digest, attrs = self._resolve_pull_alias(
-                genome, client, server_url, txn
-            )
+        alias_name, genome_digest = self._local_target(genome)
+        if genome_digest is not None:
+            found = self._servers.locate(genome_digest, [server_url])
+            if found is None:
+                raise ServerCannotServe(
+                    f"Server {server_url} does not have genome {genome_digest}."
+                )
+            attrs = found[2]
         else:
-            alias_name, genome_digest, attrs = self._resolve_pull_digest(
-                genome, client, server_url, txn
+            result = self._genome_manager.ensure_from_remote(genome, [server_url])
+            if result is None:
+                raise ServerCannotServe(
+                    _unresolved_alias_reason(genome, client, server_url)
+                    if isinstance(genome, GenomeAlias)
+                    else f"Could not resolve genome digest '{genome}' via server {server_url}."
+                )
+            txn.track_creation(result)
+            alias_name, genome_digest, attrs = (
+                result.alias_name,
+                result.genome_digest,
+                result.genome_attrs,
             )
-        if attrs is None:
-            attrs = self._servers.genome_attrs(genome_digest, [server_url])
         self._genome_manager.fill_from_server(genome_digest, attrs)
         return alias_name, genome_digest, attrs
 
-    def _resolve_pull_alias(
-        self,
-        genome_alias: GenomeAlias,
-        client: "RefgenieserverClient",
-        server_url: str,
-        txn: PullTransaction,
-    ) -> tuple[GenomeAlias, GenomeDigest, dict | None]:
-        """The pull target for an alias: a local one, else one the server knows.
-
-        The third item is the server's genome record, if it was fetched here.
-        """
-        try:
-            return genome_alias, self._alias_manager.resolve(genome_alias), None
-        except MissingAliasError:
-            pass
-        logger.warning(
-            f"No local genome alias '{genome_alias}'. "
-            f"Setting genome identity with server: {server_url}"
-        )
-        result = self._genome_manager.ensure_from_remote(
-            alias_name=genome_alias, server_urls=[server_url]
-        )
-        if not result.success:
-            raise ServerCannotServe(_unresolved_alias_reason(genome_alias, client, server_url))
-        txn.track_creation(result)
-        return genome_alias, self._alias_manager.resolve(genome_alias), result.genome_attrs
-
-    def _resolve_pull_digest(
-        self,
-        genome_digest: GenomeDigest,
-        client: "RefgenieserverClient",
-        server_url: str,
-        txn: PullTransaction,
-    ) -> tuple[GenomeAlias, GenomeDigest, dict]:
-        """The pull target for a digest: the server's aliases for it, else a local one.
-
-        The third item is the server's genome record.
-        """
-        known_digest = self._genome_manager.exists(genome_digest)
-        try:
-            aliases_metadata = client.alias.list(params={"genome_digest": genome_digest})
-        except Exception as e:
-            if not known_digest:
-                raise ServerCannotServe(
-                    f"Could not resolve genome digest '{genome_digest}' via server {server_url}."
-                ) from e
-            raise PullFailedError(f"Failed to fetch aliases metadata from {server_url}: {e}") from e
-        attrs = self._servers.genome_attrs(genome_digest, [server_url])
-        for alias_metadata in aliases_metadata:
-            result = self._genome_manager.ensure_from_remote(
-                alias_name=GenomeAlias(str(alias_metadata["name"])),
-                genome_digest=GenomeDigest(alias_metadata["genome_digest"]),
-                genome_description=alias_metadata.get("genome_description"),
-                genome_attrs=attrs,
-            )
-            txn.track_creation(result)
-        if aliases_metadata:
-            return GenomeAlias(str(aliases_metadata[0]["name"])), genome_digest, attrs
-        local_aliases = self._alias_manager.get_for_genome(genome_digest) if known_digest else []
-        if local_aliases:
-            return GenomeAlias(local_aliases[0]), genome_digest, attrs
-        raise ServerCannotServe(
-            f"Could not resolve genome digest '{genome_digest}' via server {server_url}."
-        )
+    def _local_target(
+        self, genome: GenomeAlias | GenomeDigest
+    ) -> tuple[GenomeAlias | None, GenomeDigest | None]:
+        """(alias, digest) when the genome is registered here under a usable alias."""
+        if isinstance(genome, GenomeAlias):
+            try:
+                return genome, self._alias_manager.resolve(genome)
+            except MissingAliasError:
+                return None, None
+        if self._genome_manager.exists(genome):
+            alias = first_usable_alias(self._alias_manager.get_for_genome(genome))
+            if alias is not None:
+                return alias, genome
+        return None, None
 
     def _fetch_asset_metadata(
         self,

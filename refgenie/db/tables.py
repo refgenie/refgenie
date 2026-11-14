@@ -8,7 +8,7 @@ re-runnable. See "Filesystem side effects of the ORM" in
 ``docs/refgenie/development.md`` before inserting or deleting these rows.
 """
 
-import os
+import glob
 import re
 from datetime import datetime, timezone
 from enum import Enum
@@ -102,6 +102,12 @@ def _check_serving_modes(modes: list[str]) -> None:
 def is_path_type(seek_key_type: SeekKeyType) -> bool:
     """Return True if the seek key type represents a filesystem path."""
     return seek_key_type in PATH_SEEK_KEY_TYPES
+
+
+def prefix_matches(prefix_path: Path) -> list[Path]:
+    """Files whose names start with a prefix seek key's path."""
+    pattern = f"{glob.escape(prefix_path.name)}*"
+    return [f for f in prefix_path.parent.glob(pattern) if f.is_file()]
 
 
 class RemoteType(Enum):
@@ -567,7 +573,16 @@ class AssetClassSeekKey(_Timestamps, table=True):
             files = [file for file in directory_path.iterdir() if not file.name.startswith(".")]
             if not files:
                 raise FileNotFoundError(f"No {error_string}")
-            common_prefix = os.path.commonprefix(list(set(file.name for file in files)))
+            # The common string prefix of the names (os.path.commonprefix is
+            # deprecated in Python 3.15). The first and last names in sorted
+            # order differ soonest, so their shared prefix is everyone's.
+            names = sorted(file.name for file in files)
+            first, last = names[0], names[-1]
+            size = next(
+                (i for i, (a, b) in enumerate(zip(first, last)) if a != b),
+                min(len(first), len(last)),
+            )
+            common_prefix = first[:size]
             return directory_path / common_prefix.rstrip(".")
 
         elif self.type == SeekKeyType.directory:

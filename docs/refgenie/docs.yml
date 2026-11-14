@@ -16,8 +16,7 @@ nav:
   - How-to guides:
       - Refer to assets: asset_registry_paths.md
       - Download pre-built assets: pull.md
-      - Use refgenie from Python: notebooks/refgenie.ipynb
-      - Use refgenie from Python (API): refgenie_object.md
+      - Use refgenie from Python: refgenie_object.md
       - Use data channels: data_channels.md
       - Build assets: build.md
       - Stage assets for serving: staging.md
@@ -25,6 +24,7 @@ nav:
       - Building and serving tutorial: building_tutorial.md
       - Retrieve paths to assets: seek.md
       - Compare genomes: compare.md
+      - Choose an hg38 genome: choosing_hg38.md
       - Add custom assets: custom_assets.md
       - Manage aliases: alias.md
       - Managing asset groups and naming: naming_assets.md
@@ -55,7 +55,3 @@ nav:
       - FAQ: faq.md
       - Contributing: contributing.md
       - Development setup: development.md
-renderers:
-  - hub-notebooks:
-      include: [notebooks/refgenie.ipynb]
-      execute: false

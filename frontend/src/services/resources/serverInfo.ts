@@ -5,11 +5,8 @@
 
 import { listQuery } from '../../utils/pagination';
 import type { ApiClient, RequestInitLite } from '../http';
-import type { ArchiveRecord, DatabaseSummaryResponse } from '../../types/api';
+import type { ArchiveRecord } from '../../types/api';
 import type { ListParams, PageResponse } from '../../types/pagination';
-
-export const getSummary = (c: ApiClient, init?: RequestInitLite) =>
-  c.get<DatabaseSummaryResponse>('/summary', undefined, init);
 
 export interface ListArchivesParams extends ListParams {
   genome_digest?: string;

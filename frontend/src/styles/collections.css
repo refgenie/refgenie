@@ -1,0 +1,108 @@
+/*
+ * Collection pages (/collections, /collections/:id).
+ *
+ * `--rg-collection-accent` is set inline from the server config. It is a
+ * small detail only: the logo badge, the haplotype chips and the filter focus
+ * ring. Text keeps the theme tokens so contrast does not depend on a
+ * deployment's color choice.
+ */
+
+/* The collection head is a .rg-minihero band, like every other page head. */
+.rg-collection-hero {
+  gap: var(--space-3);
+}
+
+.rg-collection-hero__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  font-size: var(--font-size-sm);
+}
+
+/* /collections: one full-width row per collection, thin lines between. */
+.rg-collection-list {
+  border-bottom: var(--border-width) solid rgb(var(--color-border));
+}
+
+/* A fixed logo column keeps every name and blurb on one left edge, whatever
+   the badge's width. */
+.rg-collection-row {
+  display: grid;
+  grid-template-columns: 6rem minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-4);
+  padding-block: var(--space-4);
+  border-top: var(--border-width) solid rgb(var(--color-border));
+}
+
+.rg-collection-row > .rg-collection-logo {
+  justify-self: start;
+}
+
+/* The page head's bottom line already separates the first row. */
+.rg-collection-row:first-child {
+  border-top: 0;
+}
+
+.rg-collection-logo {
+  flex: none;
+  width: var(--space-10);
+  height: var(--space-10);
+  border-radius: var(--radius-sm);
+  object-fit: contain;
+}
+
+.rg-collection-logo--lg {
+  width: var(--space-16);
+  height: var(--space-16);
+}
+
+.rg-collection-logo--lg.rg-collection-logo--badge {
+  width: auto;
+  min-width: var(--space-16);
+}
+
+/* The placeholder: initials on the accent. White on a mid-to-dark accent.
+   Short names wider than the square ("Jungle") widen the badge instead of
+   being clipped. */
+.rg-collection-logo--badge {
+  width: auto;
+  min-width: var(--space-10);
+  padding-inline: var(--space-2);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--rg-collection-accent, rgb(var(--color-primary)));
+  color: rgb(var(--color-text-inverse));
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+}
+
+.rg-collection-logo--lg.rg-collection-logo--badge {
+  font-size: var(--font-size-xl);
+}
+
+.rg-collection-haplotype {
+  background: color-mix(
+    in srgb,
+    var(--rg-collection-accent, rgb(var(--color-primary))) 15%,
+    rgb(var(--color-background))
+  );
+}
+
+.rg-collection__filters .rg-field__input:focus-visible {
+  outline: var(--border-width) solid var(--rg-collection-accent, rgb(var(--color-accent)));
+  outline-offset: var(--border-width);
+}
+
+.rg-collection-hero__links,
+.rg-collection-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rg-collection select.rg-field__input {
+  width: auto;
+}

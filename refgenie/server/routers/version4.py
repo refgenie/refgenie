@@ -7,11 +7,11 @@ import logging
 import pathlib
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-
-from refgenie.core import Refgenie
 from starlette.responses import FileResponse, RedirectResponse
 
+from refgenie.core import Refgenie
 from refgenie.server.dependencies import get_refgenie
+from refgenie.server.pagination import PageParams, PageResponse, get_page_params, respond
 from refgenie.server.routers.helpers import (
     require_config,
     require_published,
@@ -22,7 +22,6 @@ from refgenie.server.schemas import (
     DatabaseSummaryResponse,
     SpeciesStatistics,
 )
-from refgenie.server.pagination import PageParams, PageResponse, get_page_params, respond
 
 logger = logging.getLogger(__name__)
 router = APIRouter()

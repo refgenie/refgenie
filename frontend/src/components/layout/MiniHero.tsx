@@ -26,19 +26,42 @@ export interface MiniHeroProps {
   breadcrumbs?: ReactNode;
   /** Buttons, links and jump navs, right-aligned on the title's line. */
   actions?: ReactNode;
+  /** Extra head content under the title line, e.g. a detail page's key facts. */
+  children?: ReactNode;
+  /**
+   * A panel in the head's top-right corner, level with the breadcrumb, beside
+   * everything else (e.g. a genome's digest). Drops under the title when narrow.
+   */
+  aside?: ReactNode;
 }
 
-export function MiniHero({ title, documentTitle, lede, breadcrumbs, actions }: MiniHeroProps) {
+export function MiniHero({
+  title,
+  documentTitle,
+  lede,
+  breadcrumbs,
+  actions,
+  children,
+  aside,
+}: MiniHeroProps) {
   useDocumentTitle(documentTitle === false ? undefined : (documentTitle ?? title));
 
-  return (
-    <header className="rg-minihero">
+  const main = (
+    <>
       {breadcrumbs}
       <div className="rg-minihero__bar">
         <h1 className="rg-minihero__title">{title}</h1>
         {actions && <div className="rg-minihero__actions">{actions}</div>}
       </div>
       {lede && <p className="rg-minihero__lede">{lede}</p>}
+      {children}
+    </>
+  );
+  if (!aside) return <header className="rg-minihero">{main}</header>;
+  return (
+    <header className="rg-minihero rg-minihero--aside">
+      <div className="rg-minihero__main">{main}</div>
+      <div className="rg-minihero__aside">{aside}</div>
     </header>
   );
 }

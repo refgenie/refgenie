@@ -35,6 +35,7 @@ export interface GenomeResponse {
   taxon_id: number | null;
   assembly_source: string | null;
   assembly_accession: string | null;
+  assembly_level: string | null;
   species: SpeciesResponse | null;
 }
 
@@ -54,6 +55,8 @@ export interface GenomeDetailResponse {
   taxon_uri: string | null;
   fhr: FhrMetadata | null;
   species: SpeciesResponse | null;
+  /** Base URL of the remote refget store with this genome's sequences; null for local stores. */
+  refget_store_url: string | null;
 }
 
 // === Asset groups ===
@@ -245,12 +248,6 @@ export interface ArchiveRecord {
   download_count: number;
 }
 
-export interface DatabaseSummaryResponse {
-  genomes: number;
-  asset_groups: number;
-  assets: number;
-}
-
 // === FHR sidecar ===
 
 export interface FhrPerson {
@@ -330,4 +327,45 @@ export interface RemoteAsset {
   archive_size: number | null;
   asset_digest: string;
   archive_digest: string | null;
+}
+
+// === Genome sequences ===
+// `GET /v4/genomes/{digest}/sequences` and `/compare/{other}` (`catalog.py`).
+
+export interface AliasEntry {
+  namespace: string;
+  alias: string;
+}
+
+export interface SequenceResponse {
+  name: string;
+  length: number;
+  /** Bare GA4GH digest, no `SQ.` prefix. */
+  sha512t24u: string;
+  md5: string | null;
+  alphabet: string | null;
+  description: string | null;
+  aliases: AliasEntry[];
+}
+
+export interface GenomeSequencesResponse {
+  digest: string;
+  n_sequences: number;
+  total_length: number;
+  /** Level-1 attribute digests: names, lengths, sequences, ... */
+  level1: Record<string, string>;
+  collection_aliases: AliasEntry[];
+  sequences: SequenceResponse[];
+}
+
+/** The GA4GH seqcol comparison (`refget.utils.compare_seqcols`). */
+export interface SeqcolComparison {
+  digests: { a: string; b: string };
+  attributes: { a_only: string[]; b_only: string[]; a_and_b: string[] };
+  array_elements: {
+    a_count: Record<string, number>;
+    b_count: Record<string, number>;
+    a_and_b_count: Record<string, number>;
+    a_and_b_same_order: Record<string, boolean | null>;
+  };
 }

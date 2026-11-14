@@ -43,8 +43,8 @@ export interface JobCardProps {
 
 function queuedLabel(position: number | null): string {
   if (position === null || position === undefined) return 'Queued';
-  if (position <= 0) return 'Queued — next up';
-  return `Queued — ${position} ahead`;
+  if (position <= 0) return 'Queued, next up';
+  return `Queued, ${position} ahead`;
 }
 
 export function JobCard({ job, onErrorAction }: JobCardProps) {
@@ -107,7 +107,7 @@ export function JobCard({ job, onErrorAction }: JobCardProps) {
       )}
 
       {skipped && (
-        <p className="rg-job-card__note">Already built — nothing to do.</p>
+        <p className="rg-job-card__note">Already built, so there is nothing to do.</p>
       )}
 
       {job.error && (

@@ -7,7 +7,7 @@ AI assistants such as Claude Code, Claude Desktop and Cursor can work with refge
 
 ## Option 1: the skill file
 
-Refgenie publishes one instruction file for AI agents at **<https://docs.refgenie.org/SKILL.md>**. It covers how to `pull`, `build` and `seek`, initialize genomes, retrieve sequences and use the Python API.
+Refgenie publishes an instruction file for AI agents at **<https://docs.refgenie.org/SKILL.md>**. It covers how to `pull`, `build` and `seek`, initialize genomes, retrieve sequences and use the Python API. A second file, <https://api.refgenie.org/SKILL.md>, covers using a refgenie server over HTTP with nothing installed.
 
 Give any assistant that can fetch a URL or run shell commands an instruction like:
 
@@ -36,7 +36,7 @@ Give any assistant that can fetch a URL or run shell commands an instruction lik
 Refgenie includes an **MCP server** that gives an assistant read-only access to your local refgenie database. Install the `mcp` extra and connect it to Claude Code:
 
 ```bash
-pip install "refgenie[mcp]>=1.0.0a1"
+pip install "refgenie[mcp]>=1.0.0a2"
 claude mcp add refgenie refgenie-mcp
 ```
 

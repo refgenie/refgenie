@@ -1,5 +1,7 @@
 # How to use `refgenconf ` to manage Refgenie assets in a pipeline
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 
 Below we present an example use of `refgenconf` package. It is installed automatically with `refgenie` (or separately installable with `pip install refgenconf`). All the asset fetching functionality is impelmented in `refgenconf` package, so pipelines that just use Python API do not need to depend on `refgenie`.
 

@@ -1,5 +1,7 @@
 # Demo videos - start working with refgenie
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 Check out these demonstration videos, which show how to quickly start working with refgenie.
 
 After refgenie Python package is installed with `pip install refgenie`, refgenie can be used with or without genome configuration file.

@@ -16,7 +16,7 @@ from refgenie.utils.tables import SECTION, build_table
 def asset_table(
     asset_data: dict[str, list[str]],
     source: str,
-    aliases_data: dict[str, str] | None = None,
+    aliases_data: dict[str, list[str]] | None = None,
     include_seek_keys: bool = False,
 ) -> Table:
     """
@@ -26,7 +26,7 @@ def asset_table(
         asset_data: Genome digest -> registry path strings (``group:asset`` or
             ``group.seek_key:asset``).
         source: Where the data came from ("local" or a server URL), for the title.
-        aliases_data: Genome digest -> comma-separated alias names.
+        aliases_data: Genome digest -> alias names.
         include_seek_keys: Whether to add a seek key column.
 
     Returns:
@@ -47,7 +47,7 @@ def asset_table(
         # One section per genome, so a long listing stays readable.
         if rows:
             rows.append(SECTION)
-        aliases_str = aliases_data.get(genome_digest, "")
+        aliases_str = ", ".join(aliases_data.get(genome_digest, []))
         for asset_string in asset_strings:
             components = AssetRegistryPathComponents.parse_registry_path(asset_string)
             row = [aliases_str, genome_digest, components.asset_group, components.asset]

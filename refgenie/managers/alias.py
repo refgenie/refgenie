@@ -4,8 +4,8 @@ between them: AliasManager (SQL), and FederatedAliasManager (the local
 RefgetStore's aliases, with the SQL ones behind them).
 """
 
-from pathlib import Path
 from collections.abc import Callable, Iterable
+from pathlib import Path
 from typing import Any, Protocol
 
 from refget.store import RefgetStore
@@ -18,8 +18,8 @@ from refgenie.db.queries.search import validate_search_fields
 from refgenie.db.tables import Alias
 from refgenie.exceptions import FederatedAliasError, MissingAliasError
 from refgenie.logger import logger
-from refgenie.models import GenomeAlias, GenomeDigest, Page
 from refgenie.managers.base import ResourceManager
+from refgenie.models import GenomeAlias, GenomeDigest, Page
 from refgenie.plugins.events import NULL_EVENTS, EventSink, update_scope
 from refgenie.plugins.hooks import Change
 from refgenie.utils.search import Search, name_matches_operator
@@ -264,6 +264,43 @@ class AliasManager(ResourceManager):
             self._upsert_qualified(session, store_name, name, genome_digest)
             session.commit()
             return "kept"
+
+    def replace_store_aliases(
+        self,
+        store_name: str,
+        offered: set[tuple[str, str]],
+        priorities: dict[str, int],
+    ) -> bool:
+        """Make a store's alias rows the ``(name, digest)`` pairs it offers now.
+
+        Rows the store owns that it no longer offers are deleted, collision
+        losers' ``store::name`` rows and names with '/' included; then each
+        offered pair goes through :meth:`federated_sync`, which re-creates a
+        loser row if the name still loses. A store that offers fewer than half
+        the valid names it owns is refused and keeps its aliases: a half-built
+        store must not strip names from the catalog. Names with '/' are not
+        counted, since they go whatever the store offers.
+
+        Returns:
+            Whether the aliases were replaced.
+        """
+        with self._database_session as session:
+            owned = queries.list_by_store(session, store_name)
+            valid = sum(GenomeAlias.is_valid(r.name) for r in owned)
+            if 2 * len(offered) < valid:
+                logger.error(
+                    f"Store '{store_name}' offers {len(offered)} aliases, down from "
+                    f"{valid}; aliases left unchanged."
+                )
+                return False
+            stale = [r.name for r in owned if (r.name, r.genome_digest) not in offered]
+            queries.delete_names(session, stale)
+            session.commit()
+        if stale:
+            logger.info(f"Store '{store_name}': removed {len(stale)} alias(es) it no longer offers")
+        for name, digest in sorted(offered):
+            self.federated_sync(name, digest, store_name, priorities)
+        return True
 
     @staticmethod
     def _upsert_qualified(session, store_name: str, name: str, genome_digest: str) -> None:

@@ -42,10 +42,25 @@ export const CITATIONS: readonly Citation[] = [
     title: 'Identity and compatibility of reference genome resources',
     venue: 'NAR Genomics and Bioinformatics 3(2)',
     doi: 'https://doi.org/10.1093/nargab/lqab036',
-    note: 'Sequence-derived genome identifiers and provenance tracking — the work behind the digests this interface shows.',
+    note: 'Sequence-derived genome identifiers and provenance tracking, the work behind the digests this interface shows.',
     plain:
       'Stolarczyk M, Xue B, Sheffield NC. Identity and compatibility of ' +
       'reference genome resources. NAR Genomics and Bioinformatics. 2021;3(2). ' +
       'doi:10.1093/nargab/lqab036',
   },
 ];
+
+const REGISTRY_ISSUES = 'https://github.com/refgenie/refgenie-registry/issues/new';
+
+/** Plan 6's asset form; field ids `genome` and `genome_digest`. */
+export function assetRequestUrl(genome: string | undefined, digest: string): string {
+  const q = new URLSearchParams({ template: 'asset_request.yml' });
+  if (genome) q.set('genome', genome);
+  q.set('genome_digest', digest);
+  return `${REGISTRY_ISSUES}?${q}`;
+}
+
+/** Plan 6's genome form; field id `genome`. */
+export function genomeRequestUrl(genome: string): string {
+  return `${REGISTRY_ISSUES}?${new URLSearchParams({ template: 'genome_proposal.yml', genome })}`;
+}

@@ -164,6 +164,18 @@ def make_server_rgc(tmp_path, fixtures_path=None, *, genomes=()):
     return rgc
 
 
+def seed_alias_row(rgc, name: str, genome_digest: str) -> None:
+    """Write an alias row with no validation, as a production catalog may hold
+    one ('Homo_sapiens/NCBI/GRCh38') that refgenie's alias API refuses."""
+    from sqlmodel import Session
+
+    from refgenie.db.tables import Alias
+
+    with Session(rgc.database_engine) as session:
+        session.add(Alias(name=name, genome_digest=genome_digest))
+        session.commit()
+
+
 def seed_search_genomes(rgc):
     """Add two genomes (digests "a"*32 and "b"*32) whose searchable fields are all
     distinct, with aliases hg38 and mm39, and return the Refgenie.
@@ -411,6 +423,7 @@ def add_asset_from_files(
     custom_seek_keys=None,
     genome=GENOME,
     contents="payload\n",
+    colocate=None,
 ):
     """Materialize ``files`` under ``genome_folder/rel_dir`` and register them.
 
@@ -431,6 +444,7 @@ def add_asset_from_files(
         path=Path(rel_dir),
         asset_class_name=asset_class_name,
         custom_seek_keys=custom_seek_keys,
+        colocate=colocate,
     )
 
 
@@ -464,3 +478,16 @@ def make_command_values(**overrides):
     )
     defaults.update(overrides)
     return BuildCommandValues(**defaults)
+
+
+def build_on_disk_store(path, fasta, alias, namespace="name"):
+    """Build (or add to) an on-disk RefgetStore from a FASTA with one curated alias.
+
+    Returns the collection digest.
+    """
+    from refget.store import RefgetStore
+
+    store = RefgetStore.on_disk(str(path))
+    meta, _ = store.add_sequence_collection_from_fasta(str(fasta))
+    store.add_collection_alias(namespace, alias, meta.digest)
+    return meta.digest

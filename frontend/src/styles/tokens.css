@@ -17,6 +17,7 @@
   /* === COLOR === */
   --color-primary: 70, 76, 86; /* #464c56, refgenie slate */
   --color-primary-dark: 47, 51, 58;
+  --color-brand: 0, 128, 102; /* #008066, logo teal-green (5:1 on white) */
   --color-accent: 13, 110, 253; /* #0d6efd */
   --color-accent-dark: 10, 88, 202;
 
@@ -41,6 +42,14 @@
 
   /* modal.css falls back to --color-gray-100 for the close-button hover */
   --color-gray-100: 241, 243, 245;
+
+  /* Categorical chart slots, used in this fixed order (validated for colour
+     vision deficiency; slots 3 and 4 are under 3:1 on white, so every mark
+     carries a text label). */
+  --color-series-1: 42, 120, 214; /* #2a78d6 */
+  --color-series-2: 235, 104, 52; /* #eb6834 */
+  --color-series-3: 27, 175, 122; /* #1baf7a */
+  --color-series-4: 237, 161, 0; /* #eda100 */
 
   /* === SPACING (4px grid) === */
   --space-1: 0.25rem;

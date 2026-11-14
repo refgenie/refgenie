@@ -1,5 +1,7 @@
 # Tutorial
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 
 I assume you've already installed refgenie. In this tutorial I'll show you a few ways to use refgenie from the command line (commands that start with a `!`), and also some Python commands.
 

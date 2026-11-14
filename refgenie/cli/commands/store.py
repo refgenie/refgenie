@@ -6,12 +6,13 @@ names from each enabled store's optional ``species.json``.
 """
 
 from collections.abc import Callable
+from pathlib import Path
 from typing import Literal
 
 from pydantic import AliasChoices, BaseModel, Field
 from pydantic_settings import CliSubCommand, get_subcommand
-from rich import print as rprint
 
+from refgenie.cli.commands.helpers import note, print_table
 from refgenie.cli.errors import EXIT_NOT_FOUND, fail
 from refgenie.logger import logger
 
@@ -35,6 +36,16 @@ class StoreAddModel(BaseModel):
         validation_alias=AliasChoices("p", "priority"),
     )
     description: str | None = Field(default=None, description="Optional description.")
+
+
+class StoreApplyModel(BaseModel):
+    """store apply: make the registry match a JSON declaration file."""
+
+    file: Path = Field(
+        description="JSON array of stores, each {name, url, type?, priority?, "
+        "description?, enabled?}. Stores not listed are disabled, never deleted.",
+        validation_alias=AliasChoices("f", "file"),
+    )
 
 
 class StoreSyncModel(BaseModel):
@@ -73,6 +84,9 @@ class StoreParser(BaseModel):
     """Intermediate parser for store subcommands."""
 
     add: CliSubCommand[StoreAddModel] = Field(description="Add a store.")
+    apply: CliSubCommand[StoreApplyModel] = Field(
+        description="Make the store list match a declaration file."
+    )
     sync: CliSubCommand[StoreSyncModel] = Field(description="Ingest a store's genomes.")
     list: CliSubCommand[StoreListModel] = Field(description="List stores.")
     remove: CliSubCommand[StoreRemoveModel] = Field(description="Remove a store.")
@@ -107,6 +121,28 @@ def handle_store_add(cmd, refgenie) -> None:
         fail(str(e))
 
 
+def handle_store_apply(cmd, refgenie) -> None:
+    import json
+
+    try:
+        declared = json.loads(Path(cmd.file).read_text())
+    except (OSError, json.JSONDecodeError) as e:
+        fail(f"Could not read store declaration {cmd.file}: {e}")
+    if not isinstance(declared, list):
+        fail(f"Store declaration {cmd.file} must be a JSON array of store objects")
+    try:
+        changes = refgenie.store.apply_declaration(declared, disable_missing=True)
+    except ValueError as e:
+        fail(f"Invalid store declaration: {e}")
+    rows = [(kind, name) for kind, names in changes.items() for name in names]
+    if not rows:
+        note("Stores already match the declaration; nothing changed.")
+        return
+    from refgenie.utils.tables import build_table
+
+    print_table(build_table("Store changes", ["Change", "Store"], rows))
+
+
 def handle_store_remove(cmd, refgenie) -> None:
     from refgenie.exceptions import MissingStoreError
 
@@ -119,20 +155,20 @@ def handle_store_remove(cmd, refgenie) -> None:
 def handle_store_list(cmd, refgenie) -> None:
     stores = list(refgenie.store.list_all())
     if not stores:
-        logger.info("No stores registered.")
+        note("No stores registered.")
         return
-    rprint(refgenie.store.table())
+    print_table(refgenie.store.table())
 
 
 def handle_store_conflicts(cmd, refgenie) -> None:
     """List alias collisions, i.e. losers stored under qualified ``store::alias`` names."""
     rows = refgenie.store.conflicts()
     if not rows:
-        logger.info("No alias conflicts.")
+        note("No alias conflicts.")
         return
     from refgenie.utils.tables import build_table
 
-    rprint(
+    print_table(
         build_table(
             "Alias conflicts (loser mappings)",
             ["Alias", "Qualified store", "Genome digest"],
@@ -176,7 +212,8 @@ def handle_store_sync(cmd, refgenie) -> None:
         if not targets:
             fail("No enabled stores to sync. Add one with 'refgenie store add'.")
 
-    priorities = {s.name: s.priority for s in refgenie.store.list_all()}
+    # Only enabled stores rank, so a disabled store's genomes move to any enabled store.
+    priorities = {s.name: s.priority for s in refgenie.store.enabled_stores()}
 
     total = 0
     failures = 0
@@ -196,13 +233,14 @@ def handle_store_sync(cmd, refgenie) -> None:
     # Rebuild the router so a long-lived instance sees the freshly synced set.
     refgenie.reload_store_router()
 
-    logger.info(f"Synced {total} new genome(s) total")
+    note(f"Synced {total} new genome(s) total")
     if failures:
         fail(f"{failures} collection(s)/store(s) failed to sync")
 
 
 STORE_DISPATCH: dict[type, Callable] = {
     StoreAddModel: handle_store_add,
+    StoreApplyModel: handle_store_apply,
     StoreSyncModel: handle_store_sync,
     StoreListModel: handle_store_list,
     StoreRemoveModel: handle_store_remove,

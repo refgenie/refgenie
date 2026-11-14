@@ -1,0 +1,10 @@
+##seqcol_digest=smiTbD3jP5EwF4DNWVm0c6DGKRlFHfas
+##names_digest=rcw2OMsLISmYBGMSL6ZcY5oDMxxkraNW
+##sequences_digest=f8QDQznLH8z6IhluG5Z7GDpLyUrYCWMR
+##lengths_digest=bQM0S0cKne-FV5ozzRx6YvWJceMybjHv
+##name_length_pairs_digest=ocluvGRC6qDGAcvyxOk1A9On4lzRqCTf
+##sorted_name_length_pairs_digest=PhnbzWzb1giNxVhUR4YE6jmuVeIPkwVa
+##sorted_sequences_digest=CW3WAvOTXzuaAXT-4XeLlMa3oEiDcW53
+#name	length	alphabet	sha512t24u	md5	description
+rCRSd	33138	dna3bit	u1aZuhR4H5r0KaPwbXtardpE7sZNlqFR	e172d88e8c724dffa4b7374e374b520d	
+extra	80	dna2bit	MpgAd5kMJEwELvDquFgGED6XOyH9yxaV	a05e07440f52bb7cfd9934ccfd744e08	

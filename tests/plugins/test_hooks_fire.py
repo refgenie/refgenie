@@ -289,9 +289,9 @@ class TestPull:
         client.servers.subscribe(url)
         install_plugins(on_every_hook())
 
-        # As in TestInitFromRemote: genomes resolve through the server client.
+        # No store opens, so each genome is registered bare from the server's record.
         with patch(
-            "refgenie.managers.sources.servers.make_source", side_effect=ConnectionError("no")
+            "refgenie.managers.sources.genomes.make_source", side_effect=ConnectionError("no")
         ):
             pulled = client.transfer.pull_genomes(
                 [GenomeAlias(GENOME), GenomeAlias("t7")], force=True, force_large=True

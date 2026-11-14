@@ -1,5 +1,7 @@
 # Refgenie from within Python
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 Third-party python tools can rely on our Python object for access to refgenie assets. For this we have a Python package called `refgenconf` which provides a class with methods to access local and remote genome assets.
 
 ## Installing

@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from refgenie.models import GenomeAlias
+from refgenie.models import GenomeAlias, GenomeDigest
 from refgenie.managers.transfer.puller import PullOptions
 from tests.support.factories import (
     GENOME,
@@ -14,6 +14,7 @@ from tests.support.factories import (
     add_asset_from_files,
     fake_digest,
     make_engine,
+    seed_alias_row,
     seed_species,
 )
 from tests.support.server import needs_server
@@ -392,6 +393,52 @@ class TestPullOnAFreshInstall:
         assert [p.digest for p in parents] == [parent.digest]
         assert client_rg.asset_class.get("nested_seek_key").name == "nested_seek_key"
         assert client_rg.asset_class.get("fasta").name == "fasta"
+        # The colocated parent's FASTA is linked into the child's own folder.
+        link = client_rg.asset.data_folder / genome_digest / "child_index" / child.digest
+        link = link / f"{genome_digest}.fa"
+        assert link.is_symlink()
+        parent_fa = Path(client_rg.asset.seek(genome_digest, "fasta", "default", abs_path=True))
+        assert link.resolve() == parent_fa.resolve()
+
+    def test_a_parent_that_is_not_colocated_is_not_pulled(self, bare_client_world):
+        client_rg, server_rg, url, parent, child = bare_client_world
+        genome_digest = server_rg.alias.resolve(GENOME)
+        plain = add_asset_from_files(
+            server_rg,
+            rel_dir="plain_staging",
+            files=["sub/inner/index.txt"],
+            asset_class_name="nested_seek_key",
+            asset_group_name="plain_index",
+            asset_name="v1",
+            contents="plain payload\n",
+        )
+        server_rg.asset.links.set_parents(
+            genome_digest=genome_digest,
+            asset_group_name="plain_index",
+            asset_name="v1",
+            parent_asset_digests=[parent.digest],
+        )
+        _stage(server_rg, parent)
+        _stage(server_rg, plain)
+
+        pulled = client_rg.transfer.pull(
+            genome=GenomeAlias(GENOME),
+            asset_group_name="plain_index",
+            asset_name="v1",
+            force_server_urls=[url],
+        )
+
+        assert pulled is not None and pulled.digest == plain.digest
+        assert not client_rg.asset.exists_digest(parent.digest)
+        assert (
+            client_rg.asset.links.parents(
+                genome_digest=genome_digest, asset_group_name="plain_index", asset_name="v1"
+            )
+            == []
+        )
+        assert Path(
+            client_rg.asset.seek(genome_digest, "plain_index", "v1", abs_path=True)
+        ).exists()
 
     def test_a_parent_that_cannot_be_pulled_is_named(self, bare_client_world):
         from refgenie.exceptions import ParentPullError
@@ -566,6 +613,76 @@ class TestPullOnAFreshInstall:
         assert local.taxon_id == 6239, "an unset local value was not filled"
         assert client_rg.species.get(6239).common_name == "roundworm"
         assert client_rg.genome.detail(digest).common_name == "roundworm"
+
+    def test_a_slash_alias_on_the_server_does_not_break_a_parent_pull(self, bare_client_world):
+        client_rg, server_rg, url, parent, child = bare_client_world
+        _stage(server_rg, parent)
+        _stage(server_rg, child)
+        digest = server_rg.alias.resolve(GENOME)
+        seed_alias_row(server_rg, "Homo_sapiens/NCBI/GRCh38", digest)
+        # Prove the test drives the path: the server really lists the "/" name.
+        from refgenie.server.main import create_app
+        from fastapi.testclient import TestClient
+
+        with TestClient(create_app(refgenie_instance=server_rg)) as tc:
+            body = tc.get(f"/v4/aliases?genome_digest={digest}").json()
+        listed = [a["name"] for a in body["results"]]
+        assert "Homo_sapiens/NCBI/GRCh38" in listed
+
+        pulled = client_rg.transfer.pull(
+            genome=GenomeAlias(GENOME),
+            asset_group_name="child_index",
+            asset_name="v1",
+            force_server_urls=[url],
+        )
+
+        assert pulled is not None
+        assert client_rg.asset.exists_digest(parent.digest)
+        assert client_rg.alias.resolve(GENOME) == digest
+        assert not [a for a in client_rg.alias.list_all() if "/" in a.name]
+
+    def test_a_parent_pull_lands_under_the_childs_alias(self, bare_client_world):
+        client_rg, server_rg, url, parent, child = bare_client_world
+        _stage(server_rg, parent)
+        _stage(server_rg, child)
+        digest = server_rg.alias.resolve(GENOME)
+        seed_alias_row(server_rg, "Homo_sapiens/NCBI/GRCh38", digest)
+        seed_alias_row(server_rg, "zzz_other", digest)
+
+        client_rg.transfer.pull(
+            genome=GenomeAlias(GENOME),
+            asset_group_name="child_index",
+            asset_name="v1",
+            force_server_urls=[url],
+        )
+
+        assert [str(a) for a in client_rg.alias.get_for_genome(digest)] == [GENOME]
+
+    def test_pull_by_digest_adopts_one_usable_alias(self, bare_client_world):
+        client_rg, server_rg, url, parent, _ = bare_client_world
+        _stage(server_rg, parent)
+        digest = server_rg.alias.resolve(GENOME)
+        seed_alias_row(server_rg, "Homo_sapiens/NCBI/GRCh38", digest)
+        seed_alias_row(server_rg, "zzz_other", digest)
+
+        client_rg.transfer.pull(
+            genome=GenomeDigest(digest), asset_group_name="fasta", force_server_urls=[url]
+        )
+
+        assert [str(a) for a in client_rg.alias.get_for_genome(digest)] == [GENOME]
+
+    def test_pull_by_digest_with_no_usable_alias_is_named_by_its_digest(self, bare_client_world):
+        client_rg, server_rg, url, parent, _ = bare_client_world
+        _stage(server_rg, parent)
+        digest = server_rg.alias.resolve(GENOME)
+        seed_alias_row(server_rg, "Homo_sapiens/NCBI/GRCh38", digest)
+        server_rg.alias.remove(GENOME)
+
+        client_rg.transfer.pull(
+            genome=GenomeDigest(digest), asset_group_name="fasta", force_server_urls=[url]
+        )
+
+        assert [str(a) for a in client_rg.alias.get_for_genome(digest)] == [digest]
 
 
 # ===========================================================================
@@ -823,16 +940,21 @@ class TestResolvePullGenome:
     def test_a_local_alias_is_used_as_given(self, mock_puller):
         assert self._resolve(mock_puller, GenomeAlias("hg38")) == ("hg38", "abc123digest")
         mock_puller._genome_manager.ensure_from_remote.assert_not_called()
+        mock_puller._servers.locate.assert_called_once_with(
+            "abc123digest", ["http://test-server:5000"]
+        )
 
-    def test_a_digest_is_addressed_to_the_servers_first_alias(self, mock_puller):
-        digest = fake_digest("d")
-        mock_puller._genome_manager.exists.return_value = True
-        mock_puller._servers.client.return_value.alias.list.return_value = [
-            {"name": "first", "genome_digest": digest},
-            {"name": "second", "genome_digest": digest},
-        ]
+    def test_a_new_digest_is_registered_from_the_server(self, mock_puller):
+        """``ensure_from_remote`` picks the alias for a new digest."""
+        from refgenie.managers.genome import GenomeCreationResult
+
+        digest = GenomeDigest(fake_digest("d"))
+        ensure = mock_puller._genome_manager.ensure_from_remote
+        ensure.return_value = GenomeCreationResult(
+            genome_digest=digest, alias_name=GenomeAlias("first"), genome_attrs={}
+        )
         assert self._resolve(mock_puller, digest) == ("first", digest)
-        assert mock_puller._genome_manager.ensure_from_remote.call_count == 2
+        ensure.assert_called_once_with(digest, ["http://test-server:5000"])
         mock_puller._alias_manager.resolve.assert_not_called()
 
     def test_an_unknown_alias_is_registered_from_the_server(self, mock_puller):
@@ -840,32 +962,44 @@ class TestResolvePullGenome:
         from refgenie.managers.genome import GenomeCreationResult
 
         digest = fake_digest("d")
-        mock_puller._alias_manager.resolve.side_effect = [MissingAliasError("remote"), digest]
+        mock_puller._alias_manager.resolve.side_effect = MissingAliasError("remote")
         ensure = mock_puller._genome_manager.ensure_from_remote
         ensure.return_value = GenomeCreationResult(
-            success=True, genome_digest=digest, alias_name=GenomeAlias("remote")
+            genome_digest=digest, alias_name=GenomeAlias("remote"), genome_attrs={}
         )
         assert self._resolve(mock_puller, GenomeAlias("remote")) == ("remote", digest)
-        assert ensure.call_args.kwargs["alias_name"] == "remote"
+        assert ensure.call_args.args[0] == "remote"
         # An alias is never tried as a digest.
         mock_puller._servers.client.return_value.alias.list.assert_not_called()
 
     def test_an_alias_the_server_does_not_know_cannot_be_served(self, mock_puller):
         from refgenie.exceptions import MissingAliasError, ServerCannotServe
-        from refgenie.managers.genome import GenomeCreationResult
 
         mock_puller._alias_manager.resolve.side_effect = MissingAliasError("nope")
-        mock_puller._genome_manager.ensure_from_remote.return_value = GenomeCreationResult(
-            success=False
-        )
+        mock_puller._genome_manager.ensure_from_remote.return_value = None
         with pytest.raises(ServerCannotServe, match="genome alias 'nope'"):
             self._resolve(mock_puller, GenomeAlias("nope"))
 
-    def test_a_digest_with_no_server_alias_falls_back_to_a_local_one(self, mock_puller):
-        digest = fake_digest("d")
+    def test_a_digest_here_is_pulled_under_its_local_alias(self, mock_puller):
+        digest = GenomeDigest(fake_digest("d"))
         mock_puller._genome_manager.exists.return_value = True
-        mock_puller._alias_manager.get_for_genome.return_value = ["local"]
+        mock_puller._alias_manager.get_for_genome.return_value = ["a/slash", "local"]
         assert self._resolve(mock_puller, digest) == ("local", digest)
+        mock_puller._genome_manager.ensure_from_remote.assert_not_called()
+
+    def test_a_local_genome_the_server_lacks_cannot_be_served_there(self, mock_puller):
+        """The server's genome record is asked first, so a server that does not
+        have the genome is a ServerCannotServe, not a failure at the asset lookup."""
+        from refgenie.exceptions import PullFailedError
+
+        mock_puller._servers.locate.return_value = None
+        with pytest.raises(PullFailedError) as info:
+            mock_puller.pull(genome=GenomeAlias("hg38"), asset_group_name="fasta")
+        assert info.value.reasons == {
+            "http://test-server:5000": "Server http://test-server:5000 does not have "
+            "genome abc123digest."
+        }
+        mock_puller._servers.client.return_value.asset_group.list.assert_not_called()
 
     def test_a_plain_string_is_refused(self, mock_puller):
         """A plain str could be either kind; pull makes the caller say which."""
@@ -972,17 +1106,14 @@ class TestPullFailures:
     def test_a_client_side_error_is_not_blamed_on_the_server(self, mock_puller):
         """A connection error during alias resolution is reported as itself,
         even when the server's alias listing would name the genome."""
-        import httpx
+        import httpx2
 
         from refgenie.exceptions import MissingAliasError, PullFailedError
-        from refgenie.managers.genome import GenomeCreationResult
 
         mock_puller._alias_manager.resolve.side_effect = MissingAliasError("testgenome")
-        mock_puller._genome_manager.ensure_from_remote.return_value = GenomeCreationResult(
-            success=False
-        )
+        mock_puller._genome_manager.ensure_from_remote.return_value = None
         client = mock_puller._servers.client.return_value
-        client.alias.resolve.side_effect = httpx.ConnectError("Name or service not known")
+        client.alias.resolve.side_effect = httpx2.ConnectError("Name or service not known")
         client.alias.list.return_value = [{"name": "testgenome", "genome_digest": "d"}]
 
         with pytest.raises(PullFailedError, match="Name or service not known") as info:

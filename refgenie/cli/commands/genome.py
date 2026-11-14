@@ -5,15 +5,20 @@ from pathlib import Path
 
 from pydantic import AliasChoices, BaseModel, Field
 from pydantic_settings import CliSubCommand, get_subcommand
-from rich import print as rprint
 
-from refgenie.cli.framework import CliList
-from refgenie.cli.commands.helpers import data_channel_hint, genome_digests_from
+from refgenie.cli.commands.helpers import (
+    data_channel_hint,
+    genome_digests_from,
+    genome_ref,
+    note,
+    print_table,
+)
 from refgenie.cli.errors import EXIT_INVALID_INPUT, EXIT_NOT_FOUND, fail
+from refgenie.cli.framework import CliList
 from refgenie.logger import logger
 from refgenie.managers.collection_sync import collection_field, sync_source
 from refgenie.managers.sources import make_source
-from refgenie.managers.sources.genomes import RefgetStoreSource
+from refgenie.managers.sources.genomes import RefgetStoreSource, collection_source
 
 
 class GenomeInitModel(BaseModel):
@@ -34,7 +39,7 @@ class GenomeInitModel(BaseModel):
     )
     server: str | None = Field(
         default=None,
-        description="URL of a refgenie server to init from.",
+        description="URL of a refgenie server to init from. For a RefgetStore URL, use --store.",
     )
     store: str | None = Field(
         default=None,
@@ -209,11 +214,17 @@ def handle_genome_init(cmd, refgenie) -> None:
     with tempfile.TemporaryDirectory() as cache_dir:
         source, digest = None, cmd.digest
         if cmd.server:
-            # make_source detects the backend, so a store URL passed to --server works too.
-            try:
-                source = make_source(cmd.server)
-            except ConnectionError as e:
-                fail(str(e))
+            ref = genome_ref(None, cmd.digest) if cmd.digest else genome_ref(cmd.name[0], None)
+            found = refgenie.servers.locate(ref, [cmd.server])
+            if found is None:
+                fail(
+                    f"'{ref}' is not on {cmd.server}. For a RefgetStore URL, use --store.",
+                    EXIT_NOT_FOUND,
+                )
+            server_url, digest, attrs = found
+            source = collection_source(server_url, attrs)
+            if source is None:
+                fail(f"{cmd.server} is not usable as a genome source for {digest}.")
         elif cmd.store:
             if not digest and not cmd.namespace:
                 fail("--store requires either --digest or --namespace")
@@ -247,11 +258,11 @@ def handle_genome_init(cmd, refgenie) -> None:
         _apply_fhr_file(refgenie, digest, cmd.fhr)
 
     if not created:
-        logger.info(f"Genome already exists: {digest}")
+        note(f"Genome already exists: {digest}")
         return
-    logger.info(f"Genome initialized: {digest} (aliases: {', '.join(cmd.name)})")
+    note(f"Genome initialized: {digest} (aliases: {', '.join(cmd.name)})")
     if cmd.build and not refgenie.recipe.exists("fasta"):
-        logger.info(data_channel_hint(f"refgenie build {cmd.name[0]}/fasta"))
+        note(data_channel_hint(f"refgenie build {cmd.name[0]}/fasta"))
 
 
 def handle_genome_set_metadata(cmd, refgenie) -> None:
@@ -270,7 +281,7 @@ def handle_genome_set_metadata(cmd, refgenie) -> None:
 
 def handle_genome_list(cmd, refgenie) -> None:
     table = refgenie.genome.table()
-    rprint(table)
+    print_table(table)
 
 
 def handle_genome_remove(cmd, refgenie) -> None:
@@ -284,10 +295,10 @@ def handle_genome_remove(cmd, refgenie) -> None:
             if not Confirm.ask(
                 f"Are you sure you want to remove genome '{digest}' and all its assets?"
             ):
-                logger.info("Aborted by user. Genome not removed.")
+                note("Aborted by user. Genome not removed.")
                 continue
         refgenie.genome.remove(digest)
-        logger.info(f"Removed genome: {digest}")
+        note(f"Removed genome: {digest}")
 
 
 def handle_genome_browse(cmd, refgenie) -> None:
@@ -366,7 +377,7 @@ def handle_genome_sync(cmd, refgenie) -> None:
         failures += report.failures
         logger.info(f"  {report.registered} new genome(s) from {server_url}")
 
-    logger.info(f"Synced {total_registered} new genome(s) total")
+    note(f"Synced {total_registered} new genome(s) total")
     if failures:
         fail(f"{failures} genome(s)/source(s) failed to sync")
 

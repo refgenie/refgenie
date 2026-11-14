@@ -40,6 +40,19 @@
   color: inherit;
 }
 
+/* A link that should not outshine what is next to it. */
+.rg-link--quiet {
+  color: rgb(var(--color-text-muted));
+  text-decoration: underline;
+  text-decoration-color: rgb(var(--color-border-strong));
+  text-underline-offset: 0.15em;
+}
+
+.rg-link--quiet:hover {
+  color: rgb(var(--color-text));
+  text-decoration-color: currentColor;
+}
+
 .rg-btn {
   display: inline-flex;
   align-items: center;
@@ -241,45 +254,55 @@
   color: rgb(var(--color-text-inverse));
 }
 
-/* === CARD / PANEL === */
+/* === FLAT GROUPS ===
+   No boxed cards: content is grouped by headings and thin divider lines. */
 
-.rg-card {
-  border: var(--border-width) solid rgb(var(--color-border));
-  border-radius: var(--radius-lg);
-  background: rgb(var(--color-background));
+/* A headline number over its label's line, e.g. "Genomes 605". */
+.rg-stat {
+  min-width: 0;
+  padding-top: var(--space-3);
+  border-top: var(--border-width) solid rgb(var(--color-border));
 }
 
-.rg-card__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-4);
-  padding: var(--space-4);
+/* A list whose items are separated by thin lines, top and bottom. */
+.rg-divided-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   border-bottom: var(--border-width) solid rgb(var(--color-border));
-  background: rgb(var(--color-surface));
-  border-top-left-radius: var(--radius-lg);
-  border-top-right-radius: var(--radius-lg);
 }
 
-.rg-card__title {
+.rg-divided-list > li {
+  padding-block: var(--space-4);
+  border-top: var(--border-width) solid rgb(var(--color-border));
+}
+
+/* A collapsible section: a heading-like summary between two thin lines. */
+.rg-flat-details {
+  border-block: var(--border-width) solid rgb(var(--color-border));
+}
+
+.rg-flat-details__summary {
+  padding-block: var(--space-3);
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
+  cursor: pointer;
 }
 
-.rg-card__body {
-  padding: var(--space-4);
+.rg-flat-details[open] > .rg-flat-details__summary {
+  margin-bottom: var(--space-2);
 }
 
-.rg-card__footer {
-  padding: var(--space-4);
-  border-top: var(--border-width) solid rgb(var(--color-border));
-  color: rgb(var(--color-text-muted));
-  font-size: var(--font-size-sm);
+.rg-flat-details[open] {
+  padding-bottom: var(--space-4);
 }
 
 /* === TABLE === */
 
 .rg-table__wrap {
+  /* Contains absolutely placed descendants (sr-only text), which would
+     otherwise widen the page past a narrow screen. */
+  position: relative;
   overflow-x: auto;
   border: var(--border-width) solid rgb(var(--color-border));
   border-radius: var(--radius-lg);
@@ -326,6 +349,85 @@
 .rg-table__cell--numeric {
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+/* Long free-text values (aliases, descriptions) wrap anywhere instead of
+   widening their column. */
+.rg-table__cell--wrap {
+  overflow-wrap: anywhere;
+}
+
+/* A short secondary line under a cell's main value. */
+.rg-table__sub {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-normal);
+  color: rgb(var(--color-text-muted));
+  overflow-wrap: anywhere;
+}
+
+/* Phones: each row becomes a block, the first cell its title and every other
+   cell a "label: value" line, so wide tables never scroll sideways. Cells
+   carry their column header in data-label. */
+@media (max-width: 639px) {
+  .rg-table--stack,
+  .rg-table--stack > tbody,
+  .rg-table--stack .rg-table__row {
+    display: block;
+  }
+
+  .rg-table--stack > thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  .rg-table--stack .rg-table__row {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .rg-table--stack .rg-table__row:first-child {
+    border-top: 0;
+  }
+
+  .rg-table--stack .rg-table__cell,
+  .rg-table--compact.rg-table--stack .rg-table__cell {
+    display: block;
+    position: relative;
+    min-height: 1.5em;
+    padding: 2px 0 2px 7.5rem;
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+
+  .rg-table--stack .rg-table__cell::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 0;
+    top: 2px;
+    width: 7rem;
+    color: rgb(var(--color-text-muted));
+    font-size: var(--font-size-xs);
+    line-height: 1.6;
+    overflow-wrap: normal;
+  }
+
+  .rg-table--stack .rg-table__cell:not([data-label]) {
+    padding-left: 0;
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .rg-table--stack .rg-table__cell:not([data-label])::before {
+    content: none;
+  }
+
+  .rg-table--stack .rg-table__cell:empty {
+    display: none;
+  }
 }
 
 /* === BADGE === */
@@ -384,6 +486,17 @@
 
 .rg-digest__copy {
   flex: none;
+}
+
+/* The header's refget digest look, for the Details tab's digest lists. */
+.rg-digest--plate .rg-digest__text {
+  padding: var(--space-1) var(--space-2);
+  background: rgb(var(--color-background));
+  border: var(--border-width) solid rgb(var(--color-border));
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  font-size: var(--font-size-sm);
+  color: rgb(var(--color-primary-dark));
 }
 
 /* === SEARCH === */
@@ -1371,9 +1484,40 @@
   );
 }
 
+/* A head with a top-right panel: the panel sits level with the breadcrumb. */
+.rg-minihero--aside {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--space-8);
+}
+
+.rg-minihero__main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.rg-minihero__aside {
+  flex: none;
+  max-width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 860px) {
+  .rg-minihero--aside {
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+}
+
 /* Title and actions share one optical line and wrap independently: a long
    genome label must not squeeze the buttons into a column. */
 .rg-minihero__bar {
+  /* A button's height, so actions that arrive with the record do not push
+     the page down. */
+  min-height: 2.25rem;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -1424,7 +1568,9 @@
   /* Fixed height only: this is the full wordmark, much wider than tall, so
      a matching fixed width would distort it. Width follows its own ratio. */
   width: auto;
+  max-width: 100%;
   height: var(--hero-logo-size);
+  object-fit: contain;
 }
 
 .rg-hero__lede {
@@ -1437,10 +1583,9 @@
 
 /* Layout comes from utilities; the block owns the card surface. */
 .rg-step {
-  padding: var(--space-4);
-  border: var(--border-width) solid rgb(var(--color-border));
-  border-radius: var(--radius-md);
-  background: rgb(var(--color-surface));
+  min-width: 0;
+  padding-top: var(--space-4);
+  border-top: var(--border-width) solid rgb(var(--color-border));
 }
 
 .rg-step__index {
@@ -1457,6 +1602,7 @@
 }
 
 .rg-command {
+  display: flex;
   padding: var(--space-2) var(--space-3);
   border: var(--border-width) solid rgb(var(--color-border));
   border-radius: var(--radius-md);
@@ -1553,7 +1699,11 @@
   top: var(--space-3);
   left: var(--space-3);
   width: var(--tree-detail-width);
-  box-shadow: var(--shadow-md);
+  /* It floats over the tree, so it needs a background and an edge. */
+  padding: var(--space-3) var(--space-4);
+  background: rgb(var(--color-background));
+  border: var(--border-width) solid rgb(var(--color-border));
+  border-radius: var(--radius-sm);
 }
 
 @media (max-width: 1023px) {
@@ -1568,4 +1718,804 @@
   .rg-tree__group-label {
     transition: none;
   }
+}
+
+/* === SEQUENCE TABLE SORT HEADER === */
+/* A header cell's sort control: a button that looks like the header text. */
+
+.rg-seq-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+}
+
+/* === TABS === */
+
+/* The rule under the tabs is an inset shadow, not a border, so the selected
+   tab's underline can sit on it without a negative margin. That margin made
+   the content 1px taller than the box, and with overflow-x: auto (which makes
+   overflow-y auto too) it showed a vertical scrollbar. */
+.rg-tabs {
+  display: flex;
+  gap: var(--space-1);
+  overflow-x: auto;
+  overflow-y: hidden;
+  box-shadow: inset 0 calc(-1 * var(--border-width)) 0 rgb(var(--color-border));
+}
+
+.rg-tabs__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: rgb(var(--color-text-muted));
+  font: inherit;
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* Inside the box, or the scroll container would clip the ring. */
+.rg-tabs__tab:focus-visible {
+  outline-offset: -2px;
+}
+
+.rg-tabs__tab:hover:not(:disabled) {
+  color: rgb(var(--color-text));
+}
+
+.rg-tabs__tab--selected {
+  color: rgb(var(--color-text));
+  border-bottom-color: rgb(var(--color-accent));
+}
+
+.rg-tabs__tab:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.rg-tabs__count {
+  display: inline-block;
+  min-width: 2ch;
+  padding: 0 var(--space-2);
+  border-radius: 999px;
+  background: rgb(var(--color-surface-alt));
+  font-size: var(--font-size-xs);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.rg-tabs__count:empty {
+  min-width: 3ch;
+  min-height: 1.1em;
+}
+
+.rg-tabs__panel {
+  padding-top: var(--space-6);
+}
+
+/* The panel takes focus for keyboard users only; a click inside draws no ring. */
+.rg-tabs__panel:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* A section inside a tab panel: a plain heading over its content, no box. */
+.rg-flat-section + .rg-flat-section {
+  margin-top: var(--space-8);
+}
+
+.rg-flat-section > h2,
+.rg-flat-section > h3 {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--space-3);
+}
+
+.rg-stat-line {
+  min-height: 1.5rem;
+  line-height: 1.5rem;
+  color: rgb(var(--color-text-muted));
+  font-variant-numeric: tabular-nums;
+}
+
+.rg-skeleton--inline {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+.rg-skeleton--w12 {
+  width: 12rem;
+}
+
+.rg-skeleton--w24 {
+  width: 24rem;
+}
+
+.rg-flat-section.flex > h2 {
+  margin-bottom: 0;
+}
+
+/* === FASTA SEQUENCE PICKER === */
+
+.rg-seq-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+.rg-seq-picker__filter {
+  width: auto;
+  flex: 1 1 12rem;
+  max-width: 20rem;
+}
+
+.rg-seq-picker__list {
+  max-height: 16rem;
+  overflow-y: auto;
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid rgb(var(--color-border));
+  border-radius: var(--radius-sm);
+  list-style: none;
+  columns: 16rem;
+  column-gap: var(--space-6);
+}
+
+.rg-seq-picker__item {
+  display: flex;
+  gap: var(--space-2);
+  align-items: baseline;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  break-inside: avoid;
+}
+
+.rg-fasta-choice {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  border: 0;
+  padding: 0;
+  margin: 0 0 var(--space-3);
+}
+
+/* === GENOME PAGE HEAD === */
+
+.rg-genome-head__line {
+  min-height: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-1);
+}
+
+.rg-genome-head__facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+/* The digest is the genome's identity, so it leads the header. One white
+   plate holds the label row and the value, so they read as one thing. */
+.rg-genome-digest {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-width: 100%;
+  min-width: 0;
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-3);
+  background: rgb(var(--color-background));
+  border: var(--border-width) solid rgb(var(--color-border));
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--transition-fast);
+}
+
+.rg-genome-digest:hover,
+.rg-genome-digest:focus-within {
+  border-color: rgba(var(--color-brand), 0.45);
+}
+
+.rg-genome-digest__label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: rgb(var(--color-text-muted));
+  line-height: 1;
+}
+
+.rg-genome-digest__mark {
+  flex: none;
+  width: var(--space-5);
+  height: var(--space-5);
+  object-fit: contain;
+}
+
+.rg-genome-digest__title {
+  color: rgb(var(--color-text));
+}
+
+.rg-genome-digest__help {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--space-5);
+  height: var(--space-5);
+  border: var(--border-width) solid rgb(var(--color-border-strong));
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: rgb(var(--color-text-muted));
+  text-decoration: none;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.rg-genome-digest__help:hover {
+  color: rgb(var(--color-brand));
+  border-color: rgb(var(--color-brand));
+}
+
+.rg-genome-digest__help:focus-visible {
+  outline: 2px solid rgb(var(--color-accent));
+  outline-offset: 2px;
+}
+
+.rg-genome-digest__row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* The refgenie row sits under the digest, split from it by a hairline. */
+.rg-genome-digest__row--get {
+  margin-top: var(--space-2);
+  padding-top: var(--space-2);
+  border-top: var(--border-width) solid rgb(var(--color-border));
+}
+
+.rg-genome-digest__command .rg-copyable__text {
+  font-size: var(--font-size-sm);
+  color: rgb(var(--color-primary-dark));
+}
+
+.rg-genome-digest__connect,
+.rg-genome-digest__row--get .rg-pull-button {
+  align-self: flex-start;
+  margin-top: var(--space-1);
+}
+
+.rg-genome-digest__value {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.rg-genome-digest__value .rg-copyable__text {
+  font-size: var(--font-size-lg);
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  color: rgb(var(--color-primary-dark));
+  overflow-wrap: anywhere;
+}
+
+.rg-genome-digest__value .rg-digest__copy {
+  flex: none;
+}
+
+.rg-genome-head__desc {
+  max-width: 60rem;
+  margin-top: var(--space-2);
+  padding-left: var(--space-4);
+  border-left: 2px solid rgb(var(--color-border));
+}
+
+.rg-genome-head__desc-label {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: rgb(var(--color-text-muted));
+  opacity: 0.8;
+}
+
+.rg-genome-head__desc p {
+  margin: 0;
+  color: rgb(var(--color-text-muted));
+}
+
+.rg-genome-head__ph--sm {
+  width: 6rem;
+}
+
+.rg-genome-head__ph--md {
+  width: 14rem;
+}
+
+.rg-genome-head__ph--lg {
+  width: 22rem;
+}
+
+/* === REGION EXTRACT (genome Extract tab) === */
+
+.rg-region__form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.rg-region__label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.rg-region__input {
+  flex: 1 1 16rem;
+  max-width: 28rem;
+  font-family: var(--font-family-mono);
+}
+
+.rg-region__hint {
+  margin: var(--space-1) 0 0;
+  font-size: var(--font-size-xs);
+  color: rgb(var(--color-text-muted));
+}
+
+.rg-region__error {
+  margin: var(--space-2) 0 0;
+  font-size: var(--font-size-sm);
+  color: rgb(var(--color-danger));
+}
+
+.rg-region__out {
+  margin-top: var(--space-3);
+}
+
+.rg-region__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-1);
+}
+
+.rg-region__meta {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  color: rgb(var(--color-text-muted));
+}
+
+/* FASTA lines are 80 columns: keep them whole and scroll, never re-wrap. */
+.rg-region__fasta .rg-copyable-block__code {
+  max-height: 24rem;
+  overflow: auto;
+}
+
+/* === EXTRACT MODE TOGGLE + BED EXTRACT === */
+
+.rg-segmented {
+  display: inline-flex;
+  margin-bottom: var(--space-2);
+  border: var(--border-width) solid rgb(var(--color-border-strong));
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.rg-segmented__option {
+  padding: var(--space-1) var(--space-3);
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.5;
+  color: rgb(var(--color-text));
+  background: rgb(var(--color-background));
+  border: 0;
+  cursor: pointer;
+}
+
+.rg-segmented__option + .rg-segmented__option {
+  border-left: var(--border-width) solid rgb(var(--color-border-strong));
+}
+
+.rg-segmented__option:hover {
+  background: rgb(var(--color-surface));
+}
+
+.rg-segmented__option--on,
+.rg-segmented__option--on:hover {
+  color: rgb(var(--color-text-inverse));
+  background: rgb(var(--color-primary));
+}
+
+.rg-segmented__option:focus-visible {
+  outline: 2px solid rgb(var(--color-accent));
+  outline-offset: -2px;
+}
+
+.rg-bed__drop {
+  padding: var(--space-3);
+  border: var(--border-width) dashed rgb(var(--color-border-strong));
+  border-radius: var(--radius-md);
+  background: rgb(var(--color-surface));
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.rg-bed__drop--over {
+  border-color: rgb(var(--color-accent));
+  background: rgb(var(--color-info-surface));
+}
+
+.rg-bed__drop-text {
+  margin: 0 0 var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
+.rg-bed__drop-text .rg-btn--bare {
+  display: inline;
+  font-size: inherit;
+}
+
+.rg-bed__paste {
+  display: block;
+  resize: vertical;
+  min-height: 5.5rem;
+  white-space: pre;
+  tab-size: 8;
+}
+
+.rg-bed__file {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.5rem;
+  font-size: var(--font-size-sm);
+}
+
+.rg-bed__file-name {
+  font-family: var(--font-family-mono);
+  overflow-wrap: anywhere;
+}
+
+.rg-bed__summary {
+  margin-top: var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.rg-bed__count {
+  margin: 0;
+}
+
+.rg-bed__bad {
+  color: rgb(var(--color-danger));
+}
+
+.rg-bed__problems {
+  margin: var(--space-2) 0 0;
+  padding: var(--space-2) var(--space-3);
+  max-height: 12rem;
+  overflow: auto;
+  list-style: none;
+  font-size: var(--font-size-xs);
+  border-left: 3px solid rgb(var(--color-danger));
+  background: rgb(var(--color-danger-surface) / 0.35);
+}
+
+.rg-bed__problems li + li {
+  margin-top: var(--space-1);
+}
+
+.rg-bed__line {
+  font-weight: 600;
+}
+
+.rg-bed__line-text {
+  font-family: var(--font-family-mono);
+  overflow-wrap: anywhere;
+}
+
+.rg-bed__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 2.25rem;
+  margin-top: var(--space-3);
+}
+
+.rg-bed__progress {
+  flex: 1 1 10rem;
+  max-width: 20rem;
+  height: 0.75rem;
+  accent-color: rgb(var(--color-primary));
+}
+
+/* === GENOME ALIASES (Details tab) === */
+
+.rg-alias-table__alias {
+  overflow-wrap: anywhere;
+}
+
+/* The download button: room for "· about 0.9 GB" before it loads. */
+.rg-size-slot {
+  display: inline-block;
+  min-width: 7em;
+  padding-left: 0.25em;
+  text-align: left;
+  /* Collapses the leading space, which stays in the button's accessible name. */
+  white-space: nowrap;
+}
+
+.rg-size-slot__ph {
+  width: 6em;
+  height: 0.9em;
+  opacity: 0.4;
+}
+
+/* === COPYABLE (a value with its copy button beside it) === */
+
+.rg-copyable {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  max-width: 100%;
+  min-width: 0;
+}
+
+.rg-copyable__text {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.rg-copyable__text--mono {
+  font-family: var(--font-family-mono);
+}
+
+.rg-copyable-block {
+  position: relative;
+  min-width: 0;
+}
+
+/* Long commands scroll sideways rather than wrapping mid-word; the right
+   padding keeps the text clear of the corner button. */
+.rg-copyable-block__code {
+  margin: 0;
+  padding-right: calc(var(--space-3) + 2.5rem);
+  white-space: pre;
+  overflow-wrap: normal;
+  overflow-x: auto;
+}
+
+.rg-copyable-block > .rg-btn {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+}
+
+/* === CODE SNIPPETS (one language at a time) === */
+
+.rg-tabs--sm .rg-tabs__tab {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-size-sm);
+}
+
+.rg-snippets__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+}
+
+.rg-snippets__note {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: rgb(var(--color-text-muted));
+}
+
+/* === ALPHABETS (Sequences tab, beside the filter box) === */
+
+.rg-seq-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-6);
+}
+
+.rg-seq-toolbar > .rg-search {
+  flex: 1 1 18rem;
+  max-width: 36rem;
+}
+
+.rg-series-1 { background: rgb(var(--color-series-1)); }
+.rg-series-2 { background: rgb(var(--color-series-2)); }
+.rg-series-3 { background: rgb(var(--color-series-3)); }
+.rg-series-4 { background: rgb(var(--color-series-4)); }
+
+.rg-seq-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-6);
+}
+
+.rg-seq-summary__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.rg-seq-summary__label {
+  font-size: var(--font-size-xs);
+  color: rgb(var(--color-text-muted));
+}
+
+
+.rg-alphabets__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 18rem;
+}
+
+/* One bar per measure, its name to the left in a fixed column. */
+.rg-alphabets__row {
+  display: grid;
+  grid-template-columns: 4.5rem 1fr;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.rg-alphabets__measure {
+  font-size: var(--font-size-xs);
+  color: rgb(var(--color-text-muted));
+  text-align: right;
+}
+
+/* Thin segmented bar: a small surface gap between parts, rounded outer ends. */
+.rg-alphabets__bar {
+  display: block;
+  width: 100%;
+  height: 0.375rem;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.rg-series-1.rg-alphabets__seg { fill: rgb(var(--color-series-1)); }
+.rg-series-2.rg-alphabets__seg { fill: rgb(var(--color-series-2)); }
+.rg-series-3.rg-alphabets__seg { fill: rgb(var(--color-series-3)); }
+.rg-series-4.rg-alphabets__seg { fill: rgb(var(--color-series-4)); }
+
+.rg-alphabets__list {
+  font-size: var(--font-size-xs);
+  color: rgb(var(--color-text-muted));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-3);
+  margin: 0;
+  /* Lined up under the bars, past the measure-name column. */
+  padding: 0 0 0 calc(4.5rem + var(--space-2));
+  list-style: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.rg-alphabets__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.rg-alphabets__swatch {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 2px;
+}
+
+/* === REFGET SECTION (Details tab) === */
+
+/* Level-1 rows are a step smaller than the top-level digest. */
+.rg-refget__attr .rg-digest__text,
+.rg-refget__attr .rg-refget__term code {
+  font-size: var(--font-size-xs);
+}
+
+.rg-refget__links {
+  font-size: var(--font-size-sm);
+}
+
+
+.rg-refget__head .rg-genome-digest__label {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.rg-refget__table {
+  border-collapse: collapse;
+  max-width: 100%;
+}
+
+.rg-refget__table th,
+.rg-refget__table td {
+  padding: var(--space-1) var(--space-4) var(--space-1) 0;
+  vertical-align: middle;
+  text-align: left;
+}
+
+.rg-refget__term {
+  font-weight: var(--font-weight-semibold);
+  color: rgb(var(--color-text-muted));
+  white-space: nowrap;
+}
+
+.rg-refget__table .rg-refget__term--attr {
+  padding-left: var(--space-4);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+}
+
+.rg-refget__table .rg-refget__group {
+  padding-top: var(--space-4);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: rgb(var(--color-text-muted));
+}
+
+.rg-refget__links {
+  white-space: nowrap;
+}
+
+.rg-refget__links > * + * {
+  margin-left: var(--space-3);
+}
+
+/* The shared-genomes modal renders inside the links cell; undo the cell's layout. */
+.rg-refget__links > .modal-overlay {
+  margin-left: 0;
+  white-space: normal;
+}
+
+.rg-refget__shared-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 860px) {
+  .rg-refget__table,
+  .rg-refget__table tbody,
+  .rg-refget__table tr,
+  .rg-refget__table th,
+  .rg-refget__table td {
+    display: block;
+  }
+
+  .rg-refget__table tr {
+    padding-block: var(--space-1);
+  }
+}
+
+/* Text for readers without JavaScript (index.html); React replaces it. */
+.rg-static-fallback {
+  display: none;
 }

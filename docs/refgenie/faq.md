@@ -8,9 +8,15 @@
 
 Yes. Register them with [refgenie add](custom_assets.md), and then use `seek`, the Python API, and the rest of refgenie with them.
 
-## Can I add an asset to the public server?
+## How do I ask for a genome or asset refgenie does not have?
 
-You can run your own server with `refgenie serve` and host any assets you like; see [Run a server](server_tutorial.md). To add a new kind of asset for everyone, publish its recipe in a [data channel](set_up_data_channel.md). If you think an asset belongs on the public server, [open an issue](https://github.com/refgenie/refgenie/issues).
+- A genome refgenie does not list: [open a genome proposal](https://github.com/refgenie/refgenie-registry/issues/new?template=genome_proposal.yml).
+- A listed genome missing an asset: [open an asset request](https://github.com/refgenie/refgenie-registry/issues/new?template=asset_request.yml). Put the genome's alias and digest in the form.
+- Need it now: build it yourself; see [Build assets](build.md). To host assets of your own, run your own server with `refgenie serve` ([Run a server](server_tutorial.md)), and publish new recipes in a [data channel](set_up_data_channel.md).
+
+## Where do I get the aligner for an index?
+
+Refgenie gives you the index, not the aligner. The asset name is the tool version that built it: `refgenie seek rCRSd/bowtie2_index.version` prints `2.5.5`, so install bowtie2 2.5.5 and match the version.
 
 ## Can I keep several versions of an asset?
 

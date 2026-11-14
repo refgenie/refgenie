@@ -36,7 +36,7 @@ you can resolve from a script.
 Refgenie 1.0 is a pre-release, so tell `pip` to accept it:
 
 ```bash
-pip install "refgenie>=1.0.0a1"
+pip install "refgenie>=1.0.0a2"
 ```
 
 Without `--pre`, `pip` installs the legacy 0.13 release.
@@ -48,11 +48,11 @@ extra:
 
 | Extra | Install | What it enables | Adds |
 | --- | --- | --- | --- |
-| *(none)* | `pip install "refgenie>=1.0.0a1"` | CLI, Python API, building, pulling, staging | — |
-| `dash` | `pip install "refgenie[dash]>=1.0.0a1"` | `refgenie dash`, the local web UI | fastapi, uvicorn |
-| `server` | `pip install "refgenie[server]>=1.0.0a1"` | `refgenie serve`, the public REST API + DRS + `/mcp` endpoint (includes `dash`) | apscheduler, mcp |
-| `mcp` | `pip install "refgenie[mcp]>=1.0.0a1"` | `refgenie-mcp`, the stdio MCP server for LLM agents | mcp |
-| `snakemake` | `pip install "refgenie[snakemake]>=1.0.0a1"` | snakemake-based bulk asset building | snakemake |
+| *(none)* | `pip install "refgenie>=1.0.0a2"` | CLI, Python API, building, pulling, staging | — |
+| `dash` | `pip install "refgenie[dash]>=1.0.0a2"` | `refgenie dash`, the local web UI | fastapi, uvicorn |
+| `server` | `pip install "refgenie[server]>=1.0.0a2"` | `refgenie serve`, the public REST API + DRS + `/mcp` endpoint (includes `dash`) | apscheduler, mcp |
+| `mcp` | `pip install "refgenie[mcp]>=1.0.0a2"` | `refgenie-mcp`, the stdio MCP server for LLM agents | mcp |
+| `snakemake` | `pip install "refgenie[snakemake]>=1.0.0a2"` | snakemake-based bulk asset building | snakemake |
 
 Running `refgenie serve`, `refgenie dash`, or `refgenie-mcp` without its extra
 prints which extra to install. PostgreSQL support is included in the base
@@ -105,7 +105,6 @@ All are optional. Refgenie uses defaults under `~/.refgenie/` when they are unse
 | `REFGENIE_GENOME_FOLDER` | `$REFGENIE_HOME_PATH/genomes` | Where built asset files live. Auto-created on `refgenie init`. |
 | `REFGENIE_GENOME_STAGE_FOLDER` | `$REFGENIE_HOME_PATH/archives` | Where staged/archived assets live before push. Auto-created on `refgenie init`. |
 | `REFGENIE_SUBSCRIBE_DEFAULT_SERVER` | `true` | Whether `refgenie init` subscribes a new configuration to `https://api.refgenie.org`. |
-| `REFGENIE_STORES` | unset | JSON array of federated refget stores registered on server boot, e.g. `[{"name": "jungle", "url": "https://.../jungle/", "priority": 10}]`. Lower priority wins alias ties. See `deployment/stores.example.json`. |
 | `REFGENIE_BRIDGE_MODE` | `read` | Localhost bridge policy for `refgenie dash`. `off` = no cross-origin access; `read` = allowlisted public origins may read `/ping`, `/v4`, `/v1/jobs`; `full` = additionally allows `POST /v1/actions/pull`. `refgenie dash --bridge` overrides it for one run. |
 | `REFGENIE_BRIDGE_ORIGINS` | `https://refgenie.org` | Comma-separated exact origins the bridge admits. **Replaces** the default rather than appending. |
 | `REFGENIE_BRIDGE_ORIGIN_REGEX` | unset | Origin regex, for SPA dev servers and preview deployments only. Wildcard-equivalent patterns are refused at startup. |
@@ -132,7 +131,7 @@ Longer walkthroughs:
 
 - [Documentation](https://docs.refgenie.org/refgenie/)
 - [CLI reference](https://docs.refgenie.org/refgenie/refgenie-cli/)
-- [Tutorial notebook](https://docs.refgenie.org/refgenie/notebooks/refgenie/)
+- [Python tutorial](https://docs.refgenie.org/refgenie/refgenie_object/)
 
 ## Data Channels
 

@@ -244,7 +244,7 @@ The `Refgenie` class delegates to managers. Don't look for methods like `refgeni
 | `refgenie.alias` | AliasManager | `resolve()`, `get_for_genome()`, `add()`, `remove()` |
 | `refgenie.genome` | GenomeManager | `add()`, `get()`, `initialize_genome()` |
 | `refgenie.asset` | AssetManager | `content.add()`, `get()`, `seek()`, `remove()` |
-| `refgenie.servers` | ServerManager | `subscriptions()`, `subscribe()`, `client()`, `seek()`, `resolve_alias()`, `find_collection()` |
+| `refgenie.servers` | ServerManager | `subscriptions()`, `subscribe()`, `client()`, `seek()`, `locate()`, `alias_names()` |
 | `refgenie.sources` | SourceManager | `add_channel()`, `list_channels()` |
 | `refgenie.remote` | RemoteManager | `add()`, `get()`, `link()`, `unpushed()`, `mark_pushed()`, `pushed_urls()` |
 

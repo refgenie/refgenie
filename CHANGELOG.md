@@ -7,6 +7,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0a2] - 2026-11-14
+
+### Added
+
+- The genome page has Sequences, Extract, Download and Compare tabs: browse a
+  genome's sequences, extract regions or a BED file of regions, download FASTA
+  in the browser, and compare with another genome or your own FASTA file.
+- Collection pages (`REFGENIE_COLLECTIONS`) show a branded slice of the
+  catalog, such as the VGP assemblies.
+- `GET /v4/genomes/{digest}/sequences` and `GET /v4/genomes/{digest}/compare/{other}`.
+- `list --json` and `listr --json`; `getseq --fasta` and `--one-based`.
+- MCP: a `get_sequence` tool; `compare_genomes` returns a one-sentence summary and
+  a map of renamed sequences; `refgenie-mcp --help`; and the instructions and
+  `catalog_summary` say which server this is.
+
+### Changed
+
+- refgenie uses httpx2, the maintained successor of httpx, for HTTP.
+- `refgenie pull` brings a parent asset only when the asset colocates its files
+  (such as `bismark_bt2_index`). `refgenie pull hg38/fasta_index` now downloads
+  12 KB, not the FASTA.
+- A genome is read only from the store its `store_name` names; stores are no
+  longer probed. A genome whose store the server does not serve is left out of
+  every listing and answers 404.
+- A publish catalog with a genome that names no store, or a store the catalog
+  does not list, is refused at import.
+- Compare returns the same GA4GH comparison from the server, the CLI and MCP.
+- MCP `get_asset` builds its pull command from the shortest plain alias, gives
+  absolute URLs, and lists each file in `files`; `get_genome_sequences` is paged
+  and takes `name_contains`.
+- `listr -g` and `compare` find genomes on the subscribed servers.
+- `getseq` registers an unregistered genome first (metadata only).
+- The default log level is WARNING (set `REFGENIE_LOG_LEVEL=INFO` for the old
+  output). Results and hints print on stderr without the logger.
+- `config get` prints YAML.
+- `getseq` reads byte ranges and no longer caches sequences.
+- `pull --init` accepts `--genome-digest`, and `--all-genomes` registers
+  alias-less genomes by digest.
+- `genome init --server` takes only server URLs (use `--store` for stores).
+- `refgenie store sync` replaces each store's aliases as a set: a name the
+  store dropped is removed, a moved name follows its collection, and names
+  with '/' are skipped. A store that suddenly offers under half its aliases
+  keeps them. Only a genome's owning store writes its description and other
+  FHR columns.
+- A catalog import rewrites the aliases of each genome the catalog carries,
+  skipping names with '/', and refuses a catalog that would remove more than
+  half of them. `refgenie catalog-prune` also deletes genomes the catalog no
+  longer carries that have no assets, with their aliases, and disabled stores
+  left empty.
+
+### Fixed
+
+- `SKILL.md` is served as `text/markdown` on macOS and on Python before 3.13.
+- `genome init --server`, `alias set` and `id --remote` read a genome from the
+  store that holds it, not only from the server's first store.
+- Pulling a child asset (bwa_index, fasta_index, ...) of hg38, celegans and similar genomes no longer fails and deletes the genome when the server lists an alias containing '/'. A parent lands under the child's alias and adds none of the server's other aliases.
+- `pull --init` now fails with a clear error, instead of saving an alias that cannot be resolved, when a genome's sequence collection is not on the server (#299).
+- Quadratic `getseq` output time, whole-chromosome downloads for a few bases,
+  truncated tables off a terminal, the download progress bar on stdout, and
+  `build` exiting silently on an unknown alias.
+
+### Removed
+
+- `refgenie pull --asset-registry-paths`; pass registry paths as positional
+  arguments.
+- MCP: the `get_genome_metadata` tool (`get_genome_sequences` pages carry
+  `n_sequences` and `total_length`), and `get_asset`'s `downloads` and `local_path`.
+
 ## [1.0.0a1] - 2026-11-06
 
 First public alpha of refgenie 1.0, a rewrite that replaces the `refgenie` 0.x,
@@ -35,7 +103,7 @@ what changed for pipelines and Python code.
   assets to cloud storage for serving.
 - A built-in server (`refgenie serve`) with a JSON API at `/v4` and GA4GH DRS
   and seqcol endpoints. One server can serve several refget stores
-  (`refgenie store`, `REFGENIE_STORES`). The web UI for the public server is
+  (`refgenie store`). The web UI for the public server is
   at https://refgenie.org.
 - `refgenie dash`: a local web dashboard for your genomes and assets, which
   runs pulls and builds as background jobs.
@@ -69,5 +137,6 @@ what changed for pipelines and Python code.
 - The implicit `.dir` seek key on every asset.
 - The separate `refgenconf` and `refgenieserver` packages.
 
-[Unreleased]: https://github.com/refgenie/refgenie/compare/v1.0.0a1...HEAD
+[Unreleased]: https://github.com/refgenie/refgenie/compare/v1.0.0a2...HEAD
+[1.0.0a2]: https://github.com/refgenie/refgenie/compare/v1.0.0a1...v1.0.0a2
 [1.0.0a1]: https://github.com/refgenie/refgenie/releases/tag/v1.0.0a1

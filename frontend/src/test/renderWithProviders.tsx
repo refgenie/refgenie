@@ -34,6 +34,7 @@ export const localConfig: UiConfig = {
     jobs_cancel: true,
   }),
   web_ui: null,
+  collections: [],
   degraded: false,
 };
 

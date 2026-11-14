@@ -1,5 +1,6 @@
 """The app factory and the SPA: ``refgenie/server/main.py`` and ``spa.py``."""
 
+import json
 import re
 from collections import Counter
 from pathlib import Path
@@ -208,6 +209,26 @@ class TestModeSurfaces:
         assert response.status_code == 200
         assert '"serverInfo"' in response.text
         assert nested.status_code != 200
+
+    def test_initialize_names_the_server(self, monkeypatch):
+        """The MCP instructions open with the server's public URL."""
+        monkeypatch.setattr("refgenie.server.main.REFGENIE_PUBLIC_URL", "https://rg.example")
+        initialize = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {
+                "protocolVersion": "2025-06-18",
+                "capabilities": {},
+                "clientInfo": {"name": "test", "version": "0"},
+            },
+        }
+        headers = {"accept": "application/json, text/event-stream"}
+        with make_server_client(stub_rgc()) as client:
+            response = client.post("/mcp", json=initialize, headers=headers)
+        data = next(x for x in response.text.splitlines() if x.startswith("data:"))
+        instructions = json.loads(data[len("data:") :])["result"]["instructions"]
+        assert instructions.startswith("refgenie server at https://rg.example.")
 
 
 class TestRootNamespaceIsReservedForTheSpa:
@@ -426,30 +447,30 @@ def test_skill_md_is_served_as_markdown(rgc, tmp_path):
     assert response.text.startswith("---")
 
 
-def test_server_mode_serves_llms_txt(server_client):
-    """/llms.txt is the agent index, not the SPA shell with a 200."""
-    response = server_client.get("/llms.txt")
-    assert response.status_code == 200
-    assert response.headers["content-type"] == "text/plain; charset=utf-8"
-    assert response.text.startswith("# refgenie")
-
-
 @requires_web_assets
-def test_built_bundle_carries_skill_md(server_client):
+@pytest.mark.parametrize(
+    ("name", "content_type", "marker"),
+    [
+        ("SKILL.md", "text/markdown", "name: refgenie-api"),
+        ("llms.txt", "text/plain", "## Requests"),
+        ("robots.txt", "text/plain", "User-agent: *"),
+    ],
+)
+def test_built_bundle_carries_public_files(server_client, name, content_type, marker):
     """``frontend/public/*`` ships at the bundle root, so a real build serves the
-    committed SKILL.md -- not the SPA shell with a 200.
+    committed files -- not the SPA shell with a 200.
 
     ``requires_web_assets`` proves a bundle exists, not that it is current, so a
     failure here is usually a stale bundle rather than a missing file.
     """
-    response = server_client.get("/SKILL.md")
+    response = server_client.get(f"/{name}")
     hint = "Rebuild it: npm --prefix frontend run build"
-    assert response.headers["content-type"].startswith("text/markdown"), (
-        f"/SKILL.md came back as {response.headers['content-type']}, which means the "
-        f"bundle in refgenie/server/webui/ has no SKILL.md and the SPA shell answered. {hint}"
+    assert response.headers["content-type"].startswith(content_type), (
+        f"/{name} came back as {response.headers['content-type']}, which means the "
+        f"bundle in refgenie/server/webui/ has no {name} and the SPA shell answered. {hint}"
     )
-    assert "name: refgenie-api" in response.text, (
-        f"The bundle's SKILL.md is not the one in frontend/public/. {hint}"
+    assert marker in response.text, (
+        f"The bundle's {name} is not the one in frontend/public/. {hint}"
     )
 
 
@@ -471,6 +492,7 @@ EXPECTED_PROPERTIES = {
         "taxon_id",
         "assembly_source",
         "assembly_accession",
+        "assembly_level",
         "species",
     },
     "SpeciesResponse": {"taxon_id", "scientific_name", "common_name", "synonyms"},
@@ -488,6 +510,7 @@ EXPECTED_PROPERTIES = {
         "taxon_uri",
         "fhr",
         "species",
+        "refget_store_url",
     },
     "AssetGroupPublic": {"id", "name", "description", "genome_digest", "asset_class_id"},
     "AssetResponse": {
@@ -548,7 +571,23 @@ EXPECTED_PROPERTIES = {
         "build_commands",
         "download_count",
     },
-    "DatabaseSummaryResponse": {"genomes", "asset_groups", "assets"},
+    "GenomeSequencesResponse": {
+        "digest",
+        "n_sequences",
+        "total_length",
+        "level1",
+        "collection_aliases",
+        "sequences",
+    },
+    "SequenceResponse": {
+        "name",
+        "length",
+        "sha512t24u",
+        "md5",
+        "alphabet",
+        "description",
+        "aliases",
+    },
 }
 
 #: Endpoints the SPA's service layer calls on the shared read API.
@@ -571,6 +610,8 @@ EXPECTED_SHARED_PATHS = {
     "/relationships/{asset_digest}",
     "/aliases",
     "/aliases/{name}",
+    "/genomes/{digest}/sequences",
+    "/genomes/{digest}/compare/{other}",
 }
 
 #: Server-only reads the SPA gates on capabilities.archives / .downloads.
@@ -687,3 +728,133 @@ def test_skill_md_paths_still_exist(openapi_schema):
 )
 def test_enums_match_the_frontend_unions(openapi_schema, enum_name, members):
     assert set(openapi_schema["components"]["schemas"][enum_name]["enum"]) == members
+
+
+# ===========================================================================
+# Collection views (REFGENIE_COLLECTIONS -> /service-info refgenie.collections)
+# ===========================================================================
+
+from refgenie.server.collections import (  # noqa: E402
+    load_collections_from_env,
+    validate_collections,
+)
+
+_COLLECTIONS_EXAMPLE = _REPO_ROOT / "deployment" / "collections.example.json"
+
+
+def _collection(**overrides):
+    entry = {
+        "id": "vgp",
+        "name": "VGP assemblies",
+        "blurb": "Some assemblies.",
+        "accent_color": "#2b7a78",
+        "stores": ["vgp"],
+    }
+    return {**entry, **overrides}
+
+
+class TestCollectionConfig:
+    def test_unset_is_empty(self, monkeypatch):
+        monkeypatch.delenv("REFGENIE_COLLECTIONS", raising=False)
+        assert load_collections_from_env(["vgp"]) == []
+
+    def test_valid_entry_gets_defaults(self, monkeypatch):
+        monkeypatch.setenv("REFGENIE_COLLECTIONS", json.dumps([_collection()]))
+        [got] = load_collections_from_env(["vgp"])
+        assert got["id"] == "vgp"
+        assert got["short_name"] is None and got["note"] is None and got["logo_url"] is None
+        assert got["links"] == [] and got["genome_links"] == [] and got["columns"] == []
+
+    def test_invalid_json_is_empty(self, monkeypatch):
+        monkeypatch.setenv("REFGENIE_COLLECTIONS", "[{not json")
+        assert load_collections_from_env(["vgp"]) == []
+
+    def test_non_list_is_empty(self, monkeypatch):
+        monkeypatch.setenv("REFGENIE_COLLECTIONS", '{"id": "vgp"}')
+        assert load_collections_from_env(["vgp"]) == []
+
+    def test_bad_entry_drops_only_that_entry(self):
+        got = validate_collections(
+            [_collection(id="bad", accent_color="teal"), _collection()], ["vgp"]
+        )
+        assert [c["id"] for c in got] == ["vgp"]
+
+    def test_undeclared_store_drops_the_entry(self):
+        got = validate_collections(
+            [_collection(id="hprc", stores=["hprc"]), _collection()], ["vgp"]
+        )
+        assert [c["id"] for c in got] == ["vgp"]
+
+    def test_duplicate_id_keeps_the_first(self):
+        got = validate_collections([_collection(name="first"), _collection(name="second")], ["vgp"])
+        assert [c["name"] for c in got] == ["first"]
+
+    def test_unknown_column_is_rejected(self):
+        assert validate_collections([_collection(columns=["bogus"])], ["vgp"]) == []
+
+    def test_deployment_example_is_valid(self, monkeypatch):
+        """deployment/collections.example.json loads against a vgp store."""
+        monkeypatch.setenv("REFGENIE_COLLECTIONS", _COLLECTIONS_EXAMPLE.read_text())
+        got = load_collections_from_env({"vgp"})
+        assert [c["id"] for c in got] == ["vgp"]
+        assert got[0]["logo_url"] is None
+        assert "official" not in _COLLECTIONS_EXAMPLE.read_text().lower()
+
+
+@pytest.mark.component
+class TestCollectionsInServiceInfo:
+    @pytest.fixture
+    def store_rg(self, tmp_path, fixtures_path):
+        """A server-mode refgenie with one on-disk store named 'vgp'."""
+        from refget.store import RefgetStore
+
+        from refgenie import Refgenie
+        from refgenie.db.tables import StoreType
+
+        RefgetStore.on_disk(str(tmp_path / "vgp")).add_sequence_collection_from_fasta(
+            str(fixtures_path / "t7.fa")
+        )
+        rg = Refgenie(database_engine=make_engine(), suppress_migrations=True, server_mode=True)
+        rg.database.create_tables()
+        rg.store.add("vgp", str(tmp_path / "vgp"), StoreType.on_disk, priority=20)
+        return rg
+
+    def test_server_serves_declared_collections(self, store_rg, monkeypatch):
+        declared = [
+            _collection(
+                short_name="VGP",
+                note="Independent view.",
+                links=[{"label": "Home", "url": "https://example.org/"}],
+                genome_links=[{"label": "NCBI", "template": "https://x/{assembly_accession}"}],
+                columns=["assembly_accession", "haplotype"],
+            ),
+            _collection(id="other", stores=["missing"]),
+        ]
+        monkeypatch.setenv("REFGENIE_COLLECTIONS", json.dumps(declared))
+        with TestClient(make_server_app(store_rg)) as client:
+            collections = client.get("/service-info").json()["refgenie"]["collections"]
+        assert collections == [
+            {
+                "id": "vgp",
+                "name": "VGP assemblies",
+                "short_name": "VGP",
+                "blurb": "Some assemblies.",
+                "note": "Independent view.",
+                "accent_color": "#2b7a78",
+                "logo_url": None,
+                "stores": ["vgp"],
+                "links": [{"label": "Home", "url": "https://example.org/"}],
+                "genome_links": [{"label": "NCBI", "template": "https://x/{assembly_accession}"}],
+                "columns": ["assembly_accession", "haplotype"],
+            }
+        ]
+
+
+def test_local_mode_has_no_collections(local_client, monkeypatch):
+    assert local_client.get("/service-info").json()["refgenie"]["collections"] == []
+
+
+def test_local_mode_ignores_the_env(rgc, monkeypatch):
+    monkeypatch.setenv("REFGENIE_COLLECTIONS", json.dumps([_collection()]))
+    with TestClient(make_local_app(rgc), base_url="http://localhost") as client:
+        assert client.get("/service-info").json()["refgenie"]["collections"] == []

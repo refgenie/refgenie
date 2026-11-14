@@ -76,9 +76,9 @@ export function AliasesPage() {
       title="Aliases"
       lede={
         <>
-          An alias is a human-readable name —{' '}
-          <code className="rg-code rg-code--inline">hg38</code>,{' '}
-          <code className="rg-code rg-code--inline">mm10</code> — that resolves to a
+          An alias is a human-readable name, such as{' '}
+          <code className="rg-code rg-code--inline">hg38</code> or{' '}
+          <code className="rg-code rg-code--inline">mm10</code>, that resolves to a
           genome digest. You type the alias; refgenie stores and compares everything by
           the digest, and one genome can answer to several aliases.
         </>

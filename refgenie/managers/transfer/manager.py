@@ -3,7 +3,7 @@
 from typing import TYPE_CHECKING
 
 from refgenie.const import DEFAULT_SERVER_URL
-from refgenie.exceptions import MissingAliasError, NoSubscriptionsError
+from refgenie.exceptions import NoSubscriptionsError, PullFailedError
 from refgenie.logger import logger
 from refgenie.managers.sources.servers import estimate_pull_size
 from refgenie.managers.transfer.puller import BulkPullResult, PullOptions
@@ -13,7 +13,6 @@ from refgenie.utils.prompt import Confirmer, resolve_confirmer
 
 if TYPE_CHECKING:
     from refgenie.db.tables import Asset
-    from refgenie.managers.alias import AliasBackend
     from refgenie.managers.genome import GenomeManager
     from refgenie.managers.sources.servers import ServerManager
     from refgenie.managers.transfer.puller import AssetPuller
@@ -67,13 +66,11 @@ class TransferManager:
     def __init__(
         self,
         servers: "ServerManager",
-        alias_manager: "AliasBackend",
         genome_manager: "GenomeManager",
         puller: "AssetPuller",
         events: EventSink,
     ):
         self._servers = servers
-        self._alias = alias_manager
         self._genome = genome_manager
         self._puller = puller
         self._events = events  # required by @update_scope
@@ -188,35 +185,37 @@ class TransferManager:
     @update_scope
     def init_genomes(
         self,
-        aliases: list[GenomeAlias] | None = None,
+        genomes: list[GenomeAlias | GenomeDigest] | None = None,
         all_genomes: bool = False,
     ) -> list[GenomeDigest]:
         """
         Register genome(s) in the local store from remote metadata, without downloading files.
 
         Args:
-            aliases: Genome aliases to register.
-            all_genomes: If True, register all genomes from remote servers
-                (genomes with no alias on the server are skipped).
+            genomes: Genomes to register, each a ``GenomeAlias`` or a ``GenomeDigest``.
+            all_genomes: If True, register all genomes from remote servers. One
+                with no usable alias on the server is registered under its digest.
 
         Returns:
             List of registered genome digests.
+
+        Raises:
+            PullFailedError: Some genomes could not be registered (the rest
+                still are); the message names them.
         """
         if all_genomes:
-            aliases = [
-                GenomeAlias(g["aliases"][0])
-                for g in self._servers.list_genomes()
-                if g.get("aliases")
-            ]
-        registered = []
-        for alias in aliases or []:
-            if self._genome.init_from_remote(alias):
-                try:
-                    registered.append(self._alias.resolve(alias))
-                except MissingAliasError:
-                    pass
+            genomes = self._remote_genome_refs()
+        registered, failed = [], []
+        for genome in genomes or []:
+            digest = self._genome.init_from_remote(genome, require_collection=True)
+            if digest is None:
+                failed.append(genome)
+            else:
+                registered.append(digest)
 
         logger.info(f"Registered {len(registered)} genome(s)")
+        if failed:
+            raise PullFailedError(f"could not register {', '.join(failed)}")
         return registered
 
     @update_scope
@@ -241,24 +240,19 @@ class TransferManager:
         Returns:
             BulkPullResult: What was pulled, skipped and failed.
         """
-        remote_genomes = self._servers.list_genomes()
-        if not remote_genomes:
+        digests = self._remote_genome_refs()
+        if not digests:
             logger.warning("No remote genomes found")
             return BulkPullResult()
 
-        # Register genomes first. One with no server alias uses its digest as
-        # its alias, so the pull has an alias tree to render.
-        for g in remote_genomes:
-            alias_name = g["aliases"][0] if g.get("aliases") else None
-            self._genome.init_from_remote(
-                alias_name=GenomeAlias(alias_name or g["genome_digest"]),
-                genome_digest=GenomeDigest(g["genome_digest"]),
-                genome_description=g.get("description"),
-            )
+        # Register genomes first. One with no usable server alias uses its
+        # digest as its alias, so the pull has an alias tree to render.
+        for digest in digests:
+            self._genome.init_from_remote(digest)
 
         return self._confirm_and_pull(
-            self._remote_assets([GenomeDigest(g["genome_digest"]) for g in remote_genomes]),
-            len(remote_genomes),
+            self._remote_assets(digests),
+            len(digests),
             PullOptions(force, force_large, size_cutoff, confirm),
             empty_message="No remote assets found to mirror",
             cancelled_message="Mirror cancelled",
@@ -272,31 +266,20 @@ class TransferManager:
         """
         digests = []
         for genome in genomes:
-            if isinstance(genome, GenomeDigest):
-                digests.append(genome)
-                continue
-            if not isinstance(genome, GenomeAlias):
-                raise TypeError(
-                    f"Expected a GenomeAlias or a GenomeDigest, not {type(genome).__name__} "
-                    f"'{genome}'."
-                )
-            try:
-                digests.append(self._alias.resolve(genome))
-                continue
-            except MissingAliasError:
-                pass
-            if self._genome.init_from_remote(genome):
-                digests.append(self._alias.resolve(genome))
-            else:
+            digest = (
+                genome
+                if isinstance(genome, GenomeDigest)
+                else self._genome.init_from_remote(genome)
+            )
+            if digest is None:
                 logger.error(f"Could not resolve genome: {genome}")
+            else:
+                digests.append(digest)
         return digests
 
-    def _remote_genome_refs(self) -> list[GenomeAlias | GenomeDigest]:
-        """Every genome the servers list: its first alias, or its digest if it has none."""
-        return [
-            GenomeAlias(g["aliases"][0]) if g["aliases"] else GenomeDigest(g["genome_digest"])
-            for g in self._servers.list_genomes()
-        ]
+    def _remote_genome_refs(self) -> list[GenomeDigest]:
+        """Every genome the servers list, by digest."""
+        return [GenomeDigest(g["genome_digest"]) for g in self._servers.list_genomes()]
 
     def _remote_assets(
         self, digests: list[GenomeDigest], asset_group_name: str | None = None

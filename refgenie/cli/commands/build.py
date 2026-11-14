@@ -4,16 +4,17 @@ import sys
 
 from pydantic import AliasChoices, BaseModel, Field
 from pydantic_settings import CliPositionalArg
-from rich import print as rprint
 
-from refgenie.cli.framework import CliList
 from refgenie.cli.commands.helpers import (
+    print_table,
     _ASSET_REGISTRY_PATHS_DESCRIPTION,
     _validate_registry_paths,
     check_push_remotes,
     data_channel_hint,
     no_data_channel_synced,
+    note,
 )
+from refgenie.cli.framework import CliList
 from refgenie.logger import logger
 
 
@@ -123,7 +124,7 @@ def handle_build(cmd, refgenie) -> None:
                 recipe_version=cmd.recipe_version,
             )
             recipe_names.append(recipe.name)
-        rprint(refgenie.recipe.table(recipe_names=recipe_names))
+        print_table(refgenie.recipe.table(recipe_names=recipe_names))
         sys.exit(0)
 
     pipeline_kwargs = parse_user_kw_input(cmd.pipeline_kwargs)
@@ -155,18 +156,19 @@ def handle_build(cmd, refgenie) -> None:
             )
             if built is None:
                 failed.append(str(parsed_asset_registry_path))
-        except MissingAliasError:
+        except MissingAliasError as e:
+            logger.error(str(e))
             genome = parsed_asset_registry_path.genome
             if parsed_asset_registry_path.asset_group == "fasta":
                 fasta_path = specified_files.get("fasta", "<file>")
-                logger.info(f"Hint: refgenie genome init --fasta {fasta_path} --name {genome}")
+                note(f"Hint: refgenie genome init --fasta {fasta_path} --name {genome}")
             sys.exit(1)
         except (MissingRecipeError, MissingAssetClassError) as e:
             logger.error(str(e))
             if no_data_channel_synced(refgenie):
                 genome = parsed_asset_registry_path.genome
                 asset_group = parsed_asset_registry_path.asset_group
-                logger.info(data_channel_hint(f"refgenie build {genome}/{asset_group}"))
+                note(data_channel_hint(f"refgenie build {genome}/{asset_group}"))
             sys.exit(1)
     if failed:
         logger.error(f"Build failed: {', '.join(failed)}")

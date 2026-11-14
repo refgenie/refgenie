@@ -1,5 +1,5 @@
-from pathlib import Path
 from collections.abc import Iterable
+from pathlib import Path
 from typing import Any
 
 from rich.table import Table
@@ -19,8 +19,8 @@ from refgenie.exceptions import (
     RecipeExistsError,
 )
 from refgenie.logger import logger
-from refgenie.models import InputEntity, Page
 from refgenie.managers.base import ResourceManager
+from refgenie.models import InputEntity, Page
 from refgenie.utils.io import read_yaml
 from refgenie.utils.search import Search
 from refgenie.utils.tables import build_table

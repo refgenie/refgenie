@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import AliasChoices, BaseModel, Field
 
-from refgenie.logger import logger
+from refgenie.cli.commands.helpers import note
 
 
 class ServeModel(BaseModel):
@@ -64,7 +64,7 @@ def handle_serve(cmd, refgenie) -> None:
     _require_extra("server", "fastapi", "uvicorn", "apscheduler", "mcp")
     from refgenie.server.main import run_server
 
-    logger.info(
+    note(
         f"Starting refgenie server on port {cmd.port}. "
         f"Reload mode: {'enabled' if cmd.reload else 'disabled'}."
     )
@@ -84,7 +84,7 @@ def handle_dash(cmd, refgenie) -> None:
     # Always one worker: job state lives in this process's memory.
     url = f"http://127.0.0.1:{cmd.port}"
     _open_browser_quietly(url)
-    logger.info(f"refgenie web UI at {url} (Ctrl+C to stop)")
+    note(f"refgenie web UI at {url} (Ctrl+C to stop)")
     run_local(port=cmd.port)
 
 

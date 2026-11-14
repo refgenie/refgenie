@@ -4,8 +4,8 @@ from pydantic import AliasChoices, BaseModel, Field
 from pydantic_settings import CliSubCommand, get_subcommand
 
 from refgenie.cli.commands.listing import handle_list
-from refgenie.cli.framework import CliList
 from refgenie.cli.errors import fail
+from refgenie.cli.framework import CliList
 
 
 class AssetListNestedModel(BaseModel):

@@ -8,6 +8,9 @@ export const qk = {
   genomes: (p: object) => ['genomes', p] as const,
   genome: (d: string) => ['genome', d] as const,
   genomeIndex: () => ['genome-index'] as const,
+  // Both start with 'genome', so the 'genome' family invalidation clears them.
+  genomeSequences: (d: string) => ['genome', d, 'sequences'] as const,
+  genomeComparison: (a: string, b: string) => ['genome', a, 'compare', b] as const,
 
   assetGroups: (p: object) => ['asset-groups', p] as const,
   assetGroup: (id: number) => ['asset-group', id] as const,
@@ -36,7 +39,6 @@ export const qk = {
   configurations: (p: object) => ['configurations', p] as const,
   configuration: (id: number) => ['configuration', id] as const,
 
-  summary: () => ['summary'] as const,
   archives: (p: object) => ['archives', p] as const,
 
   jobs: (p: object) => ['jobs', p] as const,
