@@ -8,7 +8,13 @@ from pathlib import Path
 import pytest
 
 from tests.support.actions import CAPABILITY_KEY_SET
-from tests.support.factories import fake_digest, make_engine, make_server_rgc
+from tests.support.factories import (
+    build_on_disk_store,
+    fake_digest,
+    make_engine,
+    make_server_rgc,
+    server_with_stores,
+)
 from tests.support.server import (
     assert_no_duplicate_routes,
     assert_unique_operation_ids,
@@ -806,18 +812,8 @@ class TestCollectionsInServiceInfo:
     @pytest.fixture
     def store_rg(self, tmp_path, fixtures_path):
         """A server-mode refgenie with one on-disk store named 'vgp'."""
-        from refget.store import RefgetStore
-
-        from refgenie import Refgenie
-        from refgenie.db.tables import StoreType
-
-        RefgetStore.on_disk(str(tmp_path / "vgp")).add_sequence_collection_from_fasta(
-            str(fixtures_path / "t7.fa")
-        )
-        rg = Refgenie(database_engine=make_engine(), suppress_migrations=True, server_mode=True)
-        rg.database.create_tables()
-        rg.store.add("vgp", str(tmp_path / "vgp"), StoreType.on_disk, priority=20)
-        return rg
+        build_on_disk_store(tmp_path / "vgp", fixtures_path / "t7.fa", "t7")
+        return server_with_stores(("vgp", tmp_path / "vgp", 20))
 
     def test_server_serves_declared_collections(self, store_rg, monkeypatch):
         declared = [

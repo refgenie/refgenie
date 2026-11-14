@@ -12,7 +12,7 @@ import pytest
 
 from refgenie.db.tables import StoreType
 
-from tests.support.factories import build_on_disk_store, make_engine
+from tests.support.factories import build_on_disk_store, server_with_stores
 from tests.support.server import make_server_app, needs_server
 
 pytestmark = [pytest.mark.component, needs_server]
@@ -21,14 +21,6 @@ FHR = {
     "genome": "rCRSd",
     "taxon": {"name": "Homo sapiens", "uri": "https://identifiers.org/taxonomy:9606"},
 }
-
-
-def _server_rg():
-    from refgenie import Refgenie
-
-    rg = Refgenie(database_engine=make_engine(), suppress_migrations=True, server_mode=True)
-    rg.database.create_tables()
-    return rg
 
 
 def _client(rg):
@@ -73,11 +65,7 @@ class _Stores:
 
     def register(self, rg, *names):
         """Add the stores and their genomes, as a catalog import does."""
-        from refgenie.cli.commands.store import _sync_one_store
-
-        rg.store.apply_declaration([self.row(n) for n in names])
-        for name in names:
-            _sync_one_store(rg, rg.store.get(name), self.PRIORITY, 100)
+        server_with_stores(*[(n, self.paths[n], self.PRIORITY[n]) for n in names], rg=rg)
 
 
 @pytest.fixture
@@ -97,7 +85,7 @@ def _serves_collection(client, prefix, digest):
 
 class TestNoStores:
     def test_db_mode_seqcol(self):
-        with _client(_server_rg()) as client:
+        with _client(server_with_stores()) as client:
             assert client.app.state.seqcol.mounts == ()
             info = client.get("/seqcol/service-info").json()
             assert info["id"] == "org.refgenie.seqcol"
@@ -109,7 +97,7 @@ class TestNoStores:
 
 class TestStoresAreServed:
     def test_each_store_serves_seqcol_and_v4(self, stores):
-        rg = _server_rg()
+        rg = server_with_stores()
         stores.register(rg, "jungle", "vgp")
         with _client(rg) as client:
             assert _served_stores(client) == ["jungle", "vgp"]
@@ -130,7 +118,7 @@ class TestStoresAreServed:
 
 class TestStoreSetChangesAtRuntime:
     def test_added_store_is_served_after_refresh(self, stores):
-        rg = _server_rg()
+        rg = server_with_stores()
         stores.register(rg, "jungle")
         with _client(rg) as client:
             app = client.app
@@ -149,7 +137,7 @@ class TestStoreSetChangesAtRuntime:
             assert rg.store_router.names == ["jungle", "plantref"]
 
     def test_disabled_store_stops_being_served(self, stores):
-        rg = _server_rg()
+        rg = server_with_stores()
         stores.register(rg, "jungle", "vgp")
         with _client(rg) as client:
             phage = stores.digest["vgp"]
@@ -165,7 +153,7 @@ class TestStoreSetChangesAtRuntime:
             assert rg.store_router.names == ["jungle"]
 
     def test_new_default_store_takes_the_default_mount(self, stores):
-        rg = _server_rg()
+        rg = server_with_stores()
         stores.register(rg, "vgp")
         with _client(rg) as client:
             assert _serves_collection(client, "/seqcol", stores.digest["vgp"])
@@ -176,7 +164,7 @@ class TestStoreSetChangesAtRuntime:
             assert _serves_collection(client, "/seqcol/vgp", stores.digest["vgp"])
 
     def test_disabling_every_store_falls_back_to_db_mode(self, stores):
-        rg = _server_rg()
+        rg = server_with_stores()
         stores.register(rg, "jungle")
         with _client(rg) as client:
             rg.store.apply_declaration([stores.row("jungle", enabled=False)])
@@ -186,7 +174,7 @@ class TestStoreSetChangesAtRuntime:
             assert info["seqcol"]["refget_store"] == {"enabled": False}
 
     def test_unchanged_store_set_keeps_everything(self, stores):
-        rg = _server_rg()
+        rg = server_with_stores()
         stores.register(rg, "jungle")
         with _client(rg) as client:
             router = rg.store_router
@@ -196,7 +184,7 @@ class TestStoreSetChangesAtRuntime:
             assert client.app.state.seqcol.mounts is mounts
 
     def test_a_store_that_fails_to_load_keeps_the_old_set(self, stores):
-        rg = _server_rg()
+        rg = server_with_stores()
         stores.register(rg, "jungle")
         with _client(rg) as client:
             router = rg.store_router
@@ -209,7 +197,7 @@ class TestStoreSetChangesAtRuntime:
             assert _serves_collection(client, "/seqcol", stores.digest["jungle"])
 
     def test_an_unreadable_registry_keeps_the_current_stores(self, stores, monkeypatch):
-        rg = _server_rg()
+        rg = server_with_stores()
         stores.register(rg, "jungle")
         with _client(rg) as client:
 

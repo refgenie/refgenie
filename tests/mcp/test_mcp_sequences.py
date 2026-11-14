@@ -5,8 +5,7 @@ from pathlib import Path
 import pytest
 
 from refgenie import Refgenie
-from refgenie.db.tables import StoreType
-from tests.support.factories import build_on_disk_store, make_engine
+from tests.support.factories import build_on_disk_store, make_engine, server_with_stores
 
 try:
     from mcp.server.mcpserver.exceptions import ToolError
@@ -51,24 +50,9 @@ def test_get_sequence_reads_a_region(two_genomes):
 
 
 def test_sequence_tools_work_in_server_mode(tmp_path):
-    from refgenie.cli.commands.store import _sync_one_store
-
     path = tmp_path / "store"
     digest = build_on_disk_store(path, FASTA / "base.fa", "base")
-    rg = Refgenie(database_engine=make_engine(), suppress_migrations=True, server_mode=True)
-    rg.database.create_tables()
-    rg.store.apply_declaration(
-        [
-            {
-                "name": "jungle",
-                "url": str(path),
-                "type": StoreType.on_disk.value,
-                "priority": 10,
-                "enabled": True,
-            }
-        ]
-    )
-    _sync_one_store(rg, rg.store.get("jungle"), {"jungle": 10}, 100)
+    rg = server_with_stores(("jungle", path, 10))
     tools.set_refgenie(rg, public_url="https://rg.example")
     try:
         assert tools.get_sequence(digest=digest, name="chrX", start=0, end=4) == "TTGG"

@@ -24,16 +24,15 @@ from refgenie.managers.store import LOCAL_STORE_NAME
 from refgenie.models import GenomeAlias
 from refgenie.utils.seqcol import compare_level2
 
-from tests.support.factories import build_on_disk_store, make_engine, seed_species
+from tests.support.factories import (
+    build_on_disk_store,
+    make_engine,
+    seed_species,
+    server_with_stores,
+)
 from tests.support.server import needs_server
 
 pytestmark = pytest.mark.component
-
-
-def _server_rgc():
-    rg = Refgenie(database_engine=make_engine(), suppress_migrations=True, server_mode=True)
-    rg.database.create_tables()
-    return rg
 
 
 def _write_species(store_dir, species):
@@ -48,7 +47,7 @@ def _write_species(store_dir, species):
 
 class TestStoreRegistry:
     def test_add_list_remove(self):
-        rg = _server_rgc()
+        rg = server_with_stores()
         rg.store.add("jungle", "url://j", StoreType.remote, priority=10)
         rg.store.add("vgp", "url://v", StoreType.remote, priority=20)
         assert [s.name for s in rg.store.enabled_stores()] == ["jungle", "vgp"]
@@ -56,19 +55,19 @@ class TestStoreRegistry:
         assert [s.name for s in rg.store.enabled_stores()] == ["jungle"]
 
     def test_add_duplicate_raises(self):
-        rg = _server_rgc()
+        rg = server_with_stores()
         rg.store.add("jungle", "url://j", StoreType.remote)
         with pytest.raises(StoreExistsError):
             rg.store.add("jungle", "url://other", StoreType.remote)
 
     def test_add_reserved_local_name_raises(self):
-        rg = _server_rgc()
+        rg = server_with_stores()
         with pytest.raises(ValueError, match="reserved"):
             rg.store.add(LOCAL_STORE_NAME, "url://l", StoreType.remote)
         assert list(rg.store.list_all()) == []
 
     def test_env_declaration_skips_reserved_local_name(self, caplog):
-        rg = _server_rgc()
+        rg = server_with_stores()
         rg.store.apply_declaration(
             [{"name": LOCAL_STORE_NAME, "url": "url://l"}, {"name": "vgp", "url": "url://v"}],
         )
@@ -76,7 +75,7 @@ class TestStoreRegistry:
         assert "reserved" in caplog.text
 
     def test_apply_declaration_reports_changes(self):
-        rg = _server_rgc()
+        rg = server_with_stores()
         rg.store.add("jungle", "url://j", StoreType.remote, priority=10)
         rg.store.add("vgp", "url://v", StoreType.remote, priority=20)
         changes = rg.store.apply_declaration(
@@ -90,14 +89,14 @@ class TestStoreRegistry:
         assert rg.store.get("vgp").url == "url://v2"
 
     def test_apply_declaration_keeps_undeclared_stores_by_default(self):
-        rg = _server_rgc()
+        rg = server_with_stores()
         rg.store.add("jungle", "url://j", StoreType.remote, priority=10)
         rg.store.apply_declaration([{"name": "vgp", "url": "url://v"}])
         assert rg.store.get("jungle").enabled
 
     def test_apply_declaration_disables_missing(self):
         """Undeclared stores are disabled, never deleted: genomes keep their FK."""
-        rg = _server_rgc()
+        rg = server_with_stores()
         rg.store.add("jungle", "url://j", StoreType.remote, priority=10)
         rg.store.add("old", "url://o", StoreType.remote, priority=50)
         rg.genome.add("D" * 32, "owned by old", [], store_name="old")
@@ -117,7 +116,7 @@ class TestStoreRegistry:
         assert again == {"added": [], "updated": [], "disabled": []}
 
     def test_apply_declaration_reenables_a_declared_store(self):
-        rg = _server_rgc()
+        rg = server_with_stores()
         rg.store.add("vgp", "url://v", StoreType.remote, priority=20, enabled=False)
         changes = rg.store.apply_declaration(
             [{"name": "vgp", "url": "url://v", "priority": 20}], disable_missing=True
@@ -128,7 +127,7 @@ class TestStoreRegistry:
     def test_store_apply_cli_reads_the_file(self, tmp_path, capsys):
         from refgenie.cli.commands.store import StoreApplyModel, handle_store_apply
 
-        rg = _server_rgc()
+        rg = server_with_stores()
         rg.store.add("old", "url://o", StoreType.remote, priority=50)
         declaration = tmp_path / "stores.json"
         declaration.write_text(
@@ -147,15 +146,15 @@ class TestStoreRegistry:
         declaration = tmp_path / "stores.json"
         declaration.write_text(json.dumps({"name": "jungle", "url": "url://j"}))
         with pytest.raises(SystemExit):
-            handle_store_apply(StoreApplyModel(file=declaration), _server_rgc())
+            handle_store_apply(StoreApplyModel(file=declaration), server_with_stores())
 
     def test_remove_missing_raises(self):
-        rg = _server_rgc()
+        rg = server_with_stores()
         with pytest.raises(MissingStoreError):
             rg.store.remove("ghost")
 
     def test_enabled_stores_priority_order(self):
-        rg = _server_rgc()
+        rg = server_with_stores()
         rg.store.add("c", "url://c", StoreType.remote, priority=30)
         rg.store.add("a", "url://a", StoreType.remote, priority=10)
         rg.store.add("b", "url://b", StoreType.remote, priority=20)
@@ -177,7 +176,7 @@ class TestAliasPriority:
         return AliasManager(rg.database_engine), {"jungle": 10, "vgp": 20}
 
     def test_higher_priority_wins_bare_name(self, caplog):
-        rg = _server_rgc()
+        rg = server_with_stores()
         alias, priorities = self._setup(rg)
 
         # vgp registers 'hg38' -> B first; then jungle registers 'hg38' -> A.
@@ -196,7 +195,7 @@ class TestAliasPriority:
         assert any("collision on 'hg38'" in r.message for r in caplog.records)
 
     def test_lower_priority_loses_bare_name(self, caplog):
-        rg = _server_rgc()
+        rg = server_with_stores()
         alias, priorities = self._setup(rg)
 
         # jungle registers first (wins), then vgp offers the same name.
@@ -210,7 +209,7 @@ class TestAliasPriority:
         assert any("collision on 'hg38'" in r.message for r in caplog.records)
 
     def test_same_digest_dedups(self):
-        rg = _server_rgc()
+        rg = server_with_stores()
         alias, priorities = self._setup(rg)
         assert alias.federated_sync("shared", "A" * 32, "jungle", priorities) == "inserted"
         # Same (alias, digest) from another store is a natural no-op.
@@ -219,7 +218,7 @@ class TestAliasPriority:
         assert alias.resolve("shared") == "A" * 32
 
     def test_qualified_unknown_raises(self):
-        rg = _server_rgc()
+        rg = server_with_stores()
         alias, priorities = self._setup(rg)
         alias.federated_sync("hg38", "A" * 32, "jungle", priorities)
         with pytest.raises(MissingAliasError):
@@ -242,7 +241,7 @@ class TestStoreSyncIntegration:
         )
         vgp_shared = build_on_disk_store(tmp_path / "vgp", fixtures_path / "t7.fa", "shared")
 
-        rg = _server_rgc()
+        rg = server_with_stores()
         rg.store.add("jungle", str(tmp_path / "jungle"), StoreType.on_disk, priority=10)
         rg.store.add("vgp", str(tmp_path / "vgp"), StoreType.on_disk, priority=20)
 
@@ -272,7 +271,7 @@ class TestStoreSyncIntegration:
 
         digest = build_on_disk_store(tmp_path / "jungle", fixtures_path / "rCRSd.fa", "rCRSd")
         _write_species(tmp_path / "jungle", [{"taxon_id": 10116, "scientific_name": "Rattus"}])
-        rg = _server_rgc()
+        rg = server_with_stores()
         rg.store.add("jungle", str(tmp_path / "jungle"), StoreType.on_disk, priority=10)
 
         def no_network(*args, **kwargs):
@@ -303,7 +302,7 @@ class TestStoreSyncIntegration:
                 {"taxon_id": 2, "scientific_name": "Two"},
             ],
         )
-        rg = _server_rgc()
+        rg = server_with_stores()
         rg.store.add("jungle", str(tmp_path / "jungle"), StoreType.on_disk, priority=10)
         rg.store.add("vgp", str(tmp_path / "vgp"), StoreType.on_disk, priority=20)
 
@@ -320,7 +319,7 @@ class TestStoreSyncIntegration:
         digest_b = build_on_disk_store(tmp_path / "b", fixtures_path / "rCRSd.fa", "rCRSd")
         assert digest_a == digest_b  # content-addressed: identical
 
-        rg = _server_rgc()
+        rg = server_with_stores()
         rg.store.add("a", str(tmp_path / "a"), StoreType.on_disk, priority=10)
         rg.store.add("b", str(tmp_path / "b"), StoreType.on_disk, priority=20)
         priorities = {s.name: s.priority for s in rg.store.list_all()}
@@ -337,7 +336,7 @@ class TestStoreSyncIntegration:
         from refgenie.cli.commands.store import StoreSyncModel, handle_store_sync
 
         digest = build_on_disk_store(tmp_path / "new", fixtures_path / "rCRSd.fa", "rCRSd")
-        rg = _server_rgc()
+        rg = server_with_stores()
         rg.store.add("old", "url://old", StoreType.remote, priority=10, enabled=False)
         rg.store.add("new", str(tmp_path / "new"), StoreType.on_disk, priority=20)
         rg.genome.add(digest=digest, description="", alias_names=[], store_name="old")
@@ -354,7 +353,7 @@ class TestStoreSyncIntegration:
         from refgenie.managers.genome import GenomeManager
 
         digest = build_on_disk_store(tmp_path / "vgp", fixtures_path / "rCRSd.fa", "rCRSd")
-        rg = _server_rgc()
+        rg = server_with_stores()
         rg.store.add("vgp", str(tmp_path / "vgp"), StoreType.on_disk, priority=10)
         srow = rg.store.get("vgp")
         priorities = {"vgp": 10}
@@ -404,7 +403,7 @@ class TestStoreSyncIntegration:
             RefgetStore.on_disk(str(tmp_path / name)).set_fhr_metadata(
                 digest, GenomeManager._fhr_metadata_from_dict(fhr)
             )
-        rg = _server_rgc()
+        rg = server_with_stores()
         rg.store.add("owner", str(tmp_path / "owner"), StoreType.on_disk, priority=10)
         rg.store.add("other", str(tmp_path / "other"), StoreType.on_disk, priority=20)
 
@@ -430,7 +429,7 @@ def _jungle(tmp_path, fixtures_path):
     store = RefgetStore.on_disk(str(path))
     for name in ("b", "c"):
         store.add_collection_alias("name", name, rcrsd)
-    rg = _server_rgc()
+    rg = server_with_stores()
     rg.store.add("jungle", str(path), StoreType.on_disk, priority=10)
     return rg, store, rcrsd, t7
 
@@ -534,19 +533,6 @@ def _write_fasta(path, records):
     return path
 
 
-def _synced_rgc(stores):
-    """A server-mode refgenie with the given (name, path) on-disk stores synced."""
-    from refgenie.cli.commands.store import _sync_one_store
-
-    rg = _server_rgc()
-    for priority, (name, path) in enumerate(stores):
-        rg.store.add(name, str(path), StoreType.on_disk, priority=priority)
-    priorities = {s.name: s.priority for s in rg.store.list_all()}
-    for srow in rg.store.enabled_stores():
-        _sync_one_store(rg, srow, priorities, 100)
-    return rg
-
-
 class TestCompareAcrossStores:
     @pytest.fixture
     def fastas(self, tmp_path):
@@ -562,7 +548,7 @@ class TestCompareAcrossStores:
     def test_cross_store_compare_returns_the_seqcol_comparison(self, tmp_path, fastas):
         digest_a = build_on_disk_store(tmp_path / "s1", fastas[0], "a")
         digest_b = build_on_disk_store(tmp_path / "s2", fastas[1], "b")
-        rg = _synced_rgc([("s1", tmp_path / "s1"), ("s2", tmp_path / "s2")])
+        rg = server_with_stores(("s1", tmp_path / "s1", 0), ("s2", tmp_path / "s2", 1))
         assert rg.genome.get(digest_a).store_name == "s1"
         assert rg.genome.get(digest_b).store_name == "s2"
 
@@ -585,8 +571,8 @@ class TestCompareAcrossStores:
         digest_a = build_on_disk_store(tmp_path / "s1", fastas[0], "a")
         digest_b = build_on_disk_store(tmp_path / "s2", fastas[1], "b")
 
-        same = _synced_rgc([("both", tmp_path / "both")])
-        cross = _synced_rgc([("s1", tmp_path / "s1"), ("s2", tmp_path / "s2")])
+        same = server_with_stores(("both", tmp_path / "both", 0))
+        cross = server_with_stores(("s1", tmp_path / "s1", 0), ("s2", tmp_path / "s2", 1))
 
         assert same.genome.compare_sides(digest_a, digest_b) == cross.genome.compare_sides(
             digest_a, digest_b
@@ -836,7 +822,7 @@ class TestSharedReadonlyStores:
         RefgetStore.on_disk(str(tmp_path / "jungle")).set_fhr_metadata(
             human, GenomeManager._fhr_metadata_from_dict(self.FHR)
         )
-        rg = _server_rgc()
+        rg = server_with_stores()
         rg.store.add("jungle", str(tmp_path / "jungle"), StoreType.on_disk, priority=10)
         rg.store.add("vgp", str(tmp_path / "vgp"), StoreType.on_disk, priority=20)
         priorities = {"jungle": 10, "vgp": 20}
