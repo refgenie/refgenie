@@ -2,9 +2,6 @@
 <div class="page-hero">
 <img src="img/refgenie_logo.svg" alt="Refgenie" class="page-hero-logo" />
 <p class="page-hero-tagline">reference genome manager</p>
-<div class="badges">
-<a href="https://pepkit.github.io/img/PEP-compatible-green.svg"><img src="https://pepkit.github.io/img/PEP-compatible-green.svg"></a>
-</div>
 </div>
 
 

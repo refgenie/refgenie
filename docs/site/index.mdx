@@ -64,34 +64,42 @@ refgenie seek hg38/fasta_index.chrom_sizes   # prints the local path
 </div>
 
 <div class="ai-section">
-  <h2 class="ai-title">Use refgenie with AI</h2>
-  <p class="ai-blurb">Paste this into your AI agent to have it learn to use refgenie for reference genome data:</p>
+  <p class="ai-blurb"><strong>Using an AI assistant?</strong> Paste this into it. To connect the MCP server too, see <a href="/refgenie/use_with_ai/">Use refgenie with AI</a>.</p>
   <div class="ai-prompt">
     <code id="ai-prompt-text">Read https://docs.refgenie.org/SKILL.md, then use refgenie to help me with reference genome data: download and build genome assets (indexes, sequences), find asset paths for my pipelines, and work with the genomes I have.</code>
     <button class="ai-copy-btn" type="button" aria-label="Copy prompt">Copy</button>
   </div>
-  <p class="ai-mcp">The skill file at <a href="/SKILL.md">docs.refgenie.org/SKILL.md</a> teaches an assistant the refgenie CLI and Python API. For read-only access to your own database, also connect the MCP server. See <a href="/refgenie/use_with_ai/">Use refgenie with AI</a>.</p>
 </div>
 
-<div class="stats-container">
-  <div class="stat-card">
-    <div class="stat-value" id="stat-bytes">...</div>
-    <div class="stat-label">TOTAL DATA SERVED</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-value" id="stat-requests">...</div>
-    <div class="stat-label">TOTAL REQUESTS SERVED</div>
-  </div>
-</div>
+<div id="stats"></div>
 
 <script>
 {`
+// The stat cards are added only once the numbers load, so a blocked or
+// failed request never leaves empty placeholder cards on the page.
 fetch('https://stats.databio.org/stats/aws/summary.json')
   .then(r => r.json())
   .then(d => {
-    document.getElementById('stat-bytes').textContent = (d.BytesDownloaded / 1e12).toFixed(1) + ' TB';
-    document.getElementById('stat-requests').textContent = (d.AllRequests / 1e6).toFixed(1) + ' million';
-  });
+    if (!(d.BytesDownloaded > 0) || !(d.AllRequests > 0)) return;
+    const stats = document.getElementById('stats');
+    stats.className = 'stats-container';
+    [
+      [(d.BytesDownloaded / 1e12).toFixed(1) + ' TB', 'TOTAL DATA SERVED'],
+      [(d.AllRequests / 1e6).toFixed(1) + ' million', 'TOTAL REQUESTS SERVED'],
+    ].forEach(([value, label]) => {
+      const card = document.createElement('div');
+      card.className = 'stat-card';
+      const v = document.createElement('div');
+      v.className = 'stat-value';
+      v.textContent = value;
+      const l = document.createElement('div');
+      l.className = 'stat-label';
+      l.textContent = label;
+      card.append(v, l);
+      stats.append(card);
+    });
+  })
+  .catch(() => {});
 
 const aiBtn = document.querySelector('.ai-copy-btn');
 aiBtn && aiBtn.addEventListener('click', () => {
