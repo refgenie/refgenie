@@ -6,7 +6,7 @@ from sqlalchemy import event
 from sqlmodel import Session, select
 
 from refgenie.db.queries import genome as genome_queries
-from refgenie.db.queries.search import rank_condition
+from refgenie.db.queries.search import RankPatterns, padded_words
 from refgenie.db.tables import Genome, Species, SpeciesName
 from refgenie.utils.search import MatchRank, Search, match_rank
 from tests.support.factories import create_asset_class
@@ -25,18 +25,16 @@ NAMES = [
 
 @pytest.mark.parametrize("term", ["rat", "RAT", "mole-rat", "mole rat", "ratt", "BN", "100%"])
 def test_sql_ranks_like_python(refgenie_minimal, term):
-    """``rank_condition`` puts each name in the tier ``match_rank`` gives it."""
+    """``RankPatterns.rank`` puts each name in the tier ``match_rank`` gives it."""
     with Session(refgenie_minimal.database_engine) as session:
         session.add_all(
             Species(taxon_id=i, scientific_name=name, names=[SpeciesName(taxon_id=i, name=name)])
             for i, name in enumerate(NAMES)
         )
         session.commit()
-        for rank in (MatchRank.EXACT, MatchRank.WHOLE_WORD, MatchRank.WORD_START):
-            condition = rank_condition(SpeciesName.name, term, rank)
-            found = set(session.exec(select(SpeciesName.name).where(condition)).all())
-            expected = {name for name in NAMES if match_rank(name, term) <= rank}
-            assert found == expected, (term, rank)
+        rank = RankPatterns.for_term(term, "t").rank(padded_words(SpeciesName.name))
+        found = dict(session.exec(select(SpeciesName.name, rank)).all())
+        assert found == {name: match_rank(name, term) for name in NAMES}
 
 
 def test_asset_class_description_matches_at_word_starts(refgenie_minimal):
