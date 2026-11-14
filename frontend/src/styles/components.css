@@ -2279,22 +2279,6 @@
   overflow-wrap: anywhere;
 }
 
-/* The download button: room for "· about 0.9 GB" before it loads. */
-.rg-size-slot {
-  display: inline-block;
-  min-width: 7em;
-  padding-left: 0.25em;
-  text-align: left;
-  /* Collapses the leading space, which stays in the button's accessible name. */
-  white-space: nowrap;
-}
-
-.rg-size-slot__ph {
-  width: 6em;
-  height: 0.9em;
-  opacity: 0.4;
-}
-
 /* === COPYABLE (a value with its copy button beside it) === */
 
 .rg-copyable {
