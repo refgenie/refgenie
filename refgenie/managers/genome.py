@@ -578,18 +578,22 @@ class GenomeManager(ResourceManager):
 
         return result
 
-    def compare_sides(self, digest_a: GenomeDigest, digest_b: GenomeDigest) -> tuple[dict, dict]:
+    def compare_sides(
+        self, digest_a: GenomeDigest, digest_b: GenomeDigest, *, remote: bool = True
+    ) -> tuple[dict, dict]:
         """The level 2 of each of two genomes, for :func:`refgenie.utils.seqcol.compare_level2`.
 
         Each side is built with :func:`refgenie.utils.seqcol.seqcol_level2`, so
-        the server, the CLI and MCP all compare the same objects.
+        the server, the CLI and MCP all compare the same objects. With
+        ``remote=False``, a genome is read from its store only, never from its
+        ``remote_url``.
         """
         return (
-            self._compare_side(self.get(digest_a)),
-            self._compare_side(self.get(digest_b)),
+            self._compare_side(self.get(digest_a), remote),
+            self._compare_side(self.get(digest_b), remote),
         )
 
-    def _compare_side(self, genome: Genome) -> dict:
+    def _compare_side(self, genome: Genome, remote: bool) -> dict:
         """One side of a compare: from the genome's store, else from its ``remote_url``.
 
         The remote is read only when the store that ``store_name`` picks does
@@ -601,7 +605,7 @@ class GenomeManager(ResourceManager):
         except UnservedStoreError:
             raise
         except MissingGenomeError:
-            if not genome.remote_url:
+            if not (remote and genome.remote_url):
                 raise
         return self._get_remote_level2(genome.remote_url, genome.digest)
 
