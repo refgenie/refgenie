@@ -29,7 +29,7 @@ If your text region is already 0-based, for example copied from a BED file, add 
 refgenie getseq -g hg38 -l chr17:43044294-43044394 --zero-based
 ```
 
-`getseq` prints how it read the region on stderr, so you can check it.
+Either way, `getseq` prints how it read the region on stderr, so you can check it: `chr17:43,044,295-43,044,394 (1-based, inclusive): 100 bases`.
 
 From an AI assistant, over [MCP](mcp.md):
 
