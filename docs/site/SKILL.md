@@ -284,9 +284,32 @@ configured database:
 from refgenie import Refgenie
 
 rgc = Refgenie()
-digest = rgc.alias.resolve("hg38")  # seek takes a genome digest
-rgc.asset.seek(digest, "bowtie2_index")  # local path to an asset
+digest = rgc.alias.resolve("hg38")  # alias -> genome digest
+rgc.asset.seek(digest, "bowtie2_index")  # local path to the default asset
+rgc.asset.seek(digest, "fasta", seek_key_name="fai")  # one file in an asset
+
+# Or pass a registry path, like the CLI; it resolves the alias for you:
+rgc.asset.seek_components(rgc.parse_asset_registry_path("hg38/fasta.fai"))
 ```
+
+`rgc.asset.seek` takes a **genome digest, not an alias**:
+
+```
+rgc.asset.seek(genome_digest, asset_group_name, asset_name=None,
+               seek_key_name=None, force_exists=False, abs_path=False) -> str
+```
+
+- `asset_name` defaults to the group's default asset (`"2.5.5"` picks
+  `bowtie2_index:2.5.5`).
+- `seek_key_name` defaults to the asset's default seek key (`"fai"`,
+  `"chrom_sizes"`).
+- `force_exists=True` raises `FileNotFoundError` if the file is missing on disk.
+- `abs_path=True` returns the digest-named content path instead of the
+  alias path.
+
+`rgc.alias.resolve(name)` raises `MissingAliasError` for an alias not
+registered here. `rgc.asset.seek_components(...)` takes the same
+`force_exists` and `abs_path` keywords.
 
 ---
 
