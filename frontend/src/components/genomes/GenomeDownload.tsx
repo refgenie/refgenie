@@ -4,7 +4,6 @@ import { SequencePicker } from './SequencePicker';
 import { downloadSnippets } from '../../utils/codeSnippets';
 import { installCommand } from '../../utils/install';
 import { formatBytes } from '../../utils/format';
-import { approxBytes, savingText } from '../../utils/fastaDownload';
 import { useUiConfig } from '../../hooks/useUiConfig';
 import type { FastaDownloadState } from '../../hooks/useFastaDownload';
 
@@ -75,7 +74,7 @@ export function GenomeDownloadPanel({
           {count === null || totalBytes === null || estimatedBytes === null
             ? 'Working out the size…'
             : `${count.toLocaleString()} ${count === 1 ? 'sequence' : 'sequences'}, ` +
-              `about ${approxBytes(estimatedBytes)} compressed ` +
+              `about ${formatBytes(estimatedBytes)} compressed ` +
               `(${formatBytes(totalBytes)} uncompressed). `}
           Saved as a bgzip-compressed .fa.gz, built in your browser from the refget store.
         </p>
@@ -90,7 +89,9 @@ export function GenomeDownloadPanel({
           </button>
           {saving && (
             <>
-              <span role="status">{savingText(status.fraction, status.written)}</span>
+              <span role="status">
+                Saving… {Math.floor(status.fraction * 100)}% · {formatBytes(status.written)}
+              </span>
               <button type="button" className="rg-btn rg-btn--sm" onClick={download.cancel}>
                 Cancel
               </button>

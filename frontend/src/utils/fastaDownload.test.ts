@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  approxBytes,
   estimateFastaGzBytes,
   primaryChromosomes,
   refgetExportCommand,
@@ -71,16 +70,8 @@ describe('refgetExportCommand', () => {
   });
 });
 
-describe('estimateFastaGzBytes and approxBytes', () => {
+describe('estimateFastaGzBytes', () => {
   it('puts hg38 at about 0.9 GB', () => {
-    expect(approxBytes(estimateFastaGzBytes(3_099_922_541))).toBe('0.9 GB');
-  });
-  it('rounds to two figures, moving up a unit from half of it', () => {
-    expect(approxBytes(300)).toBe('300 B');
-    expect(approxBytes(600)).toBe('0.6 KB');
-    expect(approxBytes(12_345)).toBe('12 KB');
-    expect(approxBytes(300 * 1024 ** 2)).toBe('300 MB');
-    expect(approxBytes(640 * 1024 ** 2)).toBe('0.6 GB');
-    expect(approxBytes(2.5 * 1024 ** 3)).toBe('2.5 GB');
+    expect(estimateFastaGzBytes(3_099_922_541)).toBe(929_976_762);
   });
 });
