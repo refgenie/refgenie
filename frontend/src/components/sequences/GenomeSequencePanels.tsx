@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import {
-  useGenomeComparison,
-  useGenomeSequences,
-} from '../../hooks/queries/useGenomeSequences';
+import { useGenomeSequences } from '../../hooks/queries/useGenomeSequences';
 import type { CompareCandidate } from '../../utils/compareCandidates';
 import { ErrorState, LoadingState } from '../common/states';
 import { CodeSnippets } from '../common/CodeSnippets';
@@ -215,25 +212,13 @@ export function ComparePanel({
   candidates,
 }: GenomePanelProps & { candidates: CompareCandidate[] | null }) {
   const sequences = useGenomeSequences(digest);
-  const [compareWith, setCompareWith] = useState<string>('');
-  const comparison = useGenomeComparison(digest, compareWith || undefined);
-
   if (sequences.error) {
     return <ErrorState error={sequences.error} onRetry={() => sequences.refetch()} />;
   }
-  const data = sequences.data;
   return (
     <div>
-      <CompareGenomes
-        digest={digest}
-        candidates={candidates ?? []}
-        comparison={comparison.data}
-        loading={comparison.isPending}
-        error={comparison.error}
-        onSelect={setCompareWith}
-        selected={compareWith || undefined}
-      />
-      <CompareFasta digest={digest} sequences={data?.sequences} />
+      <CompareGenomes digest={digest} candidates={candidates ?? []} />
+      <CompareFasta digest={digest} sequences={sequences.data?.sequences} />
     </div>
   );
 }

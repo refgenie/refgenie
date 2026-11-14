@@ -1,32 +1,23 @@
 // Ported from repos/refget/frontend/src/pages/ComparisonView.tsx @ c0d3e09; keep the two in step.
 
+import { useState } from 'react';
+import { useGenomeComparison } from '../../hooks/queries/useGenomeSequences';
 import { FormField } from '../common/FormField';
 import { ErrorState, LoadingState } from '../common/states';
 import { ScopedLink } from '../common/ScopedLink';
 import { ComparisonResult } from './ComparisonResult';
-import type { SeqcolComparison } from './types';
 import type { CompareCandidate } from '../../utils/compareCandidates';
-
-export interface CompareGenomesProps {
-  digest: string;
-  candidates: CompareCandidate[];
-  comparison?: SeqcolComparison;
-  loading: boolean;
-  error: unknown;
-  onSelect: (other: string) => void;
-  selected?: string;
-}
 
 /** Pick another genome and read how its sequence collection relates to this one. */
 export function CompareGenomes({
   digest,
   candidates,
-  comparison,
-  loading,
-  error,
-  onSelect,
-  selected,
-}: CompareGenomesProps) {
+}: {
+  digest: string;
+  candidates: CompareCandidate[];
+}) {
+  const [selected, setSelected] = useState('');
+  const comparison = useGenomeComparison(digest, selected || undefined);
   const options = candidates.filter((c) => c.digest !== digest);
   const other = options.find((c) => c.digest === selected);
 
@@ -51,7 +42,7 @@ export function CompareGenomes({
               onFocus={(event) => event.target.select()}
               onChange={(event) => {
                 const match = options.find((c) => c.label === event.target.value);
-                if (match) onSelect(match.digest);
+                if (match) setSelected(match.digest);
               }}
             />
             <datalist id="compare-genome-list">
@@ -62,12 +53,12 @@ export function CompareGenomes({
           </FormField>
         )}
 
-        {selected && loading && <LoadingState label="Comparing" />}
-        {selected && !!error && <ErrorState error={error} />}
+        {selected && comparison.isPending && <LoadingState label="Comparing" />}
+        {selected && !!comparison.error && <ErrorState error={comparison.error} />}
 
-        {selected && comparison && (
+        {selected && comparison.data && (
           <ComparisonResult
-            comparison={comparison}
+            comparison={comparison.data}
             caption={
               <>
                 Compared with{' '}
