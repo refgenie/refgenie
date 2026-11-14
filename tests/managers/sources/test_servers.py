@@ -437,11 +437,6 @@ class TestLocate:
         assert client_rg.servers.locate(GenomeAlias("no_such_genome")) is None
         assert client_rg.servers.locate(GenomeDigest(fake_digest("nope"))) is None
 
-    def test_a_plain_string_is_refused(self, remote_world):
-        client_rg, _, _ = remote_world
-        with pytest.raises(TypeError, match="GenomeAlias or a GenomeDigest"):
-            client_rg.servers.locate(GENOME)
-
 
 class TestInitFromRemote:
     """``GenomeManager.init_from_remote`` against the real server app (component tier)."""

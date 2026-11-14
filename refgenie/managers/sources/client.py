@@ -438,13 +438,10 @@ class GenomeClient(_ListResourceClient):
 
     def compare(self, digest: str, other: str) -> dict:
         """The server's GA4GH seqcol comparison of two genomes it serves."""
-        response = self._transport.get(
+        return self._transport.get(
             operation_id=API_ID_GENOME_COMPARE,
             url_format_params={"digest": digest, "other": other},
         )
-        if not isinstance(response, dict):
-            raise ValueError(f"Unexpected compare response from {self._transport.server_url}")
-        return response
 
 
 class AliasClient(_ListResourceClient):
