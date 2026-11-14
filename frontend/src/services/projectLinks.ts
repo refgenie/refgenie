@@ -54,7 +54,7 @@ export const CITATIONS: readonly Citation[] = [
 
 const REGISTRY_ISSUES = 'https://github.com/refgenie/refgenie-registry/issues/new';
 
-/** Plan 6's asset form; field ids `genome` and `genome_digest`. */
+/** refgenie-registry's asset request form; field ids `genome` and `genome_digest`. */
 export function assetRequestUrl(genome: string | undefined, digest: string): string {
   const q = new URLSearchParams({ template: 'asset_request.yml' });
   if (genome) q.set('genome', genome);
@@ -62,7 +62,7 @@ export function assetRequestUrl(genome: string | undefined, digest: string): str
   return `${REGISTRY_ISSUES}?${q}`;
 }
 
-/** Plan 6's genome form; field id `genome`. */
+/** refgenie-registry's genome proposal form; field id `genome`. */
 export function genomeRequestUrl(genome: string): string {
   return `${REGISTRY_ISSUES}?${new URLSearchParams({ template: 'genome_proposal.yml', genome })}`;
 }

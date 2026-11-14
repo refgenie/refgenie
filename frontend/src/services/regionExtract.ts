@@ -4,14 +4,8 @@
  * Only the bytes covering the region are fetched (an HTTP `Range:` request on
  * the sequence's bit-packed `.seq` file) and decoded with the same
  * `@databio/gtars` wasm module the FASTA download uses, so a 500-base read
- * costs a few hundred bytes, not a chromosome.
- *
- * Ported from the RefgetStore Explorer's extractSequence.ts, which wraps
- * gtars' `RemoteRefgetStore`. That class caches in OPFS through
- * `navigator.storage`, which browsers only offer on https or localhost; a
- * refgenie server on plain http would fail. This module reuses the FASTA
- * download's range reader instead: same wasm calls, one wasm copy, and a
- * `fetch` that tests can swap.
+ * costs a few hundred bytes, not a chromosome. Not gtars' `RemoteRefgetStore`:
+ * it caches in OPFS, which browsers offer only on https or localhost.
  */
 
 import {

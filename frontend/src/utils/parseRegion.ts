@@ -8,12 +8,8 @@
  *   "chrM"                      the whole sequence
  *
  * Input coordinates are 1-based and inclusive, like `samtools faidx`. The
- * result is 0-based and half-open, the form the store reads take.
- *
- * Adapted from the RefgetStore Explorer's parseRegion (which reads 0-based,
- * half-open coordinates and assumes the sequence is already chosen). Here the
- * sequence name is part of the input and is matched against sequence names
- * and their aliases.
+ * result is 0-based and half-open, the form the store reads take. The
+ * sequence name is matched against sequence names and their aliases.
  */
 
 /** The most bases one in-browser extraction may return. */
