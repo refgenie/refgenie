@@ -30,11 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- `getseq` reads a text region as 1-based and inclusive, like samtools, UCSC
-  and IGV, and the website's Extract tab: `chr17:43,044,295-43,044,394` is 100
-  bases (commas are fine). `--zero-based` reads it as 0-based and half-open.
-  Separate start and end numbers (the HTTP API, MCP, Python) stay 0-based and
-  half-open, like GA4GH refget. getseq says on stderr how it read the region.
+- `getseq` reads a text region as 1-based and inclusive, like samtools and the
+  website (commas are fine), and says on stderr how it read it; `--zero-based`
+  reads a BED-style region. Start/end numbers (API, MCP, Python) stay 0-based.
 - `list` and `listr` name each genome once, by its shortest plain alias;
   `--json` has every alias and the digest.
 - MCP `get_asset` over stdio gives `seek_command` (the asset is already here);

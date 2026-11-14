@@ -7,12 +7,6 @@ Refgenie follows one rule everywhere it reads a region of a genome:
 
 To turn a text region into start and end numbers, subtract 1 from the start and keep the end.
 
-| You have | Example | Read as |
-|---|---|---|
-| A region as text | `chr17:43,044,295-43,044,394` | 1-based, inclusive |
-| Start and end numbers | `start=43044294`, `end=43044394` | 0-based, half-open |
-| A BED line | `chr17 43044294 43044394` | 0-based, half-open |
-
 ## The same 100 bases, four ways
 
 These all return the first 100 bases of BRCA1 in `hg38`, starting `TGGAAGTGTTTGCTACCAAG`.

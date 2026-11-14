@@ -56,15 +56,10 @@ pip install "refgenie[mcp]>=1.0.0a2"
 claude mcp add refgenie "$(which refgenie-mcp)"
 ```
 
-`"$(which refgenie-mcp)"` saves the full path, so the server starts even when
-refgenie's virtual environment is not active; run the line with it active.
-`refgenie-mcp` reads the same `REFGENIE_*` variables as the CLI.
-`REFGENIE_HOME_PATH` picks the refgenie folder (default `~/.refgenie`). To use
-another folder, put `-e` after the server name and `--` before the command:
-`claude mcp add refgenie -e REFGENIE_HOME_PATH=/data/refgenie -- "$(which refgenie-mcp)"`.
-If you set `REFGENIE_DB_CONFIG_PATH` for the CLI, pass it the same way. Other
-clients take the full path as `command` and the variables in the server's `env`
-block. The public server also offers the same tools over HTTP, with nothing
+Run it with refgenie's environment active, so the full path is saved.
+`refgenie-mcp` reads the same `REFGENIE_*` variables as the CLI; for another
+folder: `claude mcp add refgenie -e REFGENIE_HOME_PATH=/data/refgenie -- "$(which refgenie-mcp)"`.
+Other clients take the path as `command` and the variables in `env`. The public server also offers the same tools over HTTP, with nothing
 installed:
 
 ```bash
@@ -239,18 +234,10 @@ The first call registers hg38 from your server; no FASTA is downloaded. Over
 MCP: `get_sequence(alias="hg38", name="chr17", start=43044294, end=43044394)`.
 In Python: `rgc.sequence.get(rgc.alias.resolve("hg38"), "chr17", 43044294, 43044394)`.
 
-The coordinate rule:
-
-- A region written as text (`getseq -l`) is **1-based and inclusive**, like
-  samtools, UCSC and IGV. Commas are allowed.
-- Separate start and end numbers (MCP `get_sequence`, the Python API) are
-  **0-based and half-open**, like the GA4GH refget API and BED files. To get
-  them from a text region, subtract 1 from the start and keep the end.
-- `getseq --zero-based` reads a text region as 0-based and half-open, for
-  coordinates taken from a BED file. `getseq` prints how it read the region on
-  stderr.
-
-Details: <https://docs.refgenie.org/refgenie/coordinates/>.
+Text regions (`getseq -l`) are 1-based and inclusive, like samtools; start
+and end numbers (MCP, Python) are 0-based and half-open, like GA4GH refget:
+subtract 1 from the start. `getseq --zero-based` reads a BED-style region.
+<https://docs.refgenie.org/refgenie/coordinates/>
 
 ### Check whether two genomes match
 

@@ -71,33 +71,29 @@ refgenie seek hg38/fasta_index.chrom_sizes   # prints the local path
   </div>
 </div>
 
-<div id="stats"></div>
+<div id="stats" hidden>
+  <div class="stat-card">
+    <div class="stat-value" id="stat-bytes"></div>
+    <div class="stat-label">TOTAL DATA SERVED</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value" id="stat-requests"></div>
+    <div class="stat-label">TOTAL REQUESTS SERVED</div>
+  </div>
+</div>
 
 <script>
 {`
-// The stat cards are added only once the numbers load, so a blocked or
-// failed request never leaves empty placeholder cards on the page.
+// The cards stay hidden unless the numbers load.
 fetch('https://stats.databio.org/stats/aws/summary.json')
   .then(r => r.json())
   .then(d => {
     if (!(d.BytesDownloaded > 0) || !(d.AllRequests > 0)) return;
+    document.getElementById('stat-bytes').textContent = (d.BytesDownloaded / 1e12).toFixed(1) + ' TB';
+    document.getElementById('stat-requests').textContent = (d.AllRequests / 1e6).toFixed(1) + ' million';
     const stats = document.getElementById('stats');
-    stats.className = 'stats-container';
-    [
-      [(d.BytesDownloaded / 1e12).toFixed(1) + ' TB', 'TOTAL DATA SERVED'],
-      [(d.AllRequests / 1e6).toFixed(1) + ' million', 'TOTAL REQUESTS SERVED'],
-    ].forEach(([value, label]) => {
-      const card = document.createElement('div');
-      card.className = 'stat-card';
-      const v = document.createElement('div');
-      v.className = 'stat-value';
-      v.textContent = value;
-      const l = document.createElement('div');
-      l.className = 'stat-label';
-      l.textContent = label;
-      card.append(v, l);
-      stats.append(card);
-    });
+    stats.className = 'stats-container';  // its display: flex would override hidden
+    stats.hidden = false;
   })
   .catch(() => {});
 

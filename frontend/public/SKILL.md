@@ -326,11 +326,9 @@ curl -s "$BASE/v4/genomes/$D/sequences" | jq -r '.sequences[] | "\(.name)\t\(.le
 
 The HTTP API has no sequence endpoint. For the bases of a region over MCP, call
 `get_sequence(alias="hg38", name="chr17", start=43044294, end=43044394)`.
-`start` and `end` are 0-based and half-open, like the GA4GH refget API and BED
-files. A region written as text, such as `chr17:43,044,295-43,044,394` from a
-genome browser or the refgenie.org Extract tab, is 1-based and inclusive:
-subtract 1 from its start and keep its end. See
-<https://docs.refgenie.org/refgenie/coordinates/>.
+`start` and `end` are 0-based and half-open, like GA4GH refget; for a 1-based
+text region (`chr17:43,044,295-43,044,394`), subtract 1 from the start.
+<https://docs.refgenie.org/refgenie/coordinates/>
 
 ---
 
@@ -366,16 +364,10 @@ pip install "refgenie[mcp]>=1.0.0a2"
 claude mcp add refgenie "$(which refgenie-mcp)"
 ```
 
-`"$(which refgenie-mcp)"` saves the full path, so the server starts even when
-refgenie's virtual environment is not active; run the line with it active.
-`refgenie-mcp` reads the same `REFGENIE_*` variables as the refgenie CLI.
-`REFGENIE_HOME_PATH` picks the user's refgenie folder (default `~/.refgenie`).
-To use another folder, put `-e` after the server name and `--` before the
-command:
-`claude mcp add refgenie -e REFGENIE_HOME_PATH=/data/refgenie -- "$(which refgenie-mcp)"`.
-If `REFGENIE_DB_CONFIG_PATH` is set for the CLI, pass it the same way. Other
-clients take the full path as `command` and the variables in the server's `env`
-block.
+Run it with refgenie's environment active, so the full path is saved.
+`refgenie-mcp` reads the same `REFGENIE_*` variables as the CLI; for another
+folder: `claude mcp add refgenie -e REFGENIE_HOME_PATH=/data/refgenie -- "$(which refgenie-mcp)"`.
+Other clients take the path as `command` and the variables in `env`.
 
 The tools:
 
