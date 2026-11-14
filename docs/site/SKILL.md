@@ -21,7 +21,7 @@ so pipelines can switch genomes without code changes:
 
 - `refgenie pull hg38/bwa_index` downloads a pre-built asset from a server.
 - `refgenie build mygenome/bowtie2_index` builds an asset locally.
-- `refgenie seek hg38/salmon_index` prints the local path to an asset.
+- `refgenie seek hg38/bwa_index` prints the local path to an asset.
 
 Refgenie stores its catalog in a database (SQLite by default, PostgreSQL for
 large servers) and identifies genomes by **GA4GH digests computed from their
@@ -73,7 +73,7 @@ claude mcp add --transport http refgenie-public https://api.refgenie.org/mcp
 | `search_genomes` | substring search over digest, alias, species names, other genome names, description, accession |
 | `get_genome` | one genome by `alias` or `digest`, with its FHR metadata |
 | `list_assets` | assets, optionally of one genome and/or `asset_class` |
-| `get_asset` | one asset by digest: seek keys, parents, children, local path, `pull_command` (server) or `seek_command` (stdio) |
+| `get_asset` | one asset by digest: seek keys, parents, children, `files`, and `pull_command` (server) or `seek_command` (stdio) |
 | `list_asset_classes` | asset classes and their seek key names |
 | `list_recipes` | recipes, optionally by `output_asset_class` |
 | `get_recipe` | one recipe in full: inputs, command templates, docker image |
@@ -208,10 +208,8 @@ conda install -c bioconda bowtie2=2.5.5           # or any installer; match the 
 bowtie2 -x "$(refgenie seek yeast_s288c/bowtie2_index)" -U reads.fq -S out.sam
 ```
 
-`refgenie seek <genome>/bowtie2_index.version` prints the version to match. No
-conda? Download the prebuilt binary for that version from the tool's GitHub
-releases (bowtie2: <https://github.com/BenLangmead/bowtie2/releases>), unzip
-it, and put its folder on your `PATH`.
+No conda? Use the prebuilt binary of that version from the tool's GitHub
+releases (bowtie2: <https://github.com/BenLangmead/bowtie2/releases>).
 
 ### Chromosome sizes without the genome
 
@@ -246,13 +244,9 @@ refgenie compare hg38 hg38_noalt_decoy   # works for genomes you have not pulled
 refgenie compare sacCer3 R64-1-1 --json  # the full GA4GH comparison
 ```
 
-`compare` prints a one-line summary, for example
-`Same 17 sequences in the same order; all 17 names differ: chrI->I, ...`,
-then a rename map with one `old -> new` line for each sequence that has another
-name in the second genome. `--json` gives the summary, the rename map and the
-full GA4GH sequence-collection comparison. In that comparison: same `sequences`
-and `names` means the same genome; same `sequences` but different `names` means
-renamed; shared `name_length_pairs` means the same coordinates.
+`compare` prints one sentence, such as `Same 17 sequences in the same order; all
+17 names differ: chrI->I, ...`, then each renamed sequence. See
+<https://docs.refgenie.org/refgenie/compare/>.
 
 Not sure which hg38 to pull? See the [choosing hg38 page](https://docs.refgenie.org/refgenie/choosing_hg38/).
 

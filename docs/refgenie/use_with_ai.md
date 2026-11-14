@@ -40,7 +40,7 @@ pip install "refgenie[mcp]>=1.0.0a2"
 claude mcp add refgenie "$(which refgenie-mcp)"
 ```
 
-`"$(which refgenie-mcp)"` saves the full path to the command, so Claude Code can start it even when refgenie's virtual environment is not active. Run the line with the environment active. To use a refgenie folder other than `~/.refgenie`, see [Connect AI assistants (MCP)](mcp.md).
+Run it with refgenie's environment active. For another refgenie folder, see [Connect AI assistants (MCP)](mcp.md).
 
 Then ask things like:
 

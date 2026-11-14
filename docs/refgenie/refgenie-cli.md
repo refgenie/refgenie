@@ -615,7 +615,7 @@ Export a publish catalog covering pushed assets only, for a server to import.
 
 ```
 refgenie catalog-export [--dest PATH] [--https-prefix URL]
-    [--catalog-store-name NAME --catalog-store-url URL [--catalog-store-priority N]]
+    [--catalog-store-name NAME --catalog-store-url URL]
 ```
 
 | Option | Description |
@@ -624,18 +624,11 @@ refgenie catalog-export [--dest PATH] [--https-prefix URL]
 | `--https-prefix` | Public https base URL mirroring the stage folder that `refgenie push` uploaded to, e.g. `https://<bucket>.s3.amazonaws.com/assets`. Download links are served from here. |
 | `--catalog-store-name` | Name of the public store that holds the genomes this node built itself, e.g. `refgenie-main`. Those genomes belong to no registered store; the catalog lists them under this one. |
 | `--catalog-store-url` | Public root URL of that store. Required with `--catalog-store-name`. |
-| `--catalog-store-priority` | Priority of that store. Defaults to `30`. |
 
-The catalog carries the [store list](#store): every enabled `remote` store in
-the database, plus the catalog store if one is named. `on_disk` stores are left
-out, since their URL is a path on this machine. A disabled store is left out
-too, along with its genomes and their aliases, assets and download records; the
-export logs how many genomes it omitted for each such store. Enable the store
-again (`refgenie store apply`) and the next export carries them. A server that
-imports the catalog adds or updates the listed stores and disables any store
-the catalog does not list. The export fails if a genome belongs to any other
-store it does not publish (an `on_disk` store, or one missing from the store
-table), because the server could not import that genome.
+The catalog carries the [store list](#store): every enabled `remote` store,
+plus the catalog store if one is named. Disabled stores are left out with their
+genomes. The export fails if a genome belongs to a store it cannot publish (an
+`on_disk` store, or one missing from the store table).
 
 #### `catalog-prune`
 
@@ -643,12 +636,9 @@ Delete what a server holds but its publish catalog no longer has. A catalog
 import never deletes assets, genomes or stores, so run this on the server
 after it imports the catalog, with `--dry-run` first. It removes:
 
-- assets of genomes in the catalog that the catalog no longer lists, such as
-  the old copy of an asset rebuilt on the build node, with their names, links
-  and staged rows;
-- genomes the catalog no longer carries that have no assets, with their
-  aliases (such as the genomes of a retired store). A dropped genome that
-  still has assets is listed and kept;
+- assets the catalog no longer lists (such as the old copy of a rebuilt asset);
+- genomes the catalog no longer carries that have no assets, with their aliases
+  (a dropped genome that still has assets is listed and kept);
 - disabled stores left with no genome.
 
 A catalog with no genomes deletes no genomes.

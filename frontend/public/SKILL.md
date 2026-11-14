@@ -311,11 +311,9 @@ breaks the counts down per species.
 ## Workflow 3: verify genome identity
 
 Two genomes are the same genome if their sequence-collection digests match,
-whatever they are called. `GET /v4/aliases/{name}` returns the level-2
-sequence collection (`names`, `lengths`, `sequences`) in its `collection`
-field, which is often enough to compare. For full comparisons on a
-server-mode instance, use the GA4GH sequence-collections service at `/seqcol`
-(start from `GET /seqcol/service-info`).
+whatever they are called. To compare two, call
+`GET /v4/genomes/{digest}/compare/{other}`: it returns one sentence on how they
+differ (`summary`), the renamed sequences (`name_map`) and the GA4GH comparison.
 
 ## Workflow 4: chromosome sizes without the genome
 
@@ -356,18 +354,8 @@ Use `/mcp` exactly, with no trailing slash. Only server mode has `/mcp`;
 check `"mode": "server"` in `/service-info` first.
 
 **Over stdio, against the user's own database**, with the `refgenie-mcp`
-command from the refgenie package. It needs the `mcp` extra, or the `server`
-extra, which includes `dash` and `mcp`:
-
-```bash
-pip install "refgenie[mcp]>=1.0.0a2"
-claude mcp add refgenie "$(which refgenie-mcp)"
-```
-
-Run it with refgenie's environment active, so the full path is saved.
-`refgenie-mcp` reads the same `REFGENIE_*` variables as the CLI; for another
-folder: `claude mcp add refgenie -e REFGENIE_HOME_PATH=/data/refgenie -- "$(which refgenie-mcp)"`.
-Other clients take the path as `command` and the variables in `env`.
+command from `pip install "refgenie[mcp]>=1.0.0a2"`; setup is in the CLI
+[SKILL.md](https://docs.refgenie.org/SKILL.md).
 
 The tools:
 
