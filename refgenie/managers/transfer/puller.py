@@ -13,6 +13,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import httpx2
 from ubiquerg import untar  # type: ignore
 
 from refgenie import progress
@@ -104,10 +105,11 @@ def _unresolved_alias_reason(
     """
     try:
         client.alias.resolve(alias)
-    except Exception as e:  # noqa: BLE001 - reported to the user
-        # By status, not class: an injected test client raises httpx2's error.
-        if getattr(getattr(e, "response", None), "status_code", None) != 404:
+    except httpx2.HTTPStatusError as e:
+        if e.response.status_code != 404:
             return f"Could not resolve genome alias '{alias}' via server {server_url}: {e}"
+    except Exception as e:  # noqa: BLE001 - reported to the user
+        return f"Could not resolve genome alias '{alias}' via server {server_url}: {e}"
     else:
         return f"Could not resolve genome alias '{alias}' via server {server_url}."
     try:

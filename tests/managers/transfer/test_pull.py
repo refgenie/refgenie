@@ -1106,14 +1106,14 @@ class TestPullFailures:
     def test_a_client_side_error_is_not_blamed_on_the_server(self, mock_puller):
         """A connection error during alias resolution is reported as itself,
         even when the server's alias listing would name the genome."""
-        import httpx
+        import httpx2
 
         from refgenie.exceptions import MissingAliasError, PullFailedError
 
         mock_puller._alias_manager.resolve.side_effect = MissingAliasError("testgenome")
         mock_puller._genome_manager.ensure_from_remote.return_value = None
         client = mock_puller._servers.client.return_value
-        client.alias.resolve.side_effect = httpx.ConnectError("Name or service not known")
+        client.alias.resolve.side_effect = httpx2.ConnectError("Name or service not known")
         client.alias.list.return_value = [{"name": "testgenome", "genome_digest": "d"}]
 
         with pytest.raises(PullFailedError, match="Name or service not known") as info:

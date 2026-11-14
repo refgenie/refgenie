@@ -285,7 +285,7 @@ class TestCLIScenarios:
         /v4/archives listing -- the same metadata the production puller
         verifies downloads against.
         """
-        import httpx
+        import httpx2
 
         server = refgenie_serve_subprocess
 
@@ -313,12 +313,12 @@ class TestCLIScenarios:
         assert len(result.stdout.strip()) > 0
 
         # -- Server healthcheck --
-        response = httpx.get(f"{server['url']}/v4/healthcheck")
+        response = httpx2.get(f"{server['url']}/v4/healthcheck")
         assert response.status_code == 200
         assert response.json()["status"] == "ok"
 
         # -- Genome list --
-        response = httpx.get(f"{server['url']}/v4/genomes")
+        response = httpx2.get(f"{server['url']}/v4/genomes")
         assert response.status_code == 200
         genomes = response.json()["results"]
         assert len(genomes) >= 1
@@ -327,7 +327,7 @@ class TestCLIScenarios:
 
         # -- Asset list --
         genome_digest = server["genome_digest"]
-        response = httpx.get(f"{server['url']}/v4/assets", params={"genome_digest": genome_digest})
+        response = httpx2.get(f"{server['url']}/v4/assets", params={"genome_digest": genome_digest})
         assert response.status_code == 200
         assets = response.json()["results"]
         assert len(assets) >= 1
@@ -336,12 +336,12 @@ class TestCLIScenarios:
 
         # -- Download + checksum --
         archive_digest = server["archive_digest"]
-        resp = httpx.get(f"{server['url']}/v4/archives/{archive_digest}/download")
+        resp = httpx2.get(f"{server['url']}/v4/archives/{archive_digest}/download")
         assert resp.status_code == 200
         downloaded_content = resp.content
         assert len(downloaded_content) > 0
 
-        listing = httpx.get(f"{server['url']}/v4/archives", params={"digest": archive_digest})
+        listing = httpx2.get(f"{server['url']}/v4/archives", params={"digest": archive_digest})
         assert listing.status_code == 200
         records = listing.json()["results"]
         assert len(records) == 1
@@ -371,10 +371,10 @@ class TestCLIScenarios:
 
     def test_cli_pull_operations(self, refgenie_serve_subprocess, bulk_pull_client_env):
         """Scenario 5: All pull variants in one test."""
-        import httpx
+        import httpx2
 
         # -- Server healthcheck --
-        response = httpx.get(f"{refgenie_serve_subprocess['url']}/v4/healthcheck")
+        response = httpx2.get(f"{refgenie_serve_subprocess['url']}/v4/healthcheck")
         assert response.status_code == 200
 
         # -- Pull single genome --

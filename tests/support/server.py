@@ -128,7 +128,7 @@ def serve_refgenie(client_rg, server_rg, *urls):
     """Serve the real app for ``server_rg`` over an in-process ASGI TestClient
     and register it on ``client_rg.servers`` under each URL.
 
-    No sockets, no uvicorn: FastAPI's TestClient IS an httpx.Client over an
+    No sockets, no uvicorn: FastAPI's TestClient IS an httpx2.Client over an
     ASGI transport, and RefgenieserverClient accepts an injected http_client.
     Yields inside the live TestClient context.
     """

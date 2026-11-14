@@ -261,10 +261,10 @@ def _local_copy(source: str):
     if not source.startswith(("http://", "https://")):
         yield source
         return
-    import httpx
+    import httpx2
 
     with tempfile.NamedTemporaryFile(suffix=".sqlite", delete=False) as tmp:
-        with httpx.stream("GET", source, follow_redirects=True, timeout=60) as resp:
+        with httpx2.stream("GET", source, follow_redirects=True, timeout=60) as resp:
             resp.raise_for_status()
             for chunk in resp.iter_bytes():
                 tmp.write(chunk)

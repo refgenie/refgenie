@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import httpx
+import httpx2
 import pytest
 
 from refgenie import Refgenie
@@ -117,10 +117,10 @@ class TestServerClientPagination:
         client.get = MagicMock(
             side_effect=[
                 {"results": [{"id": 1}, {"id": 2}], "pagination": {"total": 3}},
-                httpx.ReadTimeout("page 2 timed out"),
+                httpx2.ReadTimeout("page 2 timed out"),
             ]
         )
-        with pytest.raises(httpx.ReadTimeout):
+        with pytest.raises(httpx2.ReadTimeout):
             client.get_paginated("some_operation", page_size=2)
 
     def test_complete_pagination_returns_all_pages(self):
@@ -149,14 +149,14 @@ class TestServerClientPagination:
     def test_unreachable_server_raises_at_construction(self):
         """An unreachable server must not yield a silently broken client.
 
-        Regression: __init__ caught httpx.ConnectError, logged, and handed back
+        Regression: __init__ caught httpx2.ConnectError, logged, and handed back
         a fully-constructed object that failed later with an unrelated message.
         """
-        transport = httpx.MockTransport(
-            lambda request: (_ for _ in ()).throw(httpx.ConnectError("no route"))
+        transport = httpx2.MockTransport(
+            lambda request: (_ for _ in ()).throw(httpx2.ConnectError("no route"))
         )
-        http_client = httpx.Client(transport=transport)
-        with pytest.raises(httpx.ConnectError):
+        http_client = httpx2.Client(transport=transport)
+        with pytest.raises(httpx2.ConnectError):
             RefgenieserverClient("http://unreachable.example.com", http_client=http_client)
 
 

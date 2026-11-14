@@ -52,7 +52,7 @@ dependencies = [
     "alembic>=1.20.1",
     "cryptography>=50.0.2",
     "gtars>=0.11.2",
-    "httpx>=0.28.1,<1",
+    "httpx2>=2.16.0",
     "jinja2>=3.1.6",
     "piper>=0.15.1",
     # PostgresConfig is a first-class base config type (refgenie/config/db.py),
