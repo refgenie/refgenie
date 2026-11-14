@@ -99,22 +99,19 @@ class StoreManager(ResourceManager):
         with self._database_session as session:
             return genome_queries.count_by_store(session)
 
-    def apply_declaration(
-        self, declared: list[dict], disable_missing: bool = False
-    ) -> dict[str, list[str]]:
+    def apply_declaration(self, declared: list[dict]) -> dict[str, list[str]]:
         """
         Idempotently upsert each declared store into the registry.
 
         Insert if new; update url/type/priority/enabled/description when they
-        drift. Rows are never deleted (genomes keep a foreign key to them).
-        With ``disable_missing``, every existing store not in the declaration
-        is set ``enabled=False``. An entry with no name or url, or with the
-        reserved name, is logged and skipped.
+        drift. Every existing store not in the declaration is set
+        ``enabled=False``; rows are never deleted (genomes keep a foreign key
+        to them). An entry with no name or url, or with the reserved name, is
+        logged and skipped.
 
         Args:
             declared: Store objects, each ``{"name", "url", "type"?,
                 "priority"?, "description"?, "enabled"?}``.
-            disable_missing: Disable stores the declaration does not list.
 
         Returns:
             Store names by change: ``{"added", "updated", "disabled"}``.
@@ -155,12 +152,11 @@ class StoreManager(ResourceManager):
                         setattr(existing, k, v)
                     changes["updated"].append(name)
                     logger.info(f"Updated store '{name}'")
-            if disable_missing:
-                for store in queries.list_all(session, enabled_only=True):
-                    if store.name not in declared_names:
-                        store.enabled = False
-                        changes["disabled"].append(store.name)
-                        logger.info(f"Disabled store '{store.name}' (not declared)")
+            for store in queries.list_all(session, enabled_only=True):
+                if store.name not in declared_names:
+                    store.enabled = False
+                    changes["disabled"].append(store.name)
+                    logger.info(f"Disabled store '{store.name}' (not declared)")
             session.commit()
         return changes
 

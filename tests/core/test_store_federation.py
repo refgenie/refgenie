@@ -88,12 +88,6 @@ class TestStoreRegistry:
         assert changes == {"added": ["igenomes"], "updated": ["vgp"], "disabled": []}
         assert rg.store.get("vgp").url == "url://v2"
 
-    def test_apply_declaration_keeps_undeclared_stores_by_default(self):
-        rg = server_with_stores()
-        rg.store.add("jungle", "url://j", StoreType.remote, priority=10)
-        rg.store.apply_declaration([{"name": "vgp", "url": "url://v"}])
-        assert rg.store.get("jungle").enabled
-
     def test_apply_declaration_disables_missing(self):
         """Undeclared stores are disabled, never deleted: genomes keep their FK."""
         rg = server_with_stores()
@@ -101,26 +95,20 @@ class TestStoreRegistry:
         rg.store.add("old", "url://o", StoreType.remote, priority=50)
         rg.genome.add("D" * 32, "owned by old", [], store_name="old")
 
-        changes = rg.store.apply_declaration(
-            [{"name": "jungle", "url": "url://j", "priority": 10}], disable_missing=True
-        )
+        changes = rg.store.apply_declaration([{"name": "jungle", "url": "url://j", "priority": 10}])
 
         assert changes == {"added": [], "updated": [], "disabled": ["old"]}
         assert [s.name for s in rg.store.list_all()] == ["jungle", "old"]
         assert [s.name for s in rg.store.enabled_stores()] == ["jungle"]
         assert rg.genome.get("D" * 32).store_name == "old"
         # Applying the same file again changes nothing.
-        again = rg.store.apply_declaration(
-            [{"name": "jungle", "url": "url://j", "priority": 10}], disable_missing=True
-        )
+        again = rg.store.apply_declaration([{"name": "jungle", "url": "url://j", "priority": 10}])
         assert again == {"added": [], "updated": [], "disabled": []}
 
     def test_apply_declaration_reenables_a_declared_store(self):
         rg = server_with_stores()
         rg.store.add("vgp", "url://v", StoreType.remote, priority=20, enabled=False)
-        changes = rg.store.apply_declaration(
-            [{"name": "vgp", "url": "url://v", "priority": 20}], disable_missing=True
-        )
+        changes = rg.store.apply_declaration([{"name": "vgp", "url": "url://v", "priority": 20}])
         assert changes["updated"] == ["vgp"]
         assert rg.store.get("vgp").enabled
 

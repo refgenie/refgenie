@@ -143,7 +143,7 @@ class TestStoreSetChangesAtRuntime:
             phage = stores.digest["vgp"]
             assert _serves_collection(client, "/seqcol/vgp", phage)
 
-            rg.store.apply_declaration([stores.row("vgp", enabled=False)])
+            rg.store.apply_declaration([stores.row("jungle"), stores.row("vgp", enabled=False)])
             assert client.app.state.seqcol.refresh() is True
 
             assert _served_stores(client) == ["jungle"]
