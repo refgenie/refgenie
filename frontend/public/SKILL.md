@@ -274,6 +274,13 @@ Step 3 reports each asset's `serving_modes`: `["file"]`, `["archive"]`, or
 both. Use 5a only for an asset staged as `file`, and 5b only for one staged as
 `archive`.
 
+**What `size` means.** An asset's `size` is the total bytes of every file in
+the asset, unpacked. For a `fasta` asset that is the `.fa` plus its `.fai` and
+`.chrom.sizes`. Each seek key in `seek_keys` has its own `size`: that file's
+bytes, the total for a folder, or `null` for a seek key that is a value rather
+than a file. An archive record's `size` (from `GET /v4/archives`) is the
+`.tgz` download, which is compressed and usually smaller.
+
 ## Workflow 2: find out what a server holds
 
 ```bash
