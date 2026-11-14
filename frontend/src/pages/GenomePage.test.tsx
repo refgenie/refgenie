@@ -16,7 +16,7 @@ import {
 
 vi.mock('../services/fastaExport', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../services/fastaExport')>()),
-  loadCollection: async () => ({ seqTemplate: 'sequences/%s2/%s.seq', seqs: [] }),
+  loadSeqTemplate: async () => 'sequences/%s2/%s.seq',
 }));
 
 const DIGEST = '5cb5b9d2d1e2b5e5e2f0a3c4d5e6f708';

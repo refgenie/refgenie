@@ -6,12 +6,11 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
 import {
+  DEFAULT_SEQ_TEMPLATE,
   assertDecodable,
   fastaChunks,
-  fastaSeqsFromRows,
   fastaSize,
-  loadCollection,
-  parseRgsiFull,
+  type FastaSeq,
   type FastaWasm,
 } from './fastaExport';
 import { extractRegion } from './regionExtract';
@@ -28,6 +27,15 @@ const SOURCE = Buffer.from(
   readFileSync(join(FIXTURE, 'source.fa'), 'utf8').replace(/^(>\S+)[^\n]*$/gm, '$1'),
 );
 const DIGEST = readFileSync(join(FIXTURE, 'digest.txt'), 'utf8').trim();
+// The fixture collection, as the API's `/sequences` rows list it.
+const SEQS: FastaSeq[] = readFileSync(join(STORE, 'collections', `${DIGEST}.rgsi`), 'utf8')
+  .split('\n')
+  .filter((line) => line && !line.startsWith('#'))
+  .map((line) => {
+    const [name, length, alphabet, sha512t24u] = line.split('\t');
+    return { name, length: Number(length), alphabet, sha512t24u, description: null };
+  });
+const COLLECTION = { seqTemplate: DEFAULT_SEQ_TEMPLATE, seqs: SEQS };
 
 let wasm: FastaWasm;
 
@@ -85,26 +93,19 @@ async function collect(gen: AsyncGenerator<Uint8Array>): Promise<Buffer> {
 describe('fastaChunks', () => {
   it('writes name-only headers', async () => {
     const out = await collect(
-      fastaChunks({ baseUrl: BASE, digest: DIGEST, wasm, fetchImpl: fixtureFetch }),
+      fastaChunks({ baseUrl: BASE, collection: COLLECTION, wasm, fetchImpl: fixtureFetch }),
     );
     expect(out.toString('utf8')).toContain('>chrB\n');
     expect(out.toString('utf8')).not.toContain('test contig B');
   });
 
   it('exports only the sequences in the collection it is given', async () => {
-    const full = await loadCollection(BASE, DIGEST, fixtureFetch);
     const collection = {
-      ...full,
-      seqs: full.seqs.filter((s) => ['chrB', 'chrE'].includes(s.name)),
+      ...COLLECTION,
+      seqs: SEQS.filter((s) => ['chrB', 'chrE'].includes(s.name)),
     };
     const out = await collect(
-      fastaChunks({
-        baseUrl: BASE,
-        digest: DIGEST,
-        wasm,
-        fetchImpl: fixtureFetch,
-        collection,
-      }),
+      fastaChunks({ baseUrl: BASE, collection, wasm, fetchImpl: fixtureFetch }),
     );
     const headers = out.toString('utf8').match(/^>.*$/gm);
     expect(headers).toEqual(['>chrB', '>chrE']);
@@ -113,7 +114,7 @@ describe('fastaChunks', () => {
 
   it('rebuilds the source FASTA byte for byte', async () => {
     const out = await collect(
-      fastaChunks({ baseUrl: BASE, digest: DIGEST, wasm, fetchImpl: fixtureFetch }),
+      fastaChunks({ baseUrl: BASE, collection: COLLECTION, wasm, fetchImpl: fixtureFetch }),
     );
     expect(out.equals(SOURCE)).toBe(true);
   });
@@ -124,7 +125,7 @@ describe('fastaChunks', () => {
       const out = await collect(
         fastaChunks({
           baseUrl: BASE,
-          digest: DIGEST,
+          collection: COLLECTION,
           wasm,
           fetchImpl: fixtureFetch,
           windowBases,
@@ -139,7 +140,7 @@ describe('fastaChunks', () => {
       collect(
         fastaChunks({
           baseUrl: BASE,
-          digest: DIGEST,
+          collection: COLLECTION,
           wasm,
           fetchImpl: noRangeFetch,
           windowBases: 37,
@@ -153,7 +154,7 @@ describe('fastaChunks', () => {
     await collect(
       fastaChunks({
         baseUrl: BASE,
-        digest: DIGEST,
+        collection: COLLECTION,
         wasm,
         fetchImpl: fixtureFetch,
         windowBases: 100,
@@ -167,7 +168,7 @@ describe('fastaChunks', () => {
     const controller = new AbortController();
     const gen = fastaChunks({
       baseUrl: BASE,
-      digest: DIGEST,
+      collection: COLLECTION,
       wasm,
       fetchImpl: fixtureFetch,
       windowBases: 10,
@@ -181,51 +182,13 @@ describe('fastaChunks', () => {
 
 describe('fastaSize', () => {
   it('equals the source FASTA length', async () => {
-    const { seqs } = await loadCollection(BASE, DIGEST, fixtureFetch);
-    expect(fastaSize(seqs)).toBe(SOURCE.length);
+    expect(fastaSize(SEQS)).toBe(SOURCE.length);
   });
 });
 
-describe('fastaSeqsFromRows', () => {
-  it('lets loadCollection skip the .rgsi', async () => {
-    const fromRgsi = await loadCollection(BASE, DIGEST, fixtureFetch);
-    const known = fastaSeqsFromRows(fromRgsi.seqs);
-    const urls: string[] = [];
-    const spy: typeof fetch = (input, init) => {
-      urls.push(String(input));
-      return fixtureFetch(input, init);
-    };
-    const { seqs } = await loadCollection(BASE, DIGEST, spy, known);
-    expect(seqs).toEqual(fromRgsi.seqs);
-    expect(urls.some((u) => u.endsWith('.rgsi'))).toBe(false);
-  });
-
-  it('gives null when a row has no alphabet', () => {
-    const row = {
-      name: 'c',
-      length: 1,
-      alphabet: null,
-      description: null,
-      sha512t24u: 'x',
-    };
-    expect(fastaSeqsFromRows([row])).toBeNull();
-  });
-});
-
-describe('parseRgsiFull and assertDecodable', () => {
-  it('keeps file order and reads descriptions', async () => {
-    const { seqs } = await loadCollection(BASE, DIGEST, fixtureFetch);
-    expect(seqs.map((s) => s.name)).toEqual(['chrA', 'chrB', 'chrC', 'chrD', 'chrE']);
-    expect(seqs[0].description).toBeNull();
-    expect(seqs[1].description).toBe('test contig B');
-  });
-
+describe('assertDecodable', () => {
   it('names the first sequence with an unsupported alphabet', () => {
-    const seqs = parseRgsiFull(
-      '#name\tlength\talphabet\tsha512t24u\tmd5\tdescription\n' +
-        'chr1\t10\tdna2bit\tAAAA\tmd5\t\n' +
-        'prot1\t5\tprotein\tBBBB\tmd5\t\n',
-    );
+    const seqs = [SEQS[0], { ...SEQS[0], name: 'prot1', alphabet: 'protein' }];
     expect(() => assertDecodable(seqs)).toThrow(/prot1.*protein/);
   });
 });
@@ -239,8 +202,7 @@ describe('extractRegion', () => {
   }
 
   it('reads exact bases for regions of every sequence', async () => {
-    const { seqs } = await loadCollection(BASE, DIGEST, fixtureFetch);
-    for (const seq of seqs) {
+    for (const seq of SEQS) {
       const bases = sourceBases.get(seq.name) as string;
       const spans: [number, number][] = [
         [0, seq.length],
@@ -264,8 +226,7 @@ describe('extractRegion', () => {
   });
 
   it('fetches only the bytes the region needs', async () => {
-    const { seqs } = await loadCollection(BASE, DIGEST, fixtureFetch);
-    const seq = seqs.find((s) => s.name === 'chrD') as (typeof seqs)[number];
+    const seq = SEQS.find((s) => s.name === 'chrD') as FastaSeq;
     const ranges: string[] = [];
     const spy = (async (input: RequestInfo | URL, init?: RequestInit) => {
       const range = new Headers(init?.headers).get('Range');
@@ -286,13 +247,12 @@ describe('extractRegion', () => {
   });
 
   it('refuses a range outside the sequence', async () => {
-    const { seqs } = await loadCollection(BASE, DIGEST, fixtureFetch);
     await expect(
       extractRegion({
         baseUrl: BASE,
-        seq: seqs[0],
+        seq: SEQS[0],
         start: 0,
-        end: seqs[0].length + 1,
+        end: SEQS[0].length + 1,
         wasm,
         fetchImpl: fixtureFetch,
       }),

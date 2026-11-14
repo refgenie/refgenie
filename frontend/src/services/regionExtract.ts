@@ -16,8 +16,8 @@
 
 import {
   DECODABLE,
-  loadCollection,
   loadGtars,
+  loadSeqTemplate,
   readEncodedBases,
   seqUrl,
   type FastaWasm,
@@ -33,20 +33,6 @@ export interface RegionSeq {
 /** True if a sequence's bases can be read by range in the browser. */
 export function isExtractable(alphabet: string | null | undefined): boolean {
   return !!alphabet && DECODABLE.has(alphabet.toLowerCase());
-}
-
-// One manifest read per store: it holds the `.seq` path template.
-const templates = new Map<string, Promise<string>>();
-
-function seqTemplateFor(baseUrl: string, fetchImpl: typeof fetch): Promise<string> {
-  let template = templates.get(baseUrl);
-  if (!template) {
-    // `known: []` skips the collection list; only the manifest is needed.
-    template = loadCollection(baseUrl, '', fetchImpl, []).then((c) => c.seqTemplate);
-    template.catch(() => templates.delete(baseUrl));
-    templates.set(baseUrl, template);
-  }
-  return template;
 }
 
 export interface ExtractRegionArgs {
@@ -82,7 +68,7 @@ export async function extractRegion({
     );
   }
   const [template, gtars] = await Promise.all([
-    seqTemplateFor(baseUrl, fetchImpl),
+    loadSeqTemplate(baseUrl, fetchImpl),
     wasm ?? loadGtars(),
   ]);
   return readEncodedBases({
@@ -94,12 +80,4 @@ export async function extractRegion({
     fetchImpl,
     signal,
   });
-}
-
-/** The store's `.seq` path template, from its manifest. */
-export function sequenceTemplate(
-  baseUrl: string,
-  fetchImpl: typeof fetch = fetch,
-): Promise<string> {
-  return seqTemplateFor(baseUrl, fetchImpl);
 }

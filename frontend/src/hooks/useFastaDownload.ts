@@ -5,8 +5,8 @@ import {
   fastaSeqsFromRows,
   fastaSize,
   isDecodable,
-  loadCollection,
   loadGtars,
+  loadSeqTemplate,
   type FastaCollection,
 } from '../services/fastaExport';
 import { saveStream } from '../services/saveStream';
@@ -67,22 +67,16 @@ export function useFastaDownload({
   const [chosen, setChosen] = useState<Set<string> | null>(null);
   const controller = useRef<AbortController | null>(null);
 
-  // The Sequences tab loads the same list; reuse it and skip the .rgsi.
+  // The same list the Sequences tab loads, and the store manifest's `.seq`
+  // path template: small, and gives the exact file size up front.
   const sequences = useGenomeSequences(storeUrl ? digest : undefined);
-  const known = useMemo(
-    () => (sequences.data ? fastaSeqsFromRows(sequences.data.sequences) : null),
-    [sequences.data],
-  );
-  const waiting = sequences.isPending;
-
-  // The manifest, plus the .rgsi if the API had no list: small, and gives
-  // the exact file size up front.
+  const rows = sequences.data?.sequences;
   useEffect(() => {
-    if (!storeUrl || waiting) return;
+    if (!storeUrl || !rows) return;
     let stale = false;
-    loadCollection(storeUrl, digest, undefined, known)
-      .then((loaded) => {
-        if (!stale) setCollection(loaded);
+    loadSeqTemplate(storeUrl)
+      .then((seqTemplate) => {
+        if (!stale) setCollection({ seqTemplate, seqs: fastaSeqsFromRows(rows) });
       })
       .catch((error: unknown) => {
         if (!stale) setStatus({ kind: 'error', message: messageOf(error) });
@@ -90,7 +84,7 @@ export function useFastaDownload({
     return () => {
       stale = true;
     };
-  }, [storeUrl, digest, known, waiting]);
+  }, [storeUrl, rows]);
 
   // Leaving the page stops a download in progress.
   useEffect(() => () => controller.current?.abort(), []);
@@ -167,9 +161,8 @@ export function useFastaDownload({
           const wasm = await loadGtars();
           const fasta = fastaChunks({
             baseUrl: storeUrl,
-            digest,
-            wasm,
             collection: exported,
+            wasm,
             signal: abort.signal,
             onProgress: (done, total) => {
               fraction = total ? done / total : 1;
@@ -194,13 +187,14 @@ export function useFastaDownload({
     } finally {
       controller.current = null;
     }
-  }, [storeUrl, digest, exported, totalBytes, output]);
+  }, [storeUrl, exported, totalBytes, output]);
 
   const cancel = useCallback(() => controller.current?.abort(), []);
 
   return {
     collection,
-    status,
+    // Without the sequence list there is nothing to download.
+    status: sequences.error ? { kind: 'error', message: messageOf(sequences.error) } : status,
     choosing,
     setChoosing,
     selected,

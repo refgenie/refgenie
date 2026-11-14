@@ -13,10 +13,11 @@ import { BedExtract } from './BedExtract';
 import { defaultRegion, parseRegion, type ParsedRegion } from '../../utils/parseRegion';
 import { bedSnippets, regionSnippets } from '../../utils/codeSnippets';
 import { extractHref } from '../../utils/genomePage';
-import { isExtractable, sequenceTemplate } from '../../services/regionExtract';
+import { isExtractable } from '../../services/regionExtract';
 import {
   DEFAULT_COLLECTION_TEMPLATE,
   DEFAULT_SEQ_TEMPLATE,
+  loadSeqTemplate,
   seqUrl,
 } from '../../services/fastaExport';
 import type { SequenceResponse } from '../../types/api';
@@ -113,7 +114,7 @@ export function ExtractPanel({
   const [seqTemplate, setSeqTemplate] = useState(DEFAULT_SEQ_TEMPLATE);
   useEffect(() => {
     let stale = false;
-    sequenceTemplate(storeUrl)
+    loadSeqTemplate(storeUrl)
       .then((template) => {
         if (!stale) setSeqTemplate(template);
       })
