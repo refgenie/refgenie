@@ -162,7 +162,9 @@ def should_pull_large_archive(
             f"This archive exceeds the size cutoff "
             f"({archive_size / 1000**3:.1f}GB > {size_cutoff_gb:.1f}GB). Do you want to proceed?"
         ):
-            logger.warning(f"Skipping pull of '{asset_registry_path}'. Size too large: {archive_size}")
+            logger.warning(
+                f"Skipping pull of '{asset_registry_path}'. Size too large: {archive_size}"
+            )
             return False
     return True
 
@@ -775,9 +777,7 @@ class AssetPuller(ResourceManager):
                     f"Cannot pull parent {label} required by {child_label}: the server "
                     f"did not say which genome and asset group it belongs to."
                 )
-            self._refuse_conflicting_parent(
-                genome_digest, group, name, digest, label, child_label
-            )
+            self._refuse_conflicting_parent(genome_digest, group, name, digest, label, child_label)
             logger.info(
                 f"Pulling parent {group}:{name} (digest {digest}) required by {child_label}"
             )

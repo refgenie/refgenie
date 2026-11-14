@@ -34,6 +34,7 @@ This example uses a throwaway folder, so it never touches `~/.refgenie`. Set the
 
 ```python
 import os, tempfile
+
 os.environ["REFGENIE_HOME_PATH"] = tempfile.mkdtemp()
 ```
 
@@ -57,9 +58,9 @@ Find the files, like `refgenie seek`:
 
 ```python
 digest = r.alias.resolve(GenomeAlias("rCRSd"))
-r.asset.seek(digest, "fasta")                              # the .fa
+r.asset.seek(digest, "fasta")  # the .fa
 r.asset.seek(digest, "fasta", seek_key_name="chrom_sizes")  # the .chrom.sizes
-r.asset.seek(digest, "bowtie2_index")                      # the index prefix
+r.asset.seek(digest, "bowtie2_index")  # the index prefix
 ```
 
 Register a genome from a FASTA file, like `refgenie genome init`:
@@ -75,7 +76,7 @@ tiny, created = r.build.initialize_and_build([GenomeAlias("tiny")], fasta_file_p
 Compare two genomes, like `refgenie compare`. The result is the GA4GH seqcol comparison:
 
 ```python
-r.genome.compare(digest, tiny)["attributes"]   # a_only, b_only, a_and_b per attribute
+r.genome.compare(digest, tiny)["attributes"]  # a_only, b_only, a_and_b per attribute
 ```
 
 Add and remove an alias, like `refgenie alias set` and `alias remove`:

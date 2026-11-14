@@ -260,7 +260,7 @@ configured database:
 from refgenie import Refgenie
 
 rgc = Refgenie()
-digest = rgc.alias.resolve("hg38")       # seek takes a genome digest
+digest = rgc.alias.resolve("hg38")  # seek takes a genome digest
 rgc.asset.seek(digest, "bowtie2_index")  # local path to an asset
 ```
 

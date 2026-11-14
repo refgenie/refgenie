@@ -144,9 +144,7 @@ def handle_data_channel_remove(cmd, refgenie) -> None:
 
 def handle_data_channel_validate(cmd, refgenie) -> None:
     if not refgenie.sources.test_channel(cmd.name):
-        note(
-            "Please check whether the resource is accessible and/or validity of the index file"
-        )
+        note("Please check whether the resource is accessible and/or validity of the index file")
         fail(f"Data channel '{cmd.name}' is invalid")
     note(f"Data channel '{cmd.name}' is valid")
 
