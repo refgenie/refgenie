@@ -11,89 +11,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- The genome page has Sequences, Extract, Download and Compare tabs: browse a
-  genome's sequences, extract regions or a BED file of regions, download FASTA
-  in the browser, and compare with another genome or your own FASTA file.
-- Collection pages (`REFGENIE_COLLECTIONS`) show a branded slice of the
-  catalog, such as the VGP assemblies.
-- `GET /v4/genomes/{digest}/sequences` and `GET /v4/genomes/{digest}/compare/{other}`.
-- `list --json` and `listr --json`; `getseq --fasta` and `--zero-based`.
-- MCP: a `get_sequence` tool; `compare_genomes` returns a one-sentence summary and
-  a map of renamed sequences; `refgenie-mcp --help`; and the instructions and
-  `catalog_summary` say which server this is.
-- `refgenie compare` and `GET /v4/genomes/{digest}/compare/{other}` give the same
-  one-sentence summary and rename map as MCP; `compare --json` adds the full
-  GA4GH comparison.
-- `refgenie init` says where assets go and which server it subscribed to; an
-  empty `list` says what to run next; `seek` suggests close matches (such as
-  `hg38/fasta_index.chrom_sizes` for `hg38/chrom_sizes`) and the `pull` command.
+- Genome pages have Sequences, Extract, Download and Compare tabs: browse the
+  sequences (with alphabet charts), extract regions or a BED file of regions,
+  download all or chosen sequences as FASTA in the browser (large files in
+  Firefox and Safari too), and compare with another genome or your own FASTA
+  file. The Details tab finds other genomes that share each digest, and the
+  Download and Extract tabs show the same steps in Python, R, Rust and JavaScript.
+- Collection pages (`REFGENIE_COLLECTIONS`) show a branded slice of the catalog,
+  such as the VGP assemblies, with a species tree and a genome summary pop-up.
+- Genome search ranks exact alias matches first, then word starts, then the rest.
+- `refgenie compare`, `GET /v4/genomes/{digest}/compare/{other}` and the MCP
+  `compare_genomes` tool give one sentence on how two genomes differ and a map of
+  renamed sequences; `compare --json` adds the GA4GH comparison.
+- `GET /v4/genomes/{digest}/sequences`; MCP `get_sequence`; `refgenie-mcp --help`.
+- `list --json`, `listr --json`, `getseq --fasta` and `getseq --zero-based`.
+- `init` says what it set up; an empty `list` says what to run next; `seek`
+  suggests close matches or the `pull` command.
+- A server picks up stores added to its publish catalog without a restart.
 
 ### Changed
 
 - `getseq` reads a text region as 1-based and inclusive, like samtools and the
-  website (commas are fine), and says on stderr how it read it; `--zero-based`
-  reads a BED-style region. Start/end numbers (API, MCP, Python) stay 0-based.
-- `list` and `listr` name each genome once, by its shortest plain alias;
-  `--json` has every alias and the digest.
-- MCP `get_asset` over stdio gives `seek_command` (the asset is already here);
-  on a server it gives `pull_command`.
-- `REFGENIE_LOG_LEVEL=INFO` no longer prints a line for every HTTP request;
-  `DEBUG` does.
-- refgenie.org's install line follows the server's version.
-- refgenie uses httpx2, the maintained successor of httpx, for HTTP.
-- `refgenie pull` brings a parent asset only when the asset colocates its files
-  (such as `bismark_bt2_index`). `refgenie pull hg38/fasta_index` now downloads
-  12 KB, not the FASTA.
-- A genome is read only from the store its `store_name` names; stores are no
-  longer probed. A genome whose store the server does not serve is left out of
-  every listing and answers 404.
-- A publish catalog with a genome that names no store, or a store the catalog
-  does not list, is refused at import.
-- Compare returns the same GA4GH comparison from the server, the CLI and MCP.
-- MCP `get_asset` builds its pull command from the shortest plain alias, gives
-  absolute URLs, and lists each file in `files`; `get_genome_sequences` is paged
-  and takes `name_contains`.
-- `listr -g` and `compare` find genomes on the subscribed servers.
-- `getseq` registers an unregistered genome first (metadata only).
-- The default log level is WARNING (set `REFGENIE_LOG_LEVEL=INFO` for the old
-  output). Results and hints print on stderr without the logger.
-- `config get` prints YAML.
-- `getseq` reads byte ranges and no longer caches sequences.
-- `pull --init` accepts `--genome-digest`, and `--all-genomes` registers
-  alias-less genomes by digest.
-- `genome init --server` takes only server URLs (use `--store` for stores).
-- `refgenie store sync` replaces each store's aliases as a set: a name the
-  store dropped is removed, a moved name follows its collection, and names
-  with '/' are skipped. A store that suddenly offers under half its aliases
-  keeps them. Only a genome's owning store writes its description and other
-  FHR columns.
-- A catalog import rewrites the aliases of each genome the catalog carries,
-  skipping names with '/', and refuses a catalog that would remove more than
-  half of them. `refgenie catalog-prune` also deletes genomes the catalog no
-  longer carries that have no assets, with their aliases, and disabled stores
-  left empty.
+  website (commas are fine), says on stderr how it read it, reads byte ranges
+  instead of whole sequences, and registers an unregistered genome first.
+  Start/end numbers (HTTP API, MCP, Python) stay 0-based.
+- `refgenie pull` brings a parent asset only when the asset colocates its files:
+  `refgenie pull hg38/fasta_index` downloads 12 KB, not the FASTA.
+- Output is quiet by default (log level WARNING; HTTP requests show only at
+  DEBUG); results and hints go to stderr. `config get` prints YAML.
+- `list` and `listr` name each genome once, by its shortest plain alias.
+- `listr -g` and `compare` find genomes on the subscribed servers;
+  `pull --init` accepts `--genome-digest`; `genome init --server` takes only
+  server URLs (use `--store` for stores).
+- MCP `get_asset` lists each file and gives a `seek_command` over stdio or a
+  `pull_command` on a server; `get_genome_sequences` is paged.
+- Servers read each genome only from the store its catalog row names, and keep
+  catalog and store-sync aliases in step, refusing changes that would drop more
+  than half of them; `refgenie catalog-prune` also removes emptied genomes and
+  stores.
+- refgenie uses httpx2, the maintained successor of httpx.
 
 ### Fixed
 
+- Pulling a child asset of hg38 and other genomes whose server aliases contain
+  '/' no longer fails and deletes the genome.
 - Pulling a genome by a second alias links all its assets under that alias, so
   `seek` no longer prints a path that does not exist.
-- `SKILL.md` is served as `text/markdown` on macOS and on Python before 3.13.
-- `genome init --server`, `alias set` and `id --remote` read a genome from the
-  store that holds it, not only from the server's first store.
-- Pulling a child asset (bwa_index, fasta_index, ...) of hg38, celegans and similar genomes no longer fails and deletes the genome when the server lists an alias containing '/'. A parent lands under the child's alias and adds none of the server's other aliases.
-- `pull --init` now fails with a clear error, instead of saving an alias that cannot be resolved, when a genome's sequence collection is not on the server (#299).
-- Quadratic `getseq` output time, whole-chromosome downloads for a few bases,
-  truncated tables off a terminal, the download progress bar on stdout, and
-  `build` exiting silently on an unknown alias.
+- `genome init --server`, `alias set` and `id --remote` find genomes in every
+  store, not only the first.
+- `pull --init` fails clearly when a genome's sequence collection is not on the
+  server (#299).
+- Slow `getseq` output, whole-chromosome downloads for a few bases, truncated
+  tables off a terminal, and `build` exiting silently on an unknown alias.
+- `SKILL.md` is served as `text/markdown` on macOS and Python before 3.13.
 
 ### Removed
 
-- `refgenie config set`, which was never implemented. `refgenie config` alone
-  prints the configuration.
-- `refgenie pull --asset-registry-paths`; pass registry paths as positional
-  arguments.
-- MCP: the `get_genome_metadata` tool (`get_genome_sequences` pages carry
-  `n_sequences` and `total_length`), and `get_asset`'s `downloads` and `local_path`.
+- `REFGENIE_STORES`: a server reads its stores from the publish catalog.
+- `refgenie config set`, which was never implemented.
+- `refgenie pull --asset-registry-paths`; pass registry paths as arguments.
+- MCP `get_genome_metadata` and `get_asset`'s `downloads` and `local_path`.
 
 ## [1.0.0a1] - 2026-11-06
 
