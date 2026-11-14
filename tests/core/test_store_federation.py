@@ -22,6 +22,7 @@ from refgenie.exceptions import (
 from refgenie.managers.alias import AliasManager
 from refgenie.managers.store import LOCAL_STORE_NAME
 from refgenie.models import GenomeAlias
+from refgenie.utils.seqcol import compare_level2
 
 from tests.support.factories import build_on_disk_store, make_engine, seed_species
 from tests.support.server import needs_server
@@ -565,7 +566,7 @@ class TestCompareAcrossStores:
         assert rg.genome.get(digest_a).store_name == "s1"
         assert rg.genome.get(digest_b).store_name == "s2"
 
-        result = rg.genome.compare(digest_a, digest_b)
+        result = compare_level2(*rg.genome.compare_sides(digest_a, digest_b), digest_a, digest_b)
 
         assert result["digests"] == {"a": digest_a, "b": digest_b}
         assert set(result["attributes"]) == {"a_only", "b_only", "a_and_b"}
@@ -587,7 +588,9 @@ class TestCompareAcrossStores:
         same = _synced_rgc([("both", tmp_path / "both")])
         cross = _synced_rgc([("s1", tmp_path / "s1"), ("s2", tmp_path / "s2")])
 
-        assert same.genome.compare(digest_a, digest_b) == cross.genome.compare(digest_a, digest_b)
+        assert same.genome.compare_sides(digest_a, digest_b) == cross.genome.compare_sides(
+            digest_a, digest_b
+        )
 
 
 # ---------------------------------------------------------------------------

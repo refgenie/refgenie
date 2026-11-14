@@ -36,7 +36,7 @@ from refgenie.models import (
 from refgenie.plugins.events import NULL_EVENTS, EventSink, update_scope
 from refgenie.plugins.hooks import Change
 from refgenie.utils.search import Search, alias_digests_matching
-from refgenie.utils.seqcol import compare_level2, seqcol_level2
+from refgenie.utils.seqcol import seqcol_level2
 from refgenie.utils.species_file import SpeciesEntry
 from refgenie.utils.tables import build_table
 
@@ -578,18 +578,12 @@ class GenomeManager(ResourceManager):
 
         return result
 
-    def compare(self, digest_a: GenomeDigest, digest_b: GenomeDigest) -> dict:
-        """Compare two genomes by their digests.
-
-        Returns the GA4GH seqcol comparison object (``digests``, ``attributes``,
-        ``array_elements``), wherever the two genomes live. Every path builds
-        each side with :func:`refgenie.utils.seqcol.seqcol_level2`, so the
-        server, the CLI and MCP all return the same object.
-        """
-        return compare_level2(*self.compare_sides(digest_a, digest_b), digest_a, digest_b)
-
     def compare_sides(self, digest_a: GenomeDigest, digest_b: GenomeDigest) -> tuple[dict, dict]:
-        """The level 2 of each of two genomes, as :meth:`compare` reads them."""
+        """The level 2 of each of two genomes, for :func:`refgenie.utils.seqcol.compare_level2`.
+
+        Each side is built with :func:`refgenie.utils.seqcol.seqcol_level2`, so
+        the server, the CLI and MCP all compare the same objects.
+        """
         return (
             self._compare_side(self.get(digest_a)),
             self._compare_side(self.get(digest_b)),

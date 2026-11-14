@@ -15,6 +15,7 @@ from refgenie.managers.sources.genomes import (
     make_source,
     store_url_from_service_info,
 )
+from refgenie.utils.seqcol import compare_level2
 from tests.support.factories import make_server_rgc
 from tests.support.remotes import MockRemoteSource, assert_mock_remote_source_conforms
 from tests.support.server import make_server_app, needs_server
@@ -426,7 +427,9 @@ class TestRemoteGenome:
         with patch.object(
             refgenie_minimal.genome.__class__, "_get_remote_level2", return_value=level2
         ) as remote:
-            result = refgenie_minimal.genome.compare(digest_a, digest_b)
+            result = compare_level2(
+                *refgenie_minimal.genome.compare_sides(digest_a, digest_b), digest_a, digest_b
+            )
         assert {c.args for c in remote.call_args_list} == {
             ("https://store.example.com", digest_a),
             ("https://store.example.com", digest_b),
@@ -456,7 +459,11 @@ class TestRemoteGenome:
             "_get_remote_level2",
             return_value=mock_collection_data,
         ):
-            result = refgenie_minimal.genome.compare(local_digest, remote_digest)
+            result = compare_level2(
+                *refgenie_minimal.genome.compare_sides(local_digest, remote_digest),
+                local_digest,
+                remote_digest,
+            )
         assert set(result) >= {"digests", "attributes", "array_elements"}
 
     def test_list_shows_remote_status(
@@ -528,11 +535,10 @@ class TestRemoteGenome:
 
     def test_compare_level2_helper(self):
         """compare_level2 returns the GA4GH seqcol comparison object."""
-        from refgenie.utils.seqcol import compare_level2 as _compare_level2
 
         level2_a = {"names": ["chr1", "chr2"], "lengths": [100, 200], "sequences": ["s1", "s2"]}
         level2_b = {"names": ["chr1", "chr3"], "lengths": [100, 300], "sequences": ["s1", "s3"]}
-        result = _compare_level2(level2_a, level2_b, "digest_a", "digest_b")
+        result = compare_level2(level2_a, level2_b, "digest_a", "digest_b")
 
         assert result["digests"] == {"a": "digest_a", "b": "digest_b"}
         assert sorted(result["attributes"]["a_and_b"]) == ["lengths", "names", "sequences"]

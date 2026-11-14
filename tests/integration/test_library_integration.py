@@ -19,6 +19,7 @@ from tests.support.factories import register_fasta
 from refgenie import Refgenie
 from refgenie.managers.build_inputs import resolve_default_asset
 from refgenie.models import BuildCommandValues, BuildParams, GenomeAlias
+from refgenie.utils.seqcol import compare_level2
 
 # Skip all tests unless explicitly enabled
 pytestmark = pytest.mark.skipif(
@@ -348,7 +349,7 @@ class TestTwoGenomesCompare:
 
         digest_a = rg.alias.resolve("rCRSd")
         digest_b = rg.alias.resolve("t7")
-        result = rg.genome.compare(digest_a, digest_b)
+        result = compare_level2(*rg.genome.compare_sides(digest_a, digest_b), digest_a, digest_b)
 
         assert result is not None
         assert isinstance(result, dict)

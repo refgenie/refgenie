@@ -52,6 +52,7 @@ from refgenie.managers.sources.manager import IndexFile, IndexFileSection  # noq
 from refgenie.server.routers.data_channel import resolve_channel_file_url  # noqa: E402
 from refgenie.server.schemas import DataChannel  # noqa: E402
 from refgenie.utils.digest import get_dir_digest  # noqa: E402
+from refgenie.utils.seqcol import compare_level2  # noqa: E402
 
 # --- v4 server endpoints -----------------------------------------------------
 
@@ -1450,7 +1451,9 @@ class TestGenomeSequences:
             remote = client_rg.servers.client(url).genome.compare(digest, other)
         # The server adds its wording; the GA4GH comparison underneath is the same.
         assert remote.pop("summary") and isinstance(remote.pop("name_map"), dict)
-        assert remote == server_rg.genome.compare(digest, other)
+        assert remote == compare_level2(
+            *server_rg.genome.compare_sides(digest, other), digest, other
+        )
 
     def test_sequences_in_local_mode(self, world):
         """The local demo (``refgenie dash``) reads the same endpoint."""
