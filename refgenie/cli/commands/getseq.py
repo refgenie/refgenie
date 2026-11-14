@@ -67,9 +67,9 @@ def handle_getseq(cmd, refgenie) -> None:
         fail(str(e), EXIT_INVALID_INPUT)
     # Say how the region was read, 1-based like the text people write, so an
     # off-by-one is visible.
-    first = (start or 0) + 1
-    region = f"{name}:{first}-{first + len(seq) - 1}" if start is not None or end else name
-    note(f"{name}:{first:,}-{first + len(seq) - 1:,} (1-based, inclusive): {len(seq):,} bases")
+    first, last = (start or 0) + 1, (start or 0) + len(seq)
+    region = name if start is None and end is None else f"{name}:{first}-{last}"
+    note(f"{name}:{first:,}-{last:,} (1-based, inclusive): {len(seq):,} bases")
     if cmd.fasta:
         lines = [seq[i : i + 60] for i in range(0, len(seq), 60)]
         sys.stdout.write(f">{region}\n" + "\n".join(lines) + "\n")

@@ -18,7 +18,7 @@ from refgenie.exceptions import (
     MissingGenomeError,
     UnservedStoreError,
 )
-from refgenie.models import GenomeAlias
+from refgenie.models import GenomeAlias, display_alias
 from refgenie.server.dependencies import DbId, get_refgenie
 from refgenie.server.errors import ErrorCode
 from refgenie.server.pagination import PageParams, PageResponse, get_page_params, respond
@@ -133,7 +133,7 @@ def _unserved(error: UnservedStoreError) -> HTTPException:
     )
 
 
-def _no_collection(error: MissingGenomeError, digests: str) -> HTTPException:
+def _no_collection(error: Exception, digests: str) -> HTTPException:
     """The 404 for a genome with no sequence collection in its store."""
     if isinstance(error, UnservedStoreError):
         return _unserved(error)
@@ -200,10 +200,12 @@ def compare_genomes(digest: str, other: str, rgc: Refgenie = Depends(get_refgeni
         # `refgenie compare` and MCP return.
         side_a = seqcol_level2(rgc.store_router.store_for_genome(digest, a.store_name), digest)
         side_b = seqcol_level2(rgc.store_router.store_for_genome(other, b.store_name), other)
-    except MissingGenomeError as e:
+    except (MissingGenomeError, ValueError) as e:  # ValueError: no level 2 in the store
         raise _no_collection(e, f"{digest} or {other}") from None
     result = compare_level2(side_a, side_b, digest, other)
-    summary, name_map = summarize_comparison(side_a, side_b, result, digest, other)
+    aliases = rgc.alias.get_for_genomes([digest, other])
+    label_a, label_b = (display_alias(aliases.get(d, [])) or d for d in (digest, other))
+    summary, name_map = summarize_comparison(side_a, side_b, result, label_a, label_b)
     return {**result, "summary": summary, "name_map": name_map}
 
 

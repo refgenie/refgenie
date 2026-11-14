@@ -164,7 +164,8 @@ class SequenceManager:
             end = length if end is None else end
             if not 0 <= start < end <= length:
                 raise ValueError(
-                    f"{name} has {length:,} bases; the region {start:,}-{end:,} is outside it."
+                    f"{name} has {length:,} bases; the region {start + 1:,}-{end:,} "
+                    f"(1-based; [{start}, {end}) 0-based) is outside it."
                 )
             if remote_store is None:
                 try:

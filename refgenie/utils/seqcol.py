@@ -11,13 +11,7 @@ from refget.utils import compare_seqcols
 
 from refgenie.logger import logger
 
-__all__ = [
-    "compare_level2",
-    "describe_comparison",
-    "rename_map",
-    "seqcol_level2",
-    "summarize_comparison",
-]
+__all__ = ["compare_level2", "seqcol_level2", "summarize_comparison"]
 
 
 def seqcol_level2(store: Any, digest: str) -> dict:
@@ -75,37 +69,35 @@ def _pairs(renames: dict[str, str]) -> str:
     return ", ".join(pairs)
 
 
-def rename_map(level2_a: dict, level2_b: dict) -> dict[str, str]:
-    """A's name to B's name for each sequence the two share by content but not
-    by name, in A's order."""
-    names_a, names_b = _names_by_digest(level2_a), _names_by_digest(level2_b)
-    renames: dict[str, str] = {}
-    for digest, names in names_a.items():
-        for name_a, name_b in zip(names, names_b.get(digest, [])):
-            if name_a != name_b:
-                renames[name_a] = name_b
-    return renames
+def summarize_comparison(
+    level2_a: dict, level2_b: dict, comparison: dict, label_a: str, label_b: str
+) -> tuple[str, dict[str, str]]:
+    """One sentence on how two genomes differ, and a map of renamed sequences.
 
-
-def describe_comparison(
-    comparison: dict, name_map: dict[str, str] | None, label_a: str, label_b: str
-) -> str:
-    """One sentence on how two genomes differ, from a seqcol comparison and its
-    rename map (:func:`rename_map`), or None when the renames are unknown.
-    Needs no collections, so a client can word a server's comparison with its
-    own labels."""
+    The map takes A's name to B's name for each sequence the two share by
+    content but not by name, in A's order.
+    """
     counts = comparison["array_elements"]
     n_a, n_b = counts["a_count"]["sequences"], counts["b_count"]["sequences"]
     shared = counts["a_and_b_count"]["sequences"]
-    same_nl = counts["a_and_b_count"].get("name_length_pairs", shared)
+    if "name_length_pairs" in counts["a_and_b_count"]:
+        same_nl = counts["a_and_b_count"]["name_length_pairs"]
+    else:
+        pairs_a = set(zip(level2_a["names"], level2_a["lengths"]))
+        same_nl = len(pairs_a & set(zip(level2_b["names"], level2_b["lengths"])))
+
+    names_a, names_b = _names_by_digest(level2_a), _names_by_digest(level2_b)
+    name_map: dict[str, str] = {}
+    for digest, names in names_a.items():
+        for name_a, name_b in zip(names, names_b.get(digest, [])):
+            if name_a != name_b:
+                name_map[name_a] = name_b
 
     digests = comparison.get("digests") or {}
-    if digests.get("a") and digests.get("a") == digests.get("b"):
-        return "Identical."
+    if level2_a == level2_b or (digests.get("a") and digests.get("a") == digests.get("b")):
+        return "Identical.", {}
 
-    if name_map is None:  # renames unknown (a server too old to send them)
-        naming = "."
-    elif name_map:
+    if name_map:
         which = f"all {shared}" if len(name_map) == shared else str(len(name_map))
         naming = f"; {which} names differ: {_pairs(name_map)}."
     else:
@@ -116,40 +108,28 @@ def describe_comparison(
     if shared == n_a == n_b:
         same_order = counts["a_and_b_same_order"]["sequences"] is not False
         order = "in the same order" if same_order else "in a different order"
-        return f"Same {n_a} sequences {order}{naming}"
+        return f"Same {n_a} sequences {order}{naming}", name_map
     if same_nl == low and shared < same_nl:
         differ = same_nl - shared
         if n_a == n_b:
             return (
-                f"Same {n_a} names and lengths, but {differ} of {n_a} sequences differ in content."
+                f"Same {n_a} names and lengths, but {differ} of {n_a} sequences differ in content.",
+                name_map,
             )
         return (
             f"Every name and length of {smaller} is also in {other}, but {differ} of those "
-            f"{same_nl} sequences differ in content."
+            f"{same_nl} sequences differ in content.",
+            name_map,
         )
     if shared == low:
         return (
             f"All {shared} sequences of {smaller} are in {other}, which has "
-            f"{max(n_a, n_b) - shared} more{naming}"
+            f"{max(n_a, n_b) - shared} more{naming}",
+            name_map,
         )
     if shared > 0:
-        return f"{shared} sequences are shared ({label_a} has {n_a}, {label_b} has {n_b}){naming}"
-    return "No sequences in common."
-
-
-def summarize_comparison(
-    level2_a: dict, level2_b: dict, comparison: dict, label_a: str, label_b: str
-) -> tuple[str, dict[str, str]]:
-    """One sentence on how two genomes differ, and a map of renamed sequences."""
-    if level2_a == level2_b:
-        return "Identical.", {}
-    elements = comparison["array_elements"]
-    if "name_length_pairs" not in elements["a_and_b_count"]:
-        # Count shared (name, length) pairs here when the comparison lacks them.
-        pairs_a = set(zip(level2_a["names"], level2_a["lengths"]))
-        same_nl = len(pairs_a & set(zip(level2_b["names"], level2_b["lengths"])))
-        both = {**elements["a_and_b_count"], "name_length_pairs": same_nl}
-        comparison = {**comparison, "array_elements": {**elements, "a_and_b_count": both}}
-    name_map = rename_map(level2_a, level2_b)
-    summary = describe_comparison(comparison, name_map, label_a, label_b)
-    return summary, ({} if summary in ("Identical.", "No sequences in common.") else name_map)
+        return (
+            f"{shared} sequences are shared ({label_a} has {n_a}, {label_b} has {n_b}){naming}",
+            name_map,
+        )
+    return "No sequences in common.", {}

@@ -1234,8 +1234,7 @@ class TestRemoteGenomeByName:
         import json
 
         payload = json.loads(capsys.readouterr().out)
-        # Worded here, with the names the user typed.
-        assert payload["summary"].startswith("Same 2 sequences in the same order")
+        assert payload["summary"] == "worded by the server"
         assert payload["name_map"] == {"chr1": "1", "chr2": "2"}
         assert payload["comparison"]["digests"]["a"] == REMOTE_DIGEST
 
