@@ -11,8 +11,8 @@ export interface GenomeDownloadPanelProps {
   storeUrl: string;
   /** A name for the file and for refgenie commands; the digest if none. */
   alias: string | undefined;
-  /** The in-browser download; null when the browser may not read the store. */
-  download: FastaDownloadState | null;
+  /** The in-browser download. */
+  download: FastaDownloadState;
   /** True if the genome has a built fasta asset for refgenie to pull. */
   hasFastaAsset: boolean;
 }
@@ -28,12 +28,10 @@ export function GenomeDownloadPanel({
   const version = useUiConfig().refgenie_version;
   return (
     <div>
-      {download && (
-        <section className="rg-flat-section">
-          <h2>In your browser</h2>
-          <FastaDownloadPanel download={download} />
-        </section>
-      )}
+      <section className="rg-flat-section">
+        <h2>In your browser</h2>
+        <FastaDownloadPanel download={download} />
+      </section>
       <section className="rg-flat-section">
         <h2>With other tools</h2>
         <p className="rg-muted text-sm mb-3">
@@ -46,7 +44,7 @@ export function GenomeDownloadPanel({
             digest,
             storeUrl,
             alias,
-            names: download?.names,
+            names: download.names,
             hasFastaAsset,
             refgenieInstall: installCommand(version),
           })}

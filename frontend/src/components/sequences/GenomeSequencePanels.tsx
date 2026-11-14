@@ -87,19 +87,15 @@ const MODES: { id: ExtractMode; label: string }[] = [
 
 /**
  * The genome page's Extract tab: one region, or every region of a BED file.
- * Each reads the bases in the browser (when `browserStoreUrl` is set), and
- * shows the same in code, for each tool that can read the genome's refget
- * store.
+ * Each reads the bases in the browser, and shows the same in code, for each
+ * tool that can read the genome's refget store.
  */
 export function ExtractPanel({
   digest,
   storeUrl,
-  browserStoreUrl,
 }: GenomePanelProps & {
-  /** The genome's refget store, named in the code snippets. */
+  /** The genome's refget store. */
   storeUrl: string;
-  /** Set when the browser may read the store itself. */
-  browserStoreUrl?: string | null;
 }) {
   const sequences = useGenomeSequences(digest);
   const data = sequences.data;
@@ -128,9 +124,9 @@ export function ExtractPanel({
   const seqDigest = seq?.sha512t24u;
   const [fileUrls, setFileUrls] = useState<Record<string, string>>({});
   useEffect(() => {
-    if (!browserStoreUrl || !seqDigest) return;
+    if (!seqDigest) return;
     let stale = false;
-    sequenceFileUrl(browserStoreUrl, seqDigest)
+    sequenceFileUrl(storeUrl, seqDigest)
       .then((url) => {
         if (!stale) setFileUrls((known) => ({ ...known, [seqDigest]: url }));
       })
@@ -138,14 +134,14 @@ export function ExtractPanel({
     return () => {
       stale = true;
     };
-  }, [browserStoreUrl, seqDigest]);
+  }, [storeUrl, seqDigest]);
 
   // The store's own `.seq` template, for the BED code; else the usual one.
   const [seqTemplate, setSeqTemplate] = useState(DEFAULT_SEQ_TEMPLATE);
   useEffect(() => {
-    if (!browserStoreUrl || mode !== 'bed') return;
+    if (mode !== 'bed') return;
     let stale = false;
-    sequenceTemplate(browserStoreUrl)
+    sequenceTemplate(storeUrl)
       .then((template) => {
         if (!stale) setSeqTemplate(template);
       })
@@ -153,7 +149,7 @@ export function ExtractPanel({
     return () => {
       stale = true;
     };
-  }, [browserStoreUrl, mode]);
+  }, [storeUrl, mode]);
 
   if (sequences.error) {
     return <ErrorState error={sequences.error} onRetry={() => sequences.refetch()} />;
@@ -175,24 +171,22 @@ export function ExtractPanel({
           </button>
         ))}
       </div>
-      {browserStoreUrl && (
-        <section className="rg-flat-section">
-          <h2>In your browser</h2>
-          {/* Both stay mounted, so switching keeps each one's input and result. */}
-          <div hidden={mode !== 'one'}>
-            <RegionExtract
-              storeUrl={browserStoreUrl}
-              sequences={data.sequences}
-              value={region}
-              onChange={setRegion}
-              inputRef={regionInput}
-            />
-          </div>
-          <div hidden={mode !== 'bed'}>
-            <BedExtract storeUrl={browserStoreUrl} sequences={data.sequences} />
-          </div>
-        </section>
-      )}
+      <section className="rg-flat-section">
+        <h2>In your browser</h2>
+        {/* Both stay mounted, so switching keeps each one's input and result. */}
+        <div hidden={mode !== 'one'}>
+          <RegionExtract
+            storeUrl={storeUrl}
+            sequences={data.sequences}
+            value={region}
+            onChange={setRegion}
+            inputRef={regionInput}
+          />
+        </div>
+        <div hidden={mode !== 'bed'}>
+          <BedExtract storeUrl={storeUrl} sequences={data.sequences} />
+        </div>
+      </section>
       {mode === 'bed' && (
         <section className="rg-flat-section">
           <h2>In your own code</h2>
@@ -242,13 +236,12 @@ export function ExtractPanel({
 
 /**
  * The genome page's Compare tab: compare with another genome of the species,
- * or (with `canCompareFile`) with the user's own FASTA file.
+ * or with the user's own FASTA file.
  */
 export function ComparePanel({
   digest,
   candidates,
-  canCompareFile = false,
-}: GenomePanelProps & { candidates: CompareCandidate[] | null; canCompareFile?: boolean }) {
+}: GenomePanelProps & { candidates: CompareCandidate[] | null }) {
   const sequences = useGenomeSequences(digest);
   const [compareWith, setCompareWith] = useState<string>('');
   const comparison = useGenomeComparison(digest, compareWith || undefined);
@@ -268,7 +261,7 @@ export function ComparePanel({
         onSelect={setCompareWith}
         selected={compareWith || undefined}
       />
-      {canCompareFile && <CompareFasta digest={digest} sequences={data?.sequences} />}
+      <CompareFasta digest={digest} sequences={data?.sequences} />
     </div>
   );
 }

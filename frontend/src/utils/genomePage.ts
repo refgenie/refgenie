@@ -1,15 +1,9 @@
-import { fastaDownloadEnabled } from '../services/config';
-import type { AssetResponse, FhrMetadata, GenomeDetailResponse } from '../types/api';
+import type { AssetResponse, FhrMetadata } from '../types/api';
 import { defaultRegion } from './parseRegion';
 
 /** True if there is FHR metadata to show. */
 export function hasFhr(fhr: FhrMetadata | null | undefined): fhr is FhrMetadata {
   return !!fhr && Object.keys(fhr).length > 0;
-}
-
-/** True if the genome page can offer a FASTA download for this genome. */
-export function fastaDownloadAvailable(genome: GenomeDetailResponse): boolean {
-  return fastaDownloadEnabled() && !!genome.refget_store_url;
 }
 
 export const GENOME_TABS = [

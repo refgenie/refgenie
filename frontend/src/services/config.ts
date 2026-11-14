@@ -31,16 +31,9 @@ function coerceMode(raw: string | undefined): Mode {
   return raw === 'local' ? 'local' : 'server';
 }
 
-function envValue(
-  name: 'VITE_SERVICE_INFO_URL' | 'VITE_API_BASE' | 'VITE_FASTA_DOWNLOAD',
-): string | undefined {
+function envValue(name: 'VITE_SERVICE_INFO_URL' | 'VITE_API_BASE'): string | undefined {
   const value = import.meta.env?.[name];
   return typeof value === 'string' && value !== '' ? value : undefined;
-}
-
-/** Build-time flag for the genome page's "Download FASTA" control. Off unless `1`. */
-export function fastaDownloadEnabled(): boolean {
-  return envValue('VITE_FASTA_DOWNLOAD') === '1';
 }
 
 export function fallbackConfig(): UiConfig {

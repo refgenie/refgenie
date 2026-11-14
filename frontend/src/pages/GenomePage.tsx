@@ -12,10 +12,9 @@ import { useUiConfig } from '../hooks/useUiConfig';
 import { preferredAlias } from '../utils/genomes';
 import { namingStyle } from '../utils/namingStyle';
 import { formatDigest } from '../utils/format';
-import { fastaDownloadAvailable, fastaPullSize, isGenomeTab } from '../utils/genomePage';
+import { fastaPullSize, isGenomeTab } from '../utils/genomePage';
 import type { GenomeTab } from '../utils/genomePage';
 import { ApiError } from '../services/http';
-import { fastaDownloadEnabled } from '../services/config';
 import { Breadcrumbs } from '../components/common/Breadcrumbs';
 import { MiniHero } from '../components/layout/MiniHero';
 import { CapabilityGate } from '../components/common/CapabilityGate';
@@ -43,7 +42,6 @@ import { ExternalLink } from '../components/common/ExternalLink';
 import { NoAssetsPanel } from '../components/genomes/NoAssetsPanel';
 
 const NO_SEQUENCES = 'No sequence data for this genome';
-const NO_SAME_SPECIES = 'No other genomes of this species';
 const NO_STORE = 'This genome has no refget store';
 const NO_READABLE = 'No sequence here can be read by range';
 
@@ -74,10 +72,8 @@ export function GenomePage() {
   const title = record ? (primaryAlias ?? formatDigest(record.digest)) : 'Genome';
 
   const storeUrl = record?.refget_store_url ?? null;
-  // The browser reads the store itself only when the build turns that on.
-  const canDownload = !!record && fastaDownloadAvailable(record);
   const fasta = useFastaDownload({
-    storeUrl: canDownload ? record.refget_store_url : null,
+    storeUrl,
     digest: digest ?? '',
     fileStem: primaryAlias ?? digest ?? 'genome',
   });
@@ -114,14 +110,8 @@ export function GenomePage() {
       : refgeniePullCommand(primaryAlias, hasFastaAsset);
   const candidates = useCompareCandidates(record);
   const noCandidates = candidates !== null && candidates.length === 0;
-  // The in-browser FASTA comparison keeps Compare open without other genomes.
-  const compareFile = fastaDownloadEnabled();
-  const compareOff =
-    hasSequences === false
-      ? NO_SEQUENCES
-      : noCandidates && !compareFile
-        ? NO_SAME_SPECIES
-        : undefined;
+  // Comparing your own FASTA keeps Compare open without other genomes.
+  const compareOff = hasSequences === false ? NO_SEQUENCES : undefined;
   const readable = sequences.data
     ? sequences.data.sequences.some((row) => isExtractable(row.alphabet))
     : null;
@@ -276,27 +266,19 @@ export function GenomePage() {
                 <SequencesPanel digest={record.digest} canExtract={!extractOff} />
               )}
               {activeTab === 'extract' && storeUrl && (
-                <ExtractPanel
-                  digest={record.digest}
-                  storeUrl={storeUrl}
-                  browserStoreUrl={canDownload ? storeUrl : null}
-                />
+                <ExtractPanel digest={record.digest} storeUrl={storeUrl} />
               )}
               {activeTab === 'download' && storeUrl && (
                 <GenomeDownloadPanel
                   digest={record.digest}
                   storeUrl={storeUrl}
                   alias={primaryAlias}
-                  download={canDownload ? fasta : null}
+                  download={fasta}
                   hasFastaAsset={hasFastaAsset}
                 />
               )}
               {activeTab === 'compare' && (
-                <ComparePanel
-                  digest={record.digest}
-                  candidates={candidates}
-                  canCompareFile={compareFile}
-                />
+                <ComparePanel digest={record.digest} candidates={candidates} />
               )}
               {activeTab === 'details' && (
                 <>

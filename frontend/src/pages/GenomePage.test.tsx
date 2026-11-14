@@ -1,4 +1,4 @@
-import { describe, expect, it, onTestFinished, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
@@ -13,12 +13,6 @@ import {
   genomeSequencesFixture,
   genomesFixture,
 } from '../test/fixtures';
-
-const flags = vi.hoisted(() => ({ fasta: true }));
-vi.mock('../services/config', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('../services/config')>()),
-  fastaDownloadEnabled: () => flags.fasta,
-}));
 
 vi.mock('../services/fastaExport', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../services/fastaExport')>()),
@@ -332,29 +326,6 @@ describe('GenomePage', () => {
     const compare = await screen.findByRole('tab', { name: 'Compare 1' });
     expect(compare).toBeEnabled();
     expect(query?.get('taxon_id')).toBe('9606');
-  });
-
-  it('disables Compare when no other genome shares the species', async () => {
-    flags.fasta = false;
-    onTestFinished(() => {
-      flags.fasta = true;
-    });
-    server.use(
-      http.get(`${API}/genomes`, () =>
-        HttpResponse.json({
-          ...genomesFixture,
-          results: genomesFixture.results.filter((g) => g.digest === DIGEST),
-        }),
-      ),
-    );
-    renderGenome(`/genomes/${DIGEST}?tab=compare`);
-    await waitFor(() =>
-      expect(screen.getByRole('tab', { name: 'Compare' })).toBeDisabled(),
-    );
-    expect(screen.getByRole('tab', { name: 'Compare' })).toHaveAttribute(
-      'title',
-      'No other genomes of this species',
-    );
   });
 
   it('keeps Compare open for your own FASTA when no other genome shares the species', async () => {

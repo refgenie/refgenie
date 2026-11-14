@@ -53,11 +53,8 @@ describe('SequencesPanel extract links', () => {
   });
 });
 
-function renderExtract(route = '/?tab=extract', browser = true) {
-  return renderWithProviders(
-    <ExtractPanel digest={DIGEST} storeUrl={STORE} browserStoreUrl={browser ? STORE : null} />,
-    { route },
-  );
+function renderExtract(route = '/?tab=extract') {
+  return renderWithProviders(<ExtractPanel digest={DIGEST} storeUrl={STORE} />, { route });
 }
 
 describe('ExtractPanel', () => {
@@ -91,7 +88,7 @@ describe('ExtractPanel', () => {
   it('runs a region from the URL under StrictMode', async () => {
     renderWithProviders(
       <StrictMode>
-        <ExtractPanel digest={DIGEST} storeUrl={STORE} browserStoreUrl={STORE} />
+        <ExtractPanel digest={DIGEST} storeUrl={STORE} />
       </StrictMode>,
       { route: '/?region=extra:1-4' },
     );
@@ -101,13 +98,6 @@ describe('ExtractPanel', () => {
   it('says the browser reads up to 100,000 bases', async () => {
     renderExtract();
     expect(await screen.findByText(/Up to 100,000 bases/)).toBeInTheDocument();
-  });
-
-  it('shows code for the region typed, without the browser box when it is off', async () => {
-    renderExtract('/?tab=extract&region=extra:1-4', false);
-    expect(await screen.findByRole('heading', { name: 'In your own code' })).toBeInTheDocument();
-    expect(screen.queryByLabelText('Region')).toBeNull();
-    expect(screen.getByText(/--start 0 --end 4 --remote https:\/\/store\.test\/s\/$/)).toBeInTheDocument();
   });
 
   it('keeps the code in step with the region box', async () => {
@@ -125,8 +115,8 @@ describe('ExtractPanel', () => {
   });
 });
 
-async function bedMode(route = '/?tab=extract', browser = true) {
-  renderExtract(route, browser);
+async function bedMode(route = '/?tab=extract') {
+  renderExtract(route);
   await userEvent.click(await screen.findByRole('radio', { name: 'BED file' }));
 }
 
@@ -228,16 +218,6 @@ describe('ExtractPanel BED mode', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.getByText('Cancelled.')).toBeInTheDocument();
     expect(screen.queryByText(/^>extra/)).toBeNull();
-  });
-
-  it('shows BED code for each tool, without the browser box when it is off', async () => {
-    await bedMode('/?tab=extract', false);
-    expect(screen.queryByLabelText('BED lines')).toBeNull();
-    expect(
-      screen.getByText(`refget store export ${DIGEST} --bed regions.bed --remote ${STORE} -o regions.fa`),
-    ).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('tab', { name: 'Python' }));
-    expect(screen.getByText(/export_fasta_from_regions/)).toBeInTheDocument();
   });
 });
 
