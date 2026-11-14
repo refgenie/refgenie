@@ -256,10 +256,16 @@ Details: <https://docs.refgenie.org/refgenie/coordinates/>.
 
 ```bash
 refgenie compare hg38 hg38_noalt_decoy   # works for genomes you have not pulled
+refgenie compare sacCer3 R64-1-1 --json  # the full GA4GH comparison
 ```
 
-Same `sequences` and `names`: the same genome. Same `sequences`, different
-`names`: renamed. Shared `name_length_pairs`: the same coordinates.
+`compare` prints a one-line summary, for example
+`Same 17 sequences in the same order; all 17 names differ: chrI->I, ...`,
+then a rename map with one `old -> new` line for each sequence that has another
+name in the second genome. `--json` gives the summary, the rename map and the
+full GA4GH sequence-collection comparison. In that comparison: same `sequences`
+and `names` means the same genome; same `sequences` but different `names` means
+renamed; shared `name_length_pairs` means the same coordinates.
 
 Not sure which hg38 to pull? See the [choosing hg38 page](https://docs.refgenie.org/refgenie/choosing_hg38/).
 
