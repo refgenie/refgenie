@@ -97,12 +97,9 @@ class RefgetStoreRouter:
             stores: The store rows to open.
             cache_dir: Where remote stores cache what they fetch.
             readonly: Load each store in full and freeze it (server mode).
-            sole_store: The one store (there must be exactly one) holds every
-                genome this node reads, so a genome's ``store_name`` does not
-                pick it (local mode).
+            sole_store: The one store holds every genome this node reads, so a
+                genome's ``store_name`` does not pick it (local mode).
         """
-        if sole_store and len(stores) != 1:
-            raise ValueError("A sole-store router needs exactly one store")
         self._cache_dir = Path(cache_dir)
         self._readonly = readonly
         self._sole_store = sole_store
@@ -174,14 +171,8 @@ class RefgetStoreRouter:
         digests: set[str] = set()
         page = 0
         while True:
-            result = store.list_collections(page=page, page_size=page_size)
-            items = (result or {}).get("results", [])
-            for item in items:
-                digest = (
-                    item.get("digest") if isinstance(item, dict) else getattr(item, "digest", None)
-                )
-                if digest:
-                    digests.add(digest)
+            items = store.list_collections(page=page, page_size=page_size)["results"]
+            digests.update(item.digest for item in items)
             if len(items) < page_size:
                 break
             page += 1
@@ -191,11 +182,6 @@ class RefgetStoreRouter:
         return frozen
 
     # --- Dispatch -----------------------------------------------------------
-
-    @property
-    def sole_store(self) -> bool:
-        """Whether one store holds every genome this router reads (local mode)."""
-        return self._sole_store
 
     def serves(self, store_name: str | None) -> bool:
         """Whether a genome whose ``store_name`` is this is read through this router.
@@ -340,7 +326,6 @@ class RefgetStoreRouter:
             )
         return CollectionSequences(
             digest=genome_digest,
-            store=name,
             level1=dict(store.get_collection_level1(genome_digest)),
             sequences=rows,
             collection_aliases=[

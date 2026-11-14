@@ -358,7 +358,6 @@ class CollectionSequences:
     """A genome's sequence collection, row by row, from the store that owns it."""
 
     digest: str
-    store: str
     #: Level-1 attribute digests (``names``, ``lengths``, ``sequences``, ...).
     level1: dict[str, str]
     sequences: list[SequenceRow]
