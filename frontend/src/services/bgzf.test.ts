@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { gunzipSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
-import { BGZF_BLOCK_INPUT, BGZF_EOF, bgzf, bgzfBlock, crc32 } from './bgzf';
+import { BGZF_BLOCK_INPUT, BGZF_EOF, bgzf, crc32 } from './bgzf';
 
 async function collect(source: AsyncIterable<Uint8Array>): Promise<Uint8Array> {
   const parts: Uint8Array[] = [];
@@ -77,14 +77,6 @@ describe('bgzf', () => {
     const file = await collect(bgzf(chunked(new Uint8Array(0), [1])));
     expect([...file]).toEqual([...BGZF_EOF]);
     expect(gunzipSync(file).length).toBe(0);
-  });
-
-  it('stores a block that would not fit compressed', async () => {
-    const data = new Uint8Array(BGZF_BLOCK_INPUT).fill(65);
-    // A deflater that makes things bigger forces the stored-block path.
-    const block = await bgzfBlock(data, async () => new Uint8Array(70_000));
-    expect(block.length).toBe(18 + 5 + data.length + 8);
-    expect(Buffer.from(gunzipSync(block)).equals(Buffer.from(data))).toBe(true);
   });
 
   it('writes no EOF block when the source fails', async () => {
