@@ -8,7 +8,7 @@ renders both.
 
 from rich.table import Table
 
-from refgenie.models import AssetRegistryPathComponents
+from refgenie.models import AssetRegistryPathComponents, display_alias
 from refgenie.utils.tables import SECTION, build_table
 
 
@@ -36,19 +36,20 @@ def asset_table(
     if not asset_data:
         return build_table(title, [], [])
 
-    columns = ["Aliases", "Genome digest", "Asset group", "Asset"]
+    columns = ["Genome", "Asset group", "Asset"]
     if include_seek_keys:
         columns.append("Seek key")
 
     rows = []
     for genome_digest, asset_strings in asset_data.items():
-        # One section per genome, so a long listing stays readable.
+        # One section per genome, named once by its shortest plain alias, so a
+        # long listing stays readable in a normal terminal.
         if rows:
             rows.append(SECTION)
-        aliases_str = ", ".join(aliases_data.get(genome_digest, []))
-        for asset_string in asset_strings:
+        genome = display_alias(aliases_data.get(genome_digest, [])) or genome_digest
+        for i, asset_string in enumerate(asset_strings):
             components = AssetRegistryPathComponents.parse_registry_path(asset_string)
-            row = [aliases_str, genome_digest, components.asset_group, components.asset]
+            row = [genome if i == 0 else "", components.asset_group, components.asset]
             if include_seek_keys:
                 row.append(components.seek_key)
             rows.append(row)

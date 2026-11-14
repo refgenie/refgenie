@@ -115,6 +115,13 @@ class GenomeAlias(str):
         return core_schema.no_info_after_validator_function(cls, core_schema.str_schema())
 
 
+def display_alias(names: Iterable[str]) -> GenomeAlias | None:
+    """The shortest plain alias of ``names`` (ties alphabetical), the name to
+    show a person: no iGenomes path ('/') and no store-qualified 'store::name'."""
+    plain = [n for n in names if GenomeAlias.is_valid(n) and "::" not in n]
+    return GenomeAlias(min(plain, key=lambda n: (len(n), n))) if plain else None
+
+
 def first_usable_alias(names: Iterable[str]) -> GenomeAlias | None:
     """The first of ``names`` that is a valid alias here, skipping iGenomes paths
     such as 'Homo_sapiens/NCBI/GRCh38'; None if there is none."""
