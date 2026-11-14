@@ -346,10 +346,11 @@ Use `/mcp` exactly, with no trailing slash. Only server mode has `/mcp`;
 check `"mode": "server"` in `/service-info` first.
 
 **Over stdio, against the user's own database**, with the `refgenie-mcp`
-command from the refgenie package:
+command from the refgenie package. It needs the `mcp` extra, or the `server`
+extra, which includes `dash` and `mcp`:
 
 ```bash
-pip install "refgenie[mcp]>=1.0.0a1"
+pip install "refgenie[mcp]>=1.0.0a2"
 claude mcp add refgenie refgenie-mcp
 ```
 
