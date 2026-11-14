@@ -94,7 +94,7 @@ export function useFastaDownload({
   const unavailable = useMemo(() => {
     const map = new Map<string, string>();
     for (const seq of collection?.seqs ?? []) {
-      if (!isDecodable(seq)) {
+      if (!isDecodable(seq.alphabet)) {
         map.set(seq.name, `${seq.alphabet || 'unknown'} alphabet, not supported here`);
       }
     }

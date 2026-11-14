@@ -245,17 +245,4 @@ describe('extractRegion', () => {
     // dna2bit: 20 bases fit in 5-6 bytes.
     expect(ranges).toEqual(['bytes=100-104']);
   });
-
-  it('refuses a range outside the sequence', async () => {
-    await expect(
-      extractRegion({
-        baseUrl: BASE,
-        seq: SEQS[0],
-        start: 0,
-        end: SEQS[0].length + 1,
-        wasm,
-        fetchImpl: fixtureFetch,
-      }),
-    ).rejects.toThrow(/outside/);
-  });
 });

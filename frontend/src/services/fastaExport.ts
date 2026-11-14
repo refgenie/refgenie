@@ -40,7 +40,7 @@ const DEFAULT_WINDOW_BASES = 8_000_000;
 const NEWLINE = 0x0a;
 
 /** Alphabets whose `.seq` bytes are bit-packed and can be decoded by range. */
-export const DECODABLE = new Set(['dna2bit', 'dna3bit', 'dnaio', 'dnaiupac']);
+const DECODABLE = new Set(['dna2bit', 'dna3bit', 'dnaio', 'dnaiupac']);
 
 /** Expand a refget store path template, the same rules as gtars `expand_template`. */
 export function expandTemplate(template: string, digest: string): string {
@@ -99,20 +99,20 @@ export function loadSeqTemplate(
   return template;
 }
 
-/** Throw if any sequence uses an alphabet that cannot be decoded by range. */
-/** True if the browser can rebuild this sequence's bases. */
-export function isDecodable(seq: Pick<FastaSeq, 'alphabet'>): boolean {
-  return DECODABLE.has(seq.alphabet.toLowerCase());
+/** True if the browser can read bases of this alphabet by range. */
+export function isDecodable(alphabet: string | null | undefined): boolean {
+  return !!alphabet && DECODABLE.has(alphabet.toLowerCase());
 }
 
+/** Why the browser cannot read a sequence's bases. */
+export function undecodableMessage(seq: { name: string; alphabet?: string | null }): string {
+  return `${seq.name} uses the ${seq.alphabet || 'unknown'} alphabet, which cannot be read here.`;
+}
+
+/** Throw if any sequence uses an alphabet that cannot be decoded by range. */
 export function assertDecodable(seqs: FastaSeq[]): void {
-  const bad = seqs.find((seq) => !isDecodable(seq));
-  if (bad) {
-    throw new Error(
-      `Sequence "${bad.name}" uses the ${bad.alphabet || 'unknown'} alphabet, ` +
-        'which cannot be rebuilt as FASTA in the browser.',
-    );
-  }
+  const bad = seqs.find((seq) => !isDecodable(seq.alphabet));
+  if (bad) throw new Error(undecodableMessage(bad));
 }
 
 const encoder = new TextEncoder();

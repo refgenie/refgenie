@@ -10,7 +10,7 @@ import { SearchBox } from '../common/SearchBox';
 import { cn } from '../../utils/cn';
 import { preferredAlias } from './aliases';
 import type { SequenceResponse } from '../../types/api';
-import { isExtractable } from '../../services/regionExtract';
+import { isDecodable } from '../../services/fastaExport';
 
 export const SEQUENCE_PAGE_SIZE = 50;
 
@@ -171,7 +171,7 @@ export function SequenceTable({ sequences, extractHref, aside }: SequenceTablePr
                   </td>
                   {extractHref && (
                     <td className="rg-table__cell" data-label="">
-                      {isExtractable(row.alphabet) && (
+                      {isDecodable(row.alphabet) && (
                         <Link
                           className="rg-link text-sm"
                           aria-label={`Extract a region of ${row.name}`}

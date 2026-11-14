@@ -36,7 +36,7 @@ import {
   SequencesPanel,
 } from '../components/sequences/GenomeSequencePanels';
 import { CollectionDigests } from '../components/sequences/CollectionDigests';
-import { isExtractable } from '../services/regionExtract';
+import { isDecodable } from '../services/fastaExport';
 import { assetRequestUrl } from '../services/projectLinks';
 import { ExternalLink } from '../components/common/ExternalLink';
 import { NoAssetsPanel } from '../components/genomes/NoAssetsPanel';
@@ -99,7 +99,7 @@ export function GenomePage() {
   // Comparing your own FASTA keeps Compare open without other genomes.
   const compareOff = noSequences ? NO_SEQUENCES : undefined;
   const readable = sequences.data
-    ? sequences.data.sequences.some((row) => isExtractable(row.alphabet))
+    ? sequences.data.sequences.some((row) => isDecodable(row.alphabet))
     : null;
   const downloadOff = record && !storeUrl ? NO_STORE : undefined;
   const extractOff =

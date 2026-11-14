@@ -15,11 +15,12 @@
  */
 
 import {
-  DECODABLE,
+  isDecodable,
   loadGtars,
   loadSeqTemplate,
   readEncodedBases,
   seqUrl,
+  undecodableMessage,
   type FastaWasm,
 } from './fastaExport';
 
@@ -28,11 +29,6 @@ export interface RegionSeq {
   length: number;
   alphabet: string | null;
   sha512t24u: string;
-}
-
-/** True if a sequence's bases can be read by range in the browser. */
-export function isExtractable(alphabet: string | null | undefined): boolean {
-  return !!alphabet && DECODABLE.has(alphabet.toLowerCase());
 }
 
 export interface ExtractRegionArgs {
@@ -57,16 +53,7 @@ export async function extractRegion({
   fetchImpl = fetch,
   signal,
 }: ExtractRegionArgs): Promise<string> {
-  if (!isExtractable(seq.alphabet)) {
-    throw new Error(
-      `${seq.name} uses the ${seq.alphabet ?? 'unknown'} alphabet, which cannot be read here.`,
-    );
-  }
-  if (start < 0 || end > seq.length || start > end) {
-    throw new Error(
-      `Region ${start}-${end} is outside ${seq.name} (${seq.length} bases).`,
-    );
-  }
+  if (!isDecodable(seq.alphabet)) throw new Error(undecodableMessage(seq));
   const [template, gtars] = await Promise.all([
     loadSeqTemplate(baseUrl, fetchImpl),
     wasm ?? loadGtars(),

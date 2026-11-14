@@ -1,7 +1,8 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { FastaResult } from './FastaResult';
 import { BED_CONCURRENCY, extractBed } from '../../services/bedExtract';
-import { isExtractable, type RegionSeq } from '../../services/regionExtract';
+import { isDecodable } from '../../services/fastaExport';
+import type { RegionSeq } from '../../services/regionExtract';
 import {
   MAX_BED_BASES,
   MAX_BED_REGIONS,
@@ -31,7 +32,7 @@ type Run =
   | { kind: 'done'; fasta: string; records: number; bases: number; fileName: string };
 
 const fmt = (n: number) => n.toLocaleString();
-const readable = (seq: { alphabet?: string | null }) => isExtractable(seq.alphabet);
+const readable = (seq: { alphabet?: string | null }) => isDecodable(seq.alphabet);
 
 /**
  * The Extract tab's BED mode: choose (or drop) or paste a BED file, see what

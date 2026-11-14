@@ -13,10 +13,10 @@ import { BedExtract } from './BedExtract';
 import { defaultRegion, parseRegion, type ParsedRegion } from '../../utils/parseRegion';
 import { bedSnippets, regionSnippets } from '../../utils/codeSnippets';
 import { extractHref } from '../../utils/genomePage';
-import { isExtractable } from '../../services/regionExtract';
 import {
   DEFAULT_COLLECTION_TEMPLATE,
   DEFAULT_SEQ_TEMPLATE,
+  isDecodable,
   loadSeqTemplate,
   seqUrl,
 } from '../../services/fastaExport';
@@ -104,7 +104,7 @@ export function ExtractPanel({
     [region, data],
   );
   const fallback = useMemo(() => {
-    const first = data?.sequences.find((row) => isExtractable(row.alphabet));
+    const first = data?.sequences.find((row) => isDecodable(row.alphabet));
     return first && data ? tryParse(defaultRegion(first), data.sequences) : null;
   }, [data]);
   const shown = parsed ?? fallback;

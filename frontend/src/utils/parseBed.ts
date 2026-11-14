@@ -23,6 +23,7 @@ import {
   inflateMembers,
   sniffCompression,
 } from '../vendor/fastaDigest/fastaDigest';
+import { undecodableMessage } from '../services/fastaExport';
 
 /** The most regions one in-browser BED extraction may read. */
 export const MAX_BED_REGIONS = 5_000;
@@ -147,9 +148,7 @@ export function parseBed(
       continue;
     }
     if (!isReadable(seq)) {
-      problem(
-        `${seq.name} uses the ${seq.alphabet ?? 'unknown'} alphabet, which cannot be read here.`,
-      );
+      problem(undecodableMessage(seq));
       continue;
     }
     const label = labelText && labelText !== '.' ? labelText : null;
