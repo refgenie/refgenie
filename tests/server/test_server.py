@@ -4,7 +4,7 @@ router and the data-channel mirror.
 
 from collections import Counter
 from unittest.mock import MagicMock
-from refgenie.exceptions import MissingGenomeError
+from refgenie.exceptions import MissingGenomeError, UnservedStoreError
 
 import pytest
 import yaml
@@ -325,6 +325,9 @@ class TestGenomesEndpoint:
 
             def served_store_names(self):
                 return ["jungle"], True
+
+            def get_collection_sequences(self, genome_digest, store_name):
+                raise UnservedStoreError(genome_digest, store_name)
 
         # Read the store's aliases now; the stub router below has no store.
         rgc_with_alias.alias.get_for_genome(digest)

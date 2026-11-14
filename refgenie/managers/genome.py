@@ -535,18 +535,6 @@ class GenomeManager(ResourceManager):
         """The store that owns ``genome``, with its collection loaded."""
         return self._store_router_getter().store_for_genome(genome.digest, genome.store_name)
 
-    def get_served(self, digest: GenomeDigest) -> Genome:
-        """The genome, if this refgenie serves the store it lives in.
-
-        Raises:
-            MissingGenomeError: If there is no such genome.
-            UnservedStoreError: If its store is not served here.
-        """
-        genome = self.get(digest)
-        if not self._store_router_getter().serves(genome.store_name):
-            raise UnservedStoreError(digest, genome.store_name)
-        return genome
-
     def level2(self, digest: GenomeDigest) -> dict:
         """A genome's level-2 collection, from the store its ``store_name`` names.
 
@@ -554,7 +542,7 @@ class GenomeManager(ResourceManager):
             MissingGenomeError: If there is no such genome, its store is not
                 served, or the store lacks the collection.
         """
-        genome = self.get_served(digest)
+        genome = self.get(digest)
         return self._owning_store(genome).get_collection_level2(digest)
 
     def sequences(self, digest: GenomeDigest):
@@ -564,7 +552,7 @@ class GenomeManager(ResourceManager):
             MissingGenomeError: If there is no such genome, its store is not
                 served, or the store lacks the collection.
         """
-        genome = self.get_served(digest)
+        genome = self.get(digest)
         return self._store_router_getter().get_collection_sequences(digest, genome.store_name)
 
     def get_metadata(self, digest: GenomeDigest) -> dict:

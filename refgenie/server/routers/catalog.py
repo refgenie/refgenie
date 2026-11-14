@@ -194,8 +194,8 @@ def compare_genomes(digest: str, other: str, rgc: Refgenie = Depends(get_refgeni
     from refgenie.utils.seqcol import compare_level2, seqcol_level2, summarize_comparison
 
     try:
-        a = rgc.genome.get_served(digest)
-        b = rgc.genome.get_served(other)
+        a = rgc.genome.get(digest)
+        b = rgc.genome.get(other)
         # The loaded stores, never a genome's remote_url; the same comparison
         # `refgenie compare` and MCP return.
         side_a = seqcol_level2(rgc.store_router.store_for_genome(digest, a.store_name), digest)
@@ -507,7 +507,7 @@ def get_alias(name: str, rgc: Refgenie = Depends(get_refgenie)):
         raise HTTPException(status_code=404, detail=f"Alias '{name}' not found")
 
     try:
-        genome = rgc.genome.get_served(digest)
+        genome = rgc.genome.get(digest)
         collection = rgc.store_router.get_collection_level2(digest, genome.store_name)
     except UnservedStoreError as e:
         raise _unserved(e) from None
