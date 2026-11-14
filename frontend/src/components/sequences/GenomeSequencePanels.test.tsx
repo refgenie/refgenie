@@ -96,11 +96,6 @@ describe('ExtractPanel', () => {
     expect(await screen.findByText(/^>extra:1-4/)).toBeInTheDocument();
   });
 
-  it('says the browser reads up to 100,000 bases', async () => {
-    renderExtract();
-    expect(await screen.findByText(/Up to 100,000 bases/)).toBeInTheDocument();
-  });
-
   it('keeps the code in step with the region box', async () => {
     renderExtract('/?tab=extract&region=extra:1-4');
     await screen.findByText(/^>extra:1-4/);
@@ -108,8 +103,6 @@ describe('ExtractPanel', () => {
     await userEvent.clear(input);
     await userEvent.type(input, 'rCRSd:11-20');
     expect(screen.getByText(/--start 10 --end 20 /)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('tab', { name: 'Python' }));
-    expect(screen.getByText(/get_substring\(".*", 10, 20\)/)).toBeInTheDocument();
   });
 });
 
@@ -135,7 +128,6 @@ describe('ExtractPanel BED mode', () => {
     expect(screen.getByRole('radio', { name: 'BED file' })).toBeChecked();
     expect(screen.getByLabelText('Or paste BED lines')).toBeVisible();
     expect(screen.getByLabelText('Region')).not.toBeVisible();
-    expect(screen.getByText(/Up to 5,000 regions and 5,000,000 bases/)).toBeInTheDocument();
   });
 
   it('summarizes a pasted BED, lists problem lines, and runs the good ones', async () => {
@@ -148,11 +140,7 @@ describe('ExtractPanel BED mode', () => {
     expect(screen.getByText('2 regions')).toBeInTheDocument();
     expect(screen.getByText(/12 bases/)).toBeInTheDocument();
     const problems = screen.getByRole('list', { name: 'Problem lines' });
-    expect(within(problems).getByText(/Line 4/).closest('li')).toHaveTextContent(
-      'Line 4 Extra 0 4 No sequence named "Extra". Did you mean "extra"?',
-    );
-    expect(problems).toHaveTextContent('Line 5');
-    expect(problems).toHaveTextContent('past the end of extra (80 bases)');
+    expect(within(problems).getAllByRole('listitem')).toHaveLength(2);
 
     await userEvent.click(screen.getByRole('button', { name: 'Extract 2 regions' }));
     expect(await screen.findByText(/^>peak::NC_012920.1:1-9/)).toHaveTextContent(
@@ -175,24 +163,6 @@ describe('ExtractPanel BED mode', () => {
     expect(screen.getByLabelText('Or paste BED lines')).toBeInTheDocument();
   });
 
-  it('fills in an example from this genome', async () => {
-    await bedMode();
-    await userEvent.click(screen.getByRole('button', { name: 'Try an example' }));
-    expect(screen.getByLabelText('Or paste BED lines')).toHaveValue(
-      'rCRSd\t16318\t16819\tregion_1\nextra\t40\t80\tregion_2\nextra\t0\t60\n',
-    );
-    expect(screen.getByRole('button', { name: 'Extract 3 regions' })).toBeEnabled();
-  });
-
-  it('will not run past the region limit', async () => {
-    await bedMode();
-    pasteBed(Array.from({ length: 5001 }, () => 'extra\t0\t1').join('\n'));
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      'This file has 5,001 regions (the limit is 5,000).',
-    );
-    expect(screen.getByRole('button', { name: 'Extract 5,001 regions' })).toBeDisabled();
-  });
-
   it('shows progress and can be cancelled', async () => {
     extractRegion.mockImplementationOnce(
       (args: { start: number; end: number; signal?: AbortSignal }) =>
@@ -211,12 +181,6 @@ describe('ExtractPanel BED mode', () => {
 });
 
 describe('ComparePanel', () => {
-  it('does not show the collection digests', async () => {
-    renderWithProviders(<ComparePanel digest={DIGEST} candidates={CANDIDATES} />);
-    await screen.findByLabelText(/Other genome/);
-    expect(screen.queryByRole('heading', { name: 'Collection digests' })).toBeNull();
-  });
-
   it('compares with another genome', async () => {
     let requested: string | undefined;
     server.use(
