@@ -288,6 +288,7 @@ export function GenomePage() {
               {activeTab === 'compare' && (
                 <ComparePanel
                   digest={record.digest}
+                  name={primaryAlias}
                   candidates={candidates}
                   canCompareFile={compareFile}
                 />

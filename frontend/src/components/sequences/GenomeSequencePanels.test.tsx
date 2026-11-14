@@ -293,4 +293,32 @@ describe('ComparePanel', () => {
     expect(box).toHaveAttribute('aria-expanded', 'false');
     expect(await screen.findByRole('link', { name: 'rCRSd · GenBank' })).toBeInTheDocument();
   });
+
+  it('leads with the server summary, naming genomes, and lists renames', async () => {
+    server.use(
+      http.get(`${API}/genomes/:digest/compare/:other`, () =>
+        HttpResponse.json({
+          ...genomeComparisonFixture,
+          digests: { a: DIGEST, b: OTHER },
+          summary: `All 1 sequences of ${DIGEST} are in ${OTHER}, which has 1 more; 1 names differ: chrM->MT.`,
+          name_map: { chrM: 'MT' },
+        }),
+      ),
+    );
+    renderWithProviders(
+      <ComparePanel digest={DIGEST} name="hg38" candidates={CANDIDATES} />,
+    );
+    const box = await screen.findByRole('combobox', { name: /Other genome/ });
+    await userEvent.click(box);
+    await userEvent.click(screen.getByRole('option', { name: 'rCRSd · GenBank' }));
+    expect(
+      await screen.findByText(
+        'All 1 sequences of hg38 are in rCRSd, which has 1 more; 1 names differ: chrM->MT.',
+      ),
+    ).toBeInTheDocument();
+    const renames = screen.getByRole('table', { name: '1 sequence has another name' });
+    expect(within(renames).getByRole('columnheader', { name: 'Name in hg38' })).toBeInTheDocument();
+    expect(within(renames).getByRole('columnheader', { name: 'Name in rCRSd' })).toBeInTheDocument();
+    expect(within(renames).getByText('MT')).toBeInTheDocument();
+  });
 });
