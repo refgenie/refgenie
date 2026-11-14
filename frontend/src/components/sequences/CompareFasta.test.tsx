@@ -92,7 +92,7 @@ describe('CompareFasta', () => {
 
   it('digests a picked file with progress, then shows an identical match', async () => {
     const worker = setup();
-    await userEvent.upload(screen.getByLabelText('FASTA file to compare'), fasta());
+    await userEvent.upload(screen.getByLabelText(/FASTA file/), fasta());
     expect(worker.files[0].name).toBe('mine.fa.gz');
     worker.send({ type: 'progress', bytesRead: 500, totalBytes: 1000 });
     expect(
@@ -118,7 +118,7 @@ describe('CompareFasta', () => {
     );
     const worker = setup();
     await userEvent.upload(
-      screen.getByLabelText('FASTA file to compare'),
+      screen.getByLabelText(/FASTA file/),
       fasta('mine.fa'),
     );
     worker.send({
@@ -164,7 +164,7 @@ describe('CompareFasta', () => {
       }),
     );
     const worker = setup();
-    await userEvent.upload(screen.getByLabelText('FASTA file to compare'), fasta());
+    await userEvent.upload(screen.getByLabelText(/FASTA file/), fasta());
     worker.send({
       type: 'result',
       result: result('OtherGenome', [seq('chr1', 100, 's1')]),
@@ -178,10 +178,10 @@ describe('CompareFasta', () => {
 
   it('cancels a running digest', async () => {
     const worker = setup();
-    await userEvent.upload(screen.getByLabelText('FASTA file to compare'), fasta());
+    await userEvent.upload(screen.getByLabelText(/FASTA file/), fasta());
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(worker.terminate).toHaveBeenCalled();
-    expect(screen.getByText('Drop a FASTA file here')).toBeInTheDocument();
+    expect(screen.queryByRole('progressbar')).toBeNull();
   });
 
   it('stops a running digest when it unmounts', async () => {
@@ -189,7 +189,7 @@ describe('CompareFasta', () => {
     const view = renderWithProviders(
       <CompareFasta digest={DIGEST} sequences={SEQUENCES} workerFactory={() => worker} />,
     );
-    await userEvent.upload(screen.getByLabelText('FASTA file to compare'), fasta());
+    await userEvent.upload(screen.getByLabelText(/FASTA file/), fasta());
     view.unmount();
     expect(worker.terminate).toHaveBeenCalled();
     // A late reply from the stopped worker is ignored.
@@ -198,7 +198,7 @@ describe('CompareFasta', () => {
 
   it('shows a digest error', async () => {
     const worker = setup();
-    await userEvent.upload(screen.getByLabelText('FASTA file to compare'), fasta());
+    await userEvent.upload(screen.getByLabelText(/FASTA file/), fasta());
     worker.send({
       type: 'error',
       message: 'No sequences found. Is this a FASTA file?',
@@ -211,7 +211,7 @@ describe('CompareFasta', () => {
   it('refuses a file that is not FASTA without starting a worker', async () => {
     const worker = setup();
     await userEvent.upload(
-      screen.getByLabelText('FASTA file to compare'),
+      screen.getByLabelText(/FASTA file/),
       fasta('reads.bam'),
       {
         applyAccept: false,

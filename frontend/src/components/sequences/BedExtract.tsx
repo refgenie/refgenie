@@ -1,8 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import type { DragEvent } from 'react';
 import { Icon } from '../common/Icon';
 import { Copyable } from '../common/Copyable';
-import { cn } from '../../utils/cn';
 import { BED_CONCURRENCY, extractBed } from '../../services/bedExtract';
 import { isExtractable, type RegionSeq } from '../../services/regionExtract';
 import {
@@ -39,16 +37,16 @@ const fmt = (n: number) => n.toLocaleString();
 const readable = (seq: { alphabet?: string | null }) => isExtractable(seq.alphabet);
 
 /**
- * The Extract tab's BED mode: drop, choose or paste a BED file, see what it
- * holds, then read every region in the browser into one FASTA file.
+ * The Extract tab's BED mode: choose (or drop) or paste a BED file, see what
+ * it holds, then read every region in the browser into one FASTA file.
  */
 export function BedExtract({ storeUrl, sequences }: BedExtractProps) {
+  const fileId = useId();
   const pasteId = useId();
   const hintId = useId();
   const fileInput = useRef<HTMLInputElement | null>(null);
   const [source, setSource] = useState<Source>({ kind: 'paste' });
   const [pasted, setPasted] = useState('');
-  const [dragging, setDragging] = useState(false);
   const [readError, setReadError] = useState<string | null>(null);
   const [run, setRun] = useState<Run>({ kind: 'idle' });
   const controller = useRef<AbortController | null>(null);
@@ -75,13 +73,6 @@ export function BedExtract({ storeUrl, sequences }: BedExtractProps) {
     } catch (error) {
       setReadError(error instanceof Error ? error.message : String(error));
     }
-  };
-
-  const onDrop = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setDragging(false);
-    const file = event.dataTransfer.files?.[0];
-    if (file) void loadFile(file);
   };
 
   const start = async () => {
@@ -148,85 +139,58 @@ export function BedExtract({ storeUrl, sequences }: BedExtractProps) {
 
   return (
     <section className="rg-bed" aria-label="Extract regions from a BED file">
-      <div
-        className={cn('rg-bed__drop', dragging && 'rg-bed__drop--over')}
-        data-testid="bed-drop"
-        onDragOver={(event) => {
-          event.preventDefault();
-          if (!working) setDragging(true);
-        }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={(event) => {
-          if (working) {
-            event.preventDefault();
-            return;
-          }
-          onDrop(event);
-        }}
-      >
-        {source.kind === 'file' ? (
-          <div className="rg-bed__file">
-            <Icon name="file" />
-            <span className="rg-bed__file-name">{source.name}</span>
-            <button
-              type="button"
-              className="rg-btn rg-btn--sm"
-              disabled={working}
-              onClick={() => {
-                reset();
-                setSource({ kind: 'paste' });
-                if (fileInput.current) fileInput.current.value = '';
-              }}
-            >
-              Remove
-            </button>
-          </div>
-        ) : (
-          <>
-            <p className="rg-bed__drop-text">
-              Drop a BED file here (.bed or .bed.gz), or{' '}
-              <button
-                type="button"
-                className="rg-btn rg-btn--bare"
-                disabled={working}
-                onClick={() => fileInput.current?.click()}
-              >
-                choose a file
-              </button>
-              . Or paste BED lines:
-            </p>
-            <label className="sr-only" htmlFor={pasteId}>
-              BED lines
-            </label>
-            <textarea
-              id={pasteId}
-              className="rg-field__input rg-field__input--mono rg-bed__paste"
-              rows={4}
-              spellCheck={false}
-              placeholder={example ?? 'chr1\t999999\t1000500\tname'}
-              aria-describedby={hintId}
-              value={pasted}
-              disabled={working}
-              onChange={(event) => {
-                reset();
-                setPasted(event.target.value);
-              }}
-            />
-          </>
-        )}
+      <label className="rg-region__label" htmlFor={fileId}>
+        BED file (.bed or .bed.gz)
+      </label>
+      <div className="rg-bed__file">
         <input
+          id={fileId}
           ref={fileInput}
           type="file"
-          className="sr-only"
-          tabIndex={-1}
-          aria-label="Choose a BED file"
+          className="rg-file-input"
           accept=".bed,.gz,.txt,.tsv,text/plain"
+          disabled={working}
           onChange={(event) => {
             const file = event.target.files?.[0];
             if (file) void loadFile(file);
           }}
         />
+        {source.kind === 'file' && (
+          <button
+            type="button"
+            className="rg-btn rg-btn--sm"
+            disabled={working}
+            onClick={() => {
+              reset();
+              setSource({ kind: 'paste' });
+              if (fileInput.current) fileInput.current.value = '';
+            }}
+          >
+            Remove file
+          </button>
+        )}
       </div>
+      {source.kind === 'paste' && (
+        <>
+          <label className="rg-region__label" htmlFor={pasteId}>
+            Or paste BED lines
+          </label>
+          <textarea
+            id={pasteId}
+            className="rg-field__input rg-field__input--mono rg-bed__paste"
+            rows={4}
+            spellCheck={false}
+            placeholder={example ?? 'chr1\t999999\t1000500\tname'}
+            aria-describedby={hintId}
+            value={pasted}
+            disabled={working}
+            onChange={(event) => {
+              reset();
+              setPasted(event.target.value);
+            }}
+          />
+        </>
+      )}
       <p id={hintId} className="rg-region__hint">
         BED coordinates: 0-based, end not included. Each region becomes one FASTA record
         named like bedtools getfasta -name: <code>name::chr:start-end</code>, or{' '}

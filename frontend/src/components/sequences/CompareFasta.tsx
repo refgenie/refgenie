@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type { DragEvent } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { DigestChip } from '../common/DigestChip';
 import { ScopedLink } from '../common/ScopedLink';
 import { ComparisonResult } from './ComparisonResult';
@@ -19,7 +18,6 @@ import {
 import { formatBytes, formatDigest } from '../../utils/format';
 import { preferredAlias } from '../../utils/genomes';
 import { listAliases } from '../../services/resources/aliases';
-import { cn } from '../../utils/cn';
 import type { SequenceRow } from './types';
 
 type State =
@@ -61,15 +59,15 @@ function useMatchingGenome(fileDigest: string | undefined): {
 }
 
 /**
- * The Compare tab's "your own FASTA" box: drop or pick a FASTA file, digest it
+ * The Compare tab's "your own FASTA" box: pick (or drop) a FASTA file, digest it
  * in the browser (a worker running the gtars wasm hasher), and compare its
  * sequence collection with this genome's.
  */
 export function CompareFasta({ digest, sequences, workerFactory }: CompareFastaProps) {
   const [state, setState] = useState<State>({ kind: 'idle' });
-  const [dragging, setDragging] = useState(false);
   const cancelRef = useRef<(() => void) | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const inputId = useId();
 
   // Stop a running digest when the tab closes. Clearing the ref first makes
   // the job's handlers skip their setState on the unmounted component.
@@ -138,13 +136,8 @@ export function CompareFasta({ digest, sequences, workerFactory }: CompareFastaP
     cancelRef.current = null;
     stop?.();
     setState({ kind: 'idle' });
-  };
-
-  const onDrop = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    setDragging(false);
-    const file = event.dataTransfer.files?.[0];
-    if (file && state.kind !== 'reading') start(file);
+    // So choosing the same file again starts it again.
+    if (inputRef.current) inputRef.current.value = '';
   };
 
   const done = state.kind === 'done' ? state : null;
@@ -191,64 +184,41 @@ export function CompareFasta({ digest, sequences, workerFactory }: CompareFastaP
           reads the file and computes its sequence collection digest; the file never
           leaves your computer.
         </p>
-        <div
-          className={cn('rg-dropzone', dragging && 'rg-dropzone--active')}
-          onDragOver={(event) => {
-            event.preventDefault();
-            if (!reading) setDragging(true);
-          }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={onDrop}
-          data-testid="fasta-dropzone"
-        >
-          {reading ? (
-            <div className="rg-dropzone__body">
-              <p className="text-sm">
-                Reading{' '}
-                <strong className="rg-dropzone__name">{reading.file.name}</strong>
-              </p>
-              <progress
-                className="rg-progress__bar"
-                value={percent}
-                max={100}
-                aria-label={`Reading ${reading.file.name}: ${percent}%`}
-              />
-              <p className="rg-muted text-sm">
-                {formatBytes(reading.bytesRead)} of {formatBytes(reading.file.size)} (
-                {percent}
-                %)
-              </p>
-              <button type="button" className="rg-btn rg-btn--sm" onClick={cancel}>
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <div className="rg-dropzone__body">
-              <p>Drop a FASTA file here</p>
-              <p className="rg-muted text-sm">.fa, .fasta or .fna, plain or gzipped</p>
-              <button
-                type="button"
-                className="rg-btn rg-btn--sm"
-                onClick={() => inputRef.current?.click()}
-              >
-                Choose a file…
-              </button>
-            </div>
-          )}
+        <div className="flex flex-col items-start gap-2">
+          <label className="rg-region__label" htmlFor={inputId}>
+            FASTA file (.fa, .fasta or .fna, plain or gzipped)
+          </label>
           <input
+            id={inputId}
             ref={inputRef}
             type="file"
             accept={FASTA_ACCEPT}
-            className="sr-only"
-            aria-label="FASTA file to compare"
-            tabIndex={-1}
+            className="rg-file-input"
+            disabled={!!reading}
             onChange={(event) => {
               const file = event.target.files?.[0];
-              event.target.value = '';
               if (file) start(file);
             }}
           />
         </div>
+
+        {reading && (
+          <div className="flex flex-col items-start gap-2">
+            <progress
+              className="rg-progress__bar"
+              value={percent}
+              max={100}
+              aria-label={`Reading ${reading.file.name}: ${percent}%`}
+            />
+            <p className="rg-muted text-sm">
+              Reading {reading.file.name}: {formatBytes(reading.bytesRead)} of{' '}
+              {formatBytes(reading.file.size)} ({percent}%)
+            </p>
+            <button type="button" className="rg-btn rg-btn--sm" onClick={cancel}>
+              Cancel
+            </button>
+          </div>
+        )}
 
         {state.kind === 'error' && (
           <p className="rg-state rg-state--error" role="alert">
