@@ -5,6 +5,7 @@ multi-ecosystem-groups:
   monthly:
     schedule:
       interval: "monthly"
+    target-branch: "dev"
 
 updates:
   - package-ecosystem: "pip"
