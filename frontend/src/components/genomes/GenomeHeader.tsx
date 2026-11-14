@@ -1,15 +1,14 @@
 import { ExternalLink } from '../common/ExternalLink';
 import { Badge } from '../common/Badge';
 import { accessionUrl } from '../../utils/links';
-import { namingLabel, namingTitle } from '../../utils/namingStyle';
-import type { Naming } from '../../utils/namingStyle';
+import { NAMING_TITLE } from '../../utils/namingStyle';
 import type { GenomeDetailResponse } from '../../types/api';
 
 export interface GenomeHeaderProps {
   /** Undefined while loading: every line shows a placeholder of the same height. */
   genome: GenomeDetailResponse | undefined;
-  /** How its sequences are named (`chr1` or `1`), once they load. */
-  naming?: Naming | null;
+  /** How its sequences are named, e.g. `UCSC-style names (chr1)`, once they load. */
+  naming?: string | null;
 }
 
 function Placeholder({ width }: { width: 'sm' | 'md' | 'lg' }) {
@@ -47,7 +46,7 @@ function Subtitle({
   naming,
 }: {
   genome: GenomeDetailResponse;
-  naming?: Naming | null;
+  naming?: string | null;
 }) {
   const accession = genome.assembly_accession;
   const href = accessionUrl(
@@ -96,7 +95,7 @@ function Subtitle({
       {/* No dot before it: it may wrap to a line of its own. */}
       {naming && (
         <span className="rg-genome-head__naming">
-          <Badge title={namingTitle(naming)}>{namingLabel(naming)}</Badge>
+          <Badge title={NAMING_TITLE}>{naming}</Badge>
         </span>
       )}
     </>

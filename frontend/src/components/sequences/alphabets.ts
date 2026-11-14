@@ -40,19 +40,3 @@ export function alphabetCounts(sequences: SequenceRow[]): AlphabetPart[] {
     },
   ];
 }
-
-/** What each alphabet holds, in plain words, for tooltips and the hint. */
-export const ALPHABET_MEANINGS: Record<string, string> = {
-  dna2bit: 'Only A, C, G and T',
-  dna3bit: 'A, C, G, T and N (unknown base)',
-  dnaio: 'Any IUPAC DNA letter, such as R or Y',
-  dnaiupac: 'Any IUPAC DNA letter, such as R or Y',
-  protein: 'Protein letters',
-  ASCII: 'Any text',
-};
-
-/** A tooltip for an alphabet name, e.g. `dna2bit: Only A, C, G and T`. */
-export function alphabetTitle(alphabet: string): string | undefined {
-  const meaning = ALPHABET_MEANINGS[alphabet];
-  return meaning ? `${alphabet}: ${meaning}` : undefined;
-}

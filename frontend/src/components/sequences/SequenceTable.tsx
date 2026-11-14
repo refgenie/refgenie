@@ -9,7 +9,6 @@ import { Pagination } from '../common/Pagination';
 import { SearchBox } from '../common/SearchBox';
 import { cn } from '../../utils/cn';
 import { preferredAlias } from './aliases';
-import { alphabetTitle } from './alphabets';
 import type { SequenceRow } from './types';
 import { isExtractable } from '../../services/regionExtract';
 
@@ -37,13 +36,6 @@ function compareRows(a: SequenceRow, b: SequenceRow, column: SortColumn): number
 
 const NO_ALIAS =
   'No alias: no public record, such as RefSeq, has exactly these bases. Masked or edited sequences often have none.';
-
-/** Header tooltips, for the terms the panel's hint explains. */
-const DIGEST_TITLE =
-  'GA4GH refget sequence digest (SHA-512 cut to 24 bytes): an ID computed from the bases, so the same digest means the same sequence.';
-const MD5_TITLE = 'MD5 digest of the bases: an older ID, used by some tools and databases.';
-const ALPHABET_TITLE =
-  'Which letters the sequence holds: dna2bit only A, C, G, T; dna3bit also N; dnaio any IUPAC letter.';
 
 function AliasCell({ row }: { row: SequenceRow }) {
   const { primary, all } = preferredAlias(row.aliases);
@@ -138,13 +130,13 @@ export function SequenceTable({ sequences, extractHref, aside }: SequenceTablePr
                 <th scope="col" className="rg-table__cell">
                   Aliases
                 </th>
-                <th scope="col" className="rg-table__cell" title={DIGEST_TITLE}>
+                <th scope="col" className="rg-table__cell">
                   SHA-512/24u
                 </th>
-                <th scope="col" className="rg-table__cell" title={MD5_TITLE}>
+                <th scope="col" className="rg-table__cell">
                   MD5
                 </th>
-                <th scope="col" className="rg-table__cell" title={ALPHABET_TITLE}>
+                <th scope="col" className="rg-table__cell">
                   Alphabet
                 </th>
                 {extractHref && (
@@ -171,9 +163,7 @@ export function SequenceTable({ sequences, extractHref, aside }: SequenceTablePr
                     <DigestChip digest={row.md5} />
                   </td>
                   <td className="rg-table__cell" data-label="Alphabet">
-                    {row.alphabet ? (
-                      <span title={alphabetTitle(row.alphabet)}>{row.alphabet}</span>
-                    ) : (
+                    {row.alphabet || (
                       <span className="rg-muted" title="Not recorded">
                         –
                       </span>

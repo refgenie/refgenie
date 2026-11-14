@@ -93,12 +93,6 @@ describe('LandingPage', () => {
     );
   });
 
-  it('puts the AI section after Get started', () => {
-    renderWithProviders(<LandingPage />, { config: serverConfig });
-    const headings = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent);
-    expect(headings).toEqual(['Get started', 'Use it with an AI assistant']);
-  });
-
   it('offers the AI section in both modes', () => {
     renderWithProviders(<LandingPage />, { config: serverConfig });
     expect(

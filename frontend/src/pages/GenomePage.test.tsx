@@ -182,8 +182,7 @@ describe('GenomePage', () => {
       ),
     );
     renderGenome();
-    const badge = await screen.findByText('Ensembl-style names (1, MT)');
-    expect(badge).toHaveAttribute('title', expect.stringMatching(/1, not chr1/));
+    expect(await screen.findByText('Ensembl-style names (1)')).toBeInTheDocument();
   });
 
   it('keeps the alias list off the head; Details has it, each with a copy button', async () => {
