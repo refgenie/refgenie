@@ -28,20 +28,10 @@ export interface ComparisonResultProps {
   comparison: SeqcolComparison;
   /** Beside the badge, e.g. "Compared with <link>". */
   caption: ReactNode;
-  /** The other side in sentences, e.g. "the other genome", "your file". */
-  otherName?: string;
-  /** The other side's column heading. */
-  otherColumn?: string;
 }
 
 /** A's name -> B's name for each sequence B has under another name. */
-function Renames({
-  map,
-  otherName,
-}: {
-  map: Record<string, string>;
-  otherName: string;
-}) {
+function Renames({ map }: { map: Record<string, string> }) {
   const pairs = Object.entries(map);
   if (pairs.length === 0) return null;
   return (
@@ -57,7 +47,7 @@ function Renames({
               Name in this genome
             </th>
             <th scope="col" className="rg-table__cell">
-              Name in {otherName}
+              Name in the other genome
             </th>
           </tr>
         </thead>
@@ -79,13 +69,8 @@ function Renames({
 }
 
 /** A seqcol comparison: a verdict badge, plain sentences, and the per-attribute table. */
-export function ComparisonResult({
-  comparison,
-  caption,
-  otherName = 'the other genome',
-  otherColumn = 'In other',
-}: ComparisonResultProps) {
-  const verdict = interpretCoordinateSystem(comparison, otherName);
+export function ComparisonResult({ comparison, caption }: ComparisonResultProps) {
+  const verdict = interpretCoordinateSystem(comparison);
   const counts = comparison.array_elements;
   const { summary } = comparison;
   return (
@@ -104,7 +89,7 @@ export function ComparisonResult({
           verdict.messages.map((message) => <p key={message}>{message}</p>)
         )}
         {comparison.name_map && (
-          <Renames map={comparison.name_map} otherName={otherName} />
+          <Renames map={comparison.name_map} />
         )}
       </div>
       <div className="rg-table__wrap">
@@ -119,7 +104,7 @@ export function ComparisonResult({
                 In this genome
               </th>
               <th scope="col" className="rg-table__cell rg-table__cell--numeric">
-                {otherColumn}
+                In other
               </th>
               <th scope="col" className="rg-table__cell rg-table__cell--numeric">
                 Shared
@@ -139,7 +124,7 @@ export function ComparisonResult({
                 <td className="rg-table__cell rg-table__cell--numeric" data-label="In this genome">
                   {counts.a_count[attribute] ?? 'NA'}
                 </td>
-                <td className="rg-table__cell rg-table__cell--numeric" data-label={otherColumn}>
+                <td className="rg-table__cell rg-table__cell--numeric" data-label="In other">
                   {counts.b_count[attribute] ?? 'NA'}
                 </td>
                 <td className="rg-table__cell rg-table__cell--numeric" data-label="Shared">
@@ -149,7 +134,7 @@ export function ComparisonResult({
                   {orderLabel(counts.a_and_b_same_order[attribute])}
                 </td>
                 <td className="rg-table__cell" data-label="Interpretation">
-                  {interpretAttribute(comparison, attribute, otherName)}
+                  {interpretAttribute(comparison, attribute)}
                 </td>
               </tr>
             ))}

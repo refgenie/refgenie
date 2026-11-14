@@ -1,7 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { DigestChip } from '../common/DigestChip';
 import { ScopedLink } from '../common/ScopedLink';
-import { ComparisonResult } from './ComparisonResult';
 import { useResource } from '../../hooks/useResource';
 import { useApiClient } from '../../hooks/useApiClient';
 import { qk } from '../../services/queryKeys';
@@ -10,11 +9,7 @@ import { getGenome } from '../../services/resources/genomes';
 import { FASTA_ACCEPT, looksLikeFasta } from '../../vendor/fastaDigest/fastaDigest.ts';
 import type { FastaDigestResult } from '../../vendor/fastaDigest/fastaDigest.ts';
 import { digestFile, isAbortError, type WorkerFactory } from '../../vendor/fastaDigest/fastaDigestClient.ts';
-import {
-  comparisonArrays,
-  compareSeqcols,
-  summarizeFileComparison,
-} from '../../utils/seqcolLocal';
+import { summarizeFileComparison } from '../../utils/seqcolLocal';
 import { formatBytes, formatDigest } from '../../utils/format';
 import { preferredAlias } from '../../utils/genomes';
 import { listAliases } from '../../services/resources/aliases';
@@ -142,20 +137,6 @@ export function CompareFasta({ digest, sequences, workerFactory }: CompareFastaP
 
   const done = state.kind === 'done' ? state : null;
   const fileRows = done?.result.sequences;
-  const comparison = useMemo(
-    () =>
-      done && sequences
-        ? compareSeqcols(
-            comparisonArrays(sequences),
-            comparisonArrays(done.result.sequences),
-            {
-              a: digest,
-              b: done.result.digest,
-            },
-          )
-        : null,
-    [done, sequences, digest],
-  );
   const summary = useMemo(
     () =>
       done && sequences && fileRows
@@ -227,49 +208,36 @@ export function CompareFasta({ digest, sequences, workerFactory }: CompareFastaP
           </p>
         )}
 
-        {done && summary && comparison && (
-          <div className="flex flex-col gap-4" aria-live="polite">
-            <div className="flex flex-col gap-2">
-              <h3 className="text-base font-semibold">{summary.headline}</h3>
-              <ul className="rg-compare-fasta__details flex flex-col gap-1">
-                {summary.details.map((line) => (
-                  <li key={line}>{line}</li>
-                ))}
-              </ul>
-              {match && (
-                <p>
-                  Your file matches{' '}
-                  <ScopedLink
-                    className="rg-link"
-                    to={`/genomes/${encodeURIComponent(match.digest)}`}
-                  >
-                    {match.label}
-                  </ScopedLink>{' '}
-                  in refgenie.
-                </p>
-              )}
-              <p className="rg-muted text-sm flex items-center gap-2 flex-wrap">
-                <span>
-                  {done.file.name} · {formatBytes(done.file.size)} ·{' '}
-                  {done.result.n_sequences.toLocaleString()}{' '}
-                  {done.result.n_sequences === 1 ? 'sequence' : 'sequences'} · read in{' '}
-                  {done.seconds < 10
-                    ? done.seconds.toFixed(1)
-                    : Math.round(done.seconds)}{' '}
-                  s
-                </span>
+        {done && summary && (
+          <div className="flex flex-col gap-2" aria-live="polite">
+            <h3 className="text-base font-semibold">{summary.headline}</h3>
+            <ul className="rg-compare-fasta__details flex flex-col gap-1">
+              {summary.details.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+            {match && (
+              <p>
+                Your file matches{' '}
+                <ScopedLink
+                  className="rg-link"
+                  to={`/genomes/${encodeURIComponent(match.digest)}`}
+                >
+                  {match.label}
+                </ScopedLink>{' '}
+                in refgenie.
               </p>
-              <p className="text-sm flex items-center gap-2 flex-wrap">
-                <span>Your file&apos;s digest:</span>
-                <DigestChip digest={done.result.digest} length={32} />
-              </p>
-            </div>
-            <ComparisonResult
-              comparison={comparison}
-              caption={<>Compared with your file</>}
-              otherName="your file"
-              otherColumn="In your file"
-            />
+            )}
+            <p className="rg-muted text-sm">
+              {done.file.name} · {formatBytes(done.file.size)} ·{' '}
+              {done.result.n_sequences.toLocaleString()}{' '}
+              {done.result.n_sequences === 1 ? 'sequence' : 'sequences'} · read in{' '}
+              {done.seconds < 10 ? done.seconds.toFixed(1) : Math.round(done.seconds)} s
+            </p>
+            <p className="text-sm flex items-center gap-2 flex-wrap">
+              <span>Your file&apos;s digest:</span>
+              <DigestChip digest={done.result.digest} length={32} />
+            </p>
           </div>
         )}
       </div>

@@ -102,45 +102,8 @@ describe('CompareFasta', () => {
     expect(
       await screen.findByRole('heading', { name: 'Your file is this genome' }),
     ).toBeInTheDocument();
-    expect(screen.getByText('Same coordinates')).toBeInTheDocument();
     expect(screen.getByTitle(DIGEST)).toBeInTheDocument();
-    expect(
-      screen.getByRole('columnheader', { name: 'In your file' }),
-    ).toBeInTheDocument();
     expect(worker.terminate).toHaveBeenCalled();
-  });
-
-  it('explains a renamed and a dropped sequence', async () => {
-    server.use(
-      http.get(`${API}/genomes/:digest`, () =>
-        HttpResponse.json({ detail: 'not found' }, { status: 404 }),
-      ),
-    );
-    const worker = setup();
-    await userEvent.upload(
-      screen.getByLabelText(/FASTA file/),
-      fasta('mine.fa'),
-    );
-    worker.send({
-      type: 'result',
-      result: result('FileDigest', [seq('chr1', 100, 's1'), seq('MT', 16, 'sM')]),
-      stats: STATS,
-    });
-    expect(
-      await screen.findByRole('heading', { name: 'Your file is part of this genome' }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('Your file is missing 1 sequence of this genome (chr2).'),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        '1 shared sequence has a different name in your file (chrM is MT).',
-      ),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('The coordinate systems partly overlap.'),
-    ).toBeInTheDocument();
-    expect(screen.queryByText(/matches/)).not.toBeInTheDocument();
   });
 
   it('links another genome in refgenie with the same digest', async () => {
