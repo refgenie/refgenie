@@ -1,15 +1,16 @@
 // Ported from repos/refget/frontend/src/pages/ComparisonView.tsx @ c0d3e09; keep the two in step.
 
+import { useMemo } from 'react';
 import { FormField } from '../common/FormField';
+import { FilterCombobox } from '../common/FilterCombobox';
+import type { ComboOption } from '../common/FilterCombobox';
 import { ErrorState, LoadingState } from '../common/states';
 import { ScopedLink } from '../common/ScopedLink';
 import { ComparisonResult } from './ComparisonResult';
 import type { SeqcolComparison } from './types';
+import type { CompareCandidate } from '../../utils/compareCandidates';
 
-export interface CompareCandidate {
-  digest: string;
-  label: string;
-}
+export type { CompareCandidate };
 
 export interface CompareGenomesProps {
   digest: string;
@@ -31,7 +32,14 @@ export function CompareGenomes({
   onSelect,
   selected,
 }: CompareGenomesProps) {
-  const options = candidates.filter((c) => c.digest !== digest);
+  const options = useMemo(
+    () => candidates.filter((c) => c.digest !== digest),
+    [candidates, digest],
+  );
+  const comboOptions = useMemo<ComboOption[]>(
+    () => options.map((c) => ({ value: c.digest, label: c.label, keywords: c.aliases })),
+    [options],
+  );
   const other = options.find((c) => c.digest === selected);
 
   return (
@@ -44,19 +52,14 @@ export function CompareGenomes({
           </p>
         ) : (
           <FormField htmlFor="compare-genome" label="Other genome">
-            <select
+            <FilterCombobox
               id="compare-genome"
-              className="rg-field__input"
-              value={selected ?? ''}
-              onChange={(event) => onSelect(event.target.value)}
-            >
-              <option value="">Choose a genome…</option>
-              {options.map((c) => (
-                <option key={c.digest} value={c.digest}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
+              options={comboOptions}
+              value={selected}
+              onChange={onSelect}
+              placeholder={`Type to filter ${options.length} genomes…`}
+              noun="genome"
+            />
           </FormField>
         )}
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { rankCompareCandidates, sameSpecies } from './compareCandidates';
+import { nameStem, rankCompareCandidates, sameSpecies } from './compareCandidates';
 import type { CandidateGenome } from './compareCandidates';
 
 const genome = (
@@ -76,5 +76,45 @@ describe('rankCompareCandidates', () => {
     ]);
     expect(first.label).toBe('hg38_full · GCA_000001405.15');
     expect(second.label).toBe('hg38_ucsc · UCSC');
+  });
+
+  it('puts genomes that share a name stem first, by name', () => {
+    const hg38 = genome({
+      digest: 'hg38',
+      aliases: ['hg38', 'GRCh38-fasta-no-alt-analysis'],
+      assembly_accession: 'GCA_000001405.15',
+      assembly_source: 'NCBI',
+    });
+    const ranked = rankCompareCandidates(hg38, [
+      genome({ digest: 'a', aliases: ['hg19'], assembly_accession: 'GCF_000001405.25' }),
+      genome({ digest: 'b', aliases: ['hg38_primary'], assembly_source: 'UCSC' }),
+      genome({
+        digest: 'c',
+        aliases: ['hg38_full_analysis'],
+        assembly_accession: 'GCA_000001405.15',
+      }),
+      genome({ digest: 'd', aliases: ['GRCh38-81-ensembl', 'homo_sapiens_ENSEMBL_release_81'] }),
+      genome({ digest: 'e', aliases: ['hg38-ddbj', 'hg38_initial'] }),
+      // Its name is hg19's; a stray GRCh38 alias does not pull it up.
+      genome({ digest: 'f', aliases: ['hg19_b37', 'GRCh38-b37-mislabeled'] }),
+    ]);
+    expect(ranked.map((c) => c.name)).toEqual([
+      'GRCh38-81-ensembl', // shares the GRCh38 stem with an alias of hg38
+      'hg38_full_analysis',
+      'hg38_primary',
+      'hg38-ddbj',
+      'hg19', // not the family: same assembly accession, other version
+      'hg19_b37',
+    ]);
+    // Every alias rides along, for type-to-filter.
+    expect(ranked[0].aliases).toEqual(['GRCh38-81-ensembl', 'homo_sapiens_ENSEMBL_release_81']);
+  });
+});
+
+describe('nameStem', () => {
+  it('is the leading letters and digits, lowercased', () => {
+    expect(nameStem('hg38_primary')).toBe('hg38');
+    expect(nameStem('GRCh38.p14-fasta')).toBe('grch38');
+    expect(nameStem('rCRSd')).toBeNull();
   });
 });

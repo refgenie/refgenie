@@ -22,7 +22,11 @@ vi.mock('../../services/regionExtract', async (importOriginal) => ({
 const STORE = 'https://store.test/s/';
 const DIGEST = '5cb5b9d2d1e2b5e5e2f0a3c4d5e6f708';
 const OTHER = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
-const CANDIDATES = [{ digest: OTHER, label: 'rCRSd · GenBank' }];
+const THIRD = 'ffffffffffffffffffffffffffffffff';
+const CANDIDATES = [
+  { digest: OTHER, label: 'rCRSd · GenBank', name: 'rCRSd', aliases: ['rCRSd', 'chrM-only'] },
+  { digest: THIRD, label: 'hg38_primary · UCSC', name: 'hg38_primary', aliases: ['hg38_primary'] },
+];
 
 describe('SequencesPanel', () => {
   it('names the alphabet and shows the table', async () => {
@@ -253,8 +257,9 @@ describe('ComparePanel', () => {
       }),
     );
     renderWithProviders(<ComparePanel digest={DIGEST} candidates={CANDIDATES} />);
-    const select = await screen.findByLabelText(/Other genome/);
-    await userEvent.selectOptions(select, OTHER);
+    const box = await screen.findByRole('combobox', { name: /Other genome/ });
+    await userEvent.type(box, 'rcr');
+    await userEvent.click(screen.getByRole('option', { name: 'rCRSd · GenBank' }));
     expect(
       await screen.findByText(
         "This genome's coordinate system is a subset of the other genome's.",
@@ -265,5 +270,27 @@ describe('ComparePanel', () => {
       'href',
       `/genomes/${OTHER}`,
     );
+  });
+
+  it('filters the genome list by any alias, and picks with the keyboard', async () => {
+    server.use(
+      http.get(`${API}/genomes/:digest/compare/:other`, () =>
+        HttpResponse.json(genomeComparisonFixture),
+      ),
+    );
+    renderWithProviders(<ComparePanel digest={DIGEST} candidates={CANDIDATES} />);
+    const box = await screen.findByRole('combobox', { name: /Other genome/ });
+    await userEvent.click(box);
+    expect(screen.getAllByRole('option')).toHaveLength(2);
+    await userEvent.clear(box);
+    // "chrM-only" is an alias of rCRSd, not in its label.
+    await userEvent.type(box, 'chrm');
+    const options = screen.getAllByRole('option');
+    expect(options).toHaveLength(1);
+    expect(options[0]).toHaveTextContent('rCRSd · GenBank · chrM-only');
+    await userEvent.keyboard('{Enter}');
+    expect(box).toHaveValue('rCRSd · GenBank');
+    expect(box).toHaveAttribute('aria-expanded', 'false');
+    expect(await screen.findByRole('link', { name: 'rCRSd · GenBank' })).toBeInTheDocument();
   });
 });
