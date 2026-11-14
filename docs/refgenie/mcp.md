@@ -14,14 +14,16 @@ The MCP server is read-only. It queries genomes, assets, recipes and sequence co
 
 The MCP server is the `refgenie-mcp` command. It runs as a local process and talks to your AI client over stdio. It needs the `mcp` extra; without it, `refgenie-mcp` exits with an import error.
 
+Give your client the full path to `refgenie-mcp`. If you installed refgenie in a virtual environment, the client does not activate it, so a bare `refgenie-mcp` is not found. With the environment active, `which refgenie-mcp` prints the full path.
+
 ### Choose the refgenie folder
 
-`refgenie-mcp` reads `REFGENIE_HOME_PATH`, like the CLI (default `~/.refgenie`). Apps started from a desktop launcher do not see your shell's variables, so set it in the server config.
+`refgenie-mcp` reads the same `REFGENIE_*` variables as the CLI. `REFGENIE_HOME_PATH` picks the refgenie folder (default `~/.refgenie`). If you also set `REFGENIE_DB_CONFIG_PATH` for the CLI, set it here too. Apps started from a desktop launcher do not see your shell's variables, so set them in the server config.
 
-Claude Code:
+Claude Code. Run this with refgenie's environment active. Put `-e` after the server name and `--` before the command, or leave out `-e ...` to use `~/.refgenie`:
 
 ```console
-claude mcp add --env REFGENIE_HOME_PATH=/data/refgenie refgenie -- refgenie-mcp
+claude mcp add refgenie -e REFGENIE_HOME_PATH=/data/refgenie -- "$(which refgenie-mcp)"
 ```
 
 Claude Desktop (**Settings > Developer > Edit Config**) and other clients that use `mcpServers`; restart the app after saving:
@@ -41,7 +43,7 @@ command = "/full/path/to/refgenie-mcp"
 env = { REFGENIE_HOME_PATH = "/data/refgenie" }
 ```
 
-`which refgenie-mcp` prints the full path. `refgenie-mcp --help` lists its options; on start it prints the database it opened, so check your client's MCP log to confirm the folder.
+`refgenie-mcp --help` lists its options; on start it prints the database it opened, so check your client's MCP log to confirm the folder.
 
 ### The public server
 
@@ -149,5 +151,5 @@ The assistant calls `compare_genomes` with both identifiers and returns the seqc
     - All tools are read-only queries against your refgenie database
     - Name a genome by `alias` or by `digest`
     - List tools return 20 small rows per page; follow `next_page_token` for more
-    - `refgenie-mcp` reads `REFGENIE_HOME_PATH`
+    - Give your client the full path to `refgenie-mcp`; it reads `REFGENIE_HOME_PATH` and the other `REFGENIE_*` variables, like the CLI
     - Servers offer the same tools at `/mcp`, including <https://api.refgenie.org/mcp>

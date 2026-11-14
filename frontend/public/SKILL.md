@@ -351,13 +351,19 @@ extra, which includes `dash` and `mcp`:
 
 ```bash
 pip install "refgenie[mcp]>=1.0.0a2"
-claude mcp add refgenie refgenie-mcp
+claude mcp add refgenie "$(which refgenie-mcp)"
 ```
 
-It reads the user's config from `REFGENIE_HOME_PATH` (default `~/.refgenie`).
-To use another folder, run
-`claude mcp add --env REFGENIE_HOME_PATH=/data/refgenie refgenie -- refgenie-mcp`;
-other clients set it in the server's `env` block.
+`"$(which refgenie-mcp)"` saves the full path, so the server starts even when
+refgenie's virtual environment is not active; run the line with it active.
+`refgenie-mcp` reads the same `REFGENIE_*` variables as the refgenie CLI.
+`REFGENIE_HOME_PATH` picks the user's refgenie folder (default `~/.refgenie`).
+To use another folder, put `-e` after the server name and `--` before the
+command:
+`claude mcp add refgenie -e REFGENIE_HOME_PATH=/data/refgenie -- "$(which refgenie-mcp)"`.
+If `REFGENIE_DB_CONFIG_PATH` is set for the CLI, pass it the same way. Other
+clients take the full path as `command` and the variables in the server's `env`
+block.
 
 The tools:
 

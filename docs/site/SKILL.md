@@ -53,12 +53,18 @@ server instead of shelling out:
 
 ```bash
 pip install "refgenie[mcp]>=1.0.0a2"
-claude mcp add refgenie refgenie-mcp
+claude mcp add refgenie "$(which refgenie-mcp)"
 ```
 
-To use another refgenie folder (default `~/.refgenie`), set `REFGENIE_HOME_PATH`:
-`claude mcp add --env REFGENIE_HOME_PATH=/data/refgenie refgenie -- refgenie-mcp`.
-Other clients set it in the server's `env` block. The public server also offers the same tools over HTTP, with nothing
+`"$(which refgenie-mcp)"` saves the full path, so the server starts even when
+refgenie's virtual environment is not active; run the line with it active.
+`refgenie-mcp` reads the same `REFGENIE_*` variables as the CLI.
+`REFGENIE_HOME_PATH` picks the refgenie folder (default `~/.refgenie`). To use
+another folder, put `-e` after the server name and `--` before the command:
+`claude mcp add refgenie -e REFGENIE_HOME_PATH=/data/refgenie -- "$(which refgenie-mcp)"`.
+If you set `REFGENIE_DB_CONFIG_PATH` for the CLI, pass it the same way. Other
+clients take the full path as `command` and the variables in the server's `env`
+block. The public server also offers the same tools over HTTP, with nothing
 installed:
 
 ```bash
