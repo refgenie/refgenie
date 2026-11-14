@@ -12,6 +12,7 @@ from refgenie.cli.commands.helpers import (
     genome_digests_from,
     genome_ref,
     locate_genome,
+    note,
     resolve_transient_servers,
 )
 from refgenie.cli.framework import CliList
@@ -78,6 +79,12 @@ def handle_list(cmd, refgenie) -> None:
     if cmd.as_json:
         listing = _listing_json("local", *refgenie.asset.list_all(genome_digests=genome_digests))
         print(json.dumps([listing], indent=2))
+        return
+    if not refgenie.asset.list_all(genome_digests=genome_digests)[0]:
+        note(
+            "No assets here yet. `refgenie listr` shows what the server has; "
+            "`refgenie pull <genome>/<asset>` gets one."
+        )
         return
     for table in refgenie.asset.table(genome_digests=genome_digests):
         print_table(table)

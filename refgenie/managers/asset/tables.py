@@ -8,7 +8,6 @@ renders both.
 
 from rich.table import Table
 
-from refgenie.logger import logger
 from refgenie.models import AssetRegistryPathComponents
 from refgenie.utils.tables import SECTION, build_table
 
@@ -35,7 +34,6 @@ def asset_table(
     aliases_data = aliases_data or {}
     title = f"Refgenie assets. Source: {source}"
     if not asset_data:
-        logger.warning("No assets found")
         return build_table(title, [], [])
 
     columns = ["Aliases", "Genome digest", "Asset group", "Asset"]
