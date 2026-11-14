@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Icon } from '../common/Icon';
-import { Copyable } from '../common/Copyable';
+import { FastaResult } from './FastaResult';
 import { extractRegion } from '../../services/regionExtract';
 import {
   MAX_EXTRACT_BASES,
@@ -119,18 +118,6 @@ export function RegionExtract({
 
   const example = exampleRegion(sequences);
 
-  const download = () => {
-    if (result.kind !== 'done') return;
-    const url = URL.createObjectURL(new Blob([result.fasta], { type: 'text/plain' }));
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = regionFileName(result.region.label);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 0);
-  };
-
   return (
     <section className="rg-region" aria-label="Extract a region">
       <form
@@ -183,24 +170,15 @@ export function RegionExtract({
         </p>
       )}
       {result.kind === 'done' && (
-        <div className="rg-region__out">
-          <div className="rg-region__bar">
-            <span className="rg-region__meta">
-              {result.region.label} · {result.length.toLocaleString()}{' '}
-              {result.length === 1 ? 'base' : 'bases'}
-              {result.region.clamped && ' (cut at the end of the sequence)'}
-            </span>
-            <button type="button" className="rg-btn rg-btn--sm" onClick={download}>
-              <Icon name="download" /> Download .fa
-            </button>
-          </div>
-          <Copyable
-            variant="block"
-            value={result.fasta}
-            label="Copy the FASTA"
-            className="rg-region__fasta"
-          />
-        </div>
+        <FastaResult
+          fasta={result.fasta}
+          fileName={regionFileName(result.region.label)}
+          meta={
+            `${result.region.label} · ${result.length.toLocaleString()} ` +
+            (result.length === 1 ? 'base' : 'bases') +
+            (result.region.clamped ? ' (cut at the end of the sequence)' : '')
+          }
+        />
       )}
     </section>
   );
