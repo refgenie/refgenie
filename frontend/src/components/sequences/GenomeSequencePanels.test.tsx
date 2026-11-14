@@ -24,8 +24,8 @@ const DIGEST = '5cb5b9d2d1e2b5e5e2f0a3c4d5e6f708';
 const OTHER = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
 const THIRD = 'ffffffffffffffffffffffffffffffff';
 const CANDIDATES = [
-  { digest: OTHER, label: 'rCRSd · GenBank', name: 'rCRSd', aliases: ['rCRSd', 'chrM-only'] },
-  { digest: THIRD, label: 'hg38_primary · UCSC', name: 'hg38_primary', aliases: ['hg38_primary'] },
+  { digest: OTHER, label: 'rCRSd · GenBank', name: 'rCRSd' },
+  { digest: THIRD, label: 'hg38_primary · UCSC', name: 'hg38_primary' },
 ];
 
 describe('SequencesPanel', () => {
