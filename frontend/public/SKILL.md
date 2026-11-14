@@ -324,7 +324,8 @@ The HTTP API has no sequence endpoint. For the bases of a region over MCP, call
 
 ## The MCP server
 
-Refgenie has a **read-only** Model Context Protocol X
+Refgenie has a **read-only** Model Context Protocol (MCP) server, available
+two ways:
 
 **Over HTTP, against a server-mode instance** (Streamable HTTP transport,
 nothing to install):
