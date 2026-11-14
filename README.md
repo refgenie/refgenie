@@ -110,7 +110,7 @@ All are optional. Refgenie uses defaults under `~/.refgenie/` when they are unse
 | `REFGENIE_BRIDGE_ORIGIN_REGEX` | unset | Origin regex, for SPA dev servers and preview deployments only. Wildcard-equivalent patterns are refused at startup. |
 | `REFGENIE_BRIDGE_EXPOSE_PATHS` | `false` | Whether `/ping` may report the genome folder path. Off by default: a home-directory path leaks the OS username to every allowlisted origin. |
 | `REFGENIE_WEB_DIST` | unset | Override the built web UI directory. Default is the packaged `refgenie/server/webui/`. |
-| `REFGENIE_LOG_LEVEL` | `INFO` | Python logging level. |
+| `REFGENIE_LOG_LEVEL` | `WARNING` | Python logging level. |
 | `REFGENIE_ENCRYPTION_KEY` | (auto-generated, dev only) | Fernet key for encrypting credentials. **Set explicitly in production.** |
 | `REFGENIE_DISABLE_PLUGINS` | unset | `1`/`true`/`all` turns off every plugin; a comma-separated list of plugin names turns off those. Wins over everything else. |
 | `REFGENIE_SERVER_PLUGINS` | `false` | Run plugins in server mode (`refgenie serve`). Off by default; local mode and `refgenie dash` always run them. |
