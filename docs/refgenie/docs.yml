@@ -23,6 +23,7 @@ nav:
       - Configure remote storage: remotes.md
       - Building and serving tutorial: building_tutorial.md
       - Retrieve paths to assets: seek.md
+      - "Coordinates: 1-based or 0-based": coordinates.md
       - Compare genomes: compare.md
       - Choose an hg38 genome: choosing_hg38.md
       - Add custom assets: custom_assets.md
