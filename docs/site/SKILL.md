@@ -239,6 +239,11 @@ refgenie getseq -g hg38 -l chr17:43044294-43044394 --fasta > brca1_start.fa
 The first call registers hg38 from your server; no FASTA is downloaded. Over
 MCP: `get_sequence(alias="hg38", name="chr17", start=43044294, end=43044394)`.
 
+Both default to 0-based, half-open coordinates. To convert the 1-based,
+inclusive coordinates biologists write (`chr17:43044295-43044394`), subtract 1
+from the start and keep the end the same. On the CLI you can pass
+`getseq --one-based` instead; `get_sequence` has no such option.
+
 ### Check whether two genomes match
 
 ```bash
