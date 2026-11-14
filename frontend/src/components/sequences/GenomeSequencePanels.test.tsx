@@ -1,3 +1,4 @@
+import { File as NodeFile } from 'node:buffer';
 import { StrictMode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, within } from '@testing-library/react';
@@ -120,6 +121,9 @@ async function bedMode(route = '/?tab=extract') {
   await userEvent.click(await screen.findByRole('radio', { name: 'BED file' }));
 }
 
+// jsdom's File has no arrayBuffer(); Node's does, like a browser's.
+const bedFile = (text: string, name: string) => new NodeFile([text], name) as unknown as File;
+
 function pasteBed(text: string) {
   fireEvent.change(screen.getByLabelText('BED lines'), { target: { value: text } });
 }
@@ -166,9 +170,7 @@ describe('ExtractPanel BED mode', () => {
 
   it('reads a dropped BED file', async () => {
     await bedMode();
-    const file = new File(['extra\t0\t8\tone\nrCRSd\t4\t8\n'], 'peaks.bed', {
-      type: 'text/plain',
-    });
+    const file = bedFile('extra\t0\t8\tone\nrCRSd\t4\t8\n', 'peaks.bed');
     fireEvent.drop(screen.getByTestId('bed-drop'), { dataTransfer: { files: [file] } });
     expect(await screen.findByText('peaks.bed')).toBeInTheDocument();
     expect(screen.getByText('2 regions')).toBeInTheDocument();
@@ -178,7 +180,7 @@ describe('ExtractPanel BED mode', () => {
 
   it('reads a chosen file, and can remove it', async () => {
     await bedMode();
-    const file = new File(['extra\t0\t8\n'], 'mine.bed');
+    const file = bedFile('extra\t0\t8\n', 'mine.bed');
     await userEvent.upload(screen.getByLabelText('Choose a BED file'), file);
     expect(await screen.findByText('mine.bed')).toBeInTheDocument();
     expect(screen.getByText('1 region')).toBeInTheDocument();

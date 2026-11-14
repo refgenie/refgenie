@@ -1,5 +1,7 @@
+// @vitest-environment node
 import { gzipSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
+import { BGZF_EOF, bgzfBlock } from '../services/bgzf';
 import {
   bedFastaFileName,
   bedFastaRecord,
@@ -150,5 +152,11 @@ describe('readBedFile', () => {
   it('unzips gzip by its magic bytes', async () => {
     const zipped = new Blob([gzipSync('chrM\t0\t10\n')]);
     expect(await readBedFile(zipped)).toBe('chrM\t0\t10\n');
+  });
+
+  it('unzips bgzip, a run of gzip members', async () => {
+    const block = await bgzfBlock(new TextEncoder().encode('chrM\t0\t10\n'));
+    const zipped = new Blob([block, block, BGZF_EOF]);
+    expect(await readBedFile(zipped)).toBe('chrM\t0\t10\n'.repeat(2));
   });
 });

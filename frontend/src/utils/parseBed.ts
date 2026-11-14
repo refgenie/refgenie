@@ -17,6 +17,12 @@ import {
   suggestSequences,
   type RegionSequence,
 } from './parseRegion';
+import {
+  bgzfMembers,
+  gunzipStream,
+  inflateMembers,
+  sniffCompression,
+} from '../vendor/fastaDigest/fastaDigest';
 
 /** The most regions one in-browser BED extraction may read. */
 export const MAX_BED_REGIONS = 5_000;
@@ -220,45 +226,29 @@ export function bedFastaFileName(bedName: string | null | undefined): string {
   return `${stem.replace(/[^\w.-]+/g, '_') || 'regions'}.fa`;
 }
 
-/** True if bytes start with the gzip magic number. */
-export function isGzip(bytes: Uint8Array): boolean {
-  return bytes.length >= 2 && bytes[0] === 0x1f && bytes[1] === 0x8b;
-}
-
-/** A BED file's text, unzipping a .gz file (by its first bytes, not its name). */
+/** A BED file's text, unzipping gzip or bgzip (by its first bytes, not its name). */
 export async function readBedFile(file: Blob): Promise<string> {
   if (file.size > MAX_BED_FILE_BYTES * 4) {
     throw new Error(`That file is ${fmt(file.size)} bytes, too big to read here.`);
   }
-  const bytes = await blobBytes(file);
-  if (!isGzip(bytes)) {
-    if (bytes.length > MAX_BED_FILE_BYTES) {
-      throw new Error(`That file is ${fmt(bytes.length)} bytes, too big to read here.`);
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const compression = sniffCompression(bytes);
+  const raw = (async function* () {
+    yield bytes;
+  })();
+  const plain =
+    compression === 'bgzf'
+      ? inflateMembers(bgzfMembers(raw))
+      : compression === 'gzip'
+        ? gunzipStream(raw)
+        : raw;
+  const decoder = new TextDecoder();
+  let text = '';
+  for await (const chunk of plain) {
+    text += decoder.decode(chunk, { stream: true });
+    if (text.length > MAX_BED_FILE_BYTES) {
+      throw new Error('That file is too big to read here.');
     }
-    return new TextDecoder().decode(bytes);
   }
-  if (typeof DecompressionStream === 'undefined') {
-    throw new Error('This browser cannot unzip .gz files; unzip it first.');
-  }
-  const zipped = new Response(bytes as BlobPart).body as ReadableStream<BufferSource>;
-  const text = await new Response(
-    zipped.pipeThrough(new DecompressionStream('gzip')),
-  ).text();
-  if (text.length > MAX_BED_FILE_BYTES) {
-    throw new Error('That file is too big to read here once unzipped.');
-  }
-  return text;
-}
-
-/** A Blob's bytes, by FileReader where Blob.arrayBuffer is missing (jsdom). */
-function blobBytes(blob: Blob): Promise<Uint8Array> {
-  if (typeof blob.arrayBuffer === 'function') {
-    return blob.arrayBuffer().then((buffer) => new Uint8Array(buffer));
-  }
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(new Uint8Array(reader.result as ArrayBuffer));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsArrayBuffer(blob);
-  });
+  return text + decoder.decode();
 }
