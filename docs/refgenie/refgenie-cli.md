@@ -931,7 +931,7 @@ refgenie getseq (-g ALIAS | --genome-digest DIGEST) -l LOCUS [--zero-based] [--f
 | `--genome-digest` | Genome digest, in place of an alias. One of `-g` or `--genome-digest` is required. |
 | `-l, --locus` | The region to read, 1-based and inclusive, e.g. `chr1:50,001-50,200`. **Required.** |
 | `--zero-based` | Read the region as 0-based and half-open, like a BED file. |
-| `--fasta` | Print a FASTA record: a header line with the locus, then 60 bases per line. |
+| `--fasta` | Print a FASTA record: a header line with the region, 1-based (`>chrM:1-60`), then 60 bases per line. |
 
 ```bash
 refgenie getseq -g hg38 -l chrM:1-60                # the first 60 bases
