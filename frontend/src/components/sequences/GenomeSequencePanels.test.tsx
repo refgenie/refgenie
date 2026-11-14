@@ -259,8 +259,9 @@ describe('ComparePanel', () => {
     );
     renderWithProviders(<ComparePanel digest={DIGEST} candidates={CANDIDATES} />);
     const box = await screen.findByRole('combobox', { name: /Other genome/ });
-    await userEvent.type(box, 'rcr');
-    await userEvent.click(screen.getByRole('option', { name: 'rCRSd · GenBank' }));
+    await userEvent.type(box, 'rCRSd');
+    expect(requested).toBeUndefined();
+    await userEvent.type(box, ' · GenBank');
     expect(
       await screen.findByText(
         "This genome's coordinate system is a subset of the other genome's.",
@@ -271,28 +272,6 @@ describe('ComparePanel', () => {
       'href',
       `/genomes/${OTHER}`,
     );
-  });
-
-  it('filters the genome list by any alias, and picks with the keyboard', async () => {
-    server.use(
-      http.get(`${API}/genomes/:digest/compare/:other`, () =>
-        HttpResponse.json(genomeComparisonFixture),
-      ),
-    );
-    renderWithProviders(<ComparePanel digest={DIGEST} candidates={CANDIDATES} />);
-    const box = await screen.findByRole('combobox', { name: /Other genome/ });
-    await userEvent.click(box);
-    expect(screen.getAllByRole('option')).toHaveLength(2);
-    await userEvent.clear(box);
-    // "chrM-only" is an alias of rCRSd, not in its label.
-    await userEvent.type(box, 'chrm');
-    const options = screen.getAllByRole('option');
-    expect(options).toHaveLength(1);
-    expect(options[0]).toHaveTextContent('rCRSd · GenBank · chrM-only');
-    await userEvent.keyboard('{Enter}');
-    expect(box).toHaveValue('rCRSd · GenBank');
-    expect(box).toHaveAttribute('aria-expanded', 'false');
-    expect(await screen.findByRole('link', { name: 'rCRSd · GenBank' })).toBeInTheDocument();
   });
 
   it('leads with the server summary, naming genomes, and lists renames', async () => {
@@ -309,9 +288,10 @@ describe('ComparePanel', () => {
     renderWithProviders(
       <ComparePanel digest={DIGEST} name="hg38" candidates={CANDIDATES} />,
     );
-    const box = await screen.findByRole('combobox', { name: /Other genome/ });
-    await userEvent.click(box);
-    await userEvent.click(screen.getByRole('option', { name: 'rCRSd · GenBank' }));
+    await userEvent.type(
+      await screen.findByRole('combobox', { name: /Other genome/ }),
+      'rCRSd · GenBank',
+    );
     expect(
       await screen.findByText(
         'All 1 sequences of hg38 are in rCRSd, which has 1 more; 1 names differ: chrM->MT.',

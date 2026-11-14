@@ -805,50 +805,6 @@
   font-family: var(--font-family-mono);
 }
 
-/* FilterCombobox: a text box whose option list floats over the page below. */
-.rg-combo {
-  position: relative;
-}
-
-.rg-combo__list {
-  position: absolute;
-  z-index: 20;
-  top: calc(100% + var(--space-1));
-  left: 0;
-  right: 0;
-  max-height: 20rem;
-  overflow-y: auto;
-  margin: 0;
-  padding: var(--space-1) 0;
-  list-style: none;
-  background: rgb(var(--color-background));
-  border: var(--border-width) solid rgb(var(--color-border-strong));
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-lg);
-}
-
-.rg-combo__list[hidden] {
-  display: none;
-}
-
-.rg-combo__option {
-  padding: var(--space-1) var(--space-3);
-  font-size: var(--font-size-sm);
-  cursor: pointer;
-}
-
-.rg-combo__option--active {
-  background: rgb(var(--color-surface-alt));
-}
-
-.rg-combo__option--chosen {
-  font-weight: var(--font-weight-semibold);
-}
-
-.rg-combo__empty {
-  margin: var(--space-1) 0 0;
-}
-
 .rg-field--invalid .rg-field__input {
   border-color: rgb(var(--color-danger));
 }

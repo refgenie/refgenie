@@ -1,16 +1,11 @@
 // Ported from repos/refget/frontend/src/pages/ComparisonView.tsx @ c0d3e09; keep the two in step.
 
-import { useMemo } from 'react';
 import { FormField } from '../common/FormField';
-import { FilterCombobox } from '../common/FilterCombobox';
-import type { ComboOption } from '../common/FilterCombobox';
 import { ErrorState, LoadingState } from '../common/states';
 import { ScopedLink } from '../common/ScopedLink';
 import { ComparisonResult } from './ComparisonResult';
 import type { SeqcolComparison } from './types';
 import type { CompareCandidate } from '../../utils/compareCandidates';
-
-export type { CompareCandidate };
 
 export interface CompareGenomesProps {
   digest: string;
@@ -35,14 +30,7 @@ export function CompareGenomes({
   onSelect,
   selected,
 }: CompareGenomesProps) {
-  const options = useMemo(
-    () => candidates.filter((c) => c.digest !== digest),
-    [candidates, digest],
-  );
-  const comboOptions = useMemo<ComboOption[]>(
-    () => options.map((c) => ({ value: c.digest, label: c.label, keywords: c.aliases })),
-    [options],
-  );
+  const options = candidates.filter((c) => c.digest !== digest);
   const other = options.find((c) => c.digest === selected);
 
   return (
@@ -55,14 +43,25 @@ export function CompareGenomes({
           </p>
         ) : (
           <FormField htmlFor="compare-genome" label="Other genome">
-            <FilterCombobox
+            <input
               id="compare-genome"
-              options={comboOptions}
-              value={selected}
-              onChange={onSelect}
+              className="rg-field__input"
+              list="compare-genome-list"
+              autoComplete="off"
               placeholder={`Type to filter ${options.length} genomes…`}
-              noun="genome"
+              defaultValue={other?.label}
+              // Selected on focus, so typing replaces the current choice.
+              onFocus={(event) => event.target.select()}
+              onChange={(event) => {
+                const match = options.find((c) => c.label === event.target.value);
+                if (match) onSelect(match.digest);
+              }}
             />
+            <datalist id="compare-genome-list">
+              {options.map((c) => (
+                <option key={c.digest} value={c.label} />
+              ))}
+            </datalist>
           </FormField>
         )}
 
