@@ -8,7 +8,10 @@
 import { useEffect, useId, useState } from 'react';
 import { BaseModal } from '../common/BaseModal';
 import { FormField } from '../common/FormField';
+import { Copyable } from '../common/Copyable';
 import { useBridge } from '../../hooks/useBridge';
+import { useUiConfig } from '../../hooks/useUiConfig';
+import { installCommand } from '../../utils/install';
 
 export interface ConnectDialogProps {
   open: boolean;
@@ -17,6 +20,8 @@ export interface ConnectDialogProps {
 
 export function ConnectDialog({ open, onClose }: ConnectDialogProps) {
   const bridge = useBridge();
+  // `refgenie dash` needs the dash extra, which a plain install leaves out.
+  const dashInstall = installCommand(useUiConfig().refgenie_version, 'dash');
   const [portText, setPortText] = useState(String(bridge.port));
   const portId = useId();
 
@@ -45,6 +50,16 @@ export function ConnectDialog({ open, onClose }: ConnectDialogProps) {
         </p>
 
         <ol className="flex flex-col gap-2 pl-4 list-decimal">
+          <li>
+            Install refgenie with the dashboard extra (a plain install leaves it out):
+            <Copyable
+              value={dashInstall}
+              label="Copy install command"
+              className="rg-command mt-1"
+            >
+              <code className="rg-code rg-code--inline">{dashInstall}</code>
+            </Copyable>
+          </li>
           <li>
             Start the local dashboard:{' '}
             <code className="rg-code rg-code--inline">refgenie dash</code>. It listens
@@ -104,7 +119,8 @@ export function ConnectDialog({ open, onClose }: ConnectDialogProps) {
               <ul className="flex flex-col gap-1 pl-4">
                 <li>
                   Is it running? Start it with{' '}
-                  <code className="rg-code rg-code--inline">refgenie dash</code>.
+                  <code className="rg-code rg-code--inline">refgenie dash</code>. If that
+                  says the dash extras are not installed, run the install command above.
                 </li>
                 <li>
                   Did your browser ask to allow local network access? A denied prompt

@@ -2,6 +2,8 @@
 
 export const PROJECT_LINKS = {
   docs: 'https://docs.refgenie.org',
+  /** The refgenie 1.0 introduction: what it is, its alpha status, the quick start. */
+  refgenieDocs: 'https://docs.refgenie.org/refgenie/',
   github: 'https://github.com/refgenie/refgenie',
   issues: 'https://github.com/refgenie/refgenie/issues',
   license: 'https://github.com/refgenie/refgenie/blob/master/LICENSE.txt',

@@ -16,34 +16,34 @@ import { useDocumentTitle } from '../hooks/useDocumentTitle';
 import { Copyable } from '../components/common/Copyable';
 import { ExternalLink } from '../components/common/ExternalLink';
 import { Icon } from '../components/common/Icon';
+import { Badge } from '../components/common/Badge';
+import { CopyButton } from '../components/common/CopyButton';
+import { installCommand } from '../utils/install';
 import { PROJECT_LINKS } from '../services/projectLinks';
 import { absoluteServerRoot } from '../services/instanceLinks';
 
 /** Count-only request: one row per page. */
 const COUNT_ONLY = { pageSize: 1 } as const;
 
-/** Used when the server does not report its version. */
-const FALLBACK_VERSION = '1.0.0a2';
-
 /**
- * The install line for the version this server runs, so it never goes stale.
- * The `>=` floor also lets pip pick a pre-release without `--pre`.
+ * The quick start after install, the same everywhere: a first pull that is
+ * small (hg38's FASTA index and chromosome sizes), not the 3 GB FASTA.
  */
-function installCommand(version: string): string {
-  const floor = version && version !== 'unknown' ? version : FALLBACK_VERSION;
-  return `pip install "refgenie>=${floor}"`;
-}
-
 const LATER_STEPS = [
   {
+    label: 'Set up',
+    command: 'refgenie init',
+    note: 'Creates your refgenie folder and connects it to the public server.',
+  },
+  {
     label: 'Pull an asset',
-    command: 'refgenie pull hg38/fasta',
-    note: 'Downloads it from the public server.',
+    command: 'refgenie pull hg38/fasta_index',
+    note: 'About 12 KB: the FASTA index (.fai) and chromosome sizes for hg38.',
   },
   {
     label: 'Use it',
-    command: 'refgenie seek hg38/fasta',
-    note: 'Prints the local path for your pipeline.',
+    command: 'refgenie seek hg38/fasta_index.chrom_sizes',
+    note: 'Prints the local path of the file, for your pipeline.',
   },
 ] as const;
 
@@ -105,6 +105,11 @@ export function LandingPage() {
           reference genome: FASTA files, aligner indexes, annotations. Every machine
           gets the same files under the same names.
         </p>
+        <p className="rg-hero__note text-sm">
+          <Badge>Alpha</Badge> Refgenie 1.0 is an alpha release: it works, but commands
+          and data can still change, so pin the version in production pipelines.{' '}
+          <ExternalLink href={PROJECT_LINKS.refgenieDocs}>Details</ExternalLink>
+        </p>
 
         <form className="rg-hero__search flex gap-2 w-full" onSubmit={submit}>
           <label className="sr-only" htmlFor="landing-search">
@@ -128,7 +133,7 @@ export function LandingPage() {
 
       <section className="flex flex-col gap-4">
         <h2 className="text-xl font-semibold">Get started</h2>
-        <ol className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <ol className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {[
             {
               label: 'Install',
@@ -148,46 +153,38 @@ export function LandingPage() {
           ))}
         </ol>
         <p className="rg-muted text-sm">
-          The <ExternalLink href={PROJECT_LINKS.docs}>documentation</ExternalLink>{' '}
-          covers building your own assets and running your own server.
+          Then pull what your pipeline needs, such as{' '}
+          <code className="rg-code rg-code--inline">hg38/bowtie2_index</code>. The{' '}
+          <ExternalLink href={PROJECT_LINKS.docs}>documentation</ExternalLink> covers
+          building your own assets and running your own server.
         </p>
       </section>
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-xl font-semibold">Use it with an AI assistant</h2>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="rg-step flex flex-col gap-2">
-            <span className="font-semibold">Connect the MCP server</span>
-            <span className="rg-muted text-sm">
-              {isLocal
-                ? 'Lets an assistant look up your local genomes and assets. It cannot change anything.'
-                : 'Lets an assistant look up the genomes and assets on this server. It cannot change anything.'}
-            </span>
-            <Command value={mcpCommand} />
-          </div>
-
-          <div className="rg-step flex flex-col gap-2">
-            <span className="font-semibold">Or give it the API guide</span>
-            <span className="rg-muted text-sm">
-              {/* Plain <a>: /SKILL.md is a static file, not a client route. */}
-              <a className="rg-link" href={skillPath}>
-                SKILL.md
-                <Icon name="code" className="rg-icon--trailing" />
-              </a>{' '}
-              explains this server&rsquo;s API in one page. Paste this into a chat:
-            </span>
-            <Command value={skillPrompt} label="Copy prompt" />
-          </div>
-        </div>
-
+      {/* Kept short: most visitors come for the genomes and the CLI. */}
+      <section className="flex flex-col gap-2">
+        <h2 className="text-lg font-semibold">Use it with an AI assistant</h2>
         <p className="rg-muted text-sm">
-          To have an assistant run the command-line tool, give it the{' '}
-          <ExternalLink href={PROJECT_LINKS.toolSkill}>CLI guide</ExternalLink>. More in{' '}
-          <ExternalLink href={PROJECT_LINKS.useWithAi}>
-            Use refgenie with AI
-          </ExternalLink>
-          .
+          {isLocal
+            ? 'Connect the MCP server to let an assistant look up your local genomes and assets. It cannot change anything.'
+            : 'Connect the MCP server to let an assistant look up the genomes and assets on this server. It cannot change anything.'}
+        </p>
+        <div className="rg-landing__ai-command">
+          <Command value={mcpCommand} />
+        </div>
+        <p className="rg-muted text-sm">
+          Or give it{' '}
+          {/* Plain <a>: /SKILL.md is a static file, not a client route. */}
+          <a className="rg-link" href={skillPath}>
+            SKILL.md
+            <Icon name="code" className="rg-icon--trailing" />
+          </a>
+          , this server&rsquo;s API in one page{' '}
+          <span className="rg-landing__prompt">
+            (copy a starter prompt <CopyButton value={skillPrompt} label="Copy prompt" />)
+          </span>
+          , or the <ExternalLink href={PROJECT_LINKS.toolSkill}>CLI guide</ExternalLink> to
+          run the command-line tool. More in{' '}
+          <ExternalLink href={PROJECT_LINKS.useWithAi}>Use refgenie with AI</ExternalLink>.
         </p>
       </section>
     </div>

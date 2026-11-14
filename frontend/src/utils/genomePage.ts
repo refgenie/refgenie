@@ -1,5 +1,5 @@
 import { fastaDownloadEnabled } from '../services/config';
-import type { FhrMetadata, GenomeDetailResponse } from '../types/api';
+import type { AssetResponse, FhrMetadata, GenomeDetailResponse } from '../types/api';
 import { defaultRegion } from './parseRegion';
 
 /** True if there is FHR metadata to show. */
@@ -30,4 +30,14 @@ export function isGenomeTab(value: string | null): value is GenomeTab {
 export function extractHref(row: { name: string; length: number }): string {
   const params = new URLSearchParams({ tab: 'extract', region: defaultRegion(row) });
   return `?${params.toString()}`;
+}
+
+/**
+ * The size of what `refgenie pull <alias>/fasta` fetches: the `fasta` group's
+ * default asset, else its first. Null when there is none or its size is unknown.
+ */
+export function fastaPullSize(assets: readonly AssetResponse[] | undefined): number | null {
+  const group = assets?.filter((asset) => asset.asset_group_name === 'fasta') ?? [];
+  const asset = group.find((a) => a.is_default) ?? group[0];
+  return asset?.size ?? null;
 }

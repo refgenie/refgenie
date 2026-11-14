@@ -3,6 +3,7 @@ import { Copyable } from '../common/Copyable';
 import { BridgePullButton } from '../bridge/BridgePullButton';
 import { ConnectDialog } from '../bridge/ConnectDialog';
 import { useBridge } from '../../hooks/useBridge';
+import { formatBytes } from '../../utils/format';
 import ga4ghMark from '../../assets/ga4gh-mark.png';
 
 export const SEQCOL_SPEC_URL = 'https://ga4gh.github.io/refget/seqcols/';
@@ -11,6 +12,8 @@ export interface GenomeDigestProps {
   digest: string;
   /** The `refgenie pull` command; adds a "Get it with refgenie" row when set. */
   pullCommand?: string | null;
+  /** Bytes the pull fetches, shown beside the command so a multi-GB pull is no surprise. */
+  pullSize?: number | null;
   /** Whether the genome has a fasta asset a connected local refgenie can pull. */
   hasFastaAsset?: boolean;
 }
@@ -22,6 +25,7 @@ export interface GenomeDigestProps {
 export function GenomeDigest({
   digest,
   pullCommand,
+  pullSize = null,
   hasFastaAsset = false,
 }: GenomeDigestProps) {
   return (
@@ -41,6 +45,7 @@ export function GenomeDigest({
         <GetWithRefgenie
           digest={digest}
           command={pullCommand}
+          size={pullSize}
           hasFastaAsset={hasFastaAsset}
         />
       )}
@@ -52,10 +57,12 @@ export function GenomeDigest({
 function GetWithRefgenie({
   digest,
   command,
+  size,
   hasFastaAsset,
 }: {
   digest: string;
   command: string;
+  size: number | null;
   hasFastaAsset: boolean;
 }) {
   const bridge = useBridge();
@@ -70,14 +77,21 @@ function GetWithRefgenie({
         <img src="refgenie_bug.svg" alt="" className="rg-genome-digest__mark" />
         <span className="rg-genome-digest__title">Get it with refgenie</span>
       </span>
-      <Copyable
-        value={command}
-        label="Copy refgenie command"
-        className="rg-genome-digest__command"
-        mono
-      >
-        {command}
-      </Copyable>
+      <span className="rg-genome-digest__pull">
+        <Copyable
+          value={command}
+          label="Copy refgenie command"
+          className="rg-genome-digest__command"
+          mono
+        >
+          {command}
+        </Copyable>
+        {size !== null && (
+          <span className="rg-genome-digest__size" title="Size of the asset once pulled">
+            {formatBytes(size)}
+          </span>
+        )}
+      </span>
       {bridge.status === 'connected' && hasFastaAsset && (
         <BridgePullButton genomeDigest={digest} assetGroupName="fasta" />
       )}

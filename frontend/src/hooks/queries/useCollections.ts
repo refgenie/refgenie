@@ -32,8 +32,15 @@ export function useCollectionGenomes(collection: CollectionConfig | undefined) {
   );
 }
 
-/** Genome count for an index card: one row requested, `pagination.total` read. */
-export function useCollectionCount(collection: CollectionConfig) {
-  const query = useGenomes({ store: collection.stores, pageSize: 1 });
+/**
+ * Genome count for an index card: one row requested, `pagination.total` read.
+ * `withAssets` counts only the genomes with built assets.
+ */
+export function useCollectionCount(collection: CollectionConfig, withAssets = false) {
+  const query = useGenomes({
+    store: collection.stores,
+    has_assets: withAssets || undefined,
+    pageSize: 1,
+  });
   return { ...query, data: query.data?.pagination.total };
 }
