@@ -149,25 +149,33 @@ class TestParseLocus:
         "locus, expected",
         [
             ("chr1", ("chr1", None, None)),  # name only
-            ("chr1:0-1000", ("chr1", 0, 1000)),  # name with range
-            ("chr1:500", ("chr1", 500, None)),  # name with start only
-            ("V01146.1:0-10", ("V01146.1", 0, 10)),  # dot in name
-            ("ENST00000-1:0-10", ("ENST00000-1", 0, 10)),  # hyphen in name
-            ("gi|12345|ref|NC_001:0-100", ("gi|12345|ref|NC_001", 0, 100)),  # pipes in name
+            ("chr1:1-1000", ("chr1", 0, 1000)),  # 1-based inclusive -> 0-based half-open
+            ("chr1:500", ("chr1", 499, None)),  # name with start only
+            ("chr17:43,044,295-43,044,394", ("chr17", 43044294, 43044394)),  # commas
+            ("V01146.1:1-10", ("V01146.1", 0, 10)),  # dot in name
+            ("ENST00000-1:1-10", ("ENST00000-1", 0, 10)),  # hyphen in name
+            ("gi|12345|ref|NC_001:1-100", ("gi|12345|ref|NC_001", 0, 100)),  # pipes in name
             ("invalid locus", ValueError),  # space is invalid
             ("", ValueError),  # empty is invalid
         ],
     )
     def test_parse_locus(self, locus, expected):
-        """parse_locus splits name/start/end across name char-classes; rejects bad input."""
+        """Text regions are 1-based and inclusive, like samtools; the result is
+        0-based half-open."""
         if expected is ValueError:
             with pytest.raises(ValueError, match="Invalid locus format"):
                 parse_locus(locus)
         else:
             assert parse_locus(locus) == expected
 
-    def test_one_based(self):
-        assert parse_locus("chr1:1-10", one_based=True) == ("chr1", 0, 10)
-        assert parse_locus("chr1:5", one_based=True) == ("chr1", 4, None)
+    def test_a_1_based_region_starts_at_1(self):
         with pytest.raises(ValueError, match="start at 1"):
-            parse_locus("chr1:0-10", one_based=True)
+            parse_locus("chr1:0-10")
+
+    def test_an_empty_region_is_refused(self):
+        with pytest.raises(ValueError, match="empty"):
+            parse_locus("chr1:10-9")
+
+    def test_zero_based(self):
+        assert parse_locus("chr1:0-10", zero_based=True) == ("chr1", 0, 10)
+        assert parse_locus("chr1:5", zero_based=True) == ("chr1", 5, None)

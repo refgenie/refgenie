@@ -937,11 +937,11 @@ class TestCommandsWithAssets:
         """`getseq --genome-digest <digest>` works like `getseq -g <alias>`;
         `-g <digest>` is an alias lookup and fails."""
         digest = cli_rg.alias.resolve("rCRSd")
-        assert cli("getseq", "-g", "rCRSd", "-l", "rCRSd:0-10") == 0
+        assert cli("getseq", "-g", "rCRSd", "-l", "rCRSd:1-10") == 0
         by_alias = capsys.readouterr().out.strip()
-        assert cli("getseq", "--genome-digest", digest, "-l", "rCRSd:0-10") == 0
+        assert cli("getseq", "--genome-digest", digest, "-l", "rCRSd:1-10") == 0
         assert capsys.readouterr().out.strip() == by_alias
-        assert cli("getseq", "-g", digest, "-l", "rCRSd:0-10") != 0
+        assert cli("getseq", "-g", digest, "-l", "rCRSd:1-10") != 0
 
     def test_build_takes_an_alias_only(self, cli, cli_rg):
         """`build <digest>/fasta` is an alias lookup: the build folder is named
@@ -1186,7 +1186,7 @@ class TestRemoteGenomeByName:
             ) as init,
             patch.object(SequenceManager, "get", return_value="ACGT") as get,
         ):
-            assert cli("getseq", "-g", "hg38", "-l", "chr1:0-4") == 0
+            assert cli("getseq", "-g", "hg38", "-l", "chr1:1-4") == 0
         assert init.call_args.args == (GenomeAlias("hg38"),)
         assert init.call_args.kwargs == {"require_collection": True}
         assert get.call_args.args == (REMOTE_DIGEST, "chr1", 0, 4)
@@ -1194,7 +1194,7 @@ class TestRemoteGenomeByName:
 
     def test_getseq_of_a_genome_no_one_can_provide_is_not_found(self, cli, cli_rg):
         with patch.object(type(cli_rg.genome), "init_from_remote", return_value=None):
-            assert cli("getseq", "-g", "hg38", "-l", "chr1:0-4") == EXIT_NOT_FOUND
+            assert cli("getseq", "-g", "hg38", "-l", "chr1:1-4") == EXIT_NOT_FOUND
 
     # Local genomes are named by digest: a bare genome's alias lives in this
     # process's alias cache only, so the CLI's own Refgenie would not see it.
@@ -1504,18 +1504,23 @@ class TestQuietScriptableOutput:
         assert out.count("\n") == 1 and len(out.strip()) == 33138
 
     def test_getseq_fasta(self, cli, capsys):
-        assert cli("getseq", "-g", "rCRSd", "-l", "rCRSd:0-10", "--fasta") == 0
+        assert cli("getseq", "-g", "rCRSd", "-l", "rCRSd:1-10", "--fasta") == 0
         header, bases = capsys.readouterr().out.splitlines()
-        assert header == ">rCRSd:0-10" and len(bases) == 10
+        assert header == ">rCRSd:1-10" and len(bases) == 10
         assert cli("getseq", "-g", "rCRSd", "-l", "rCRSd", "--fasta") == 0
-        lines = capsys.readouterr().out.splitlines()[1:]
+        header, *lines = capsys.readouterr().out.splitlines()
+        assert header == ">rCRSd"
         assert all(len(x) == 60 for x in lines[:-1]) and sum(map(len, lines)) == 33138
 
-    def test_getseq_one_based(self, cli, capsys):
-        assert cli("getseq", "-g", "rCRSd", "-l", "rCRSd:0-10") == 0
-        zero = capsys.readouterr().out
-        assert cli("getseq", "-g", "rCRSd", "-l", "rCRSd:1-10", "--one-based") == 0
-        assert capsys.readouterr().out == zero
+    def test_getseq_zero_based(self, cli, capsys):
+        """The same 10 bases, as a 1-based text region or with --zero-based;
+        stderr says how the region was read."""
+        assert cli("getseq", "-g", "rCRSd", "-l", "rCRSd:1-10") == 0
+        one = capsys.readouterr()
+        assert cli("getseq", "-g", "rCRSd", "-l", "rCRSd:0-10", "--zero-based") == 0
+        assert capsys.readouterr().out == one.out
+        assert len(one.out.strip()) == 10
+        assert "rCRSd:1-10 (1-based, inclusive): 10 bases" in one.err
 
     def test_getseq_unknown_name(self, cli):
         assert cli("getseq", "-g", "rCRSd", "-l", "chr999") == EXIT_NOT_FOUND
