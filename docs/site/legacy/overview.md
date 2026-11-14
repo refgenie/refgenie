@@ -1,5 +1,7 @@
 # Refgenie overview
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 ## Motivation
 
 Reference genome assemblies are the starting point for many downstream tools, such as sequence alignment and annotation. Many tools produce independent assets that accompany a genome assembly; for instance, aligners like `bwa` or `bowtie2` must *hash* the genome, creating *indexes* to improve alignment performance. These indexes are typically shared across tools, so it's common for a research group to organize a central folder for reference genome assets, which includes indexes and other files like annotations. In addition to saving disk space, this simplifies sharing software among group members. Structuring assets uniformly allows software to adapt from one reference assembly to the next. However, each group typically does this independently. If we could standardize this across groups, it would make it easier to share scripts and software that use genome-related resources.

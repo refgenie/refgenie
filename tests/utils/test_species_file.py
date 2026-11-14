@@ -3,7 +3,7 @@
 import json
 import logging
 
-import httpx
+import httpx2
 import pytest
 
 from refgenie.exceptions import SpeciesFileError
@@ -51,7 +51,7 @@ class TestParse:
         ],
     )
     def test_bad_entries_are_skipped_and_logged(self, bad, caplog):
-        with caplog.at_level(logging.DEBUG):
+        with caplog.at_level(logging.DEBUG, logger="refgenie"):
             kept = parse_species({"species": [bad, RAT]}, "f")
         assert [e.taxon_id for e in kept] == [10116]
         assert "skipped species entry 0" in caplog.text
@@ -85,7 +85,7 @@ class TestReadOnDisk:
 class TestReadHttp:
     @pytest.fixture
     def respond(self, monkeypatch):
-        """Install a handler behind every httpx.Client; return the requested URLs."""
+        """Install a handler behind every httpx2.Client; return the requested URLs."""
         urls = []
 
         def install(handler):
@@ -93,37 +93,37 @@ class TestReadHttp:
                 urls.append(str(request.url))
                 return handler(request)
 
-            real_client = httpx.Client
+            real_client = httpx2.Client
 
             def factory(*args, **kwargs):
-                kwargs["transport"] = httpx.MockTransport(wrapped)
+                kwargs["transport"] = httpx2.MockTransport(wrapped)
                 return real_client(*args, **kwargs)
 
-            monkeypatch.setattr(httpx, "Client", factory)
+            monkeypatch.setattr(httpx2, "Client", factory)
             return urls
 
         return install
 
     @pytest.mark.parametrize("root", ["https://x.org/jungle", "https://x.org/jungle/"])
     def test_200(self, respond, root):
-        urls = respond(lambda r: httpx.Response(200, json={"species": [RAT]}))
+        urls = respond(lambda r: httpx2.Response(200, json={"species": [RAT]}))
         (e,) = read_species_file(root, on_disk=False)
         assert e.taxon_id == 10116
         assert urls == ["https://x.org/jungle/species.json"]
 
     @pytest.mark.parametrize("status", [403, 404])
     def test_missing_file(self, respond, status):
-        respond(lambda r: httpx.Response(status))
+        respond(lambda r: httpx2.Response(status))
         assert read_species_file("https://x.org/s", on_disk=False) is None
 
     def test_server_error_raises(self, respond):
-        respond(lambda r: httpx.Response(500))
+        respond(lambda r: httpx2.Response(500))
         with pytest.raises(SpeciesFileError, match="HTTP 500"):
             read_species_file("https://x.org/s", on_disk=False)
 
     def test_connect_error_raises(self, respond):
         def boom(request):
-            raise httpx.ConnectError("down")
+            raise httpx2.ConnectError("down")
 
         respond(boom)
         with pytest.raises(SpeciesFileError):

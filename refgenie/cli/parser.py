@@ -8,8 +8,8 @@ from refgenie.cli.commands.asset import AssetParser
 from refgenie.cli.commands.asset_class import AssetClassParser
 from refgenie.cli.commands.build import BuildModel
 from refgenie.cli.commands.config import ConfigParser
-from refgenie.cli.commands.data_channel import DataChannelParser
 from refgenie.cli.commands.curate import InsertModel, RemoveModel, RenameModel
+from refgenie.cli.commands.data_channel import DataChannelParser
 from refgenie.cli.commands.database import InitModel, PurgeModel
 from refgenie.cli.commands.generate import GenerateParser
 from refgenie.cli.commands.genome import GenomeParser
@@ -22,15 +22,15 @@ from refgenie.cli.commands.pull import MirrorModel, PullModel
 from refgenie.cli.commands.push import PushModel
 from refgenie.cli.commands.recipe import RecipeParser
 from refgenie.cli.commands.remote import RemoteParser
-from refgenie.cli.commands.store import StoreParser
 from refgenie.cli.commands.serve import DashModel, ServeModel
-from refgenie.cli.commands.stage import StageParser
 from refgenie.cli.commands.servers import (
     CatalogExportModel,
     CatalogPruneModel,
     SubscribeModel,
     UnsubscribeModel,
 )
+from refgenie.cli.commands.stage import StageParser
+from refgenie.cli.commands.store import StoreParser
 from refgenie.cli.messages import SUBPARSER_MESSAGES
 
 

@@ -179,6 +179,8 @@ tests/data/*.fa.fai
 tests/data/*.fa.gz
 tests/data/*.gtf.gz
 tests/data/.DS_Store
+# gtars caches a .rgsi index next to each FASTA it reads.
+tests/data/**/*.rgsi
 !tests/data/rCRSd.fa
 !tests/data/rCRSd.fa.fai
 !tests/data/rCRSd-extra.fa

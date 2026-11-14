@@ -11,7 +11,7 @@ import tarfile
 from subprocess import CalledProcessError
 from unittest.mock import MagicMock, patch
 
-import httpx
+import httpx2
 import pytest
 
 from refgenie import Refgenie
@@ -50,20 +50,20 @@ class TestIO:
         """
         captured = {}
 
-        def handler(request: httpx.Request) -> httpx.Response:
+        def handler(request: httpx2.Request) -> httpx2.Response:
             captured["user_agent"] = request.headers.get("user-agent")
             if request.url.path == "/redirect":
-                return httpx.Response(302, headers={"Location": "https://example.org/final.yaml"})
-            return httpx.Response(200, text="name: test\nversion: 1.0.0\n")
+                return httpx2.Response(302, headers={"Location": "https://example.org/final.yaml"})
+            return httpx2.Response(200, text="name: test\nversion: 1.0.0\n")
 
-        transport = httpx.MockTransport(handler)
-        real_client = httpx.Client
+        transport = httpx2.MockTransport(handler)
+        real_client = httpx2.Client
 
         def client_factory(*args, **kwargs):
             kwargs["transport"] = transport
             return real_client(*args, **kwargs)
 
-        monkeypatch.setattr(httpx, "Client", client_factory)
+        monkeypatch.setattr(httpx2, "Client", client_factory)
 
         content = read_yaml("https://example.org/redirect")
         assert content == {"name": "test", "version": "1.0.0"}

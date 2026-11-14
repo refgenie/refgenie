@@ -6,61 +6,64 @@ The MCP server is read-only. It queries genomes, assets, recipes and sequence co
 
 !!! info "Prerequisites"
 
-    - Refgenie installed with the `mcp` extra (`pip install "refgenie[mcp]>=1.0.0a1"`; the `server` extra includes it too)
-    - A refgenie database with at least one genome
+    - Refgenie installed with the `mcp` extra (`pip install "refgenie[mcp]>=1.0.0a2"`), or with the `server` extra, which includes `dash` and `mcp`
+    - `refgenie init` run once. An empty database works; the tools return empty lists until you pull or build something
     - An MCP client, such as Claude Desktop or Claude Code
 
 ## Configure your AI client
 
 The MCP server is the `refgenie-mcp` command. It runs as a local process and talks to your AI client over stdio. It needs the `mcp` extra; without it, `refgenie-mcp` exits with an import error.
 
-### Claude Code
+Give your client the full path to `refgenie-mcp`. If you installed refgenie in a virtual environment, the client does not activate it, so a bare `refgenie-mcp` is not found. With the environment active, `which refgenie-mcp` prints the full path.
+
+### Choose the refgenie folder
+
+`refgenie-mcp` reads the same `REFGENIE_*` variables as the CLI. `REFGENIE_HOME_PATH` picks the refgenie folder (default `~/.refgenie`). If you also set `REFGENIE_DB_CONFIG_PATH` for the CLI, set it here too. Apps started from a desktop launcher do not see your shell's variables, so set them in the server config.
+
+Claude Code. Run this with refgenie's environment active. Put `-e` after the server name and `--` before the command, or leave out `-e ...` to use `~/.refgenie`:
 
 ```console
-claude mcp add refgenie refgenie-mcp
+claude mcp add refgenie -e REFGENIE_HOME_PATH=/data/refgenie -- "$(which refgenie-mcp)"
 ```
 
-Claude Code can now read your refgenie database in every conversation.
-
-### Claude Desktop
-
-Open **Settings > Developer > Edit Config** and add the refgenie server to `mcpServers`:
+Claude Desktop (**Settings > Developer > Edit Config**) and other clients that use `mcpServers`; restart the app after saving:
 
 ```json
-{
-  "mcpServers": {
-    "refgenie": {
-      "command": "refgenie-mcp"
-    }
-  }
-}
+{ "mcpServers": { "refgenie": {
+    "command": "/full/path/to/refgenie-mcp",
+    "env": { "REFGENIE_HOME_PATH": "/data/refgenie" } } } }
 ```
 
-If `refgenie-mcp` is not on your PATH, use its full path, which `which refgenie-mcp` prints:
+Codex:
 
-```json
-{
-  "mcpServers": {
-    "refgenie": {
-      "command": "/home/you/.local/bin/refgenie-mcp"
-    }
-  }
-}
+```toml
+# ~/.codex/config.toml
+[mcp_servers.refgenie]
+command = "/full/path/to/refgenie-mcp"
+env = { REFGENIE_HOME_PATH = "/data/refgenie" }
 ```
 
-Restart Claude Desktop after saving the config.
-
-### Other MCP clients
-
-Any MCP client that supports stdio can run `refgenie-mcp`. It takes no arguments and uses your default refgenie configuration.
+`refgenie-mcp --help` lists its options; on start it prints the database it opened, so check your client's MCP log to confirm the folder.
 
 ### The public server
 
 The public server offers the same tools over Streamable HTTP at <https://api.refgenie.org/mcp>, for questions about its catalog rather than your own:
 
+Claude Code:
+
 ```console
 claude mcp add --transport http refgenie-public https://api.refgenie.org/mcp
 ```
+
+Other clients that take an `mcpServers` JSON block. Nothing needs to be installed:
+
+```json
+{ "mcpServers": { "refgenie-public": {
+    "type": "http",
+    "url": "https://api.refgenie.org/mcp" } } }
+```
+
+Register both servers under different names; they have the same tools.
 
 Any refgenie server you run with `refgenie serve` has the same `/mcp` endpoint.
 
@@ -72,7 +75,7 @@ All tools are read-only. They give the same answers as the server's HTTP API.
 |------|-------------|
 | `catalog_summary` | Count genomes, asset groups and assets, and list the species that have assets |
 | `list_genomes` | List genomes, most assets first; filter by `has_assets` and `taxon_id` |
-| `search_genomes` | Search genomes by digest, alias, any species name (scientific, common or other common names, e.g. brown rat), other genome names (GRCh38), description or accession (substring matching); same filters |
+| `search_genomes` | Search genomes by digest, alias, any species name (scientific, common or other common names, e.g. brown rat), other genome names (GRCh38), description or accession (substring matching; a description must match at a word start); best matches first; same filters |
 | `get_genome` | Get one genome by `alias` or `digest`, with its FHR metadata and a `species` object holding all its species' names, other common names included |
 | `list_assets` | List assets, optionally of one genome (`alias` or `digest`) and/or one `asset_class` |
 | `get_asset` | Get one asset by digest: names, seek keys, parents, children, and how to get its files |
@@ -80,9 +83,9 @@ All tools are read-only. They give the same answers as the server's HTTP API.
 | `list_recipes` | List recipes, optionally those that build one `output_asset_class` |
 | `get_recipe` | Get one recipe in full: inputs, command templates, docker image, and the build command |
 | `lookup_digest` | Say what a digest is: a genome, an asset, or nothing |
-| `get_genome_metadata` | Get sequence collection metadata (number of sequences, total length, source) |
-| `get_genome_sequences` | Get sequence-level data: names, lengths, and sequence digests |
-| `compare_genomes` | Compare two genomes using seqcol comparison |
+| `get_genome_sequences` | List a genome's sequences (name, length, digest), paged; filter with `name_contains` |
+| `get_sequence` | Get the bases of one region (`name`, `start`, `end`; 0-based, half-open; at most 100,000 bases) without downloading the genome. See [Coordinates](coordinates.md). |
+| `compare_genomes` | Compare two genomes using seqcol comparison, with a one-sentence summary and a map of renamed sequences |
 
 A tool that takes a genome has two parameters, `alias` (a name like `hg38`) and `digest` (32 characters). Give exactly one.
 
@@ -102,7 +105,7 @@ To get the next page, call the tool again with the same filters and `token` set 
 
 ### Getting the files
 
-Over stdio, `get_asset` returns `local_path`, where the files are on this machine. On a server (`/mcp`), it returns `downloads`, the archive and file-list URLs relative to the server. Both include `pull_command`, the `refgenie pull` line for the asset.
+`get_asset` returns `files`, one entry per file (local paths over stdio, URLs on a server), `archive_url` for archive-served assets, and the command for it: `pull_command` (the `refgenie pull` line) on a server, or `seek_command` (the `refgenie seek` line) over stdio, where the asset is already local.
 
 ### Errors
 
@@ -128,13 +131,19 @@ The assistant calls `list_assets` with `alias="hg38"` and lists the assets built
 
 > "Get me the details on this asset: a1b2c3d4e5"
 
-The assistant calls `get_asset` with the digest and returns the full asset record, including its local path, seek keys, any parent/child relationships, and the command to pull it.
+The assistant calls `get_asset` with the digest and returns the full asset record, including its files, seek keys, any parent/child relationships, and the command to pull it.
 
 **Searching across genomes:**
 
 > "Do I have any mouse genomes?"
 
 The assistant calls `search_genomes` with `query="mouse"` and returns any genomes matching that term in any species name, alias, or description.
+
+**Reading a region:**
+
+> "Show me the first 100 bases of BRCA1 in hg38."
+
+The assistant calls `get_sequence` with `alias="hg38"`, `name="chr17"`, `start=43044294`, `end=43044394`. These are 0-based, half-open numbers for the region a genome browser writes as `chr17:43,044,295-43,044,394` (see [Coordinates](coordinates.md)).
 
 **Comparing genomes:**
 
@@ -148,5 +157,5 @@ The assistant calls `compare_genomes` with both identifiers and returns the seqc
     - All tools are read-only queries against your refgenie database
     - Name a genome by `alias` or by `digest`
     - List tools return 20 small rows per page; follow `next_page_token` for more
-    - `refgenie-mcp` takes no arguments and uses your default refgenie configuration
+    - Give your client the full path to `refgenie-mcp`; it reads `REFGENIE_HOME_PATH` and the other `REFGENIE_*` variables, like the CLI
     - Servers offer the same tools at `/mcp`, including <https://api.refgenie.org/mcp>

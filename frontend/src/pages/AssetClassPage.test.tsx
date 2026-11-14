@@ -30,6 +30,7 @@ function genome(digest: string, alias: string, species: string): GenomeResponse 
     taxon_id: null,
     assembly_source: null,
     assembly_accession: null,
+    assembly_level: null,
     species: null,
   };
 }

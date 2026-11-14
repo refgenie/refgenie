@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 from urllib.parse import quote, unquote, urljoin, urlsplit
 
-import httpx
+import httpx2
 import yaml
 from fastapi import APIRouter, HTTPException, Response
 
@@ -64,11 +64,11 @@ async def get_channel_index(channel_name: str):
 async def _fetch_index(index_url: str) -> IndexFile:
     """Fetch and parse a channel's upstream index.yaml; 502 if either fails."""
     try:
-        async with httpx.AsyncClient() as client:
+        async with httpx2.AsyncClient() as client:
             response = await client.get(index_url, headers=HTTP_HEADERS, timeout=10.0)
             response.raise_for_status()
             return IndexFile(**yaml.safe_load(response.text))
-    except (httpx.RequestError, httpx.HTTPStatusError):
+    except (httpx2.RequestError, httpx2.HTTPStatusError):
         raise HTTPException(status_code=502, detail=f"Failed to fetch index from {index_url}")
     except yaml.YAMLError as e:
         raise HTTPException(status_code=502, detail=f"Invalid YAML from {index_url}") from e

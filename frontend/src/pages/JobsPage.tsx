@@ -96,7 +96,7 @@ export function JobsPage() {
             {job.result.registry_path}
           </ScopedLink>
         ) : (
-          <span className="rg-muted">—</span>
+          <span className="rg-muted">NA</span>
         ),
     },
   ];
@@ -107,8 +107,8 @@ export function JobsPage() {
         title="Jobs"
         lede={
           <>
-            A job is one long-running operation this instance has been asked to perform — a
-            pull, a build, or a genome initialization. Click a job's name for its inputs, its
+            A job is one long-running operation this instance has been asked to perform, such
+            as a pull, a build, or a genome initialization. Click a job's name for its inputs, its
             log, and the error if it failed.
           </>
         }
@@ -117,7 +117,7 @@ export function JobsPage() {
       <div className="rg-banner rg-banner--info" role="status">
         <span>
           Jobs live in the refgenie server process and are not saved to disk. Restarting the
-          server clears this history — an empty list after a restart is expected.
+          server clears this history, so an empty list after a restart is expected.
         </span>
       </div>
 

@@ -56,7 +56,7 @@ export function RecipePanel() {
             docker
           </Badge>
         ) : (
-          <span className="rg-muted">—</span>
+          <span className="rg-muted">NA</span>
         ),
     },
     { key: 'inputs', header: 'Inputs', render: inputSummary },
@@ -102,6 +102,7 @@ export function AssetClassPanel() {
     {
       key: 'description',
       header: 'Description',
+      className: 'rg-table__cell--wrap',
       render: (cls) => cls.description ?? <span className="rg-muted">NA</span>,
     },
     {

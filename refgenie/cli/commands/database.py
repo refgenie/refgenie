@@ -8,13 +8,14 @@ from pydantic import AliasChoices, BaseModel, Field
 class InitModel(BaseModel):
     genome_folder: Path | None = Field(
         default=None,
-        description="Absolute path to parent folder refgenie-managed assets.",
+        description="Folder for the assets refgenie manages. Unset means "
+        "$REFGENIE_HOME_PATH/genomes, or the folder already configured.",
         validation_alias=AliasChoices("f", "genome-folder"),
     )
     genome_stage_folder: Path | None = Field(
         default=None,
-        description="Absolute path to parent stage folder refgenie-managed assets; "
-        "used to stage and serve assets.",
+        description="Folder where built assets are staged for serving. Unset means "
+        "$REFGENIE_HOME_PATH/archives, or the folder already configured.",
         validation_alias=AliasChoices("a", "genome-stage-folder"),
     )
     config_version: str | None = Field(
@@ -40,12 +41,23 @@ class PurgeModel(BaseModel):
 def handle_init(cmd, refgenie) -> None:
     from refgenie.const import CURRENT_CONFIG_VERSION
 
-    refgenie.database.init(
+    from refgenie.cli.commands.helpers import note
+
+    ok = refgenie.database.init(
         genome_folder=cmd.genome_folder,
         genome_stage_folder=cmd.genome_stage_folder,
         config_version=cmd.config_version or CURRENT_CONFIG_VERSION,
         # The flag only opts out; otherwise REFGENIE_SUBSCRIBE_DEFAULT_SERVER decides.
         subscribe_default_server=None if cmd.default_server else False,
+    )
+    if not ok:
+        return
+    servers = refgenie.servers.subscriptions()
+    note(f"refgenie is ready. Assets go in {refgenie.genome_folder}")
+    note(
+        f"Subscribed to {', '.join(servers)}. Next: `refgenie listr` shows what you can pull."
+        if servers
+        else "No servers subscribed. Add one with `refgenie subscribe <url>`."
     )
 
 

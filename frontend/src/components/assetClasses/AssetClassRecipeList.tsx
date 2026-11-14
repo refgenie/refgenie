@@ -44,7 +44,7 @@ export function AssetClassRecipeList({
                 <span className="font-medium">{recipe.name}</span>
               )}
               <span className="rg-muted"> v{recipe.version}</span>
-              {recipe.description && <span className="rg-muted"> — {recipe.description}</span>}
+              {recipe.description && <span className="rg-muted">: {recipe.description}</span>}
             </li>
           ))}
         </ul>

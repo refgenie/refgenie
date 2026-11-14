@@ -1,5 +1,7 @@
 # Refgenie manuscripts
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 If you use Refgenie in your research, please consider citing these manuscripts:
 
 - [Stolarczyk et al. (2020) *Refgenie: a reference genome resource manager*](https://doi.org/10.1093/gigascience/giz149): introductory publication

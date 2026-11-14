@@ -15,7 +15,7 @@ This creates `~/.refgenie/` with a SQLite database, a `genomes/` folder, and a d
 | Variable | Default | Purpose |
 |---|---|---|
 | `REFGENIE_HOME_PATH` | `~/.refgenie` | Base directory for all refgenie files |
-| `REFGENIE_LOG_LEVEL` | `INFO` | Logging verbosity |
+| `REFGENIE_LOG_LEVEL` | `WARNING` | Logging verbosity |
 | `REFGENIE_GENOME_FOLDER` | `$REFGENIE_HOME_PATH/genomes` | Directory for genome assets |
 | `REFGENIE_GENOME_STAGE_FOLDER` | `$REFGENIE_HOME_PATH/archives` | Directory for staged assets |
 | `REFGENIE_DB_CONFIG_PATH` | `$REFGENIE_HOME_PATH/refgenie_db_config.yaml` | Path to the database config file |
@@ -29,6 +29,8 @@ For example:
 export REFGENIE_GENOME_FOLDER=~/my_genomes
 export REFGENIE_DB_CONFIG_PATH=~/my_refgenie_db_config.yaml
 ```
+
+Coming from refgenie 0.x? The `$REFGENIE` variable that pointed to the 0.x config file is ignored in 1.x, which uses `REFGENIE_HOME_PATH` and `REFGENIE_DB_CONFIG_PATH` instead. To move an existing setup, see [Upgrade from legacy](upgrade.md).
 
 The [README](https://github.com/refgenie/refgenie#environment-variables) lists the variables for the server, dashboard, and plugins too.
 
@@ -51,14 +53,26 @@ refgenie unsubscribe -s https://my-lab-server.example.org
 refgenie config get
 ```
 
-This prints a table of the stored settings (genome folder, stage folder, subscribed servers, plugin settings), then the settings that come from environment variables:
+This prints YAML in two blocks. `configuration` holds the settings stored in the database (genome folder, stage folder, subscribed servers, plugin settings). `environment` holds the settings that come from environment variables, or their defaults:
 
-```
-log_level: LogLevel.INFO
-genome_folder: /home/user/.refgenie/genomes
-genome_stage_folder: /home/user/.refgenie/archives
-database_config_path: /home/user/.refgenie/refgenie_db_config.yaml
-...
+```yaml
+configuration:
+  version: 1
+  genome_folder: /home/user/.refgenie/genomes
+  servers:
+  - https://api.refgenie.org
+  genome_stage_folder: /home/user/.refgenie/archives
+  plugin_settings: {}
+environment:
+  log_level: WARNING
+  genome_folder: /home/user/.refgenie/genomes
+  genome_stage_folder: /home/user/.refgenie/archives
+  database_config_path: /home/user/.refgenie/refgenie_db_config.yaml
+  disable_plugins: ''
+  server_plugins: false
+  subscribe_default_server: true
+  container_engine: auto
+  apptainer_cachedir: null
 ```
 
 ## Configure from Python

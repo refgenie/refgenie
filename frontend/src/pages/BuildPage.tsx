@@ -318,7 +318,7 @@ export function BuildPage() {
                 placeholder={
                   nameRequest
                     ? "Enter a name (couldn't read the tool's version)"
-                    : "auto — from the recipe's default_asset"
+                    : "auto (the recipe's default_asset)"
                 }
                 value={values.assetName}
                 onChange={(event) => setField('assetName', event.target.value)}
@@ -364,7 +364,7 @@ export function BuildPage() {
                   <code className="rg-code rg-code--inline">refgenie push</code> uploads, and
                   what another machine&rsquo;s{' '}
                   <code className="rg-code rg-code--inline">refgenie pull</code> fetches. It
-                  is a separate phase after the build — silent, and slow on large assets.
+                  is a separate phase after the build, silent and slow on large assets.
                 </p>
               </div>
             )}

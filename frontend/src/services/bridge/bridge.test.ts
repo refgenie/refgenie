@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { vi } from 'vitest';
 
 import { validatePing, SUPPORTED_BRIDGE_VERSIONS } from './contract';
-import { isSelfLocal, isWebKitOnly } from './environment';
+import { isSelfLocal, isWebKitOnly, localNetworkPermission } from './environment';
 import { forget, recall, remember } from './persistence';
 import { probeLocal } from './probe';
 
@@ -135,6 +135,29 @@ describe('environment detectors', () => {
   });
 });
 
+describe('localNetworkPermission', () => {
+  const permissions = (states: Record<string, string>) => ({
+    query: async ({ name }: { name: string }) => {
+      if (!(name in states)) throw new TypeError(`unknown permission ${name}`);
+      return { state: states[name] };
+    },
+  });
+
+  it('reports the state of the first permission name the browser knows', async () => {
+    expect(
+      await localNetworkPermission(permissions({ 'local-network-access': 'prompt' })),
+    ).toBe('prompt');
+    expect(
+      await localNetworkPermission(permissions({ 'loopback-network': 'granted' })),
+    ).toBe('granted');
+  });
+
+  it('is unsupported when the browser knows no such permission', async () => {
+    expect(await localNetworkPermission(permissions({}))).toBe('unsupported');
+    expect(await localNetworkPermission(undefined)).toBe('unsupported');
+  });
+});
+
 const fakeStorage = () => {
   const map = new Map<string, string>();
   return {
@@ -181,8 +204,8 @@ describe('probeLocal outcome classification', () => {
     }) as Response;
 
   it('classifies a valid answer as connected', async () => {
-    const fetchImpl = vi.fn(
-      async (_input: RequestInfo | URL, _init?: RequestInit) => jsonResponse(validPing),
+    const fetchImpl = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) =>
+      jsonResponse(validPing),
     );
     const result = await probeLocal(8080, fetchImpl as unknown as typeof fetch);
     expect(result.kind).toBe('connected');
@@ -197,8 +220,8 @@ describe('probeLocal outcome classification', () => {
   });
 
   it('probes exactly one port and exactly one endpoint — never a scan', async () => {
-    const fetchImpl = vi.fn(
-      async (_input: RequestInfo | URL, _init?: RequestInit) => jsonResponse({}, 500),
+    const fetchImpl = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) =>
+      jsonResponse({}, 500),
     );
     await probeLocal(8080, fetchImpl as unknown as typeof fetch);
     expect(fetchImpl).toHaveBeenCalledTimes(1);

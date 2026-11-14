@@ -4,10 +4,9 @@ from typing import Literal
 
 from pydantic import AliasChoices, BaseModel, Field
 
-from refgenie.cli.commands.helpers import genome_digest_from
+from refgenie.cli.commands.helpers import genome_digest_from, note
 from refgenie.cli.errors import EXIT_NOT_FOUND, fail
 from refgenie.exceptions import MissingRemoteError
-from refgenie.logger import logger
 
 
 class PushModel(BaseModel):
@@ -54,9 +53,9 @@ def _finish_push(
         parts.append(f"{skipped_count} skipped (no push_command)")
     if failed_count:
         parts.append(f"{failed_count} failed")
-    logger.info(f"Push complete: {', '.join(parts)}")
+    note(f"Push complete: {', '.join(parts)}")
     if dry_run:
-        logger.info("(dry run -- no uploads were executed)")
+        note("(dry run -- no uploads were executed)")
     if failed_count:
         fail(f"push: {failed_count} of {total} uploads failed")
     if pushed_count == 0 and skipped_count > 0:
@@ -81,6 +80,6 @@ def handle_push(cmd, refgenie) -> None:
     except MissingRemoteError as e:
         fail(f"push: {e}", EXIT_NOT_FOUND)
     if not report.total:
-        logger.info("Nothing to push. All remote-asset links are up to date.")
+        note("Nothing to push. All remote-asset links are up to date.")
         return
     _finish_push(report.pushed, report.skipped, report.failed, report.total, cmd.dry_run)

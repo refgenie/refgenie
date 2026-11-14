@@ -1,6 +1,7 @@
 """Smoke tests for the serve command."""
 
 import os
+import sys
 import time
 import urllib.request
 
@@ -40,6 +41,7 @@ class TestServer:
                 proc.kill()
 
     @pytest.mark.skipif(os.geteuid() == 0, reason="port 1 binds as root")
+    @pytest.mark.skipif(sys.platform == "darwin", reason="macOS lets any user bind port 1")
     def test_serve_invalid_port(self, initialized_runner):
         """Serve on a privileged port must exit nonzero with a permission error.
 

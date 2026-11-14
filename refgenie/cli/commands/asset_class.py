@@ -4,8 +4,8 @@ from collections.abc import Callable
 
 from pydantic import AliasChoices, BaseModel, Field
 from pydantic_settings import CliPositionalArg, CliSubCommand, get_subcommand
-from rich import print as rprint
 
+from refgenie.cli.commands.helpers import print_table
 from refgenie.cli.errors import fail
 
 
@@ -58,7 +58,7 @@ class AssetClassParser(BaseModel):
 
 
 def handle_asset_class_list(cmd, refgenie) -> None:
-    rprint(refgenie.asset_class.table())
+    print_table(refgenie.asset_class.table())
 
 
 def handle_asset_class_add(cmd, refgenie) -> None:

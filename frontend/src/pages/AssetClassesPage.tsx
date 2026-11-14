@@ -24,6 +24,7 @@ const COLUMNS: Array<Column<AssetClassPublic>> = [
   {
     key: 'description',
     header: 'Description',
+    className: 'rg-table__cell--wrap',
     render: (item) => item.description ?? <span className="rg-muted">NA</span>,
   },
   {
@@ -40,8 +41,8 @@ export function AssetClassesPage() {
       actions={<ActionBar slot="asset-class" />}
       lede={
         <>
-          An asset class is the definition of one kind of genome file bundle — a FASTA, a
-          bowtie2 index, a set of annotations. It names the files that bundle must contain, so
+          An asset class is the definition of one kind of genome file bundle, such as a
+          FASTA, a bowtie2 index, or a set of annotations. It names the files that bundle must contain, so
           anything built to that class can be used the same way whichever genome it came from.
         </>
       }

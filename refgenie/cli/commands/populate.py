@@ -5,12 +5,12 @@ from pathlib import Path
 
 from pydantic import AliasChoices, BaseModel, Field
 
-from refgenie.cli.framework import CliList
 from refgenie.cli.commands.helpers import (
     _APPEND_SERVER_DESCRIPTION,
     _GENOME_SERVER_TRANSIENT_DESCRIPTION,
     resolve_transient_servers,
 )
+from refgenie.cli.framework import CliList
 
 
 class PopulateModel(BaseModel):

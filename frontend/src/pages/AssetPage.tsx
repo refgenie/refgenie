@@ -162,7 +162,7 @@ export function AssetPage() {
                         (<FileSize bytes={key.size} />)
                       </span>
                     )}
-                    {key.description && <span className="rg-muted">— {key.description}</span>}
+                    {key.description && <span className="rg-muted">{key.description}</span>}
                   </li>
                 ))}
               </ul>

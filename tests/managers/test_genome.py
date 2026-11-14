@@ -324,7 +324,7 @@ class TestInitializeAndBuild:
             digest, created = rg.build.initialize_and_build(
                 genome_names=["rCRSd"], source=source, digest=meta.digest, build_fasta=build_fasta
             )
-            assert rg.sequence.get(digest, "rCRSd:0-10") == "GATCACAGGT"
+            assert rg.sequence.get(digest, "rCRSd", 0, 10) == "GATCACAGGT"
         assert created
         if build_fasta:
             assert rg.asset.get(

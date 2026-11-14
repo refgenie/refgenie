@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Any
 from pypiper import PipelineManager
 from pypiper.exceptions import SubprocessError
 from pypiper.manager import COMPLETE_FLAG, FAIL_FLAG
-from refgenie.db.engine import Engine
 
+from refgenie.db.engine import Engine
 from refgenie.db.tables import Asset
 from refgenie.exceptions import (
     BuildFailedError,
@@ -22,11 +22,11 @@ from refgenie.exceptions import (
     MissingRecipeError,
 )
 from refgenie.logger import logger
+from refgenie.managers import build_inputs, containers
 from refgenie.managers.asset.colocation import (
     create_colocation_symlinks,
     get_colocation_metadata,
 )
-from refgenie.managers import build_inputs, containers
 from refgenie.managers.base import ResourceManager
 from refgenie.models import (
     AssetRegistryPathComponents,
@@ -45,9 +45,9 @@ if TYPE_CHECKING:
     from refgenie.managers.alias import AliasBackend
     from refgenie.managers.asset.manager import AssetManager
     from refgenie.managers.genome import GenomeManager
-    from refgenie.managers.sources import RemoteGenomeSource
     from refgenie.managers.recipe import RecipeManager
     from refgenie.managers.sequence import SequenceManager
+    from refgenie.managers.sources import RemoteGenomeSource
     from refgenie.managers.stage import StageManager
 
 

@@ -121,7 +121,7 @@ def mouse_rgc(rgc):
 
 def _add_genome(rgc, digest, **columns):
     with Session(rgc.database_engine) as session:
-        session.add(Genome(digest=digest, description="", **columns))
+        session.add(Genome(digest=digest, **{"description": "", **columns}))
         session.commit()
 
 
@@ -167,3 +167,142 @@ def test_common_name_comes_from_the_species_list(mouse_rgc):
 def test_unknown_field_raises(rgc):
     with pytest.raises(ValueError, match="bogus.*Valid fields are"):
         _page(rgc, "x", fields=["bogus"])
+
+
+def _ordered(rgc, term, **kwargs):
+    return [listing.genome.digest for listing in _page(rgc, term, **kwargs).items]
+
+
+@pytest.mark.parametrize(
+    ["term", "found"],
+    [
+        ("Pecul", True),
+        ("peculiar description", True),
+        ("eculiar", False),
+        ("cription", False),
+    ],
+)
+def test_description_matches_only_at_word_starts(rgc, term, found):
+    assert _digests(rgc, term, fields=["description"]) == ([A] if found else [])
+
+
+def test_description_word_starts_follow_punctuation(rgc):
+    rat = "c" * 32
+    _add_genome(rgc, rat, description="Strain BN/NHsdMcwi (rat-specific)")
+    for term in ("rat", "specific", "NHsd", "rat-spec"):
+        assert _digests(rgc, term, fields=["description"]) == [rat], term
+
+
+class TestRatSearch:
+    """Searching "rat" lists rat genomes first, and no human genome."""
+
+    HUMAN, RN6, RN7, GOLDFISH, PIRATE = (c * 32 for c in "abcde")
+
+    @pytest.fixture
+    def rat_rgc(self, refgenie_minimal):
+        rgc = refgenie_minimal
+        _add_genome(
+            rgc,
+            self.HUMAN,
+            description="T2T-CHM13 with curated satellite repeat annotations",
+            species_name="Homo sapiens",
+            taxon_id=9606,
+        )
+        # By the default order (species name), goldfish and mosquito come
+        # before Rattus; only ranking puts the rats first.
+        _add_genome(rgc, self.RN6, species_name="Rattus norvegicus", taxon_id=10116)
+        _add_genome(rgc, self.RN7, species_name="Rattus norvegicus", taxon_id=10116)
+        _add_genome(rgc, self.GOLDFISH, species_name="Carassius auratus")
+        _add_genome(rgc, self.PIRATE, species_name="Aedes aegypti")
+        seed_species(rgc, 9606, "Homo sapiens", "human")
+        seed_species(rgc, 10116, "Rattus norvegicus", "Norway rat", ["brown rat"])
+        rgc.alias.add("rn6", self.RN6)
+        rgc.alias.add("mRatBN7.2", self.RN7)
+        rgc.alias.add("pirate", self.PIRATE)
+        return rgc
+
+    def test_curated_human_genome_does_not_match(self, rat_rgc):
+        assert self.HUMAN not in _ordered(rat_rgc, "rat")
+
+    def test_rat_genomes_rank_first(self, rat_rgc):
+        order = _ordered(rat_rgc, "rat")
+        assert sorted(order[:2]) == sorted([self.RN6, self.RN7])
+        assert sorted(order[2:]) == sorted([self.GOLDFISH, self.PIRATE])
+
+    def test_pages_follow_the_ranking(self, rat_rgc):
+        """Ranking is in SQL, so pages walk the ranked order and the total is every match."""
+        search = Search(term="rat")
+        full = _ordered(rat_rgc, "rat")
+        walked = []
+        for offset in range(len(full)):
+            page = rat_rgc.genome.page(search=search, offset=offset, limit=1)
+            assert page.total == len(full) == 4
+            walked += [listing.genome.digest for listing in page.items]
+        assert walked == full
+
+    def test_human_ranks_first_for_human(self, rat_rgc):
+        _add_genome(rat_rgc, "f" * 32, description="Mouse with a humanized immune system")
+        assert _ordered(rat_rgc, "human") == [self.HUMAN, "f" * 32]
+
+
+class TestRanking:
+    """Exact name, then whole word, then word start, then anything else."""
+
+    # Digests sort in reverse of the expected rank, so the default order
+    # (species, then digest; none have species or assets) cannot pass the test.
+    OTHER, WORD_START, WHOLE_WORD, EXACT = (c * 32 for c in "abcd")
+
+    @pytest.fixture
+    def ranked_rgc(self, refgenie_minimal):
+        rgc = refgenie_minimal
+        _add_genome(rgc, self.OTHER, synonyms=["Antelope"])
+        _add_genome(rgc, self.WORD_START, synonyms=["Elandsberg antelope"])
+        _add_genome(rgc, self.WHOLE_WORD, synonyms=["Common eland"])
+        _add_genome(rgc, self.EXACT, synonyms=["ELAND"])
+        return rgc
+
+    def test_tiers(self, ranked_rgc):
+        _add_genome(ranked_rgc, "e" * 32, synonyms=["Elands"])
+        _add_genome(ranked_rgc, "f" * 32, synonyms=["Gazelands"])
+        assert _ordered(ranked_rgc, "eland") == [
+            self.EXACT,
+            self.WHOLE_WORD,
+            self.WORD_START,
+            "e" * 32,
+            "f" * 32,
+        ]
+
+    def test_ties_keep_the_default_order(self, ranked_rgc):
+        # Both are word starts, so the digest decides.
+        assert _ordered(ranked_rgc, "ante") == [self.OTHER, self.WORD_START]
+
+    def test_alias_rank_counts(self, ranked_rgc):
+        """A genome whose only exact match is an alias ranks with the exact matches."""
+        alias_only = "0" * 32
+        _add_genome(ranked_rgc, alias_only)
+        ranked_rgc.alias.add("eland", alias_only)
+        assert _ordered(ranked_rgc, "eland")[:2] == [alias_only, self.EXACT]
+
+    def test_alias_ranks_its_best_alias(self, ranked_rgc):
+        alias_only = "0" * 32
+        _add_genome(ranked_rgc, alias_only)
+        ranked_rgc.alias.add("gazelands", alias_only)
+        ranked_rgc.alias.add("eland-v2", alias_only)
+        assert _ordered(ranked_rgc, "eland").index(alias_only) == 1
+
+    def test_ranking_follows_the_searched_fields(self, ranked_rgc):
+        ranked_rgc.alias.add("eland", self.OTHER)
+        assert _ordered(ranked_rgc, "eland", fields=["synonyms"])[0] == self.EXACT
+        assert _ordered(ranked_rgc, "eland", fields=["aliases"]) == [self.OTHER]
+
+    def test_punctuation_only_term_still_searches(self, ranked_rgc):
+        assert _ordered(ranked_rgc, "-") == []
+
+    def test_non_ascii_synonyms_rank(self, refgenie_minimal):
+        """The JSON text escapes non-ASCII names; every tier escapes the term to match."""
+        rgc = refgenie_minimal
+        _add_genome(rgc, self.OTHER, synonyms=["Compère"])
+        _add_genome(rgc, self.WORD_START, synonyms=["Pèrelachaise"])
+        _add_genome(rgc, self.WHOLE_WORD, synonyms=["Père David's deer"])
+        _add_genome(rgc, self.EXACT, synonyms=["père"])
+        assert _ordered(rgc, "Père") == [self.EXACT, self.WHOLE_WORD, self.WORD_START, self.OTHER]

@@ -29,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.14"]
+        python-version: ["3.11", "3.15"]
         tier: ["unit", "component", "e2e"]
         # macOS runners bill at a 10x multiplier (Linux 1x), which made the
         # macOS leg ~82% of this repo's Actions spend off ~32% of the compute.

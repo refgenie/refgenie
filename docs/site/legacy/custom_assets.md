@@ -1,5 +1,7 @@
 # Use custom assets
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 Refgenie will write the genome configuration file automatically for any assets that you obtain using either `refgenie pull` or `refgenie build` -- but you can also take advantage of the refgenie system to manage your own custom assets in a few ways.
 
 ## Build a custom asset

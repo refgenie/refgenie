@@ -1,5 +1,7 @@
 # Configuration file upgrade demonstration
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 
 In the following tutorial we will present the process of upgrading the refgenie configuration file and asset files from version **0.3** to version **0.4**.
 

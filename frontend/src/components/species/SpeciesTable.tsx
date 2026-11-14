@@ -59,7 +59,7 @@ export function SpeciesTable({
     { key: 'genomes', header: 'Genomes', align: 'right', render: (row) => row.genomes },
     {
       key: 'assets',
-      header: 'Assets',
+      header: 'Built assets',
       align: 'right',
       // Zero is styled as absence.
       render: (row) =>

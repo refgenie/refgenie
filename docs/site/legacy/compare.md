@@ -1,5 +1,7 @@
 # Genomes compatibility
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 ## Motivation
 
 Many genomic analyses require less stringent comparison: simple compatibility between assets that are not necessarily identical.

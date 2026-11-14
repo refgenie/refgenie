@@ -9,7 +9,6 @@ from pydantic_settings import CliSettingsSource
 
 from refgenie.cli.messages import COMMAND_GROUPS
 
-
 # --- CliList workaround ---
 #
 # pydantic-settings binds a repeated CLI option to a list, but not a single

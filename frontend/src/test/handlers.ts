@@ -12,6 +12,8 @@ import {
   remoteGenomesFixture,
   remoteServersFixture,
   stagedAssetsFixture,
+  genomeSequencesFixture,
+  genomeComparisonFixture,
 } from './fixtures';
 
 /** Tests run against a relative api_base, so MSW matches path-only patterns. */
@@ -36,9 +38,6 @@ export const handlers = [
   http.get(`${API}/recipes`, () => HttpResponse.json(emptyPage)),
   http.get(`${API}/configurations`, () => HttpResponse.json(emptyPage)),
   // Server mode only (`archives`).
-  http.get(`${API}/summary`, () =>
-    HttpResponse.json({ genomes: 2, asset_groups: 3, assets: 4 }),
-  ),
   // Jobs: empty by default.
   http.get(`${LOCAL_API}/jobs`, () => HttpResponse.json(emptyPage)),
   http.get(`${LOCAL_API}/jobs/:id/log`, () =>
@@ -47,4 +46,8 @@ export const handlers = [
   http.get(`${LOCAL_API}/remote/servers`, () => HttpResponse.json(remoteServersFixture)),
   http.get(`${LOCAL_API}/remote/genomes`, () => HttpResponse.json(remoteGenomesFixture)),
   http.get(`${LOCAL_API}/remote/assets`, () => HttpResponse.json(remoteAssetsFixture)),
+  http.get(`${API}/genomes/:digest/sequences`, () => HttpResponse.json(genomeSequencesFixture)),
+  http.get(`${API}/genomes/:digest/compare/:other`, () =>
+    HttpResponse.json(genomeComparisonFixture),
+  ),
 ];

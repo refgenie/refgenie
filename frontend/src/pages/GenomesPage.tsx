@@ -3,7 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { useSearchParamsState } from '../hooks/useSearchParamsState';
 import { useResetPastEndPage } from '../hooks/useResetPastEndPage';
 import { useGenomes } from '../hooks/queries/useGenomes';
-import { useSummary } from '../hooks/queries/useServerInfo';
+import { useAssetGroups } from '../hooks/queries/useAssetGroups';
+import { useAssets } from '../hooks/queries/useAssets';
 import { useCapability } from '../hooks/useCapability';
 import { useRouteBase } from '../hooks/useRouteBase';
 import { useBridgeDigests } from '../hooks/queries/useBridgeDigests';
@@ -14,18 +15,19 @@ import { Badge } from '../components/common/Badge';
 import { SearchBox } from '../components/common/SearchBox';
 import { Pagination } from '../components/common/Pagination';
 import { EmptyState } from '../components/common/states';
+import { ExternalLink } from '../components/common/ExternalLink';
+import { genomeRequestUrl } from '../services/projectLinks';
 import { GENOME_SEARCH_FIELDS } from '../services/resources/genomes';
 import type { Column } from '../components/common/DataTable';
 import type { GenomeResponse } from '../types/api';
 
-/** Most genomes have no assets, so the list hides them by default; `?assets=all` shows all. */
+/** `?assets=built` limits the list to genomes with built assets; off by default. */
 const WITH_ASSETS_PARAM = 'assets';
-const SHOW_ALL = 'all';
+const BUILT_ONLY = 'built';
 
 export function GenomesPage() {
   const [state, actions] = useSearchParamsState();
   const [params, setParams] = useSearchParams();
-  const canReadArchives = useCapability('archives');
   // The empty state suggests only what this instance can do.
   const canInitGenome = useCapability('genome_init');
   const canBuild = useCapability('build');
@@ -65,7 +67,7 @@ export function GenomesPage() {
         ]
       : [];
 
-  const onlyWithAssets = params.get(WITH_ASSETS_PARAM) !== SHOW_ALL;
+  const onlyWithAssets = params.get(WITH_ASSETS_PARAM) === BUILT_ONLY;
 
   const query = useGenomes({
     has_assets: onlyWithAssets || undefined,
@@ -77,12 +79,11 @@ export function GenomesPage() {
   });
   useResetPastEndPage(query.error, state.page, actions.setPage);
 
-  const summary = useSummary({ enabled: canReadArchives });
-  // Only the total is read.
-  const withAssets = useGenomes(
-    { has_assets: true, pageSize: 1 },
-    { enabled: canReadArchives },
-  );
+  // The same list totals the landing page reads; only the totals are used.
+  const totalGenomes = useGenomes({ pageSize: 1 }).data?.pagination.total;
+  const totalGroups = useAssetGroups({ pageSize: 1 }).data?.pagination.total;
+  const totalAssets = useAssets({ pageSize: 1 }).data?.pagination.total;
+  const withAssets = useGenomes({ has_assets: true, pageSize: 1 });
 
   // When the filter empties a search, count the hidden matches for the empty state.
   const filteredOutSearch =
@@ -104,8 +105,8 @@ export function GenomesPage() {
     setParams(
       (previous) => {
         const next = new URLSearchParams(previous);
-        if (on) next.delete(WITH_ASSETS_PARAM);
-        else next.set(WITH_ASSETS_PARAM, SHOW_ALL);
+        if (on) next.set(WITH_ASSETS_PARAM, BUILT_ONLY);
+        else next.delete(WITH_ASSETS_PARAM);
         // Page 4 of the filtered list is not page 4 of the full one.
         next.delete('page');
         return next;
@@ -123,32 +124,35 @@ export function GenomesPage() {
             A genome here is one reference assembly, identified by a digest computed
             from its sequences rather than by whatever name a provider gave it. Each row
             lists the names that genome answers to and how many assets have been built
-            for it.
+            for it. Most genomes have no built assets yet.
           </>
         }
       />
 
-      {summary.data && (
+      {totalGenomes !== undefined && (
         <dl className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="rg-card p-4">
+          <div className="rg-stat">
             <dt className="rg-kv__term">Genomes</dt>
             <dd className="text-2xl font-semibold">
-              {withAssets.data ? withAssets.data.pagination.total : '—'}
+              {totalGenomes.toLocaleString()}
               <span className="rg-muted text-sm font-normal">
                 {' '}
-                with assets · {summary.data.genomes} registered
+                · {withAssets.data ? withAssets.data.pagination.total : '…'} with built
+                assets
               </span>
             </dd>
           </div>
           {(
             [
-              ['Asset groups', summary.data.asset_groups],
-              ['Assets', summary.data.assets],
+              ['Asset groups', totalGroups],
+              ['Assets', totalAssets],
             ] as const
           ).map(([term, value]) => (
-            <div className="rg-card p-4" key={term}>
+            <div className="rg-stat" key={term}>
               <dt className="rg-kv__term">{term}</dt>
-              <dd className="text-2xl font-semibold">{value}</dd>
+              <dd className="text-2xl font-semibold">
+                {value === undefined ? '…' : value.toLocaleString()}
+              </dd>
             </div>
           ))}
         </dl>
@@ -173,7 +177,7 @@ export function GenomesPage() {
           checked={onlyWithAssets}
           onChange={(event) => setOnlyWithAssets(event.target.checked)}
         />
-        Only genomes with assets
+        Only genomes with built assets
       </label>
 
       <GenomeTable
@@ -189,7 +193,7 @@ export function GenomesPage() {
               <p className="mb-4">
                 {hiddenMatches}{' '}
                 {hiddenMatches === 1 ? 'genome matches' : 'genomes match'} “{state.q}”,
-                but {hiddenMatches === 1 ? 'it has no' : 'none have'} assets built here.
+                but {hiddenMatches === 1 ? 'it has no' : 'none have'} built assets.
               </p>
               <button
                 type="button"
@@ -204,10 +208,20 @@ export function GenomesPage() {
               query={state.q || undefined}
               message={
                 onlyWithAssets
-                  ? 'No genome here has any assets built. Untick the filter to see every registered genome.'
+                  ? 'No genome here has built assets. Untick the filter to see every genome.'
                   : noGenomesMessage
               }
               onClearSearch={actions.clearSearch}
+              action={
+                !canBuild && state.q ? (
+                  <p className="mt-4">
+                    Not in the catalog?{' '}
+                    <ExternalLink href={genomeRequestUrl(state.q)}>
+                      Request this genome
+                    </ExternalLink>
+                  </p>
+                ) : undefined
+              }
             />
           )
         }

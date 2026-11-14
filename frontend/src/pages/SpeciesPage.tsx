@@ -43,6 +43,7 @@ export function SpeciesPage() {
   const rows = index.data ? matched.slice(first, first + state.pageSize) : undefined;
 
   const named = all.filter((row) => row.key !== '');
+  const genomeTotal = all.reduce((sum, row) => sum + row.genomes, 0);
   const withAssets = named.filter((row) => row.assets > 0).length;
 
   return (
@@ -55,7 +56,8 @@ export function SpeciesPage() {
             {index.data && (
               <>
                 {' '}
-                {named.length} species · {withAssets} with assets built.
+                {named.length} species · {genomeTotal} genomes · {withAssets} species
+                with built assets.
               </>
             )}
           </>
@@ -65,7 +67,7 @@ export function SpeciesPage() {
       <SearchBox
         value={state.q}
         onChange={actions.setQuery}
-        placeholder="Search species — any name, or taxon ID…"
+        placeholder="Search species by any name or taxon ID…"
         label="Search species"
       />
 

@@ -113,7 +113,7 @@ The [migration reference](migration-from-legacy.md) lists this and the other cha
 If you only pulled pre-built assets, set up a new instance and pull again from the public server:
 
 ```bash
-pip install "refgenie>=1.0.0a1"
+pip install "refgenie>=1.0.0a2"
 refgenie init
 refgenie pull hg38/fasta
 ```

@@ -5,8 +5,8 @@ from collections.abc import Callable
 
 from pydantic import AliasChoices, BaseModel, Field
 from pydantic_settings import CliPositionalArg, CliSubCommand, get_subcommand
-from rich import print as rprint
 
+from refgenie.cli.commands.helpers import print_table
 from refgenie.cli.errors import fail
 
 
@@ -73,7 +73,7 @@ class RecipeParser(BaseModel):
 
 
 def handle_recipe_list(cmd, refgenie) -> None:
-    rprint(refgenie.recipe.table())
+    print_table(refgenie.recipe.table())
 
 
 def handle_recipe_add(cmd, refgenie) -> None:
@@ -96,7 +96,7 @@ def handle_recipe_remove(cmd, refgenie) -> None:
 
 def handle_recipe_requirements(cmd, refgenie) -> None:
     recipe = refgenie.recipe.get(recipe_name=cmd.recipe_name, recipe_version=cmd.recipe_version)
-    rprint(refgenie.recipe.table(recipe_names=[recipe.name]))
+    print_table(refgenie.recipe.table(recipe_names=[recipe.name]))
     sys.exit(0)
 
 

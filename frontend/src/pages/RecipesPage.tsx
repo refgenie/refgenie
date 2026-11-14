@@ -22,9 +22,24 @@ const COLUMNS: Array<Column<RecipeResponse>> = [
       ),
   },
   { key: 'version', header: 'Version', render: (recipe) => recipe.version },
-  { key: 'description', header: 'Description', render: (recipe) => recipe.description ?? NA },
-  { key: 'default_asset', header: 'Default asset', render: (recipe) => recipe.default_asset },
-  { key: 'docker_image', header: 'Docker image', render: (recipe) => recipe.docker_image ?? NA },
+  {
+    key: 'description',
+    header: 'Description',
+    className: 'rg-table__cell--wrap',
+    render: (recipe) => recipe.description ?? NA,
+  },
+  {
+    key: 'default_asset',
+    header: 'Default asset',
+    className: 'rg-table__cell--wrap',
+    render: (recipe) => recipe.default_asset,
+  },
+  {
+    key: 'docker_image',
+    header: 'Docker image',
+    className: 'rg-table__cell--wrap',
+    render: (recipe) => recipe.docker_image ?? NA,
+  },
 ];
 
 export function RecipesPage() {

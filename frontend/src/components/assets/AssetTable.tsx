@@ -47,6 +47,7 @@ export function AssetTable({
     {
       key: 'description',
       header: 'Description',
+      className: 'rg-table__cell--wrap',
       render: (asset) => asset.description ?? <span className="rg-muted">NA</span>,
     },
     {

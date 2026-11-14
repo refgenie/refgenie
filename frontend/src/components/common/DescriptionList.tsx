@@ -3,6 +3,8 @@ import type { ReactNode } from 'react';
 
 export interface DescriptionItem {
   term: string;
+  /** Shown in place of `term`, which stays the row's key. */
+  label?: ReactNode;
   value: ReactNode;
 }
 
@@ -24,7 +26,7 @@ export function DescriptionList({ items, hideEmpty = false }: DescriptionListPro
     <dl className="rg-kv">
       {rows.map((item) => (
         <Fragment key={item.term}>
-          <dt className="rg-kv__term">{item.term}</dt>
+          <dt className="rg-kv__term">{item.label ?? item.term}</dt>
           <dd className="rg-kv__value">
             {isEmpty(item.value) ? <span className="rg-muted">NA</span> : item.value}
           </dd>

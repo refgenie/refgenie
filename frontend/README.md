@@ -81,8 +81,10 @@ not template it. The router `basename` and the API base come from
 
 The bundle is gitignored and never committed.
 
-Everything in `public/` ships at the bundle root, including `SKILL.md` — the
-agent-facing capability doc served at `/SKILL.md`. Note that a *missing* file
+Everything in `public/` ships at the bundle root and every host serves it:
+`SKILL.md` (the agent-facing capability doc at `/SKILL.md`), `llms.txt` and
+`robots.txt`. The text inside `#root` in `index.html` is for readers without
+JavaScript; React replaces it on its first render. Note that a *missing* file
 there does not 404: the SPA catch-all answers with the shell, so Vite, the
 Python server and Cloudflare all return `200 text/html`. Assert on
 `Content-Type`, never on status.
@@ -360,7 +362,7 @@ curl -si -X POST http://localhost:8080/v1/actions/pull \
 env -u REFGENIE uv run refgenie dash --bridge full
 ```
 
-The SPA currently deploys to `https://api.refgenie.org`; both it and
+The SPA currently deploys to `https://refgenie.org`; both it and
 `https://refgenie.org` are in the default bridge allowlist. Check
 `https://api.refgenie.org/service-info` → `refgenie.web_ui.commit` before
 concluding a missing control is a bug; the deployed bundle may predate your

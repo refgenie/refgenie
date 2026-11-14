@@ -10,7 +10,7 @@ import os
 import urllib.request
 from pathlib import Path
 
-import httpx
+import httpx2
 import pytest
 import yaml
 
@@ -173,7 +173,7 @@ class TestDataChannelIntegration:
 # --- merged from test_store_backed_serving.py --------------------------------
 # Integration tests for store-backed server mode: refgenie's production serving
 # path, a remote RefgetStore served over HTTP with the refgenie server in
-# store-backed mode (the store declared in REFGENIE_STORES). The `store_backed_server`
+# store-backed mode (the store registered in its store table). The `store_backed_server`
 # fixture (in conftest.py) builds a small on-disk RefgetStore from refget test
 # FASTAs, serves it over HTTP via a `python -m http.server` subprocess, and
 # starts `refgenie serve` as a subprocess pointed at the HTTP store.
@@ -185,7 +185,7 @@ class TestStoreBackedServing:
 
     def test_service_info_reports_store_enabled(self, store_backed_server):
         """GET /seqcol/service-info reflects the store-backed backend and counts."""
-        resp = httpx.get(f"{store_backed_server['url']}/seqcol/service-info", timeout=30)
+        resp = httpx2.get(f"{store_backed_server['url']}/seqcol/service-info", timeout=30)
         assert resp.status_code == 200
         data = resp.json()
         assert data["id"] == "org.refgenie.seqcol"
@@ -200,7 +200,7 @@ class TestStoreBackedServing:
 
     def test_list_collections(self, store_backed_server):
         """GET /seqcol/list/collection lists the store's collection digests."""
-        resp = httpx.get(f"{store_backed_server['url']}/seqcol/list/collection", timeout=30)
+        resp = httpx2.get(f"{store_backed_server['url']}/seqcol/list/collection", timeout=30)
         assert resp.status_code == 200
         data = resp.json()
         assert data["pagination"]["total"] == 3
@@ -210,7 +210,7 @@ class TestStoreBackedServing:
     def test_get_collection(self, store_backed_server):
         """GET /seqcol/collection/{digest} returns a valid seqcol document."""
         digest = store_backed_server["digests"][0]
-        resp = httpx.get(f"{store_backed_server['url']}/seqcol/collection/{digest}", timeout=30)
+        resp = httpx2.get(f"{store_backed_server['url']}/seqcol/collection/{digest}", timeout=30)
         assert resp.status_code == 200
         data = resp.json()
         # Core seqcol attributes derived from the store.
@@ -224,22 +224,22 @@ class TestStoreBackedServing:
         """GET /seqcol/collection/{digest}?level=2 matches the default level."""
         digest = store_backed_server["digests"][0]
         url = store_backed_server["url"]
-        default = httpx.get(f"{url}/seqcol/collection/{digest}", timeout=30).json()
-        level2 = httpx.get(f"{url}/seqcol/collection/{digest}?level=2", timeout=30)
+        default = httpx2.get(f"{url}/seqcol/collection/{digest}", timeout=30).json()
+        level2 = httpx2.get(f"{url}/seqcol/collection/{digest}?level=2", timeout=30)
         assert level2.status_code == 200
         assert level2.json() == default
 
     def test_get_collection_unknown_digest_404(self, store_backed_server):
         """An unknown collection digest returns 404."""
         url = store_backed_server["url"]
-        resp = httpx.get(f"{url}/seqcol/collection/NONEXISTENT_DIGEST_12345678901234", timeout=30)
+        resp = httpx2.get(f"{url}/seqcol/collection/NONEXISTENT_DIGEST_12345678901234", timeout=30)
         assert resp.status_code == 404
 
     def test_comparison(self, store_backed_server):
         """GET /seqcol/comparison/{a}/{b} compares two store collections."""
         digests = store_backed_server["digests"]
         a, b = digests[0], digests[1]
-        resp = httpx.get(f"{store_backed_server['url']}/seqcol/comparison/{a}/{b}", timeout=30)
+        resp = httpx2.get(f"{store_backed_server['url']}/seqcol/comparison/{a}/{b}", timeout=30)
         assert resp.status_code == 200
         data = resp.json()
         assert data["digests"] == {"a": a, "b": b}
@@ -248,7 +248,7 @@ class TestStoreBackedServing:
 
     def test_drs_service_info(self, store_backed_server):
         """GET /ga4gh/drs/v1/service-info responds in store-backed mode."""
-        resp = httpx.get(f"{store_backed_server['url']}/ga4gh/drs/v1/service-info", timeout=30)
+        resp = httpx2.get(f"{store_backed_server['url']}/ga4gh/drs/v1/service-info", timeout=30)
         assert resp.status_code == 200
         data = resp.json()
         assert data["type"]["artifact"] == "drs"

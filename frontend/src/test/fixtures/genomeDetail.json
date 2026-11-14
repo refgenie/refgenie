@@ -8,6 +8,7 @@
   "assembly_accession": "GCA_000001405.15",
   "assembly_level": "chromosome",
   "remote_url": null,
+  "refget_store_url": "https://store.test/s/",
   "taxon_uri": "https://identifiers.org/taxonomy:9606",
   "species": {
     "taxon_id": 9606,

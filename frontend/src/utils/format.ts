@@ -20,3 +20,11 @@ export function formatDigest(digest: string | null | undefined, length = 12): st
   if (!digest) return 'NA';
   return digest.length <= length ? digest : `${digest.slice(0, length)}…`;
 }
+
+/** Base pairs, short: 16,569 bp; 46.7 Mbp; 3.1 Gbp. */
+export function formatBp(bases: number): string {
+  if (bases >= 1e9) return `${(bases / 1e9).toFixed(1)} Gbp`;
+  if (bases >= 1e6) return `${(bases / 1e6).toFixed(1)} Mbp`;
+  if (bases >= 1e4) return `${(bases / 1e3).toFixed(1)} kbp`;
+  return `${bases.toLocaleString()} bp`;
+}

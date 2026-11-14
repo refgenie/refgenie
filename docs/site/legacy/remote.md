@@ -1,5 +1,7 @@
 # Remote mode in refgenie for cloud computing use
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 Starting with version 0.11.0, refgenie offers a series of new functions that work directly with remote assets, which we refer to as *remote mode*. Remote mode simply means that we omit the local configuration file and storage of assets, instead relying only on the server for both metadata and asset files. **With remote mode, you can skip `refgenie init` and start workling with refgenie right after installation!**
 
 ## Rationale

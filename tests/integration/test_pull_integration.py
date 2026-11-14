@@ -18,7 +18,7 @@ import os
 import tarfile
 from pathlib import Path
 
-import httpx
+import httpx2
 import pytest
 
 from tests.support.factories import RCRSD_FASTA
@@ -131,12 +131,12 @@ class TestFileModePull:
         asset_digest = file_mode_pull_server["genomes"]["rCRSd"]["asset_digest"]
         url = file_mode_pull_server["url"]
 
-        resp = httpx.get(f"{url}/v4/assets/{asset_digest}")
+        resp = httpx2.get(f"{url}/v4/assets/{asset_digest}")
         assert resp.status_code == 200, resp.text
         # Asset-level serving_modes_override reached staging and is surfaced to the
         # puller; without this the client would try the archive path.
         assert resp.json()["serving_modes"] == ["file"]
-        assert httpx.get(f"{url}/v4/archives/{asset_digest}/download").status_code == 404
+        assert httpx2.get(f"{url}/v4/archives/{asset_digest}/download").status_code == 404
 
         client_env = create_client_env(tmp_path, url)
 
@@ -176,17 +176,17 @@ class TestCrossModeContentFidelity:
         url = server_b["url"]
 
         # File endpoint: {"asset_digest": ..., "files": [...]}, then raw bytes.
-        listing = httpx.get(f"{url}/v4/assets/{asset_digest}/files")
+        listing = httpx2.get(f"{url}/v4/assets/{asset_digest}/files")
         assert listing.status_code == 200, listing.text
         files = listing.json()["files"]
         fa_file = next(f for f in files if f.endswith(".fa"))
-        file_resp = httpx.get(f"{url}/v4/assets/{asset_digest}/files/{fa_file}")
+        file_resp = httpx2.get(f"{url}/v4/assets/{asset_digest}/files/{fa_file}")
         assert file_resp.status_code == 200, file_resp.text
         file_content = file_resp.content
 
         # Archive endpoint: no http/https remote is configured, so the real route
         # serves the tarball locally rather than redirecting.
-        archive_resp = httpx.get(f"{url}/v4/archives/{asset_digest}/download")
+        archive_resp = httpx2.get(f"{url}/v4/archives/{asset_digest}/download")
         assert archive_resp.status_code == 200, archive_resp.text
         assert archive_resp.content[:2] == b"\x1f\x8b", "Expected gzip magic bytes"
 

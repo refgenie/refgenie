@@ -1,5 +1,7 @@
 # Usage reference
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 ## `refgenie --help`
 ```console
 version: 0.11.1-dev | refgenconf 0.11.2-dev

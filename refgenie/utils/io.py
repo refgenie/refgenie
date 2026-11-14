@@ -21,7 +21,7 @@ def read_yaml(path: Path | str) -> dict:
     Read a YAML either from a local file or from a remote URL.
 
     Local paths may be given as either a ``Path`` or a plain ``str``. URLs are
-    fetched with httpx, following redirects and carrying an explicit
+    fetched with httpx2, following redirects and carrying an explicit
     ``User-Agent`` header (required to get through Cloudflare, which otherwise
     403s the default UA).
 

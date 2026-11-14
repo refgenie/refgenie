@@ -2,7 +2,6 @@
 
 import re
 
-
 # Semver pattern: major.minor.patch with optional pre-release/build metadata
 SEMVER_PATTERN = re.compile(
     r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)"

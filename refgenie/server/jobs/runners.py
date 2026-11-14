@@ -14,8 +14,8 @@ from refgenie.server.jobs.manager import JobContext
 from refgenie.server.jobs.schemas import (
     BuildJobParams,
     GenomeInitJobParams,
-    JobResult,
     JobKind,
+    JobResult,
     PullJobParams,
 )
 from refgenie.server.jobs.tailer import build_log_tailer

@@ -5,6 +5,8 @@ job is a record with an `error.code`, not an HTTP error.
 """
 
 from refgenie.server.jobs.manager import CancelOutcome, JobContext, JobManager
+from refgenie.server.jobs.router import get_job_manager
+from refgenie.server.jobs.router import router as jobs_router
 from refgenie.server.jobs.schemas import (
     BuildJobParams,
     GenomeInitJobParams,
@@ -16,8 +18,6 @@ from refgenie.server.jobs.schemas import (
     JobStatus,
     PullJobParams,
 )
-from refgenie.server.jobs.router import get_job_manager
-from refgenie.server.jobs.router import router as jobs_router
 
 __all__ = [
     "BuildJobParams",

@@ -12,7 +12,7 @@ describe('JobCard', () => {
     const job = makeJob({ status: 'queued', queue_position: 2 });
     const { container } = renderWithProviders(<JobCard job={job} />);
 
-    expect(screen.getByText('Queued — 2 ahead')).toBeInTheDocument();
+    expect(screen.getByText('Queued, 2 ahead')).toBeInTheDocument();
     // A queued card must not show a stalled-looking bar or an empty log box.
     expect(container.querySelector('.rg-progress')).toBeNull();
     expect(container.querySelector('.rg-log-tail')).toBeNull();
@@ -20,7 +20,7 @@ describe('JobCard', () => {
 
   it('says "next up" rather than "0 ahead"', () => {
     renderWithProviders(<JobCard job={makeJob({ status: 'queued', queue_position: 0 })} />);
-    expect(screen.getByText('Queued — next up')).toBeInTheDocument();
+    expect(screen.getByText('Queued, next up')).toBeInTheDocument();
   });
 
   it('says it is waiting for output when a running job has no log lines yet', () => {

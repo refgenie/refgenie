@@ -1,6 +1,6 @@
 /** The nav registry. NavBar filters entries by capability. */
 
-import type { CapabilityKey } from '../types/ui';
+import type { CapabilityKey, UiConfig } from '../types/ui';
 
 export interface NavEntry {
   to: string;
@@ -8,12 +8,15 @@ export interface NavEntry {
   capability?: CapabilityKey;
   /** Also listed, under `/local`, when browsing a connected local refgenie. */
   local?: boolean;
+  /** Shown only when this returns true for the bootstrap config. */
+  visible?: (config: UiConfig) => boolean;
 }
 
 export const NAV: NavEntry[] = [
   { to: '/', label: 'Home' },
   { to: '/genomes', label: 'Genomes', local: true },
   { to: '/species', label: 'Species', local: true },
+  { to: '/collections', label: 'Collections', visible: (c) => c.collections.length > 0 },
   { to: '/asset-classes', label: 'Asset classes', local: true },
   { to: '/recipes', label: 'Recipes', local: true },
   { to: '/aliases', label: 'Aliases', local: true },

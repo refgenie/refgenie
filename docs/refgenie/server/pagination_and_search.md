@@ -14,7 +14,7 @@ Pagination follows the [GA4GH page-based style](https://github.com/ga4gh/TASC/bl
 - `page`: The page to return, counted from 0 (default: 0). A page past the last one is a `400`.
 - `page_size`: Results per page (default: 100, at most 1000). Over 1000 is a `400`.
 
-Every list has a fixed order that ends in a unique column, so walking the pages returns each row exactly once. Genomes come with the most asset groups first, then by species name, then by digest. Page 0 of an empty list is an empty `results`, not an error. The last page is `(total - 1) // page_size`: stop when `(page + 1) * page_size >= total`.
+Every list has a fixed order that ends in a unique column, so walking the pages returns each row exactly once. Genomes come with the most asset groups first, then by species name, then by digest; with a search term, the best matches come first (see [Genome search ranking](#genome-search-ranking)). Page 0 of an empty list is an empty `results`, not an error. The last page is `(total - 1) // page_size`: stop when `(page + 1) * page_size >= total`.
 
 ## Search
 
@@ -24,7 +24,7 @@ Search takes these query parameters:
 - `search_fields`: Comma-separated list of fields to search within. If not specified, searches across all searchable fields for the endpoint.
 - `operator`: How to match (default `contains`):
   - `eq`: Exact match (field equals the query string exactly).
-  - `contains`: Checks if the field contains the query string (case-insensitive).
+  - `contains`: Checks if the field contains the query string (case-insensitive). In a `description` field, the query must start a word: `rat` finds "rat genome" and "(rat)", not "curated".
   - `starts_with`: Checks if the field starts with the query string (case-insensitive).
   - `ends_with`: Checks if the field ends with the query string (case-insensitive).
 
@@ -48,6 +48,17 @@ With several fields in `search_fields`, a row matches if any one of them matches
 The genome `species` field matches the genome's scientific name and, when its store publishes a species list, every name of its taxon (scientific, common and other common names). So `brown rat` finds *Rattus norvegicus* even where the listed common name is `Norway rat`. Each name is matched on its own under the usual operators.
 
 The genome `synonyms` field holds other names of the genome itself, from the FHR record's `genomeSynonym` (`GRCh38`). Each name is matched on its own: `eq` must equal one whole name, `starts_with` and `ends_with` test the start and end of each name, and `contains` looks inside them.
+
+### Genome search ranking
+
+With a search term, genomes are listed best match first. Each genome gets the best rank of any of its names (aliases, species names, synonyms, digest, assembly source and accession) that matched; the usual order breaks ties. Names are compared without case, with punctuation read as spaces:
+
+1. **Exact**: a whole name is the query (`human` for the common name "human", `hg38` for an alias).
+2. **Whole word**: the query is a whole word of a name (`rat` in "Norway rat" or "naked mole-rat").
+3. **Word start**: a word of a name starts with the query (`rat` in "Rattus norvegicus").
+4. **Anything else**: the query is inside a word (`rat` in "mRatBN7.2"), or only the description matched.
+
+So `?q=rat` lists *Rattus norvegicus* genomes first. Ranking only reorders; it never changes which genomes match or the `total`.
 
 In genome responses, `common_name` is the species list's common name for the genome's taxon (genomes have none of their own), and list and detail rows carry a `species` object (`taxon_id`, `scientific_name`, `common_name`, `synonyms`), or `null` when the species list has no row for the genome's taxon.
 

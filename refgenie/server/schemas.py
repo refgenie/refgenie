@@ -6,7 +6,6 @@ surface: the v4 JSON API, the GA4GH DRS endpoints, and data-channel config.
 import datetime
 from enum import Enum
 from typing import Annotated, Any
-
 from urllib.parse import urlsplit
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, RootModel, model_validator
@@ -81,12 +80,12 @@ class GenomeResponse(BaseModel):
     description: str | None = None
     asset_count: int = 0
     species_name: str | None = None
-    # ``assembly_level`` is on the detail response only.
     common_name: str | None = None
     synonyms: list[str] | None = None
     taxon_id: int | None = None
     assembly_source: str | None = None
     assembly_accession: str | None = None
+    assembly_level: str | None = None
     species: SpeciesResponse | None = None
 
     @classmethod
@@ -103,6 +102,7 @@ class GenomeResponse(BaseModel):
             taxon_id=genome.taxon_id,
             assembly_source=genome.assembly_source,
             assembly_accession=genome.assembly_accession,
+            assembly_level=genome.assembly_level,
             species=SpeciesResponse.of(listing.species),
         )
 
@@ -117,6 +117,9 @@ class GenomeDetailResponse(GenomePublic):
     #: The full FHR sidecar (``store.get_fhr_metadata``); may be None.
     fhr: dict[str, Any] | None = None
     species: SpeciesResponse | None = None
+    #: Base URL of the remote refget store holding this genome's sequences;
+    #: null for local or unknown stores.
+    refget_store_url: str | None = None
 
 
 class SeekKeyResponse(BaseModel):
@@ -471,3 +474,36 @@ class PingResponse(BaseModel):
     bridge: PingBridgeInfo
     #: None when counting is slow or the database is unreachable.
     counts: PingCounts | None = None
+
+
+# --- Genome sequences ---------------------------------------------------------
+
+
+class AliasEntry(BaseModel):
+    """One ``namespace: alias`` pair for a sequence or a collection."""
+
+    namespace: str
+    alias: str
+
+
+class SequenceResponse(BaseModel):
+    """One sequence of a genome: name, length, digests, alphabet and aliases."""
+
+    name: str
+    length: int
+    sha512t24u: str
+    md5: str | None = None
+    alphabet: str | None = None
+    description: str | None = None
+    aliases: list[AliasEntry] = []
+
+
+class GenomeSequencesResponse(BaseModel):
+    """A genome's sequence collection, row by row, for the genome page."""
+
+    digest: str
+    n_sequences: int
+    total_length: int
+    level1: dict[str, str]
+    collection_aliases: list[AliasEntry]
+    sequences: list[SequenceResponse]

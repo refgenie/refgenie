@@ -1,5 +1,7 @@
 # Use refgenie in your pipeline
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 The code snippets below can be used in your pipeline to **assert the existence of the refgenie-managed files** in 3 different languages: Bash, Python and R.
 
 Refgenie checks if the asset is available locally and tries pull it from the server if it's not.

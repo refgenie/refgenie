@@ -8,7 +8,7 @@ const PAYLOAD = {
     mode: 'local',
     api_base: '/v4',
     root_path: '',
-    refgenie_version: '1.0.0a1',
+    refgenie_version: '1.0.0a2',
     service_name: 'refgenie local dashboard',
     capabilities: { pull: true, remote_browse: true, downloads: false },
   },
@@ -41,7 +41,10 @@ describe('parseServiceInfo', () => {
     // readthedocs URL. ServiceInfoRefgenieBlock no longer declares the field,
     // so the payload is built first and handed over as data.
     const wire = {
-      refgenie: { ...PAYLOAD.refgenie, links: { docs: 'https://refgenie.databio.org' } },
+      refgenie: {
+        ...PAYLOAD.refgenie,
+        links: { docs: 'https://refgenie.databio.org' },
+      },
     };
     const config = parseServiceInfo(wire);
     expect('links' in config).toBe(false);
@@ -68,7 +71,8 @@ describe('loadUiConfig resolution chain', () => {
 
   it('falls back without crashing or retrying on malformed JSON', async () => {
     const fetchImpl = vi.fn(
-      async () => new Response('not json', { headers: { 'content-type': 'application/json' } }),
+      async () =>
+        new Response('not json', { headers: { 'content-type': 'application/json' } }),
     );
     const config = await loadUiConfig(fetchImpl as never);
     expect(config.degraded).toBe(true);
@@ -127,5 +131,45 @@ describe('fallbackConfig', () => {
     ] as const) {
       expect(config.capabilities[key]).toBe(false);
     }
+  });
+});
+
+describe('collections and seqcol services in the bootstrap config', () => {
+  it('takes the collections the server validated, else none', () => {
+    const vgp = {
+      id: 'vgp',
+      name: 'VGP',
+      short_name: null,
+      blurb: 'Assemblies.',
+      note: null,
+      accent_color: '#2b7a78',
+      logo_url: null,
+      stores: ['vgp'],
+      links: [],
+      genome_links: [],
+      columns: [],
+    };
+    const wire = { refgenie: { ...PAYLOAD.refgenie, collections: [vgp] } };
+    expect(parseServiceInfo(wire).collections).toEqual([vgp]);
+    expect(parseServiceInfo(PAYLOAD).collections).toEqual([]);
+  });
+
+  it('reads seqcol.services, skipping the placeholder with no store', () => {
+    const config = parseServiceInfo({
+      ...PAYLOAD,
+      seqcol: {
+        services: [
+          {
+            store: 'vgp',
+            url: '/seqcol/vgp',
+            refget_store: { url: 'https://s3/vgp/' },
+          },
+          { url: '/seqcol' },
+        ],
+      },
+    });
+    expect(config.seqcol_services).toEqual([
+      { store: 'vgp', url: '/seqcol/vgp', refget_store_url: 'https://s3/vgp/' },
+    ]);
   });
 });

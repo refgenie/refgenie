@@ -1,0 +1,44 @@
+{
+  "digest": "smiTbD3jP5EwF4DNWVm0c6DGKRlFHfas",
+  "n_sequences": 2,
+  "total_length": 33218,
+  "level1": {
+    "names": "rcw2OMsLISmYBGMSL6ZcY5oDMxxkraNW",
+    "lengths": "bQM0S0cKne-FV5ozzRx6YvWJceMybjHv",
+    "sequences": "f8QDQznLH8z6IhluG5Z7GDpLyUrYCWMR",
+    "name_length_pairs": "ocluvGRC6qDGAcvyxOk1A9On4lzRqCTf",
+    "sorted_name_length_pairs": "PhnbzWzb1giNxVhUR4YE6jmuVeIPkwVa",
+    "sorted_sequences": "CW3WAvOTXzuaAXT-4XeLlMa3oEiDcW53"
+  },
+  "collection_aliases": [
+    {
+      "namespace": "refgenie",
+      "alias": "rCRSd_extra"
+    }
+  ],
+  "sequences": [
+    {
+      "name": "rCRSd",
+      "length": 33138,
+      "sha512t24u": "u1aZuhR4H5r0KaPwbXtardpE7sZNlqFR",
+      "md5": "e172d88e8c724dffa4b7374e374b520d",
+      "alphabet": "dna3bit",
+      "description": null,
+      "aliases": [
+        {
+          "namespace": "refseq",
+          "alias": "NC_012920.1"
+        }
+      ]
+    },
+    {
+      "name": "extra",
+      "length": 80,
+      "sha512t24u": "MpgAd5kMJEwELvDquFgGED6XOyH9yxaV",
+      "md5": "a05e07440f52bb7cfd9934ccfd744e08",
+      "alphabet": "dna2bit",
+      "description": null,
+      "aliases": []
+    }
+  ]
+}

@@ -16,7 +16,7 @@ REFGENIE_HOME_PATH: Path = Path(os.environ.get("REFGENIE_HOME_PATH", Path.home()
 if not REFGENIE_HOME_PATH.exists():
     REFGENIE_HOME_PATH.mkdir(parents=True, exist_ok=True)
 
-REFGENIE_LOG_LEVEL = os.environ.get("REFGENIE_LOG_LEVEL", "INFO")
+REFGENIE_LOG_LEVEL = os.environ.get("REFGENIE_LOG_LEVEL", "WARNING")
 REFGENIE_GENOME_FOLDER = Path(
     os.environ.get("REFGENIE_GENOME_FOLDER", REFGENIE_HOME_PATH / "genomes")
 )

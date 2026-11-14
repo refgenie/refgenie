@@ -18,13 +18,7 @@ refgenie pull hg38/bowtie2_index hg38/bwa_index mm10/fasta
 A pull needs nothing set up beyond `refgenie init`.
 
 - **Asset classes.** If you do not have the asset's class (such as `fasta` or `bwa_index`), refgenie downloads it from the server and registers it. You need a [data channel](data_channels.md) only to *build* assets yourself.
-- **Parent assets.** Some assets are made from others: a `bwa_index` is built from a `fasta`, its parent. If a parent is missing, refgenie pulls it first, from the same server, and logs it:
-
-    ```
-    Pulling parent fasta:default (digest a0e94e...) required by bwa_index:0.7.19
-    ```
-
-    Parents of parents are pulled the same way, and the size flags below apply to them too. A parent that was pulled stays, even if the asset you asked for then fails.
+- **Parent assets.** Some assets are made from others: a `bowtie2_index` is built from a `fasta`. A pull brings only the asset you name, and that asset works on its own. Pull the parent as well if you need it (`refgenie pull hg38/fasta`). The exception is an asset that keeps links to its parent's files in its own folder, such as `bismark_bt2_index`. Refgenie pulls that parent first, from the same server, and creates the links.
 
 ## Pull many assets at once
 
@@ -63,7 +57,7 @@ refgenie pull -g hg38 --all --skip-large --size-cutoff 1
 
 ## Other options
 
-- `--init` registers genomes (aliases and metadata) without downloading any asset files: `refgenie pull -g hg38 --init`.
+- `--init` registers genomes (aliases and metadata) without downloading any asset files. Name them with `-g` or `--genome-digest`: `refgenie pull -g hg38 --init`.
 - `--force` (`-f`) replaces an asset you already have and skips confirmation prompts.
 
 Run `refgenie pull --help` for the full list.

@@ -1,5 +1,7 @@
 # Download pre-built reference genome assets
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 ## Introduction
 
 Use the `refgenie` command-line interface to download and organize genome assets. You do this by simply running `refgenie` from the command line.

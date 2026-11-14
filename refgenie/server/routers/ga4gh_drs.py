@@ -3,10 +3,10 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import FileResponse
-from refgenie.core import Refgenie
-from refgenie.db.tables import Asset
 from starlette.responses import RedirectResponse
 
+from refgenie.core import Refgenie
+from refgenie.db.tables import Asset
 from refgenie.server.const import (
     SERVICE_CONTACT_URL,
     SERVICE_DOCUMENTATION_URL,

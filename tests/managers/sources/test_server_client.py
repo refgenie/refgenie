@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import httpx
+import httpx2
 import pytest
 
 from refgenie import Refgenie
@@ -77,7 +77,12 @@ class TestRemoteStore:
             session.commit()
 
         mock_store = MagicMock()
-        mock_store.get_sequence_by_name.side_effect = KeyError("not found")
+        mock_store.get_collection_level2.return_value = {
+            "names": ["chr1"],
+            "lengths": [10],
+            "sequences": ["SQ.abc"],
+        }
+        mock_store.get_substring.side_effect = KeyError("no bytes")
 
         class _FakeRouter:
             names: list = []
@@ -85,13 +90,13 @@ class TestRemoteStore:
             def __init__(self, store):
                 self.default_store = store
 
-            def get_store(self, name):
+            def store_for_genome(self, genome_digest, store_name):
                 return self.default_store
 
         r._store_router = _FakeRouter(mock_store)
 
         with pytest.raises(RuntimeError, match="not available in server mode"):
-            r.sequence.get("test_genome", "chr1")
+            r.sequence.get("testdigest1234567890abcdef123456", "chr1")
 
 
 # ===========================================================================
@@ -112,10 +117,10 @@ class TestServerClientPagination:
         client.get = MagicMock(
             side_effect=[
                 {"results": [{"id": 1}, {"id": 2}], "pagination": {"total": 3}},
-                httpx.ReadTimeout("page 2 timed out"),
+                httpx2.ReadTimeout("page 2 timed out"),
             ]
         )
-        with pytest.raises(httpx.ReadTimeout):
+        with pytest.raises(httpx2.ReadTimeout):
             client.get_paginated("some_operation", page_size=2)
 
     def test_complete_pagination_returns_all_pages(self):
@@ -144,14 +149,14 @@ class TestServerClientPagination:
     def test_unreachable_server_raises_at_construction(self):
         """An unreachable server must not yield a silently broken client.
 
-        Regression: __init__ caught httpx.ConnectError, logged, and handed back
+        Regression: __init__ caught httpx2.ConnectError, logged, and handed back
         a fully-constructed object that failed later with an unrelated message.
         """
-        transport = httpx.MockTransport(
-            lambda request: (_ for _ in ()).throw(httpx.ConnectError("no route"))
+        transport = httpx2.MockTransport(
+            lambda request: (_ for _ in ()).throw(httpx2.ConnectError("no route"))
         )
-        http_client = httpx.Client(transport=transport)
-        with pytest.raises(httpx.ConnectError):
+        http_client = httpx2.Client(transport=transport)
+        with pytest.raises(httpx2.ConnectError):
             RefgenieserverClient("http://unreachable.example.com", http_client=http_client)
 
 

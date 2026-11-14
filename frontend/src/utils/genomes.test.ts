@@ -16,6 +16,7 @@ function genome(overrides: Partial<GenomeResponse> = {}): GenomeResponse {
     taxon_id: null,
     assembly_source: null,
     assembly_accession: null,
+    assembly_level: null,
     species: null,
     ...overrides,
   };

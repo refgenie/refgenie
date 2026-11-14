@@ -80,6 +80,8 @@ export interface TreeProps {
   onSelect: (species: string | null) => void;
   onMatchStats: (count: number, suppressed: boolean) => void;
   ref?: Ref<TreeHandle>;
+  /** The hierarchy to draw; defaults to the full bundled taxonomy. */
+  data?: TreeNode;
 }
 
 /** Evenly spaced hues, one per group, at a fixed saturation and lightness. */
@@ -98,6 +100,7 @@ export function Tree({
   onSelect,
   onMatchStats,
   ref: handleRef,
+  data,
 }: TreeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -182,7 +185,7 @@ export function Tree({
     const layout = d3tree<TreeNode>()
       .size([2 * Math.PI, radius])
       .separation((a, b) => (a.parent === b.parent ? 1 : 2) / a.depth);
-    const root = layout(hierarchy(treeData));
+    const root = layout(hierarchy(data ?? treeData));
 
     /** The name of `node`'s ancestor (or self) at the grouping level. */
     const groupOf = (node: Node): string | null => {
@@ -481,7 +484,7 @@ export function Tree({
       .style('stroke', theme.accent)
       .style('stroke-width', 2)
       .style('pointer-events', 'none');
-  }, [filter, level, interaction, selected, onSelect]);
+  }, [filter, level, interaction, selected, onSelect, data]);
 
   // A ResizeObserver, not a window listener: toggling full screen changes the
   // panel box without ever firing a window resize.

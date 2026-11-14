@@ -13,7 +13,7 @@ state at all.
 import os
 import shutil
 from pathlib import Path
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from refgenie.db.engine import Engine
 from refgenie.db.queries import asset as queries

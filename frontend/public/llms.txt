@@ -1,0 +1,19 @@
+# refgenie
+
+> refgenie is a catalog of reference genomes and the assets built from them: FASTA files, aligner indexes and annotations. Find a genome by name or species, then download its assets or the command that pulls them. The web UI is https://refgenie.org; the API is https://api.refgenie.org.
+
+- [SKILL.md](https://refgenie.org/SKILL.md): how to find a genome and get its files with the HTTP API, step by step
+- [OpenAPI schema](https://api.refgenie.org/openapi.json): every HTTP endpoint
+- [MCP server](https://api.refgenie.org/mcp): Streamable HTTP, read-only tools; list tools return 20 rows a page
+- [Genome search as JSON](https://api.refgenie.org/v4/genomes?q=hg38): the page refgenie.org/genomes/{digest} has its data at https://api.refgenie.org/v4/genomes/{digest}
+
+## Docs
+
+- [Connect an AI assistant](https://docs.refgenie.org/refgenie/mcp/): setting up the MCP server
+- [refgenie CLI skill](https://docs.refgenie.org/SKILL.md): driving the refgenie command-line tool
+- [refgenie documentation](https://docs.refgenie.org/refgenie/)
+
+## Requests
+
+- [Request a genome](https://github.com/refgenie/refgenie-registry/issues/new?template=genome_proposal.yml)
+- [Request assets for a listed genome](https://github.com/refgenie/refgenie-registry/issues/new?template=asset_request.yml)

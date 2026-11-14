@@ -8,13 +8,14 @@ from pathlib import Path
 from pydantic import AliasChoices, BaseModel, Field
 from pydantic_settings import CliPositionalArg
 
-from refgenie.cli.framework import CliList
 from refgenie.cli.commands.helpers import (
     _ASSET_REGISTRY_PATHS_DESCRIPTION,
     _GENOME_DIGEST_DESCRIPTION,
     _validate_registry_paths,
     genome_digest_from,
+    note,
 )
+from refgenie.cli.framework import CliList
 from refgenie.logger import logger
 
 
@@ -142,7 +143,7 @@ def handle_remove(cmd, refgenie) -> None:
         if not cmd.force and not Confirm.ask(
             f"Are you sure you want to remove the '{genome_digest}/{parsed_asset_registry_path.asset_group}:{asset_name}' asset?"
         ):
-            logger.info("Aborted by a user. Asset not removed")
+            note("Aborted by a user. Asset not removed")
             continue
         refgenie.asset.remove(
             genome_digest=genome_digest,
@@ -163,7 +164,7 @@ def handle_remove(cmd, refgenie) -> None:
             continue
         for alias in refgenie.alias.get_for_genome(genome_digest=genome_digest):
             refgenie.alias.remove(alias)
-            logger.info(f"Removed alias '{alias}': no assets left for {genome_digest}")
+            note(f"Removed alias '{alias}': no assets left for {genome_digest}")
 
 
 def handle_rename(cmd, refgenie) -> None:

@@ -5,8 +5,9 @@ from pathlib import Path
 
 from pydantic import AliasChoices, BaseModel, Field
 
-from refgenie.cli.framework import CliList
+from refgenie.cli.commands.helpers import note
 from refgenie.cli.errors import fail
+from refgenie.cli.framework import CliList
 from refgenie.logger import logger
 
 _GENOME_SERVER_DESCRIPTION = "One or more URLs to add to/remove from the list of subscriptions."
@@ -47,6 +48,18 @@ class CatalogExportModel(BaseModel):
         "served from here.",
         validation_alias=AliasChoices("https-prefix"),
     )
+    catalog_store_name: str | None = Field(
+        default=None,
+        description="Name of the public store holding the genomes this node "
+        "built itself (e.g. refgenie-main). Those genomes have no store; the "
+        "export assigns them this one and publishes it.",
+        validation_alias=AliasChoices("catalog-store-name"),
+    )
+    catalog_store_url: str | None = Field(
+        default=None,
+        description="Public root URL of the catalog store. Required with --catalog-store-name.",
+        validation_alias=AliasChoices("catalog-store-url"),
+    )
 
 
 class CatalogPruneModel(BaseModel):
@@ -85,8 +98,17 @@ def handle_catalog_export(cmd, refgenie) -> None:
         fail("--https-prefix is required: public https base URL for the pushed assets")
     from refgenie.publish_catalog import export_publish_catalog
 
-    summary = export_publish_catalog(refgenie, cmd.dest, cmd.https_prefix)
-    logger.info(f"Exported publish catalog to {cmd.dest}")
+    try:
+        summary = export_publish_catalog(
+            refgenie,
+            cmd.dest,
+            cmd.https_prefix,
+            catalog_store_name=cmd.catalog_store_name,
+            catalog_store_url=cmd.catalog_store_url,
+        )
+    except (ValueError, RuntimeError) as e:
+        fail(f"Catalog export failed: {e}")
+    note(f"Exported publish catalog to {cmd.dest}")
     for name, count in summary.items():
         logger.info(f"  {name}: {count}")
 
@@ -101,7 +123,11 @@ def handle_catalog_prune(cmd, refgenie) -> None:
 
     removed = prune_publish_catalog(refgenie.database_engine, source, dry_run=cmd.dry_run)
     verb = "Would delete" if cmd.dry_run else "Deleted"
-    for kind in ("asset", "assetgroup"):
-        logger.info(f"{verb} {len(removed[kind])} {kind} row(s)")
+    for kind in ("asset", "assetgroup", "genome", "alias", "store"):
+        note(f"{verb} {len(removed[kind])} {kind} row(s)")
         for item in removed[kind]:
-            logger.info(f"  {item}")
+            note(f"  {item}")
+    if removed["kept_genome"]:
+        note(f"Kept {len(removed['kept_genome'])} genome(s) that still have assets")
+        for item in removed["kept_genome"]:
+            note(f"  {item}")

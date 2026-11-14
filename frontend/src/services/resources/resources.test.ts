@@ -21,7 +21,6 @@ import { listConfigurations } from './configurations';
 import {
   archiveDownloadUrl,
   assetFileDownloadUrl,
-  getSummary,
   listArchives,
 } from './serverInfo';
 import { listRemoteAssets, listRemoteGenomes, listRemoteServers } from './remote';
@@ -159,10 +158,8 @@ describe('resource request shapes', () => {
 
   it('server info', async () => {
     const { client, calls } = spyClient();
-    await getSummary(client);
-    expect(calls[0]).toBe('/v4/summary');
     await listArchives(client, { genome_digest: 'g1' });
-    expect(calls[1]).toBe('/v4/archives?genome_digest=g1');
+    expect(calls[0]).toBe('/v4/archives?genome_digest=g1');
   });
 
   it('remote browse rides the local /v1 client', async () => {

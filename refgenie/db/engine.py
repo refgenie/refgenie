@@ -41,7 +41,7 @@ def load_database_config(config_path: str | Path | None = None) -> DatabaseConfi
         cp.write_text(dump_db_config(create_default_db_config()))
         logger.info(
             f"Database configuration file created at {cp}. "
-            "Please edit it to set the database connection parameters."
+            "It uses SQLite by default; edit it only to switch to PostgreSQL."
         )
     return load_db_config(cp)
 

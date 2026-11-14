@@ -47,6 +47,8 @@ export default defineConfig(({ mode }) => {
       // Source maps must never ride into every `pip install`.
       sourcemap: false,
     },
+    // ES module workers, so the FASTA digest worker can load the gtars wasm.
+    worker: { format: 'es' },
     test: {
       globals: true,
       environment: 'jsdom',

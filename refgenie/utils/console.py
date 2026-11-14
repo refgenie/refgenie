@@ -4,7 +4,7 @@ from rich.console import Console
 from rich.progress import BarColumn, ProgressColumn, TextColumn, filesize
 from rich.text import Text
 
-CONSOLE = Console()
+CONSOLE = Console(stderr=True)
 
 
 class _DownloadColumn(ProgressColumn):

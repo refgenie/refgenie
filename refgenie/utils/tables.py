@@ -42,9 +42,9 @@ def build_table(
     for column in columns:
         if isinstance(column, tuple):
             name, style = column
-            table.add_column(name, style=style)
+            table.add_column(name, style=style, overflow="fold")
         else:
-            table.add_column(column)
+            table.add_column(column, overflow="fold")
 
     for row in rows:
         if row is SECTION:

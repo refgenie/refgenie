@@ -1,5 +1,6 @@
 import { Icon } from './Icon';
 import type { IconName } from './Icon';
+import { safeHttpUrl } from '../../utils/links';
 
 export interface ExternalLinkProps {
   href: string;
@@ -20,9 +21,12 @@ export function ExternalLink({
   hint = 'opens in a new tab',
   title,
 }: ExternalLinkProps) {
+  // A link from data that is not http(s) (e.g. `javascript:`) shows as text.
+  const safe = safeHttpUrl(href);
+  if (!safe) return <span title={title}>{children}</span>;
   return (
     <a
-      href={href}
+      href={safe}
       className={className}
       target="_blank"
       rel="noopener noreferrer"

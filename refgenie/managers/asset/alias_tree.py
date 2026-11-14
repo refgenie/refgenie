@@ -14,9 +14,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from refgenie.db.engine import Engine
-
-from refgenie.logger import logger
 from refgenie.db.queries import asset as queries
+from refgenie.logger import logger
 from refgenie.managers.base import ResourceManager
 from refgenie.models import GenomeAlias, GenomeDigest
 

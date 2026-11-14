@@ -1,5 +1,7 @@
 # FAQ
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 ## Why isn't the refgenie executable available on PATH?
 
 By default, Python command-line programs are installed to ~/.local/bin. You can add that location to your path by appending it (export PATH=$PATH:~/.local/bin). Add this to your `.bashrc` if you want it to persist.

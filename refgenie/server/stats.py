@@ -1,8 +1,8 @@
 """Endpoint hit tracking: collector, ASGI middleware, and persistence handlers."""
 
 from collections import defaultdict
-from datetime import datetime
 from collections.abc import Callable
+from datetime import datetime
 from typing import Any
 
 from fastapi import FastAPI

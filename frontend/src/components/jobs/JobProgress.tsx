@@ -33,7 +33,7 @@ export function JobProgress({ kind, progress, compact = false }: JobProgressProp
         ? formatBytes(bytesDone)
         : `${formatBytes(bytesDone)} / ${formatBytes(bytesTotal)}`;
 
-  const label = determinate ? `${info.label} — ${rounded}%` : info.label;
+  const label = determinate ? `${info.label}, ${rounded}%` : info.label;
 
   return (
     <div className={cn('rg-progress', compact && 'rg-progress--compact')}>
@@ -61,7 +61,7 @@ export function JobProgress({ kind, progress, compact = false }: JobProgressProp
         <div className="rg-progress__meta">
           <span className="rg-progress__phase">
             {info.label}
-            {step && <span className="rg-muted"> — step {step.index} of {step.total}</span>}
+            {step && <span className="rg-muted">, step {step.index} of {step.total}</span>}
           </span>
           {bytesLabel && <span className="rg-progress__bytes">{bytesLabel}</span>}
         </div>

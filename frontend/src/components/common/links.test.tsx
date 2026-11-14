@@ -44,6 +44,12 @@ describe('ExternalLink', () => {
     );
     expect(container.querySelector('svg')).toBeNull();
   });
+
+  it('renders an unsafe URL as plain text, not a link', () => {
+    const { container } = render(<ExternalLink href="javascript:alert(1)">Bad</ExternalLink>);
+    expect(container.querySelector('a')).toBeNull();
+    expect(screen.getByText('Bad')).toBeInTheDocument();
+  });
 });
 
 describe('ApiLink', () => {

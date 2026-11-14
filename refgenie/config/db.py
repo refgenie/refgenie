@@ -2,9 +2,8 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Annotated, Literal
 
-from pydantic import AfterValidator, BaseModel, TypeAdapter, computed_field
 import yacman
-
+from pydantic import AfterValidator, BaseModel, TypeAdapter, computed_field
 from yaml import dump as ydump
 
 from refgenie.config import REFGENIE_HOME_PATH

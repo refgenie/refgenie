@@ -105,8 +105,8 @@ export function AssetGroupPage() {
         // No `/asset-groups` list page exists, so the lede defines the term here.
         lede={
           <>
-            An asset group holds every build of one asset class for one genome — all of this
-            genome's bowtie2 indexes, say, across tool versions. One member is marked the
+            An asset group holds every build of one asset class for one genome: all of this
+            genome's bowtie2 indexes across tool versions, for example. One member is marked the
             default, and that is what a bare{' '}
             <code className="rg-code rg-code--inline">{'<genome>/<group>'}</code> registry path
             resolves to.

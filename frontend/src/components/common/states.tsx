@@ -1,7 +1,7 @@
 /** Loading, error and empty states for data-driven views. */
 
 import { ApiError } from '../../services/http';
-import { CopyButton } from './CopyButton';
+import { Copyable } from './Copyable';
 
 export interface LoadingStateProps {
   /** Render skeleton rows (tables) instead of a spinner block (panels). */
@@ -62,8 +62,11 @@ export function ErrorState({ error, subject, apiBase, onRetry }: ErrorStateProps
     const identifier = (
       <span className="flex items-center gap-2 flex-wrap">
         <span>Not found{subject ? ':' : '.'}</span>
-        {subject && <code className="rg-code rg-code--inline">{subject}</code>}
-        {subject && <CopyButton value={subject} label="Copy identifier" />}
+        {subject && (
+          <Copyable value={subject} label="Copy identifier">
+            <code className="rg-code rg-code--inline">{subject}</code>
+          </Copyable>
+        )}
       </span>
     );
     body = BARE_NOT_FOUND_CODES.has(api.code) ? (
@@ -95,9 +98,11 @@ export interface EmptyStateProps {
   /** Shown when there is no data at all. Text only: buttons are the manage UI. */
   message: string;
   onClearSearch?: () => void;
+  /** Shown under the message, e.g. where to request what is missing. */
+  action?: React.ReactNode;
 }
 
-export function EmptyState({ query, message, onClearSearch }: EmptyStateProps) {
+export function EmptyState({ query, message, onClearSearch, action }: EmptyStateProps) {
   if (query) {
     return (
       <div className="rg-state rg-state--empty">
@@ -107,6 +112,7 @@ export function EmptyState({ query, message, onClearSearch }: EmptyStateProps) {
             Clear search
           </button>
         )}
+        {action}
       </div>
     );
   }

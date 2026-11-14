@@ -2,9 +2,9 @@
 
 import os
 import shutil
+from collections.abc import Callable
 from inspect import signature
 from pathlib import Path
-from collections.abc import Callable
 
 from refgenie.const import ALIAS_DIR
 from refgenie.logger import logger

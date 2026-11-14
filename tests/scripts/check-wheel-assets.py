@@ -40,7 +40,9 @@ INDEX_PATH = WEBUI_PREFIX + "index.html"
 BUILD_INFO_PATH = WEBUI_PREFIX + "build-info.json"
 ASSETS_PREFIX = WEBUI_PREFIX + "_app/"
 
-DEFAULT_MAX_BYTES = 8 * 1024 * 1024
+#: The gtars wasm (about 10.7 MB) is meant to ship; the budget still catches
+#: source maps, font packs and stray fixtures on top of it.
+DEFAULT_MAX_BYTES = 16 * 1024 * 1024
 
 
 #: Contents are only read eagerly for these two members -- everything else in

@@ -38,6 +38,7 @@ export function fallbackConfig(): UiConfig {
     service_name: 'refgenie',
     capabilities: staticFallbackCapabilities(),
     web_ui: null,
+    collections: [],
     degraded: true,
   };
 }
@@ -52,7 +53,20 @@ export function parseServiceInfo(payload: ServiceInfoResponse): UiConfig {
     service_name: block.service_name ?? 'refgenie',
     capabilities: coerceCapabilities(block.capabilities),
     web_ui: block.web_ui ?? null,
+    collections: block.collections ?? [],
     degraded: false,
+    // A server with no stores lists one placeholder service with no `store`.
+    seqcol_services: (payload.seqcol?.services ?? []).flatMap((s) =>
+      s.store
+        ? [
+            {
+              store: s.store,
+              url: s.url,
+              refget_store_url: s.refget_store?.url ?? null,
+            },
+          ]
+        : [],
+    ),
   };
 }
 

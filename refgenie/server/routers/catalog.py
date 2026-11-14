@@ -1,35 +1,39 @@
+from dataclasses import asdict
+from typing import Any
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from refgenie.server.dependencies import DbId, get_refgenie
-from refgenie.server.errors import ErrorCode
-from refgenie.server.routers import helpers
+from refgenie.core import Refgenie
+from refgenie.db.tables import (
+    AliasPublic,
+    AssetClassPublic,
+    AssetGroupPublic,
+    ConfigurationPublic,
+    StagedAssetPublic,
+)
 from refgenie.exceptions import (
     MissingAliasError,
     MissingAssetError,
     MissingConfigDataError,
     MissingGenomeError,
+    UnservedStoreError,
 )
-from refgenie.models import GenomeAlias
-from refgenie.core import Refgenie
-from refgenie.db.tables import (
-    StagedAssetPublic,
-    AliasPublic,
-    AssetClassPublic,
-    AssetGroupPublic,
-    ConfigurationPublic,
-)
+from refgenie.models import GenomeAlias, display_alias
+from refgenie.server.dependencies import DbId, get_refgenie
+from refgenie.server.errors import ErrorCode
 from refgenie.server.pagination import PageParams, PageResponse, get_page_params, respond
-from refgenie.server.search import SearchParams, get_search_params, invalid_search_is_422
-
+from refgenie.server.routers import helpers
 from refgenie.server.schemas import (
     AliasResponse,
     AssetClassResponse,
     AssetResponse,
     GenomeDetailResponse,
     GenomeResponse,
+    GenomeSequencesResponse,
     RecipeResponse,
     SpeciesResponse,
 )
+from refgenie.server.search import SearchParams, get_search_params, invalid_search_is_422
 
 
 def _taxon_uri(taxon_id: int | None) -> str | None:
@@ -54,23 +58,32 @@ def list_genomes(
         None, description="Only genomes with (true) or without (false) assets"
     ),
     taxon_id: int | None = Query(None, description="Only genomes of this NCBI taxon id"),
+    store: str | None = Query(
+        None, description="Only genomes present in these stores (comma-separated store names)"
+    ),
     search: SearchParams = Depends(get_search_params),
     paging: PageParams = Depends(get_page_params),
     rgc: Refgenie = Depends(get_refgenie),
 ):
     """
     List genomes with their aliases and asset counts, most asset groups first,
-    then by species name and digest.
+    then by species name and digest. With ``q``, best matches come first:
+    an exact name, then a whole word of a name, then a word start, then the rest.
 
     Exact-match filters:
     - digest: Filter by exact genome digest
     - alias: Filter by exact genome alias
     - has_assets: Only genomes with (true) or without (false) assets
     - taxon_id: Filter by NCBI taxon id
+    - store: Only genomes present in any of these stores (comma-separated).
+      This is membership, so a genome held by several stores matches each.
+      An unknown store name is a 422.
 
     Searchable fields: see ``SEARCH_FIELDS`` in ``refgenie.db.queries.genome``.
     An unknown alias gives an empty page, not a 404.
     """
+    stores = [s.strip() for s in (store or "").split(",") if s.strip()] or None
+    # UnknownStoreError is a ValueError, so this also turns it into a 422.
     with invalid_search_is_422():
         page = rgc.genome.page(
             digest=digest or None,
@@ -78,6 +91,7 @@ def list_genomes(
             search=search.to_search(),
             has_assets=has_assets,
             taxon_id=taxon_id,
+            stores=stores,
             offset=paging.offset,
             limit=paging.page_size,
         )
@@ -112,11 +126,25 @@ def _genome_not_found(digest: str, rgc: Refgenie) -> HTTPException:
     )
 
 
+def _no_collection(error: Exception, digests: str) -> HTTPException:
+    """The 404 for a genome whose store is not served here or lacks its collection."""
+    message = (
+        str(error)
+        if isinstance(error, UnservedStoreError)
+        else f"No sequence collection for genome {digests} in this refgenie's stores"
+    )
+    return HTTPException(
+        status_code=404, detail={"code": ErrorCode.GENOME_NOT_FOUND, "message": message}
+    )
+
+
 @router.get("/genomes/{digest}", response_model=GenomeDetailResponse)
 def get_genome(digest: str, rgc: Refgenie = Depends(get_refgenie)):
     """Return a genome's core columns plus its FHR metadata, taxon URI and species."""
     try:
         detail = rgc.genome.detail(digest)
+    except UnservedStoreError as e:
+        raise _no_collection(e, digest) from None
     except MissingGenomeError:
         raise _genome_not_found(digest, rgc) from None
     response = GenomeDetailResponse.model_validate(detail.genome, from_attributes=True)
@@ -124,7 +152,49 @@ def get_genome(digest: str, rgc: Refgenie = Depends(get_refgenie)):
     response.taxon_uri = _taxon_uri(detail.genome.taxon_id)
     response.fhr = detail.fhr
     response.species = SpeciesResponse.of(detail.species)
+    response.refget_store_url = detail.store_url
     return response
+
+
+@router.get("/genomes/{digest}/sequences", response_model=GenomeSequencesResponse)
+def get_genome_sequences(digest: str, rgc: Refgenie = Depends(get_refgenie)):
+    """Return a genome's sequences (names, lengths, digests, aliases) from the refget store that holds it."""
+    try:
+        collection = rgc.genome.sequences(digest)
+    except MissingGenomeError as e:
+        raise _no_collection(e, digest) from None
+    return GenomeSequencesResponse.model_validate(
+        {
+            "digest": collection.digest,
+            "n_sequences": len(collection.sequences),
+            "total_length": sum(row.length for row in collection.sequences),
+            "level1": collection.level1,
+            "collection_aliases": [asdict(a) for a in collection.collection_aliases],
+            "sequences": [asdict(row) for row in collection.sequences],
+        }
+    )
+
+
+@router.get("/genomes/{digest}/compare/{other}", response_model=dict[str, Any])
+def compare_genomes(digest: str, other: str, rgc: Refgenie = Depends(get_refgenie)):
+    """Compare two genomes' sequence collections (GA4GH seqcol comparison).
+
+    Adds ``summary``, one sentence on how they differ, and ``name_map``, A's
+    name to B's for each sequence they share under another name, so a client
+    can word the result without fetching both collections.
+    """
+    from refgenie.utils.seqcol import compare_level2, summarize_comparison
+
+    try:
+        # The loaded stores, never a genome's remote_url.
+        side_a, side_b = rgc.genome.compare_sides(digest, other, remote=False)
+    except (MissingGenomeError, ValueError) as e:  # ValueError: no level 2 in the store
+        raise _no_collection(e, f"{digest} or {other}") from None
+    result = compare_level2(side_a, side_b, digest, other)
+    aliases = rgc.alias.get_for_genomes([digest, other])
+    label_a, label_b = (display_alias(aliases.get(d, [])) or d for d in (digest, other))
+    summary, name_map = summarize_comparison(side_a, side_b, result, label_a, label_b)
+    return {**result, "summary": summary, "name_map": name_map}
 
 
 @router.get("/asset_groups", response_model=PageResponse[AssetGroupPublic])
@@ -424,12 +494,17 @@ def get_alias(name: str, rgc: Refgenie = Depends(get_refgenie)):
     except MissingAliasError:
         raise HTTPException(status_code=404, detail=f"Alias '{name}' not found")
 
-    router = rgc.store_router
-    collection = router.get_collection_level2(digest)
-    if collection is None:
-        raise HTTPException(status_code=404, detail=f"Collection data not found for {digest}")
+    try:
+        genome = rgc.genome.get(digest)
+        collection = rgc.store_router.get_collection_level2(digest, genome.store_name)
+    except UnservedStoreError as e:
+        raise _no_collection(e, digest) from None
+    except MissingGenomeError:
+        raise HTTPException(
+            status_code=404, detail=f"Collection data not found for {digest}"
+        ) from None
 
-    _fhr = router.get_fhr_metadata(digest)
+    _fhr = rgc.store_router.get_fhr_metadata(digest, genome.store_name)
     fhr = _fhr.to_dict() if _fhr is not None else None
 
     return AliasResponse(

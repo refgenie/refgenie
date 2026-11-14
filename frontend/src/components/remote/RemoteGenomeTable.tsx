@@ -48,6 +48,7 @@ export function RemoteGenomeTable({
     {
       key: 'description',
       header: 'Description',
+      className: 'rg-table__cell--wrap',
       render: (genome) => genome.description ?? <span className="rg-muted">NA</span>,
     },
     {

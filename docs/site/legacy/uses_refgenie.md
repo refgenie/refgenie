@@ -1,5 +1,7 @@
 # Studies using refgenie
 
+> **This is the documentation for refgenie 0.x, which is end-of-life.** For refgenie 1.x, see [docs.refgenie.org](https://docs.refgenie.org/refgenie/).
+
 Here are some studies we have found that make use of refgenie in some way:
 
 <li><b>Dozmorov et al. (2021). </b><i>Chromatin conformation capture (Hi-C) sequencing of patient-derived xenografts: analysis guidelines</i> 

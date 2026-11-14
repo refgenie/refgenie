@@ -165,7 +165,7 @@ export function TreeExplorerPage() {
       {filter.trim() !== '' && (
         <p className="rg-muted text-sm" role="status">
           {matches.count} matching species
-          {matches.suppressed && ' — narrow the filter to see their names'}
+          {matches.suppressed && '. Narrow the filter to see their names.'}
         </p>
       )}
 
@@ -181,8 +181,8 @@ export function TreeExplorerPage() {
         />
 
         {selected && (
-          <aside className="rg-tree__detail rg-card">
-            <div className="rg-card__body flex flex-col gap-2">
+          <aside className="rg-tree__detail">
+            <div className="flex flex-col gap-2">
               <div className="flex items-start justify-between gap-2">
                 <h2 className="font-semibold">{selected}</h2>
                 <button
