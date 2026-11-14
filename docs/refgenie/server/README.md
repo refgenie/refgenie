@@ -13,7 +13,7 @@ refgenie serve [-p PORT] [-r]
 | `-p`, `--port` | Port to listen on (default `8000`). The server listens on all interfaces. |
 | `-r`, `--reload` | Restart when the code changes. For development only. |
 
-It needs the `server` extra: `pip install "refgenie[server]>=1.0.0a1"`.
+It needs the `server` extra: `pip install "refgenie[server]>=1.0.0a2"`.
 
 ## Endpoints
 

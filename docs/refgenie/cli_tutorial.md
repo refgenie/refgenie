@@ -10,7 +10,7 @@ This tutorial covers common refgenie tasks on the command line: downloading asse
 ## Step 1: Install
 
 ```bash
-pip install "refgenie>=1.0.0a1"
+pip install "refgenie>=1.0.0a2"
 refgenie --version
 ```
 

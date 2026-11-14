@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0a2] - 2026-11-14
+
 ### Added
 
 - The genome page has Sequences, Extract, Download and Compare tabs: browse a
@@ -133,5 +135,6 @@ what changed for pipelines and Python code.
 - The implicit `.dir` seek key on every asset.
 - The separate `refgenconf` and `refgenieserver` packages.
 
-[Unreleased]: https://github.com/refgenie/refgenie/compare/v1.0.0a1...HEAD
+[Unreleased]: https://github.com/refgenie/refgenie/compare/v1.0.0a2...HEAD
+[1.0.0a2]: https://github.com/refgenie/refgenie/compare/v1.0.0a1...v1.0.0a2
 [1.0.0a1]: https://github.com/refgenie/refgenie/releases/tag/v1.0.0a1

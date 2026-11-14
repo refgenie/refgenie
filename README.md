@@ -36,7 +36,7 @@ you can resolve from a script.
 Refgenie 1.0 is a pre-release, so tell `pip` to accept it:
 
 ```bash
-pip install "refgenie>=1.0.0a1"
+pip install "refgenie>=1.0.0a2"
 ```
 
 Without `--pre`, `pip` installs the legacy 0.13 release.
@@ -48,11 +48,11 @@ extra:
 
 | Extra | Install | What it enables | Adds |
 | --- | --- | --- | --- |
-| *(none)* | `pip install "refgenie>=1.0.0a1"` | CLI, Python API, building, pulling, staging | — |
-| `dash` | `pip install "refgenie[dash]>=1.0.0a1"` | `refgenie dash`, the local web UI | fastapi, uvicorn |
-| `server` | `pip install "refgenie[server]>=1.0.0a1"` | `refgenie serve`, the public REST API + DRS + `/mcp` endpoint (includes `dash`) | apscheduler, mcp |
-| `mcp` | `pip install "refgenie[mcp]>=1.0.0a1"` | `refgenie-mcp`, the stdio MCP server for LLM agents | mcp |
-| `snakemake` | `pip install "refgenie[snakemake]>=1.0.0a1"` | snakemake-based bulk asset building | snakemake |
+| *(none)* | `pip install "refgenie>=1.0.0a2"` | CLI, Python API, building, pulling, staging | — |
+| `dash` | `pip install "refgenie[dash]>=1.0.0a2"` | `refgenie dash`, the local web UI | fastapi, uvicorn |
+| `server` | `pip install "refgenie[server]>=1.0.0a2"` | `refgenie serve`, the public REST API + DRS + `/mcp` endpoint (includes `dash`) | apscheduler, mcp |
+| `mcp` | `pip install "refgenie[mcp]>=1.0.0a2"` | `refgenie-mcp`, the stdio MCP server for LLM agents | mcp |
+| `snakemake` | `pip install "refgenie[snakemake]>=1.0.0a2"` | snakemake-based bulk asset building | snakemake |
 
 Running `refgenie serve`, `refgenie dash`, or `refgenie-mcp` without its extra
 prints which extra to install. PostgreSQL support is included in the base
