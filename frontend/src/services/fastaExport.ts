@@ -19,7 +19,7 @@ import type { SequenceResponse } from '../types/api';
 type Gtars = typeof import('@databio/gtars');
 export type FastaWasm = Pick<Gtars, 'encodedByteRange' | 'decodeEncodedRange'>;
 
-/** One row of a collection `.rgsi`, in collection (= FASTA) order. */
+/** One sequence of a collection, in collection (= FASTA) order. */
 export interface FastaSeq {
   name: string;
   length: number;
@@ -40,37 +40,22 @@ const DEFAULT_WINDOW_BASES = 8_000_000;
 const NEWLINE = 0x0a;
 
 /** Alphabets whose `.seq` bytes are bit-packed and can be decoded by range. */
-export const DECODABLE = new Set(['dna2bit', 'dna3bit', 'dnaio', 'dnaiupac']);
+const DECODABLE = new Set(['dna2bit', 'dna3bit', 'dnaio', 'dnaiupac']);
 
 /**
- * Parse a collection `.rgsi`: `name, length, alphabet, sha512t24u, md5,
- * description`. Lines starting with `#` are headers.
+ * Expand a refget store path template, the same rules as gtars
+ * `expand_template`. `prefix(n)` writes the digest's first `n` characters.
  */
-export function parseRgsiFull(text: string): FastaSeq[] {
-  const seqs: FastaSeq[] = [];
-  for (const line of text.split('\n')) {
-    const row = line.replace(/\r$/, '');
-    if (row === '' || row.startsWith('#')) continue;
-    const cols = row.split('\t');
-    const description = cols.slice(5).join('\t');
-    seqs.push({
-      name: cols[0],
-      length: Number(cols[1]),
-      alphabet: cols[2] ?? '',
-      sha512t24u: cols[3] ?? '',
-      description: description === '' ? null : description,
-    });
-  }
-  return seqs;
-}
-
-/** Expand a refget store path template, the same rules as gtars `expand_template`. */
-export function expandTemplate(template: string, digest: string): string {
+export function expandTemplate(
+  template: string,
+  digest: string,
+  prefix = (n: number) => digest.slice(0, n),
+): string {
   return template
     .split('%s2')
-    .join(digest.slice(0, 2))
+    .join(prefix(2))
     .split('%s4')
-    .join(digest.slice(0, 4))
+    .join(prefix(4))
     .split('%s')
     .join(digest);
 }
@@ -85,67 +70,56 @@ async function fetchOk(url: string, fetchImpl: typeof fetch, init?: RequestInit)
   return response;
 }
 
-/**
- * The FASTA sequence list from the API's `/sequences` rows, or null if any row
- * lacks an alphabet (then the store's `.rgsi` is read instead).
- */
+/** The FASTA sequence list from the API's `/sequences` rows. */
 export function fastaSeqsFromRows(
   rows: Pick<
     SequenceResponse,
     'name' | 'length' | 'alphabet' | 'description' | 'sha512t24u'
   >[],
-): FastaSeq[] | null {
-  const seqs: FastaSeq[] = [];
-  for (const row of rows) {
-    if (!row.alphabet) return null;
-    seqs.push({
-      name: row.name,
-      length: row.length,
-      alphabet: row.alphabet,
-      description: row.description || null,
-      sha512t24u: row.sha512t24u,
-    });
-  }
-  return seqs;
+): FastaSeq[] {
+  return rows.map((row) => ({
+    name: row.name,
+    length: row.length,
+    alphabet: row.alphabet ?? '',
+    description: row.description || null,
+    sha512t24u: row.sha512t24u,
+  }));
 }
 
-/**
- * Read the store manifest and the collection's sequence list. Pass `known`
- * (e.g. from {@link fastaSeqsFromRows}) to skip fetching the `.rgsi`.
- */
-export async function loadCollection(
+// One manifest read per store.
+const seqTemplates = new Map<string, Promise<string>>();
+
+/** The store's `.seq` path template, from its manifest. */
+export function loadSeqTemplate(
   baseUrl: string,
-  digest: string,
   fetchImpl: typeof fetch = fetch,
-  known?: FastaSeq[] | null,
-): Promise<FastaCollection> {
+): Promise<string> {
   const base = withSlash(baseUrl);
-  const manifest = (await (
-    await fetchOk(new URL('rgstore.json', base).href, fetchImpl)
-  ).json()) as { seqdata_path_template?: string; collections_path_template?: string };
-  const seqTemplate = manifest.seqdata_path_template || DEFAULT_SEQ_TEMPLATE;
-  if (known) return { seqTemplate, seqs: known };
-  const collTemplate =
-    manifest.collections_path_template || DEFAULT_COLLECTION_TEMPLATE;
-  const collUrl = new URL(expandTemplate(collTemplate, digest), base).href;
-  const text = await (await fetchOk(collUrl, fetchImpl)).text();
-  return { seqTemplate, seqs: parseRgsiFull(text) };
+  let template = seqTemplates.get(base);
+  if (!template) {
+    template = fetchOk(new URL('rgstore.json', base).href, fetchImpl)
+      .then((response) => response.json() as Promise<{ seqdata_path_template?: string }>)
+      .then((manifest) => manifest.seqdata_path_template || DEFAULT_SEQ_TEMPLATE);
+    template.catch(() => seqTemplates.delete(base));
+    seqTemplates.set(base, template);
+  }
+  return template;
+}
+
+/** True if the browser can read bases of this alphabet by range. */
+export function isDecodable(alphabet: string | null | undefined): boolean {
+  return !!alphabet && DECODABLE.has(alphabet.toLowerCase());
+}
+
+/** Why the browser cannot read a sequence's bases. */
+export function undecodableMessage(seq: { name: string; alphabet?: string | null }): string {
+  return `${seq.name} uses the ${seq.alphabet || 'unknown'} alphabet, which cannot be read here.`;
 }
 
 /** Throw if any sequence uses an alphabet that cannot be decoded by range. */
-/** True if the browser can rebuild this sequence's bases. */
-export function isDecodable(seq: Pick<FastaSeq, 'alphabet'>): boolean {
-  return DECODABLE.has(seq.alphabet.toLowerCase());
-}
-
 export function assertDecodable(seqs: FastaSeq[]): void {
-  const bad = seqs.find((seq) => !isDecodable(seq));
-  if (bad) {
-    throw new Error(
-      `Sequence "${bad.name}" uses the ${bad.alphabet || 'unknown'} alphabet, ` +
-        'which cannot be rebuilt as FASTA in the browser.',
-    );
-  }
+  const bad = seqs.find((seq) => !isDecodable(seq.alphabet));
+  if (bad) throw new Error(undecodableMessage(bad));
 }
 
 const encoder = new TextEncoder();
@@ -177,15 +151,13 @@ interface Window {
 
 export interface FastaChunksOptions {
   baseUrl: string;
-  digest: string;
+  collection: FastaCollection;
   wasm: FastaWasm;
   fetchImpl?: typeof fetch;
   lineWidth?: number;
   windowBases?: number;
   onProgress?: (basesDone: number, basesTotal: number) => void;
   signal?: AbortSignal;
-  /** An already loaded collection, to skip refetching it. */
-  collection?: FastaCollection;
 }
 
 /** The `.seq` URL of one sequence in a store. */
@@ -248,7 +220,7 @@ export async function* fastaChunks(
 ): AsyncGenerator<Uint8Array> {
   const {
     baseUrl,
-    digest,
+    collection: { seqTemplate, seqs },
     wasm,
     fetchImpl = fetch,
     lineWidth = DEFAULT_LINE_WIDTH,
@@ -260,8 +232,6 @@ export async function* fastaChunks(
   if (windowBases < 1) throw new Error('windowBases must be at least 1');
 
   const base = withSlash(baseUrl);
-  const { seqTemplate, seqs } =
-    opts.collection ?? (await loadCollection(base, digest, fetchImpl));
   assertDecodable(seqs);
   signal?.throwIfAborted();
 

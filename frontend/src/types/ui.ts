@@ -123,10 +123,14 @@ export interface ServiceInfoRefgenieBlock {
   capabilities?: Partial<Record<string, boolean>>;
   // The `links` block is ignored; project links live in services/projectLinks.ts.
   web_ui?: WebUiBuildInfo | null;
-  collections?: unknown;
+  /** Validated by the server. */
+  collections?: CollectionConfig[];
 }
 
 export interface ServiceInfoResponse {
   refgenie?: ServiceInfoRefgenieBlock;
+  seqcol?: {
+    services?: { store?: string; url: string; refget_store?: { url?: string | null } }[];
+  };
   [key: string]: unknown;
 }

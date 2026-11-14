@@ -16,8 +16,6 @@ export interface CopyableProps {
   children?: ReactNode;
   /** Monospace for the inline variant. Blocks are always monospace. */
   mono?: boolean;
-  /** Tooltip on the shown text, e.g. the full value of a shortened one. */
-  title?: string;
   className?: string;
 }
 
@@ -28,7 +26,6 @@ export function Copyable({
   label,
   children,
   mono = false,
-  title,
   className,
 }: CopyableProps) {
   const button = (
@@ -40,7 +37,7 @@ export function Copyable({
   if (variant === 'block') {
     return (
       <div className={cn('rg-copyable-block', className)}>
-        <pre className="rg-code rg-copyable-block__code" title={title}>
+        <pre className="rg-code rg-copyable-block__code">
           {children ?? value}
         </pre>
         {button}
@@ -49,13 +46,19 @@ export function Copyable({
   }
   return (
     <span className={cn('rg-copyable', className)}>
-      <span
-        className={cn('rg-copyable__text', mono && 'rg-copyable__text--mono')}
-        title={title}
-      >
+      <span className={cn('rg-copyable__text', mono && 'rg-copyable__text--mono')}>
         {children ?? value}
       </span>
       {button}
     </span>
+  );
+}
+
+/** A shell command to copy, shown as inline code. */
+export function Command({ value }: { value: string }) {
+  return (
+    <Copyable value={value} label={`Copy: ${value}`} className="rg-command">
+      <code className="rg-code rg-code--inline">{value}</code>
+    </Copyable>
   );
 }

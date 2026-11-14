@@ -3,7 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SequenceTable } from './SequenceTable';
 import { genomeSequencesFixture } from '../../test/fixtures';
-import type { SequenceRow } from './types';
+import type { SequenceResponse } from '../../types/api';
 
 const rows = genomeSequencesFixture.sequences;
 
@@ -12,7 +12,7 @@ function bodyRows() {
   return within(body).getAllByRole('row');
 }
 
-function makeRows(n: number): SequenceRow[] {
+function makeRows(n: number): SequenceResponse[] {
   return Array.from({ length: n }, (_, i) => ({
     name: `chr${i + 1}`,
     length: 1000 + i,

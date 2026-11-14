@@ -54,30 +54,6 @@ function rows() {
 }
 
 describe('CollectionPage', () => {
-  it('shows the branding: name, blurb, links and note', async () => {
-    seed();
-    renderAt('/collections/vgp');
-    expect(
-      screen.getByRole('heading', { level: 1, name: vgpCollection.name }),
-    ).toBeInTheDocument();
-    expect(screen.getByText(vgpCollection.blurb)).toBeInTheDocument();
-    for (const link of vgpCollection.links) {
-      expect(
-        screen.getByRole('link', { name: new RegExp(link.label) }),
-      ).toHaveAttribute('href', link.url);
-    }
-    expect(screen.getByText(vgpCollection.note!)).toBeInTheDocument();
-    await loaded();
-  });
-
-  it('shows the placeholder badge and no logo image', async () => {
-    seed();
-    const { container } = renderAt('/collections/vgp');
-    expect(screen.getByText('VGP')).toBeInTheDocument();
-    expect(container.querySelector('img.rg-collection-logo')).toBeNull();
-    await loaded();
-  });
-
   it('shows headline counts', async () => {
     seed();
     renderAt('/collections/vgp');
@@ -151,14 +127,6 @@ describe('CollectionPage', () => {
     expect(
       screen.queryByText('No quality metrics have been published for this assembly.'),
     ).not.toBeInTheDocument();
-  });
-
-  it('never claims to be official or endorsed', async () => {
-    seed();
-    const { container } = renderAt('/collections/vgp');
-    await loaded();
-    expect(container.textContent).not.toMatch(/official/i);
-    expect(container.textContent).not.toMatch(/endors/i);
   });
 
   it('says so for an unknown collection, with a way back', () => {

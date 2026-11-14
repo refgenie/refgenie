@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { alphabetCounts } from './alphabets';
-import type { SequenceRow } from './types';
+import type { SequenceResponse } from '../../types/api';
 
 const rows = (...specs: [string | null, number][]) =>
-  specs.map(([alphabet, length]) => ({ alphabet, length }) as unknown as SequenceRow);
+  specs.map(([alphabet, length]) => ({ alphabet, length }) as unknown as SequenceResponse);
 
 describe('alphabetCounts', () => {
   it('counts sequences and bases for each alphabet, most sequences first', () => {

@@ -1,5 +1,4 @@
 /** Pure helpers for the genome page's FASTA download: presets and the CLI command. */
-import { formatBytes } from './format';
 
 /**
  * Names that are not primary chromosomes: unlocalized (_random), unplaced
@@ -57,40 +56,12 @@ export function refgetExportCommand({
 }
 
 /**
- * bgzip bytes per base of FASTA (80-column lines, uppercase), as written by
- * `bgzf.ts`. Measured on 48 evenly spread 256 kb windows of two genomes:
- * hg38 gave 0.281 with 6% N (about 0.30 per non-N base; N runs cost almost
- * nothing), and a VGP bat assembly with no N gave 0.303. The sequence list
- * does not say how much of a sequence is N, so every base counts as 0.30; for
- * hg38 that overshoots by about 5%.
+ * bgzip bytes per FASTA base, as `bgzf.ts` writes it: measured 0.28 on hg38
+ * and 0.30 on a genome with no N.
  */
 export const BGZF_BYTES_PER_BASE = 0.3;
 
 /** The likely size of a .fa.gz of `bases` bases. */
 export function estimateFastaGzBytes(bases: number): number {
   return Math.round(bases * BGZF_BYTES_PER_BASE);
-}
-
-/**
- * A rough size with two significant figures: "0.9 GB", "640 MB", "12 KB".
- * Anything from half a unit up is shown in that unit ("0.6 GB", not "610 MB").
- */
-export function approxBytes(bytes: number): string {
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  let value = bytes;
-  let unit = 0;
-  while (value >= 512 && unit < units.length - 1) {
-    value /= 1024;
-    unit += 1;
-  }
-  if (unit === 0) return `${Math.round(value)} B`;
-  const shown = value < 10 ? value.toFixed(1) : String(Math.round(value));
-  return `${shown} ${units[unit]}`;
-}
-
-/** "Saving… 34% · 312.0 MB of about 920.0 MB": the total is projected from progress so far. */
-export function savingText(fraction: number, written: number): string {
-  const percent = Math.floor(fraction * 100);
-  const total = fraction >= 0.01 ? ` of about ${formatBytes(written / fraction)}` : '';
-  return `Saving… ${percent}% · ${formatBytes(written)}${total}`;
 }

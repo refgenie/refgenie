@@ -13,8 +13,6 @@
 
 /** Input bytes per block: bgzip's own choice, so the compressed block fits in 64 KiB. */
 export const BGZF_BLOCK_INPUT = 0xff00;
-/** Largest whole member, header and trailer included. */
-const MAX_BLOCK_SIZE = 0x10000;
 const HEADER_SIZE = 18;
 const TRAILER_SIZE = 8;
 
@@ -56,25 +54,10 @@ export const deflateRawWeb: DeflateRaw = async (data) => {
   return new Uint8Array(await new Response(stream.readable).arrayBuffer());
 };
 
-/** `data` as one uncompressed ("stored") deflate block. */
-function storedDeflate(data: Uint8Array): Uint8Array {
-  const out = new Uint8Array(data.length + 5);
-  out[0] = 0x01; // final block, stored
-  out[1] = data.length & 0xff;
-  out[2] = data.length >>> 8;
-  out[3] = ~data.length & 0xff;
-  out[4] = (~data.length >>> 8) & 0xff;
-  out.set(data, 5);
-  return out;
-}
-
 /** One BGZF member holding `data` (at most {@link BGZF_BLOCK_INPUT} bytes). */
 export async function bgzfBlock(data: Uint8Array, deflate: DeflateRaw = deflateRawWeb) {
   if (data.length > BGZF_BLOCK_INPUT) throw new Error('BGZF block input too large');
-  let body = await deflate(data);
-  // Data that does not compress could overflow the block; store it instead.
-  if (body.length + HEADER_SIZE + TRAILER_SIZE > MAX_BLOCK_SIZE)
-    body = storedDeflate(data);
+  const body = await deflate(data);
   const size = HEADER_SIZE + body.length + TRAILER_SIZE;
   const out = new Uint8Array(size);
   const view = new DataView(out.buffer);

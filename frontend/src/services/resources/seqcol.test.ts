@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from 'vitest';
-import { coerceSeqcolServices } from '../config';
 import { findCollectionsSharing, seqcolBase, serviceForStore } from './seqcol';
 
 const SERVICES = [
@@ -14,26 +13,6 @@ const SERVICES = [
     refget_store_url: 'https://s3/refget-store/vgp/',
   },
 ];
-
-describe('coerceSeqcolServices', () => {
-  it('reads seqcol.services from service-info, dropping malformed entries', () => {
-    expect(
-      coerceSeqcolServices({
-        services: [
-          {
-            store: 'vgp',
-            url: '/seqcol/vgp',
-            refget_store: { url: 'https://s3/vgp/' },
-          },
-          { url: 42 },
-        ],
-      }),
-    ).toEqual([
-      { store: 'vgp', url: '/seqcol/vgp', refget_store_url: 'https://s3/vgp/' },
-    ]);
-    expect(coerceSeqcolServices(undefined)).toEqual([]);
-  });
-});
 
 describe('serviceForStore', () => {
   it("picks the service that reads the genome's store, else the first", () => {

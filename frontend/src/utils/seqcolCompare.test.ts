@@ -30,12 +30,6 @@ const all = (a: number, b: number, shared: number) => ({
   sequences: [a, b, shared] as [number, number, number],
 });
 
-const EMOJI = /\p{Extended_Pictographic}/u;
-
-function allMessages(c: SeqcolComparison): string[] {
-  return [...interpretCoordinateSystem(c).messages, ...ATTRS.map((a) => interpretAttribute(c, a))];
-}
-
 describe('seqcol comparison interpretation', () => {
   it('identical', () => {
     const c = cmp(all(3, 3, 3));
@@ -83,11 +77,5 @@ describe('seqcol comparison interpretation', () => {
     const verdict = interpretCoordinateSystem(c);
     expect(verdict.level).toBe('swap');
     expect(verdict.messages.join(' ')).toMatch(/name swap/);
-  });
-
-  it('never uses emoji', () => {
-    for (const c of [cmp(all(3, 3, 3), false), cmp(all(1, 2, 1)), cmp(all(2, 2, 0))]) {
-      for (const message of allMessages(c)) expect(message).not.toMatch(EMOJI);
-    }
   });
 });

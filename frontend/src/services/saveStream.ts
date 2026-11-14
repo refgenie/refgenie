@@ -126,18 +126,18 @@ async function saveBlob(
 ): Promise<void> {
   const parts: BlobPart[] = [];
   for await (const chunk of source) parts.push(chunk as Uint8Array<ArrayBuffer>);
-  const url = URL.createObjectURL(
-    new Blob(parts, { type: 'application/octet-stream' }),
-  );
-  try {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-  } finally {
-    // Revoke after the click has started the download.
-    setTimeout(() => URL.revokeObjectURL(url), 0);
-  }
+  downloadBlob(filename, new Blob(parts, { type: 'application/octet-stream' }));
+}
+
+/** Save a Blob as `filename` through a temporary link. */
+export function downloadBlob(filename: string, blob: Blob): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  // Revoke after the click has started the download.
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }

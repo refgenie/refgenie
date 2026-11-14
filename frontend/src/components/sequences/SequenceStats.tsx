@@ -4,10 +4,10 @@
 import { alphabetCounts } from './alphabets';
 import type { AlphabetPart } from './alphabets';
 import { formatBp } from '../../utils/format';
-import type { SequenceRow } from './types';
+import type { SequenceResponse } from '../../types/api';
 
 export interface SequenceStatsProps {
-  sequences: SequenceRow[];
+  sequences: SequenceResponse[];
 }
 
 /** Each part's left edge and width in percent, with a small gap between parts. */

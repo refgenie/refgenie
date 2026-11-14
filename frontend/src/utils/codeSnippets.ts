@@ -236,13 +236,7 @@ export interface BedSnippetArgs {
 
 /** A store path template as a JavaScript template-literal body, over digest `d`. */
 function templateLiteral(template: string): string {
-  return template
-    .split('%s2')
-    .join('${d.slice(0, 2)}')
-    .split('%s4')
-    .join('${d.slice(0, 4)}')
-    .split('%s')
-    .join('${d}');
+  return expandTemplate(template, '${d}', (n) => `\${d.slice(0, ${n})}`);
 }
 
 const NATIVE_BED_NOTE =

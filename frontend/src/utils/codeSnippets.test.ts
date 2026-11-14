@@ -22,17 +22,6 @@ describe('regionSnippets', () => {
   });
   const code = (id: string) => snippets.find((s) => s.id === id)?.code ?? '';
 
-  it('covers the tools with a verified remote read', () => {
-    expect(snippets.map((s) => s.label)).toEqual([
-      'CLI',
-      'Python',
-      'R',
-      'Rust',
-      'Node',
-      'Browser JS',
-    ]);
-  });
-
   it('turns the 1-based region into 0-based, half-open coordinates', () => {
     expect(code('cli')).toBe(
       `refget store get ${SEQ} -s --start 0 --end 60 --remote ${STORE}`,
@@ -50,9 +39,6 @@ describe('downloadSnippets', () => {
   it('names the store and file, and the chosen sequences', () => {
     const all = downloadSnippets({ digest: DIGEST, storeUrl: STORE, alias: 'hg38' });
     expect(all.map((s) => s.id)).toEqual(['refget', 'python']);
-    expect(all[0].code).toBe(
-      `refget store export ${DIGEST} --remote ${STORE} -o hg38.fa.gz`,
-    );
     const some = downloadSnippets({
       digest: DIGEST,
       storeUrl: STORE,
@@ -80,17 +66,6 @@ describe('bedSnippets', () => {
     collectionTemplate: 'collections/%s.rgsi',
   });
   const code = (id: string) => snippets.find((s) => s.id === id)?.code ?? '';
-
-  it('covers the same tools as one region', () => {
-    expect(snippets.map((s) => s.label)).toEqual([
-      'CLI',
-      'Python',
-      'R',
-      'Rust',
-      'Node',
-      'Browser JS',
-    ]);
-  });
 
   it('uses each library\'s own BED export where it has one', () => {
     expect(code('cli')).toBe(

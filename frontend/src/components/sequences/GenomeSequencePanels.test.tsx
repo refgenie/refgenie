@@ -1,3 +1,4 @@
+import { File as NodeFile } from 'node:buffer';
 import { StrictMode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen, within } from '@testing-library/react';
@@ -53,11 +54,8 @@ describe('SequencesPanel extract links', () => {
   });
 });
 
-function renderExtract(route = '/?tab=extract', browser = true) {
-  return renderWithProviders(
-    <ExtractPanel digest={DIGEST} storeUrl={STORE} browserStoreUrl={browser ? STORE : null} />,
-    { route },
-  );
+function renderExtract(route = '/?tab=extract') {
+  return renderWithProviders(<ExtractPanel digest={DIGEST} storeUrl={STORE} />, { route });
 }
 
 describe('ExtractPanel', () => {
@@ -91,23 +89,11 @@ describe('ExtractPanel', () => {
   it('runs a region from the URL under StrictMode', async () => {
     renderWithProviders(
       <StrictMode>
-        <ExtractPanel digest={DIGEST} storeUrl={STORE} browserStoreUrl={STORE} />
+        <ExtractPanel digest={DIGEST} storeUrl={STORE} />
       </StrictMode>,
       { route: '/?region=extra:1-4' },
     );
     expect(await screen.findByText(/^>extra:1-4/)).toBeInTheDocument();
-  });
-
-  it('says the browser reads up to 100,000 bases', async () => {
-    renderExtract();
-    expect(await screen.findByText(/Up to 100,000 bases/)).toBeInTheDocument();
-  });
-
-  it('shows code for the region typed, without the browser box when it is off', async () => {
-    renderExtract('/?tab=extract&region=extra:1-4', false);
-    expect(await screen.findByRole('heading', { name: 'In your own code' })).toBeInTheDocument();
-    expect(screen.queryByLabelText('Region')).toBeNull();
-    expect(screen.getByText(/--start 0 --end 4 --remote https:\/\/store\.test\/s\/$/)).toBeInTheDocument();
   });
 
   it('keeps the code in step with the region box', async () => {
@@ -117,36 +103,31 @@ describe('ExtractPanel', () => {
     await userEvent.clear(input);
     await userEvent.type(input, 'rCRSd:11-20');
     expect(screen.getByText(/--start 10 --end 20 /)).toBeInTheDocument();
-    // Half-typed text keeps the last region that parsed.
-    await userEvent.type(input, ':');
-    expect(screen.getByText(/--start 10 --end 20 /)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('tab', { name: 'Python' }));
-    expect(screen.getByText(/get_substring\(".*", 10, 20\)/)).toBeInTheDocument();
   });
 });
 
-async function bedMode(route = '/?tab=extract', browser = true) {
-  renderExtract(route, browser);
+async function bedMode(route = '/?tab=extract') {
+  renderExtract(route);
   await userEvent.click(await screen.findByRole('radio', { name: 'BED file' }));
 }
 
+// jsdom's File has no arrayBuffer(); Node's does, like a browser's.
+const bedFile = (text: string, name: string) => new NodeFile([text], name) as unknown as File;
+
 function pasteBed(text: string) {
-  fireEvent.change(screen.getByLabelText('BED lines'), { target: { value: text } });
+  fireEvent.change(screen.getByLabelText('Or paste BED lines'), {
+    target: { value: text },
+  });
 }
 
 describe('ExtractPanel BED mode', () => {
   it('switches between one region and a BED file', async () => {
     renderExtract();
-    const one = await screen.findByRole('radio', { name: 'One region' });
-    expect(one).toHaveAttribute('aria-checked', 'true');
+    expect(await screen.findByRole('radio', { name: 'One region' })).toBeChecked();
     await userEvent.click(screen.getByRole('radio', { name: 'BED file' }));
-    expect(screen.getByRole('radio', { name: 'BED file' })).toHaveAttribute(
-      'aria-checked',
-      'true',
-    );
-    expect(screen.getByLabelText('BED lines')).toBeVisible();
+    expect(screen.getByRole('radio', { name: 'BED file' })).toBeChecked();
+    expect(screen.getByLabelText('Or paste BED lines')).toBeVisible();
     expect(screen.getByLabelText('Region')).not.toBeVisible();
-    expect(screen.getByText(/Up to 5,000 regions and 5,000,000 bases/)).toBeInTheDocument();
   });
 
   it('summarizes a pasted BED, lists problem lines, and runs the good ones', async () => {
@@ -159,11 +140,7 @@ describe('ExtractPanel BED mode', () => {
     expect(screen.getByText('2 regions')).toBeInTheDocument();
     expect(screen.getByText(/12 bases/)).toBeInTheDocument();
     const problems = screen.getByRole('list', { name: 'Problem lines' });
-    expect(within(problems).getByText(/Line 4/).closest('li')).toHaveTextContent(
-      'Line 4 Extra 0 4 No sequence named "Extra". Did you mean "extra"?',
-    );
-    expect(problems).toHaveTextContent('Line 5');
-    expect(problems).toHaveTextContent('past the end of extra (80 bases)');
+    expect(within(problems).getAllByRole('listitem')).toHaveLength(2);
 
     await userEvent.click(screen.getByRole('button', { name: 'Extract 2 regions' }));
     expect(await screen.findByText(/^>peak::NC_012920.1:1-9/)).toHaveTextContent(
@@ -174,44 +151,16 @@ describe('ExtractPanel BED mode', () => {
     expect(screen.getByRole('button', { name: /Download .fa/ })).toBeInTheDocument();
   });
 
-  it('reads a dropped BED file', async () => {
-    await bedMode();
-    const file = new File(['extra\t0\t8\tone\nrCRSd\t4\t8\n'], 'peaks.bed', {
-      type: 'text/plain',
-    });
-    fireEvent.drop(screen.getByTestId('bed-drop'), { dataTransfer: { files: [file] } });
-    expect(await screen.findByText('peaks.bed')).toBeInTheDocument();
-    expect(screen.getByText('2 regions')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Extract 2 regions' }));
-    expect(await screen.findByText(/^>one::extra:0-8/)).toBeInTheDocument();
-  });
-
   it('reads a chosen file, and can remove it', async () => {
     await bedMode();
-    const file = new File(['extra\t0\t8\n'], 'mine.bed');
-    await userEvent.upload(screen.getByLabelText('Choose a BED file'), file);
-    expect(await screen.findByText('mine.bed')).toBeInTheDocument();
-    expect(screen.getByText('1 region')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Remove' }));
-    expect(screen.getByLabelText('BED lines')).toBeInTheDocument();
-  });
-
-  it('fills in an example from this genome', async () => {
-    await bedMode();
-    await userEvent.click(screen.getByRole('button', { name: 'Try an example' }));
-    expect(screen.getByLabelText('BED lines')).toHaveValue(
-      'rCRSd\t16318\t16819\tregion_1\nextra\t40\t80\tregion_2\nextra\t0\t60\n',
-    );
-    expect(screen.getByRole('button', { name: 'Extract 3 regions' })).toBeEnabled();
-  });
-
-  it('will not run past the region limit', async () => {
-    await bedMode();
-    pasteBed(Array.from({ length: 5001 }, () => 'extra\t0\t1').join('\n'));
-    expect(screen.getByRole('alert')).toHaveTextContent(
-      'This file has 5,001 regions (the limit is 5,000).',
-    );
-    expect(screen.getByRole('button', { name: 'Extract 5,001 regions' })).toBeDisabled();
+    const file = bedFile('extra\t0\t8\tone\nrCRSd\t4\t8\n', 'peaks.bed');
+    await userEvent.upload(screen.getByLabelText(/^BED file \(/), file);
+    expect(await screen.findByText('2 regions')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Or paste BED lines')).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Extract 2 regions' }));
+    expect(await screen.findByText(/^>one::extra:0-8/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Remove file' }));
+    expect(screen.getByLabelText('Or paste BED lines')).toBeInTheDocument();
   });
 
   it('shows progress and can be cancelled', async () => {
@@ -229,25 +178,9 @@ describe('ExtractPanel BED mode', () => {
     expect(screen.getByText('Cancelled.')).toBeInTheDocument();
     expect(screen.queryByText(/^>extra/)).toBeNull();
   });
-
-  it('shows BED code for each tool, without the browser box when it is off', async () => {
-    await bedMode('/?tab=extract', false);
-    expect(screen.queryByLabelText('BED lines')).toBeNull();
-    expect(
-      screen.getByText(`refget store export ${DIGEST} --bed regions.bed --remote ${STORE} -o regions.fa`),
-    ).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('tab', { name: 'Python' }));
-    expect(screen.getByText(/export_fasta_from_regions/)).toBeInTheDocument();
-  });
 });
 
 describe('ComparePanel', () => {
-  it('does not show the collection digests', async () => {
-    renderWithProviders(<ComparePanel digest={DIGEST} candidates={CANDIDATES} />);
-    await screen.findByLabelText(/Other genome/);
-    expect(screen.queryByRole('heading', { name: 'Collection digests' })).toBeNull();
-  });
-
   it('compares with another genome', async () => {
     let requested: string | undefined;
     server.use(

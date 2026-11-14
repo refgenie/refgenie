@@ -1,4 +1,4 @@
-import type { SequenceRow } from './types';
+import type { SequenceResponse } from '../../types/api';
 
 /** Categorical slots in fixed order; a fifth alphabet or more folds into "other". */
 const MAX_SLOTS = 4;
@@ -16,7 +16,7 @@ export interface AlphabetPart {
  * the tail folded into "other". The order (and so each alphabet's colour) is
  * the same for both measures.
  */
-export function alphabetCounts(sequences: SequenceRow[]): AlphabetPart[] {
+export function alphabetCounts(sequences: SequenceResponse[]): AlphabetPart[] {
   const parts = new Map<string, AlphabetPart>();
   for (const s of sequences) {
     const alphabet = s.alphabet ?? 'unknown';

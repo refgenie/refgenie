@@ -13,7 +13,7 @@ import { useRecipes } from '../hooks/queries/useRecipes';
 import { useUiConfig } from '../hooks/useUiConfig';
 import { useApiClient } from '../hooks/useApiClient';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
-import { Copyable } from '../components/common/Copyable';
+import { Command } from '../components/common/Copyable';
 import { ExternalLink } from '../components/common/ExternalLink';
 import { Icon } from '../components/common/Icon';
 import { Badge } from '../components/common/Badge';
@@ -46,14 +46,6 @@ const LATER_STEPS = [
     note: 'Prints the local path of the file, for your pipeline.',
   },
 ] as const;
-
-function Command({ value, label }: { value: string; label?: string }) {
-  return (
-    <Copyable value={value} label={label ?? `Copy: ${value}`} className="rg-command">
-      <code className="rg-code rg-code--inline">{value}</code>
-    </Copyable>
-  );
-}
 
 /** One quiet line of counts, shown once they have all loaded. */
 function Counts() {

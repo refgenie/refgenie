@@ -11,10 +11,8 @@ export interface GenomeHeaderProps {
   naming?: string | null;
 }
 
-function Placeholder({ width }: { width: 'sm' | 'md' | 'lg' }) {
-  return (
-    <span className={`rg-skeleton rg-skeleton--inline rg-genome-head__ph--${width}`} />
-  );
+function Placeholder() {
+  return <span className="rg-skeleton rg-skeleton--inline rg-genome-head__ph" />;
 }
 
 /**
@@ -27,13 +25,13 @@ export function GenomeHeader({ genome, naming }: GenomeHeaderProps) {
     <div className="rg-genome-head" aria-busy={genome ? undefined : true}>
       <div className="rg-genome-head__facts">
       <p className="rg-genome-head__line">
-        {genome ? <Subtitle genome={genome} naming={naming} /> : <Placeholder width="lg" />}
+        {genome ? <Subtitle genome={genome} naming={naming} /> : <Placeholder />}
       </p>
       {genome ? (
         genome.description && <Description text={genome.description} />
       ) : (
         <p className="rg-genome-head__line">
-          <Placeholder width="lg" />
+          <Placeholder />
         </p>
       )}
       </div>

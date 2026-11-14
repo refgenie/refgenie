@@ -4,22 +4,17 @@
  * Only the bytes covering the region are fetched (an HTTP `Range:` request on
  * the sequence's bit-packed `.seq` file) and decoded with the same
  * `@databio/gtars` wasm module the FASTA download uses, so a 500-base read
- * costs a few hundred bytes, not a chromosome.
- *
- * Ported from the RefgetStore Explorer's extractSequence.ts, which wraps
- * gtars' `RemoteRefgetStore`. That class caches in OPFS through
- * `navigator.storage`, which browsers only offer on https or localhost; a
- * refgenie server on plain http would fail. This module reuses the FASTA
- * download's range reader instead: same wasm calls, one wasm copy, and a
- * `fetch` that tests can swap.
+ * costs a few hundred bytes, not a chromosome. Not gtars' `RemoteRefgetStore`:
+ * it caches in OPFS, which browsers offer only on https or localhost.
  */
 
 import {
-  DECODABLE,
-  loadCollection,
+  isDecodable,
   loadGtars,
+  loadSeqTemplate,
   readEncodedBases,
   seqUrl,
+  undecodableMessage,
   type FastaWasm,
 } from './fastaExport';
 
@@ -28,25 +23,6 @@ export interface RegionSeq {
   length: number;
   alphabet: string | null;
   sha512t24u: string;
-}
-
-/** True if a sequence's bases can be read by range in the browser. */
-export function isExtractable(alphabet: string | null | undefined): boolean {
-  return !!alphabet && DECODABLE.has(alphabet.toLowerCase());
-}
-
-// One manifest read per store: it holds the `.seq` path template.
-const templates = new Map<string, Promise<string>>();
-
-function seqTemplateFor(baseUrl: string, fetchImpl: typeof fetch): Promise<string> {
-  let template = templates.get(baseUrl);
-  if (!template) {
-    // `known: []` skips the collection list; only the manifest is needed.
-    template = loadCollection(baseUrl, '', fetchImpl, []).then((c) => c.seqTemplate);
-    template.catch(() => templates.delete(baseUrl));
-    templates.set(baseUrl, template);
-  }
-  return template;
 }
 
 export interface ExtractRegionArgs {
@@ -71,18 +47,9 @@ export async function extractRegion({
   fetchImpl = fetch,
   signal,
 }: ExtractRegionArgs): Promise<string> {
-  if (!isExtractable(seq.alphabet)) {
-    throw new Error(
-      `${seq.name} uses the ${seq.alphabet ?? 'unknown'} alphabet, which cannot be read here.`,
-    );
-  }
-  if (start < 0 || end > seq.length || start > end) {
-    throw new Error(
-      `Region ${start}-${end} is outside ${seq.name} (${seq.length} bases).`,
-    );
-  }
+  if (!isDecodable(seq.alphabet)) throw new Error(undecodableMessage(seq));
   const [template, gtars] = await Promise.all([
-    seqTemplateFor(baseUrl, fetchImpl),
+    loadSeqTemplate(baseUrl, fetchImpl),
     wasm ?? loadGtars(),
   ]);
   return readEncodedBases({
@@ -94,21 +61,4 @@ export async function extractRegion({
     fetchImpl,
     signal,
   });
-}
-
-/** The URL of one sequence's `.seq` file, by the store's own path template. */
-export async function sequenceFileUrl(
-  baseUrl: string,
-  digest: string,
-  fetchImpl: typeof fetch = fetch,
-): Promise<string> {
-  return seqUrl(baseUrl, await seqTemplateFor(baseUrl, fetchImpl), digest);
-}
-
-/** The store's `.seq` path template, from its manifest. */
-export function sequenceTemplate(
-  baseUrl: string,
-  fetchImpl: typeof fetch = fetch,
-): Promise<string> {
-  return seqTemplateFor(baseUrl, fetchImpl);
 }

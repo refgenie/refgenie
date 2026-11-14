@@ -37,7 +37,7 @@ describe('extractBed', () => {
       read: read as never,
     });
     expect(most).toBe(2);
-    expect(progress).toEqual([1, 2, 3, 4, 5]);
+    expect(progress).toEqual([2, 4, 5]);
     expect(records.join('')).toBe(
       '>b::chr1:10-20\nGTACGTACGT\n>chrM:0-4\nACGT\n>chr1:0-8\nACGTACGT\n' +
         '>chrM:4-12\nACGTACGT\n>chr1:5-9\nCGTA\n',

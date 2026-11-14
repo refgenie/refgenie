@@ -12,10 +12,9 @@ import { useUiConfig } from '../hooks/useUiConfig';
 import { preferredAlias } from '../utils/genomes';
 import { namingStyle } from '../utils/namingStyle';
 import { formatDigest } from '../utils/format';
-import { fastaDownloadAvailable, fastaPullSize, isGenomeTab } from '../utils/genomePage';
+import { fastaPullSize, isGenomeTab } from '../utils/genomePage';
 import type { GenomeTab } from '../utils/genomePage';
 import { ApiError } from '../services/http';
-import { fastaDownloadEnabled } from '../services/config';
 import { Breadcrumbs } from '../components/common/Breadcrumbs';
 import { MiniHero } from '../components/layout/MiniHero';
 import { CapabilityGate } from '../components/common/CapabilityGate';
@@ -37,13 +36,12 @@ import {
   SequencesPanel,
 } from '../components/sequences/GenomeSequencePanels';
 import { CollectionDigests } from '../components/sequences/CollectionDigests';
-import { isExtractable } from '../services/regionExtract';
+import { isDecodable } from '../services/fastaExport';
 import { assetRequestUrl } from '../services/projectLinks';
 import { ExternalLink } from '../components/common/ExternalLink';
 import { NoAssetsPanel } from '../components/genomes/NoAssetsPanel';
 
 const NO_SEQUENCES = 'No sequence data for this genome';
-const NO_SAME_SPECIES = 'No other genomes of this species';
 const NO_STORE = 'This genome has no refget store';
 const NO_READABLE = 'No sequence here can be read by range';
 
@@ -74,31 +72,15 @@ export function GenomePage() {
   const title = record ? (primaryAlias ?? formatDigest(record.digest)) : 'Genome';
 
   const storeUrl = record?.refget_store_url ?? null;
-  // The browser reads the store itself only when the build turns that on.
-  const canDownload = !!record && fastaDownloadAvailable(record);
   const fasta = useFastaDownload({
-    storeUrl: canDownload ? record.refget_store_url : null,
+    storeUrl,
     digest: digest ?? '',
     fileStem: primaryAlias ?? digest ?? 'genome',
   });
 
   // A 404 means the genome has no sequence data here: a normal answer.
-  const noSequences = sequences.error instanceof ApiError && sequences.error.isNotFound;
-  const hasSequences = sequences.data
-    ? true
-    : noSequences
-      ? false
-      : sequences.error
-        ? true
-        : null;
-  const sequenceStats = sequences.data
-    ? {
-        count: sequences.data.sequences.length,
-        bases: sequences.data.sequences.reduce((sum, s) => sum + s.length, 0),
-      }
-    : hasSequences === false || sequences.error
-      ? (false as const)
-      : null;
+  const noSequences =
+    !sequences.data && sequences.error instanceof ApiError && sequences.error.isNotFound;
   const naming = useMemo(
     () => (sequences.data ? namingStyle(sequences.data.sequences) : null),
     [sequences.data],
@@ -114,30 +96,23 @@ export function GenomePage() {
       : refgeniePullCommand(primaryAlias, hasFastaAsset);
   const candidates = useCompareCandidates(record);
   const noCandidates = candidates !== null && candidates.length === 0;
-  // The in-browser FASTA comparison keeps Compare open without other genomes.
-  const compareFile = fastaDownloadEnabled();
-  const compareOff =
-    hasSequences === false
-      ? NO_SEQUENCES
-      : noCandidates && !compareFile
-        ? NO_SAME_SPECIES
-        : undefined;
+  // Comparing your own FASTA keeps Compare open without other genomes.
+  const compareOff = noSequences ? NO_SEQUENCES : undefined;
   const readable = sequences.data
-    ? sequences.data.sequences.some((row) => isExtractable(row.alphabet))
+    ? sequences.data.sequences.some((row) => isDecodable(row.alphabet))
     : null;
   const downloadOff = record && !storeUrl ? NO_STORE : undefined;
   const extractOff =
     downloadOff ??
-    (hasSequences === false ? NO_SEQUENCES : readable === false ? NO_READABLE : undefined);
+    (noSequences ? NO_SEQUENCES : readable === false ? NO_READABLE : undefined);
 
   const tabs: TabItem<GenomeTab>[] = [
     {
       id: 'sequences',
       label: 'Sequences',
-      count:
-        hasSequences === false ? undefined : sequenceStats ? sequenceStats.count : null,
-      disabled: hasSequences === false,
-      title: hasSequences === false ? NO_SEQUENCES : undefined,
+      count: noSequences ? undefined : (sequences.data?.sequences.length ?? null),
+      disabled: noSequences,
+      title: noSequences ? NO_SEQUENCES : undefined,
     },
     { id: 'extract', label: 'Extract', disabled: !!extractOff, title: extractOff },
     { id: 'download', label: 'Download', disabled: !!downloadOff, title: downloadOff },
@@ -167,7 +142,7 @@ export function GenomePage() {
   // A short real range for the "Only need the sequence?" command.
   const firstSequence = sequences.data?.sequences[0];
   const region = firstSequence
-    ? `${firstSequence.name}:0-${Math.min(100, firstSequence.length)}`
+    ? `${firstSequence.name}:1-${Math.min(100, firstSequence.length)}`
     : undefined;
 
   // The build form needs an alias; the digest is only for the job target.
@@ -209,7 +184,6 @@ export function GenomePage() {
               digest={record.digest}
               pullCommand={pullCommand}
               pullSize={hasFastaAsset ? fastaPullSize(assets.data?.results) : null}
-              hasFastaAsset={hasFastaAsset}
             />
           ) : undefined
         }
@@ -276,27 +250,19 @@ export function GenomePage() {
                 <SequencesPanel digest={record.digest} canExtract={!extractOff} />
               )}
               {activeTab === 'extract' && storeUrl && (
-                <ExtractPanel
-                  digest={record.digest}
-                  storeUrl={storeUrl}
-                  browserStoreUrl={canDownload ? storeUrl : null}
-                />
+                <ExtractPanel digest={record.digest} storeUrl={storeUrl} />
               )}
               {activeTab === 'download' && storeUrl && (
                 <GenomeDownloadPanel
                   digest={record.digest}
                   storeUrl={storeUrl}
                   alias={primaryAlias}
-                  download={canDownload ? fasta : null}
+                  download={fasta}
                   hasFastaAsset={hasFastaAsset}
                 />
               )}
               {activeTab === 'compare' && (
-                <ComparePanel
-                  digest={record.digest}
-                  candidates={candidates}
-                  canCompareFile={compareFile}
-                />
+                <ComparePanel digest={record.digest} candidates={candidates} />
               )}
               {activeTab === 'details' && (
                 <>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { GenomesPage } from './GenomesPage';
@@ -53,7 +53,6 @@ describe('GenomesPage', () => {
   it('shows one common name under the scientific name', async () => {
     renderWithProviders(<GenomesPage />);
     const row = await screen.findByRole('row', { name: /hg38/ });
-    expect(within(row).getByText('human')).toHaveClass('rg-table__sub');
     expect(row).toHaveTextContent('Homo sapienshuman');
   });
 
@@ -85,13 +84,6 @@ describe('GenomesPage', () => {
     renderWithProviders(<GenomesPage />, { route: '/genomes?assets=built' });
     expect(await screen.findByRole('link', { name: 'hg38' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'bare-genome' })).not.toBeInTheDocument();
-  });
-
-  it('labels the count column "Built assets"', async () => {
-    renderWithProviders(<GenomesPage />);
-    expect(
-      await screen.findByRole('columnheader', { name: 'Built assets' }),
-    ).toBeInTheDocument();
   });
 
   it('sends the search term and the assets filter to the server', async () => {

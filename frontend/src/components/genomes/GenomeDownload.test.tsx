@@ -1,11 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { HttpResponse, http } from 'msw';
 import { useState } from 'react';
 import { GenomeDownloadPanel } from './GenomeDownload';
 import { useFastaDownload } from '../../hooks/useFastaDownload';
-import { genomeDetailFixture } from '../../test/fixtures';
+import { genomeDetailFixture, genomeSequencesFixture } from '../../test/fixtures';
 import { renderWithProviders as render } from '../../test/renderWithProviders';
+import { server } from '../../test/server';
+import { API } from '../../test/handlers';
 import type { GenomeDetailResponse } from '../../types/api';
 
 vi.mock('../../services/saveStream', () => ({
@@ -23,30 +26,34 @@ vi.mock('../../services/fastaExport', async (importOriginal) => ({
   fastaChunks: vi.fn(async function* () {
     yield new TextEncoder().encode('>chr1\nACGT\n');
   }),
-  loadCollection: vi.fn(async () => ({
-    seqTemplate: 'sequences/%s2/%s.seq',
-    seqs: [
-      {
-        name: 'chr1',
-        length: 80,
-        alphabet: 'dna2bit',
-        description: null,
-        sha512t24u: 'x',
-      },
-    ],
-  })),
+  loadSeqTemplate: vi.fn(async () => 'sequences/%s2/%s.seq'),
 }));
 
 const { saveStream } = await import('../../services/saveStream');
-const { loadCollection, fastaChunks } = await import('../../services/fastaExport');
+const { fastaChunks } = await import('../../services/fastaExport');
 
-const PICK_SEQS = ['chr1', 'chr2', 'chr1_KI270706v1_random', 'chrEBV'].map((name) => ({
+const row = (name: string, alphabet = 'dna2bit') => ({
   name,
   length: 80,
-  alphabet: 'dna2bit',
+  alphabet,
   description: null,
   sha512t24u: name,
-}));
+  md5: null,
+  aliases: [],
+});
+
+/** The genome's `/sequences` rows. */
+function serveSequences(rows: ReturnType<typeof row>[]) {
+  server.use(
+    http.get(`${API}/genomes/:digest/sequences`, () =>
+      HttpResponse.json({ ...genomeSequencesFixture, sequences: rows }),
+    ),
+  );
+}
+
+const PICK_SEQS = ['chr1', 'chr2', 'chr1_KI270706v1_random', 'chrEBV'].map((name) =>
+  row(name),
+);
 
 const genome: GenomeDetailResponse = genomeDetailFixture;
 
@@ -80,6 +87,7 @@ const renderPanel = () => render(<Harness storeUrl={genome.refget_store_url} />)
 describe('Download tab', () => {
   beforeEach(() => {
     vi.mocked(saveStream).mockClear();
+    serveSequences([row('chr1')]);
   });
 
   it('saves to <fileStem>.fa.gz', async () => {
@@ -94,18 +102,8 @@ describe('Download tab', () => {
     expect(await screen.findByText('Saved')).toBeInTheDocument();
   });
 
-  it('reuses the sequence list the Sequences tab loads', async () => {
-    renderPanel();
-    await screen.findByText(/\(87 B uncompressed\)/);
-    const known = vi.mocked(loadCollection).mock.lastCall?.[3];
-    expect(known?.map((s) => s.name)).toEqual(['rCRSd', 'extra']);
-  });
-
   it('exports only the chosen sequences, and the CLI command names them', async () => {
-    vi.mocked(loadCollection).mockImplementationOnce(async () => ({
-      seqTemplate: 'sequences/%s2/%s.seq',
-      seqs: PICK_SEQS,
-    }));
+    serveSequences(PICK_SEQS);
     renderPanel();
     await screen.findByText(/4 sequences/);
     await userEvent.click(screen.getByRole('radio', { name: 'Choose sequences…' }));
@@ -126,14 +124,7 @@ describe('Download tab', () => {
   });
 
   it('disables sequences it cannot rebuild, and downloads the rest', async () => {
-    const seqs = [
-      ...PICK_SEQS.slice(0, 2),
-      { ...PICK_SEQS[0], name: 'prot1', alphabet: 'protein', sha512t24u: 'p' },
-    ];
-    vi.mocked(loadCollection).mockImplementationOnce(async () => ({
-      seqTemplate: 'sequences/%s2/%s.seq',
-      seqs,
-    }));
+    serveSequences([...PICK_SEQS.slice(0, 2), row('prot1', 'protein')]);
     renderPanel();
     await screen.findByText(/3 sequences/);
     await userEvent.click(screen.getByRole('radio', { name: 'Choose sequences…' }));
@@ -151,10 +142,7 @@ describe('Download tab', () => {
   });
 
   it('explains, without saving, when all sequences include one it cannot rebuild', async () => {
-    vi.mocked(loadCollection).mockImplementationOnce(async () => ({
-      seqTemplate: 'sequences/%s2/%s.seq',
-      seqs: [{ ...PICK_SEQS[0], name: 'prot1', alphabet: 'protein' }],
-    }));
+    serveSequences([row('prot1', 'protein')]);
     renderPanel();
     await screen.findByText(/1 sequence,/);
     await userEvent.click(screen.getByRole('button', { name: /^Download \.fa\.gz/ }));
@@ -186,26 +174,9 @@ describe('Download tab', () => {
     expect(screen.getByRole('radio', { name: 'Choose sequences…' })).toBeChecked();
   });
 
-  it('shows the whole-genome CLI command by default', async () => {
+  it("offers refgenie with this server's install line", async () => {
     renderPanel();
     await screen.findByText(/\(87 B uncompressed\)/);
-    expect(
-      screen.getByText(
-        `refget store export ${genome.digest} --remote ${genome.refget_store_url} -o hg38.fa.gz`,
-      ),
-    ).toBeInTheDocument();
-  });
-
-  it('offers refget, Python and refgenie, each with a copy button', async () => {
-    renderPanel();
-    await screen.findByText(/\(87 B uncompressed\)/);
-    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
-      'refget CLI',
-      'Python',
-      'refgenie CLI',
-    ]);
-    expect(screen.getByText('pip install refget')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Copy the refget CLI code' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('tab', { name: 'refgenie CLI' }));
     expect(screen.getByText(/refgenie pull hg38\/fasta/)).toBeInTheDocument();
     // The same install line as the landing page, for the server's version.

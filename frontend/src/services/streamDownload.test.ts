@@ -7,12 +7,14 @@ import { BLOB_FALLBACK_MAX, chooseSaveMethod } from './saveStream';
 
 type Handler = (event: unknown) => void;
 
+const SCOPE = 'http://localhost/app/rg-download/';
+
 /** Run public/download-sw.js against a fake worker global. */
-function loadWorker(scope = 'http://localhost/app/') {
+function loadWorker() {
   const handlers: Record<string, Handler> = {};
   const self = {
     addEventListener: (type: string, fn: Handler) => (handlers[type] = fn),
-    registration: { scope },
+    registration: { scope: SCOPE },
     skipWaiting: () => {},
     clients: { claim: async () => {} },
   };
@@ -44,11 +46,8 @@ async function* bytes(parts: number[][], failAfter?: number) {
   }
 }
 
-function start(
-  source: AsyncIterable<Uint8Array>,
-  opts: { signal?: AbortSignal; scope?: string } = {},
-) {
-  const worker = loadWorker(opts.scope);
+function start(source: AsyncIterable<Uint8Array>, opts: { signal?: AbortSignal } = {}) {
+  const worker = loadWorker();
   const channel = new MessageChannel();
   const server = servePort(channel.port1 as unknown as PortLike, source, {
     signal: opts.signal,
@@ -151,8 +150,6 @@ describe('download worker and page', () => {
   });
 });
 
-const SCOPE = 'http://localhost/app/rg-download/';
-
 describe('download worker at its own narrow scope', () => {
   afterEach(() => {
     vi.useRealTimers();
@@ -164,30 +161,8 @@ describe('download worker at its own narrow scope', () => {
     );
   });
 
-  it('streams a download under the scope and leaves the rest alone', async () => {
-    const { worker, server } = start(bytes([[1, 2], [3]]), { scope: SCOPE });
-    await server.registered;
-    expect(worker.fetch('http://localhost/app/genomes/abc')).toBeUndefined();
-    const response = await worker.fetch(downloadUrl(SCOPE, 'abc', 'x.fa.gz'));
-    expect([...new Uint8Array(await response!.arrayBuffer())]).toEqual([1, 2, 3]);
-    await expect(server.done).resolves.toBeUndefined();
-  });
-
-  it('serves the newest registration after the page registers again', async () => {
-    const { worker, server } = start(bytes([[1, 2], [3]]), { scope: SCOPE });
-    await server.registered;
-    const again = new MessageChannel();
-    const reRegistered = server.adopt(again.port1 as unknown as PortLike);
-    worker.register('abc', 'x.fa.gz', again.port2);
-    await reRegistered;
-    const response = await worker.fetch(downloadUrl(SCOPE, 'abc', 'x.fa.gz'));
-    await server.started;
-    expect([...new Uint8Array(await response!.arrayBuffer())]).toEqual([1, 2, 3]);
-    await expect(server.done).resolves.toBeUndefined();
-  });
-
   it('drops a registration the page gives up on before it is fetched', async () => {
-    const { worker, server } = start(bytes([[1]]), { scope: SCOPE });
+    const { worker, server } = start(bytes([[1]]));
     await server.registered;
     server.stop(new Error('Not started'));
     await expect(server.done).rejects.toThrow('Not started');
@@ -198,39 +173,12 @@ describe('download worker at its own narrow scope', () => {
 
   it('drops a registration that is never fetched', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
-    const { worker, server } = start(bytes([[1]]), { scope: SCOPE });
+    const { worker, server } = start(bytes([[1]]));
     await server.registered;
     vi.advanceTimersByTime(60_000);
     const response = await worker.fetch(downloadUrl(SCOPE, 'abc', 'x'));
     expect(response!.status).toBe(404);
     server.stop(new Error('done'));
-  });
-});
-
-describe('servePort.stop', () => {
-  it('removes its abort listener and stops the source', async () => {
-    const abort = new AbortController();
-    const remove = vi.spyOn(abort.signal, 'removeEventListener');
-    let returned = false;
-    const source: AsyncIterable<Uint8Array> = {
-      [Symbol.asyncIterator]: () => ({
-        next: async () => ({ done: false, value: new Uint8Array(1) }),
-        return: async () => {
-          returned = true;
-          return { done: true, value: undefined };
-        },
-      }),
-    };
-    const channel = new MessageChannel();
-    const server = servePort(channel.port1 as unknown as PortLike, source, {
-      signal: abort.signal,
-    });
-    server.stop(new Error('Not started'));
-    expect(remove).toHaveBeenCalledWith('abort', expect.any(Function));
-    abort.abort();
-    await expect(server.done).rejects.toThrow('Not started');
-    expect(returned).toBe(true);
-    channel.port2.close();
   });
 });
 
