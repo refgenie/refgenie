@@ -2147,46 +2147,7 @@
   overflow: auto;
 }
 
-/* === EXTRACT MODE TOGGLE + BED EXTRACT === */
-
-.rg-segmented {
-  display: inline-flex;
-  margin-bottom: var(--space-2);
-  border: var(--border-width) solid rgb(var(--color-border-strong));
-  border-radius: var(--radius-md);
-  overflow: hidden;
-}
-
-.rg-segmented__option {
-  padding: var(--space-1) var(--space-3);
-  font-family: inherit;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  line-height: 1.5;
-  color: rgb(var(--color-text));
-  background: rgb(var(--color-background));
-  border: 0;
-  cursor: pointer;
-}
-
-.rg-segmented__option + .rg-segmented__option {
-  border-left: var(--border-width) solid rgb(var(--color-border-strong));
-}
-
-.rg-segmented__option:hover {
-  background: rgb(var(--color-surface));
-}
-
-.rg-segmented__option--on,
-.rg-segmented__option--on:hover {
-  color: rgb(var(--color-text-inverse));
-  background: rgb(var(--color-primary));
-}
-
-.rg-segmented__option:focus-visible {
-  outline: 2px solid rgb(var(--color-accent));
-  outline-offset: -2px;
-}
+/* === BED EXTRACT === */
 
 .rg-bed__paste {
   display: block;

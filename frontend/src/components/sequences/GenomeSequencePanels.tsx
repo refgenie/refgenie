@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useGenomeSequences } from '../../hooks/queries/useGenomeSequences';
 import type { CompareCandidate } from '../../utils/compareCandidates';
@@ -12,7 +12,6 @@ import { RegionExtract } from './RegionExtract';
 import { BedExtract } from './BedExtract';
 import { defaultRegion, parseRegion, type ParsedRegion } from '../../utils/parseRegion';
 import { bedSnippets, regionSnippets } from '../../utils/codeSnippets';
-import { cn } from '../../utils/cn';
 import { extractHref } from '../../utils/genomePage';
 import { isExtractable, sequenceTemplate } from '../../services/regionExtract';
 import {
@@ -95,6 +94,7 @@ export function ExtractPanel({
   const [params] = useSearchParams();
   const [region, setRegion] = useState(() => params.get('region') ?? '');
   const [mode, setMode] = useState<ExtractMode>('one');
+  const modeName = useId();
 
   // The snippets follow the box: the region typed, else the first readable
   // sequence's first 1,000 bases.
@@ -129,20 +129,20 @@ export function ExtractPanel({
   if (!data) return <LoadingState rows={8} label="Loading sequences" />;
   return (
     <div>
-      <div className="rg-segmented" role="radiogroup" aria-label="What to extract">
+      <fieldset className="rg-fasta-choice">
+        <legend className="sr-only">What to extract</legend>
         {MODES.map(({ id, label }) => (
-          <button
-            key={id}
-            type="button"
-            role="radio"
-            aria-checked={mode === id}
-            className={cn('rg-segmented__option', mode === id && 'rg-segmented__option--on')}
-            onClick={() => setMode(id)}
-          >
+          <label key={id} className="flex items-center gap-2">
+            <input
+              type="radio"
+              name={modeName}
+              checked={mode === id}
+              onChange={() => setMode(id)}
+            />
             {label}
-          </button>
+          </label>
         ))}
-      </div>
+      </fieldset>
       <section className="rg-flat-section">
         <h2>In your browser</h2>
         {/* Both stay mounted, so switching keeps each one's input and result. */}

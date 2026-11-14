@@ -130,13 +130,9 @@ function pasteBed(text: string) {
 describe('ExtractPanel BED mode', () => {
   it('switches between one region and a BED file', async () => {
     renderExtract();
-    const one = await screen.findByRole('radio', { name: 'One region' });
-    expect(one).toHaveAttribute('aria-checked', 'true');
+    expect(await screen.findByRole('radio', { name: 'One region' })).toBeChecked();
     await userEvent.click(screen.getByRole('radio', { name: 'BED file' }));
-    expect(screen.getByRole('radio', { name: 'BED file' })).toHaveAttribute(
-      'aria-checked',
-      'true',
-    );
+    expect(screen.getByRole('radio', { name: 'BED file' })).toBeChecked();
     expect(screen.getByLabelText('Or paste BED lines')).toBeVisible();
     expect(screen.getByLabelText('Region')).not.toBeVisible();
     expect(screen.getByText(/Up to 5,000 regions and 5,000,000 bases/)).toBeInTheDocument();
@@ -170,7 +166,7 @@ describe('ExtractPanel BED mode', () => {
   it('reads a chosen file, and can remove it', async () => {
     await bedMode();
     const file = bedFile('extra\t0\t8\tone\nrCRSd\t4\t8\n', 'peaks.bed');
-    await userEvent.upload(screen.getByLabelText(/^BED file/), file);
+    await userEvent.upload(screen.getByLabelText(/^BED file \(/), file);
     expect(await screen.findByText('2 regions')).toBeInTheDocument();
     expect(screen.queryByLabelText('Or paste BED lines')).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Extract 2 regions' }));
