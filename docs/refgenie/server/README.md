@@ -47,7 +47,7 @@ The server reads the same variables as the CLI, plus a few of its own.
 | `REFGENIE_GENOME_STAGE_FOLDER` | `$REFGENIE_HOME_PATH/archives` | Where staged assets live |
 | `REFGENIE_LOG_LEVEL` | `WARNING` | Log verbosity |
 | `REFGENIE_PUBLIC_URL` | `https://api.refgenie.org` | The server's public base URL, for MCP download links |
-| `REFGENIE_COLLECTIONS` | unset | A JSON list of collection pages for the web UI, each drawn from one or more stores; a collection shows once its stores are served. See [`deployment/collections.example.json`](https://github.com/refgenie/refgenie/blob/master/deployment/collections.example.json). |
+| `REFGENIE_COLLECTIONS` | unset | A JSON list of collection pages for the web UI, each drawn from one or more stores; a collection shows once its stores are served, and an invalid value stops the server at startup. See [`deployment/collections.example.json`](https://github.com/refgenie/refgenie/blob/master/deployment/collections.example.json). |
 | `REFGENIE_CATALOG_URL` | unset | A publish catalog (made by `refgenie catalog-export`) to import at startup and then on a schedule. The catalog also lists the RefgetStores the server reads; a change to that list takes effect at the next import, without a restart. |
 | `CATALOG_IMPORT_INTERVAL_SECONDS` | `86400` | How often to re-import `REFGENIE_CATALOG_URL` |
 | `DATA_CHANNELS_CONFIG_PATH` | the packaged `data_channels.yaml` | Which data channels to re-serve |

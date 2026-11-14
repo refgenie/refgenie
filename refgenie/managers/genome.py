@@ -36,7 +36,7 @@ from refgenie.models import (
 from refgenie.plugins.events import NULL_EVENTS, EventSink, update_scope
 from refgenie.plugins.hooks import Change
 from refgenie.utils.search import Search, alias_digests_matching
-from refgenie.utils.seqcol import seqcol_level2
+from refgenie.utils.seqcol import compare_level2, seqcol_level2
 from refgenie.utils.species_file import SpeciesEntry
 from refgenie.utils.tables import build_table
 
@@ -577,6 +577,10 @@ class GenomeManager(ResourceManager):
             result["remote_url"] = genome.remote_url
 
         return result
+
+    def compare(self, digest_a: GenomeDigest, digest_b: GenomeDigest) -> dict:
+        """The GA4GH seqcol comparison of two genomes."""
+        return compare_level2(*self.compare_sides(digest_a, digest_b), digest_a, digest_b)
 
     def compare_sides(
         self, digest_a: GenomeDigest, digest_b: GenomeDigest, *, remote: bool = True
