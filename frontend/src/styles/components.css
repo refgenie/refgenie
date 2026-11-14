@@ -2018,6 +2018,19 @@
   border-top: var(--border-width) solid rgb(var(--color-border));
 }
 
+.rg-genome-digest__pull {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--space-2);
+}
+
+.rg-genome-digest__size {
+  font-size: var(--font-size-sm);
+  color: rgb(var(--color-text-muted));
+  white-space: nowrap;
+}
+
 .rg-genome-digest__command .rg-copyable__text {
   font-size: var(--font-size-sm);
   color: rgb(var(--color-primary-dark));

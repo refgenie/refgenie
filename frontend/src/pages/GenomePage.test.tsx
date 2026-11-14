@@ -150,6 +150,18 @@ describe('GenomePage', () => {
     );
   });
 
+  it('shows the size of the fasta pull beside its command', async () => {
+    renderWithProviders(
+      <Routes>
+        <Route path="/genomes/:digest" element={<GenomePage />} />
+      </Routes>,
+      { route: `/genomes/${DIGEST}`, config: serverConfig },
+    );
+    expect(await screen.findByText('refgenie pull hg38/fasta')).toBeInTheDocument();
+    // 3,273,481,150 bytes in the assets fixture.
+    expect(screen.getByTitle('Size of the asset once pulled')).toHaveTextContent('3.0 GB');
+  });
+
   it('keeps the alias list off the head; Details has it, each with a copy button', async () => {
     const names = ['hg38', 'GRCh38-a', 'GRCh38-b', 'hs38', 'hg38-x', 'hg38-y'];
     server.use(

@@ -10,7 +10,7 @@ import { useCompareCandidates } from '../hooks/useCompareCandidates';
 import { useUiConfig } from '../hooks/useUiConfig';
 import { preferredAlias } from '../utils/genomes';
 import { formatDigest } from '../utils/format';
-import { fastaDownloadAvailable, isGenomeTab } from '../utils/genomePage';
+import { fastaDownloadAvailable, fastaPullSize, isGenomeTab } from '../utils/genomePage';
 import type { GenomeTab } from '../utils/genomePage';
 import { ApiError } from '../services/http';
 import { fastaDownloadEnabled } from '../services/config';
@@ -202,6 +202,7 @@ export function GenomePage() {
             <GenomeDigest
               digest={record.digest}
               pullCommand={pullCommand}
+              pullSize={hasFastaAsset ? fastaPullSize(assets.data?.results) : null}
               hasFastaAsset={hasFastaAsset}
             />
           ) : undefined
