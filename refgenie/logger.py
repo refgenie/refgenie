@@ -29,7 +29,9 @@ logging.getLogger().setLevel(_level)
 # The dash job log (server/jobs/logcapture.py) reads INFO records from this
 # logger; the console handler above filters them out.
 logging.getLogger("refgenie").setLevel(min(_level, logging.INFO))
-for _name in ("httpx2", "httpcore2", "alembic"):
+for _name in ("httpcore2", "alembic"):
     logging.getLogger(_name).setLevel(logging.WARNING)
+# One INFO line per HTTP request drowns refgenie's own progress; show them only when debugging.
+logging.getLogger("httpx2").setLevel(logging.DEBUG if _level == logging.DEBUG else logging.WARNING)
 
 logger = logging.getLogger("refgenie")

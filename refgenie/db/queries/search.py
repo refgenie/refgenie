@@ -44,28 +44,15 @@ def like_escape(text: str) -> str:
     return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
-def rank_condition(column: Any, term: str, rank: MatchRank) -> Any | None:
-    """``column`` matches ``term`` at least as well as ``rank``; None for ``OTHER`` or a blank term.
-
-    The SQL twin of :func:`refgenie.utils.search.match_rank`.
-    """
-    wanted = search_words(term)
-    if not wanted or rank == MatchRank.OTHER:
-        return None
-    if rank == MatchRank.EXACT:
-        return padded_words(column) == f" {wanted} "
-    escaped = like_escape(wanted)
-    pattern = f"% {escaped} %" if rank == MatchRank.WHOLE_WORD else f"% {escaped}%"
-    return padded_words(column).like(pattern, escape="\\")
-
-
 def word_start_condition(column: Any, term: str) -> Any:
     """``column`` has a word that starts with ``term``, case-insensitively.
 
     A term with no word characters (only punctuation) falls back to a substring match.
     """
-    condition = rank_condition(column, term, MatchRank.WORD_START)
-    return condition if condition is not None else column.ilike(f"%{term}%")
+    wanted = search_words(term)
+    if not wanted:
+        return column.ilike(f"%{term}%")
+    return padded_words(column).like(f"% {like_escape(wanted)}%", escape="\\")
 
 
 def rank_literal(rank: MatchRank) -> Any:

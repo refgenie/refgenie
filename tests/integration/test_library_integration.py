@@ -19,6 +19,7 @@ from tests.support.factories import register_fasta
 from refgenie import Refgenie
 from refgenie.managers.build_inputs import resolve_default_asset
 from refgenie.models import BuildCommandValues, BuildParams, GenomeAlias
+from refgenie.utils.seqcol import compare_level2
 
 # Skip all tests unless explicitly enabled
 pytestmark = pytest.mark.skipif(
@@ -348,7 +349,7 @@ class TestTwoGenomesCompare:
 
         digest_a = rg.alias.resolve("rCRSd")
         digest_b = rg.alias.resolve("t7")
-        result = rg.genome.compare(digest_a, digest_b)
+        result = compare_level2(*rg.genome.compare_sides(digest_a, digest_b), digest_a, digest_b)
 
         assert result is not None
         assert isinstance(result, dict)
@@ -723,8 +724,6 @@ class TestCatalogImportPostgres:
         self, refgenie_instance, fixtures_path, tmp_path
     ):
         """Without its store row, the genome's store check fails the whole import."""
-        from refgenie.db.publish import CatalogStoreError
-
         from refgenie.db.tables import Genome, Store
         from refgenie.publish_catalog import export_publish_catalog, import_publish_catalog
         from tests.test_publish_catalog import artifact_engine
@@ -735,7 +734,7 @@ class TestCatalogImportPostgres:
         with artifact_engine(artifact).begin() as conn:
             conn.execute(Store.__table__.delete())
 
-        with pytest.raises(CatalogStoreError):
+        with pytest.raises(ValueError, match="stores it does not list"):
             import_publish_catalog(refgenie_instance.database_engine, str(artifact))
         with refgenie_instance.database_engine.connect() as conn:
             assert conn.execute(Genome.__table__.select()).first() is None

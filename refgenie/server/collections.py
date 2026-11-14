@@ -3,26 +3,22 @@
 A collection is a named, branded slice of the catalog defined by one or more
 stores (for example, the Vertebrate Genomes Project assemblies in the ``vgp``
 store). ``REFGENIE_COLLECTIONS`` holds a JSON array of :class:`CollectionConfig`
-objects; see ``deployment/collections.example.json``. The server validates
-them against the stores it loaded and serves the survivors to the web UI in
-``/service-info`` under ``refgenie.collections``.
+objects; see ``deployment/collections.example.json``. The server parses it
+once at startup (a bad value stops startup) and serves the collections whose
+stores it serves to the web UI in ``/service-info`` under
+``refgenie.collections``.
 """
 
-import json
 import os
-from collections.abc import Iterable
 from typing import Literal
 
-from pydantic import BaseModel, Field, HttpUrl, ValidationError
-
-from refgenie.logger import logger
+from pydantic import BaseModel, Field, HttpUrl, TypeAdapter
 
 __all__ = [
     "CollectionConfig",
     "CollectionLink",
     "GenomeLinkTemplate",
     "load_collections_from_env",
-    "validate_collections",
 ]
 
 CollectionColumn = Literal["assembly_accession", "haplotype", "assembly_level", "assembly_source"]
@@ -66,50 +62,11 @@ class CollectionConfig(BaseModel):
     columns: list[CollectionColumn] = []
 
 
-def validate_collections(declared: list, store_names: Iterable[str]) -> list[dict]:
-    """Validate declared collections against the loaded stores.
+def load_collections_from_env() -> list[CollectionConfig]:
+    """Parse ``REFGENIE_COLLECTIONS``; unset gives ``[]``.
 
-    An entry failing validation is logged and skipped; so is one naming a
-    store not in ``store_names``, and a duplicate id (the first wins).
-    Returns JSON-ready dicts.
+    Raises:
+        pydantic.ValidationError: If the value is not a JSON array of valid collections.
     """
-    known = set(store_names)
-    seen: set[str] = set()
-    result: list[dict] = []
-    for idx, entry in enumerate(declared):
-        try:
-            collection = CollectionConfig.model_validate(entry)
-        except ValidationError as e:
-            logger.error(f"REFGENIE_COLLECTIONS entry {idx} is invalid; skipping it: {e}")
-            continue
-        missing = [s for s in collection.stores if s not in known]
-        if missing:
-            logger.warning(
-                f"Collection '{collection.id}' names unknown store(s) {', '.join(missing)}; "
-                "skipping it."
-            )
-            continue
-        if collection.id in seen:
-            logger.warning(f"Duplicate collection id '{collection.id}'; keeping the first.")
-            continue
-        seen.add(collection.id)
-        result.append(collection.model_dump(mode="json"))
-    return result
-
-
-def load_collections_from_env(store_names: Iterable[str]) -> list[dict]:
-    """Read and validate ``REFGENIE_COLLECTIONS``; unset or invalid gives ``[]``."""
     raw = os.environ.get("REFGENIE_COLLECTIONS")
-    if not raw:
-        return []
-    try:
-        declared = json.loads(raw)
-    except json.JSONDecodeError as e:
-        logger.error(f"REFGENIE_COLLECTIONS is not valid JSON; ignoring it: {e}")
-        return []
-    if not isinstance(declared, list):
-        logger.error(
-            "REFGENIE_COLLECTIONS must be a JSON array of collection objects; ignoring it."
-        )
-        return []
-    return validate_collections(declared, store_names)
+    return TypeAdapter(list[CollectionConfig]).validate_json(raw) if raw else []

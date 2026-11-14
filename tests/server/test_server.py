@@ -4,7 +4,7 @@ router and the data-channel mirror.
 
 from collections import Counter
 from unittest.mock import MagicMock
-from refgenie.exceptions import MissingGenomeError
+from refgenie.exceptions import MissingGenomeError, UnservedStoreError
 
 import pytest
 import yaml
@@ -52,6 +52,7 @@ from refgenie.managers.sources.manager import IndexFile, IndexFileSection  # noq
 from refgenie.server.routers.data_channel import resolve_channel_file_url  # noqa: E402
 from refgenie.server.schemas import DataChannel  # noqa: E402
 from refgenie.utils.digest import get_dir_digest  # noqa: E402
+from refgenie.utils.seqcol import compare_level2  # noqa: E402
 
 # --- v4 server endpoints -----------------------------------------------------
 
@@ -325,6 +326,9 @@ class TestGenomesEndpoint:
 
             def served_store_names(self):
                 return ["jungle"], True
+
+            def get_collection_sequences(self, genome_digest, store_name):
+                raise UnservedStoreError(genome_digest, store_name)
 
         # Read the store's aliases now; the stub router below has no store.
         rgc_with_alias.alias.get_for_genome(digest)
@@ -1447,7 +1451,9 @@ class TestGenomeSequences:
             remote = client_rg.servers.client(url).genome.compare(digest, other)
         # The server adds its wording; the GA4GH comparison underneath is the same.
         assert remote.pop("summary") and isinstance(remote.pop("name_map"), dict)
-        assert remote == server_rg.genome.compare(digest, other)
+        assert remote == compare_level2(
+            *server_rg.genome.compare_sides(digest, other), digest, other
+        )
 
     def test_sequences_in_local_mode(self, world):
         """The local demo (``refgenie dash``) reads the same endpoint."""

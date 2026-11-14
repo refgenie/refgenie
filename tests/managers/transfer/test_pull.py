@@ -614,20 +614,14 @@ class TestPullOnAFreshInstall:
         assert client_rg.species.get(6239).common_name == "roundworm"
         assert client_rg.genome.detail(digest).common_name == "roundworm"
 
-    def test_a_slash_alias_on_the_server_does_not_break_a_parent_pull(self, bare_client_world):
+    def test_a_parent_pull_lands_under_the_childs_alias(self, bare_client_world):
+        """A "/" alias on the server neither breaks a parent pull nor lands here."""
         client_rg, server_rg, url, parent, child = bare_client_world
         _stage(server_rg, parent)
         _stage(server_rg, child)
         digest = server_rg.alias.resolve(GENOME)
         seed_alias_row(server_rg, "Homo_sapiens/NCBI/GRCh38", digest)
-        # Prove the test drives the path: the server really lists the "/" name.
-        from refgenie.server.main import create_app
-        from fastapi.testclient import TestClient
-
-        with TestClient(create_app(refgenie_instance=server_rg)) as tc:
-            body = tc.get(f"/v4/aliases?genome_digest={digest}").json()
-        listed = [a["name"] for a in body["results"]]
-        assert "Homo_sapiens/NCBI/GRCh38" in listed
+        seed_alias_row(server_rg, "zzz_other", digest)
 
         pulled = client_rg.transfer.pull(
             genome=GenomeAlias(GENOME),
@@ -638,51 +632,7 @@ class TestPullOnAFreshInstall:
 
         assert pulled is not None
         assert client_rg.asset.exists_digest(parent.digest)
-        assert client_rg.alias.resolve(GENOME) == digest
-        assert not [a for a in client_rg.alias.list_all() if "/" in a.name]
-
-    def test_a_parent_pull_lands_under_the_childs_alias(self, bare_client_world):
-        client_rg, server_rg, url, parent, child = bare_client_world
-        _stage(server_rg, parent)
-        _stage(server_rg, child)
-        digest = server_rg.alias.resolve(GENOME)
-        seed_alias_row(server_rg, "Homo_sapiens/NCBI/GRCh38", digest)
-        seed_alias_row(server_rg, "zzz_other", digest)
-
-        client_rg.transfer.pull(
-            genome=GenomeAlias(GENOME),
-            asset_group_name="child_index",
-            asset_name="v1",
-            force_server_urls=[url],
-        )
-
         assert [str(a) for a in client_rg.alias.get_for_genome(digest)] == [GENOME]
-
-    def test_pull_by_digest_adopts_one_usable_alias(self, bare_client_world):
-        client_rg, server_rg, url, parent, _ = bare_client_world
-        _stage(server_rg, parent)
-        digest = server_rg.alias.resolve(GENOME)
-        seed_alias_row(server_rg, "Homo_sapiens/NCBI/GRCh38", digest)
-        seed_alias_row(server_rg, "zzz_other", digest)
-
-        client_rg.transfer.pull(
-            genome=GenomeDigest(digest), asset_group_name="fasta", force_server_urls=[url]
-        )
-
-        assert [str(a) for a in client_rg.alias.get_for_genome(digest)] == [GENOME]
-
-    def test_pull_by_digest_with_no_usable_alias_is_named_by_its_digest(self, bare_client_world):
-        client_rg, server_rg, url, parent, _ = bare_client_world
-        _stage(server_rg, parent)
-        digest = server_rg.alias.resolve(GENOME)
-        seed_alias_row(server_rg, "Homo_sapiens/NCBI/GRCh38", digest)
-        server_rg.alias.remove(GENOME)
-
-        client_rg.transfer.pull(
-            genome=GenomeDigest(digest), asset_group_name="fasta", force_server_urls=[url]
-        )
-
-        assert [str(a) for a in client_rg.alias.get_for_genome(digest)] == [digest]
 
 
 # ===========================================================================

@@ -196,18 +196,13 @@ class ServerManager(ResourceManager):
         the server's alias endpoint; a digest is used as is.
 
         Args:
-            genome: The genome, as a ``GenomeAlias`` or a ``GenomeDigest``. A
-                plain ``str`` raises TypeError: say which one it is.
+            genome: The genome, as a ``GenomeAlias`` or a ``GenomeDigest``.
             server_urls: Servers to ask, in order. Defaults to the subscriptions.
 
         Returns:
             (server_url, digest, the server's genome record), or None if no
             server knows the genome.
         """
-        if not isinstance(genome, (GenomeAlias, GenomeDigest)):
-            raise TypeError(
-                f"locate needs a GenomeAlias or a GenomeDigest, not {type(genome).__name__}"
-            )
         for server_url in server_urls or self.subscriptions():
             try:
                 client = self.client(server_url)

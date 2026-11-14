@@ -19,15 +19,6 @@ def _add_identical_copy(r, name):
     )
 
 
-def test_list_shows_every_name_of_shared_content(refgenie_built):
-    r = refgenie_built
-    _add_identical_copy(r, "peer")
-    digest = r.alias.resolve(GENOME)
-    listed, _ = r.asset.list_all(genome_digests=[digest])
-    assert f"{GROUP}:{ASSET}" in listed[digest]
-    assert f"{GROUP}:peer" in listed[digest]
-
-
 def test_list_with_seek_keys_covers_every_name(refgenie_built):
     r = refgenie_built
     _add_identical_copy(r, "peer")

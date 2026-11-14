@@ -491,3 +491,24 @@ def build_on_disk_store(path, fasta, alias, namespace="name"):
     meta, _ = store.add_sequence_collection_from_fasta(str(fasta))
     store.add_collection_alias(namespace, alias, meta.digest)
     return meta.digest
+
+
+def server_with_stores(*stores, rg=None):
+    """A server-mode Refgenie with on-disk ``stores`` registered and their genomes synced.
+
+    Each store is ``(name, path, priority)``. With ``rg``, the stores are added
+    to that instance instead of a new one over a fresh in-memory catalog.
+    """
+    from refgenie import Refgenie
+    from refgenie.cli.commands.store import _sync_one_store
+    from refgenie.db.tables import StoreType
+
+    if rg is None:
+        rg = Refgenie(database_engine=make_engine(), suppress_migrations=True, server_mode=True)
+        rg.database.create_tables()
+    for name, path, priority in stores:
+        rg.store.add(name, str(path), StoreType.on_disk, priority=priority)
+    priorities = {s.name: s.priority for s in rg.store.list_all()}
+    for name, _, _ in stores:
+        _sync_one_store(rg, rg.store.get(name), priorities, 100)
+    return rg

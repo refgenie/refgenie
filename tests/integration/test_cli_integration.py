@@ -15,6 +15,7 @@ from pathlib import Path
 
 import pytest
 
+from refgenie.utils.seqcol import compare_level2
 from tests.support.factories import RCRSD_FASTA, TESTS_DATA_DIR, samtools_available
 from tests.integration.helpers import (
     TEST_DB_URL,
@@ -511,7 +512,9 @@ class TestCLIScenarios:
 
         # -- Genome compare (same genome) --
         genome_digest = cli_multi_genome_config["genome_digest"]
-        result = rg.genome.compare(genome_digest, genome_digest)
+        result = compare_level2(
+            *rg.genome.compare_sides(genome_digest, genome_digest), genome_digest, genome_digest
+        )
         assert result is not None
         assert "digests" in result
         assert result["digests"]["a"] == genome_digest

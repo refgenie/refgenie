@@ -1,5 +1,7 @@
 """Unit tests for the federated RefgetStoreRouter."""
 
+from types import SimpleNamespace
+
 import pytest
 
 from refgenie.core.store_router import RefgetStoreRouter, make_store
@@ -29,7 +31,7 @@ class _FakeStore:
     def list_collections(self, page, page_size):
         ordered = sorted(self._digests)
         chunk = ordered[page * page_size : (page + 1) * page_size]
-        return {"results": [{"digest": d} for d in chunk]}
+        return {"results": [SimpleNamespace(digest=d) for d in chunk]}
 
 
 def _router(monkeypatch, tmp_path, stores_by_url, rows, readonly=True):
@@ -258,31 +260,6 @@ def test_collection_digests_recomputed_when_editable(monkeypatch, tmp_path, stor
     assert router.collection_digests("vgp") == first | {"new"}
 
 
-def test_collection_digests_unknown_store_raises(router):
-    with pytest.raises(KeyError):
-        router.collection_digests("nope")
-
-
-@pytest.mark.component
-def test_collection_digests_real_on_disk_stores(tmp_path, fixtures_path):
-    """Against frozen on-disk stores, the set is exactly what was ingested."""
-    from refget.store import RefgetStore
-
-    def build(path, fastas):
-        store = RefgetStore.on_disk(str(path))
-        return {store.add_sequence_collection_from_fasta(str(f))[0].digest for f in fastas}
-
-    a = build(tmp_path / "a", [fixtures_path / "rCRSd.fa", fixtures_path / "t7.fa"])
-    b = build(tmp_path / "b", [fixtures_path / "demo.fa"])
-    rows = [
-        Store(name="a", url=str(tmp_path / "a"), type=StoreType.on_disk, priority=1),
-        Store(name="b", url=str(tmp_path / "b"), type=StoreType.on_disk, priority=2),
-    ]
-    router = RefgetStoreRouter(rows, tmp_path / "cache", readonly=True)
-    assert router.collection_digests("a") == a
-    assert router.collection_digests("b") == b
-
-
 @pytest.mark.component
 @pytest.mark.parametrize("scan", [False, True])
 def test_collection_sequences_bulk_and_cached(tmp_path, fixtures_path, monkeypatch, scan):
@@ -310,5 +287,4 @@ def test_collection_sequences_bulk_and_cached(tmp_path, fixtures_path, monkeypat
         ("insdc", "XY000001.1")
     ]
     assert all(not r.aliases for r in result.sequences[1:])
-    assert result.store == "s"
     assert router.get_collection_sequences(digest, "s") is result

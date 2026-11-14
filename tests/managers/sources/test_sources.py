@@ -15,7 +15,8 @@ from refgenie.managers.sources.genomes import (
     make_source,
     store_url_from_service_info,
 )
-from tests.support.factories import make_server_rgc
+from refgenie.utils.seqcol import compare_level2
+from tests.support.factories import RCRSD_FASTA, build_on_disk_store, server_with_stores
 from tests.support.remotes import MockRemoteSource, assert_mock_remote_source_conforms
 from tests.support.server import make_server_app, needs_server
 
@@ -27,26 +28,27 @@ API_URL = "https://api.refgenie.org"
 
 @contextmanager
 def served_by(app):
-    """Answer every ``refgenie.utils.http`` request with the real ``app``.
+    """Answer every ``refgenie.utils.http`` request with the real, started ``app``.
 
-    The TestClient is not entered, so the lifespan never loads the store. The
-    store source is mocked; yields that mock.
+    The client-side store source is mocked; yields that mock.
     """
     from fastapi.testclient import TestClient
 
     with (
-        patch("refgenie.utils.http.make_client", return_value=nullcontext(TestClient(app))),
+        TestClient(app) as client,
+        patch("refgenie.utils.http.make_client", return_value=nullcontext(client)),
         patch("refgenie.managers.sources.genomes.RefgetStoreSource") as store,
     ):
         yield store
 
 
-def api_app(tmp_path, *, store_url=STORE_URL, web_dist=None):
-    """A real server app whose store registry holds ``store_url`` (if any)."""
-    rgc = make_server_rgc(tmp_path)
-    if store_url:
-        rgc.store.add("jungle", store_url)
-    return make_server_app(rgc, web_dist=web_dist)
+def api_app(tmp_path, *, store=True, web_dist=None):
+    """A real server app serving one on-disk store, ``tmp_path / "jungle"`` (if ``store``)."""
+    stores = []
+    if store:
+        build_on_disk_store(tmp_path / "jungle", RCRSD_FASTA, "rCRSd")
+        stores = [("jungle", tmp_path / "jungle", 10)]
+    return make_server_app(server_with_stores(*stores), web_dist=web_dist)
 
 
 @pytest.fixture
@@ -110,15 +112,17 @@ _VALID_MANIFEST = {
 
 @needs_server
 class TestServiceInfoBootstrap:
+    pytestmark = pytest.mark.component
+
     def test_server_resolves_to_its_store(self, tmp_path):
         with served_by(api_app(tmp_path)) as store:
             source = RefgenieServerSource(API_URL)
-        assert source.store_url == STORE_URL
+        assert source.store_url == str(tmp_path / "jungle")
         assert source.url == API_URL
-        assert store.call_args[0][0] == STORE_URL
+        assert store.call_args[0][0] == source.store_url
 
     def test_server_without_a_store_is_refused(self, tmp_path):
-        with served_by(api_app(tmp_path, store_url=None)):
+        with served_by(api_app(tmp_path, store=False)):
             with pytest.raises(ConnectionError) as exc:
                 RefgenieServerSource(API_URL)
         assert API_URL in str(exc.value)
@@ -210,6 +214,7 @@ class TestStoreUrlParsing:
 
 
 @needs_server
+@pytest.mark.component
 def test_make_source_caches_by_normalized_url(tmp_path):
     with served_by(api_app(tmp_path)):
         first = make_source(API_URL)
@@ -426,7 +431,9 @@ class TestRemoteGenome:
         with patch.object(
             refgenie_minimal.genome.__class__, "_get_remote_level2", return_value=level2
         ) as remote:
-            result = refgenie_minimal.genome.compare(digest_a, digest_b)
+            result = compare_level2(
+                *refgenie_minimal.genome.compare_sides(digest_a, digest_b), digest_a, digest_b
+            )
         assert {c.args for c in remote.call_args_list} == {
             ("https://store.example.com", digest_a),
             ("https://store.example.com", digest_b),
@@ -456,7 +463,11 @@ class TestRemoteGenome:
             "_get_remote_level2",
             return_value=mock_collection_data,
         ):
-            result = refgenie_minimal.genome.compare(local_digest, remote_digest)
+            result = compare_level2(
+                *refgenie_minimal.genome.compare_sides(local_digest, remote_digest),
+                local_digest,
+                remote_digest,
+            )
         assert set(result) >= {"digests", "attributes", "array_elements"}
 
     def test_list_shows_remote_status(
@@ -528,11 +539,10 @@ class TestRemoteGenome:
 
     def test_compare_level2_helper(self):
         """compare_level2 returns the GA4GH seqcol comparison object."""
-        from refgenie.utils.seqcol import compare_level2 as _compare_level2
 
         level2_a = {"names": ["chr1", "chr2"], "lengths": [100, 200], "sequences": ["s1", "s2"]}
         level2_b = {"names": ["chr1", "chr3"], "lengths": [100, 300], "sequences": ["s1", "s3"]}
-        result = _compare_level2(level2_a, level2_b, "digest_a", "digest_b")
+        result = compare_level2(level2_a, level2_b, "digest_a", "digest_b")
 
         assert result["digests"] == {"a": "digest_a", "b": "digest_b"}
         assert sorted(result["attributes"]["a_and_b"]) == ["lengths", "names", "sequences"]

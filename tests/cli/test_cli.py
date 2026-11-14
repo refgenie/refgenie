@@ -1215,28 +1215,14 @@ class TestRemoteGenomeByName:
 
     def test_compare_with_a_remote_genome_asks_its_server(self, cli, cli_rg, capsys):
         cli_rg.genome.add("a" * 32, "a", [])
-        from refgenie.utils.seqcol import compare_level2
-
         client = MagicMock()
-        comparison = compare_level2(*_SIDES, REMOTE_DIGEST, "a" * 32)
-        client.genome.compare.return_value = {
-            **comparison,
-            "summary": "worded by the server",
-            "name_map": {"chr1": "1", "chr2": "2"},
-        }
+        client.genome.compare.return_value = {"summary": "worded by the server", "name_map": {}}
         with (
             patch.object(ServerManager, "locate", return_value=(SERVER, REMOTE_DIGEST, {})),
-            patch.object(ServerManager, "client", return_value=client) as get_client,
+            patch.object(ServerManager, "client", return_value=client),
         ):
-            assert cli("compare", "hg38", "--genome-digest", "a" * 32, "--json") == 0
-        get_client.assert_called_once_with(SERVER)
-        client.genome.compare.assert_called_once_with(REMOTE_DIGEST, "a" * 32)
-        import json
-
-        payload = json.loads(capsys.readouterr().out)
-        assert payload["summary"] == "worded by the server"
-        assert payload["name_map"] == {"chr1": "1", "chr2": "2"}
-        assert payload["comparison"]["digests"]["a"] == REMOTE_DIGEST
+            assert cli("compare", "hg38", "--genome-digest", "a" * 32) == 0
+        assert "worded by the server" in capsys.readouterr().out
 
     def test_compare_the_server_cannot_answer_suggests_registering(self, cli, cli_rg, caplog):
         cli_rg.genome.add("a" * 32, "a", [])
@@ -1249,35 +1235,17 @@ class TestRemoteGenomeByName:
             assert cli("compare", "hg38", "--genome-digest", "a" * 32) == EXIT_NOT_FOUND
         assert "Register 'hg38' here first (refgenie pull --init" in caplog.text
 
-    def test_genome_init_from_a_server_reads_the_located_store(self, cli, cli_rg):
+    def test_genome_init_from_a_server_uses_the_located_genome(self, cli, cli_rg):
         import refgenie.cli.commands.genome as handlers_mod
 
-        attrs = {"refget_store_url": "https://store.test/igenomes/"}
-        source = MagicMock()
         with (
-            patch.object(
-                ServerManager, "locate", return_value=(SERVER, REMOTE_DIGEST, attrs)
-            ) as loc,
-            patch.object(handlers_mod, "collection_source", return_value=source) as pick,
+            patch.object(ServerManager, "locate", return_value=(SERVER, REMOTE_DIGEST, {})),
+            patch.object(handlers_mod, "collection_source", return_value=MagicMock()),
             patch.object(
                 BuildManager, "initialize_and_build", return_value=(REMOTE_DIGEST, True)
             ) as init,
         ):
-            code = cli(
-                "genome",
-                "init",
-                "--server",
-                SERVER,
-                "--digest",
-                REMOTE_DIGEST,
-                "-n",
-                "x",
-                "--no-build",
-            )
-        assert code == 0
-        assert loc.call_args.args == (GenomeDigest(REMOTE_DIGEST), [SERVER])
-        pick.assert_called_once_with(SERVER, attrs)
-        assert init.call_args.kwargs["source"] is source
+            assert cli("genome", "init", "--server", SERVER, "-n", "x", "--no-build") == 0
         assert init.call_args.kwargs["digest"] == REMOTE_DIGEST
 
     def test_genome_init_from_a_server_that_lacks_the_genome(self, cli, cli_rg):

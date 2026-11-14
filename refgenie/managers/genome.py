@@ -36,7 +36,7 @@ from refgenie.models import (
 from refgenie.plugins.events import NULL_EVENTS, EventSink, update_scope
 from refgenie.plugins.hooks import Change
 from refgenie.utils.search import Search, alias_digests_matching
-from refgenie.utils.seqcol import compare_level2, seqcol_level2
+from refgenie.utils.seqcol import seqcol_level2
 from refgenie.utils.species_file import SpeciesEntry
 from refgenie.utils.tables import build_table
 
@@ -535,18 +535,6 @@ class GenomeManager(ResourceManager):
         """The store that owns ``genome``, with its collection loaded."""
         return self._store_router_getter().store_for_genome(genome.digest, genome.store_name)
 
-    def get_served(self, digest: GenomeDigest) -> Genome:
-        """The genome, if this refgenie serves the store it lives in.
-
-        Raises:
-            MissingGenomeError: If there is no such genome.
-            UnservedStoreError: If its store is not served here.
-        """
-        genome = self.get(digest)
-        if not self._store_router_getter().serves(genome.store_name):
-            raise UnservedStoreError(digest, genome.store_name)
-        return genome
-
     def level2(self, digest: GenomeDigest) -> dict:
         """A genome's level-2 collection, from the store its ``store_name`` names.
 
@@ -554,7 +542,7 @@ class GenomeManager(ResourceManager):
             MissingGenomeError: If there is no such genome, its store is not
                 served, or the store lacks the collection.
         """
-        genome = self.get_served(digest)
+        genome = self.get(digest)
         return self._owning_store(genome).get_collection_level2(digest)
 
     def sequences(self, digest: GenomeDigest):
@@ -564,7 +552,7 @@ class GenomeManager(ResourceManager):
             MissingGenomeError: If there is no such genome, its store is not
                 served, or the store lacks the collection.
         """
-        genome = self.get_served(digest)
+        genome = self.get(digest)
         return self._store_router_getter().get_collection_sequences(digest, genome.store_name)
 
     def get_metadata(self, digest: GenomeDigest) -> dict:
@@ -590,24 +578,22 @@ class GenomeManager(ResourceManager):
 
         return result
 
-    def compare(self, digest_a: GenomeDigest, digest_b: GenomeDigest) -> dict:
-        """Compare two genomes by their digests.
+    def compare_sides(
+        self, digest_a: GenomeDigest, digest_b: GenomeDigest, *, remote: bool = True
+    ) -> tuple[dict, dict]:
+        """The level 2 of each of two genomes, for :func:`refgenie.utils.seqcol.compare_level2`.
 
-        Returns the GA4GH seqcol comparison object (``digests``, ``attributes``,
-        ``array_elements``), wherever the two genomes live. Every path builds
-        each side with :func:`refgenie.utils.seqcol.seqcol_level2`, so the
-        server, the CLI and MCP all return the same object.
+        Each side is built with :func:`refgenie.utils.seqcol.seqcol_level2`, so
+        the server, the CLI and MCP all compare the same objects. With
+        ``remote=False``, a genome is read from its store only, never from its
+        ``remote_url``.
         """
-        return compare_level2(*self.compare_sides(digest_a, digest_b), digest_a, digest_b)
-
-    def compare_sides(self, digest_a: GenomeDigest, digest_b: GenomeDigest) -> tuple[dict, dict]:
-        """The level 2 of each of two genomes, as :meth:`compare` reads them."""
         return (
-            self._compare_side(self.get(digest_a)),
-            self._compare_side(self.get(digest_b)),
+            self._compare_side(self.get(digest_a), remote),
+            self._compare_side(self.get(digest_b), remote),
         )
 
-    def _compare_side(self, genome: Genome) -> dict:
+    def _compare_side(self, genome: Genome, remote: bool) -> dict:
         """One side of a compare: from the genome's store, else from its ``remote_url``.
 
         The remote is read only when the store that ``store_name`` picks does
@@ -619,7 +605,7 @@ class GenomeManager(ResourceManager):
         except UnservedStoreError:
             raise
         except MissingGenomeError:
-            if not genome.remote_url:
+            if not (remote and genome.remote_url):
                 raise
         return self._get_remote_level2(genome.remote_url, genome.digest)
 

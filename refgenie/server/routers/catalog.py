@@ -126,23 +126,15 @@ def _genome_not_found(digest: str, rgc: Refgenie) -> HTTPException:
     )
 
 
-def _unserved(error: UnservedStoreError) -> HTTPException:
-    """The 404 for a genome whose store this server does not serve."""
-    return HTTPException(
-        status_code=404, detail={"code": ErrorCode.GENOME_NOT_FOUND, "message": str(error)}
-    )
-
-
 def _no_collection(error: Exception, digests: str) -> HTTPException:
-    """The 404 for a genome with no sequence collection in its store."""
-    if isinstance(error, UnservedStoreError):
-        return _unserved(error)
+    """The 404 for a genome whose store is not served here or lacks its collection."""
+    message = (
+        str(error)
+        if isinstance(error, UnservedStoreError)
+        else f"No sequence collection for genome {digests} in this refgenie's stores"
+    )
     return HTTPException(
-        status_code=404,
-        detail={
-            "code": ErrorCode.GENOME_NOT_FOUND,
-            "message": f"No sequence collection for genome {digests} in this refgenie's stores",
-        },
+        status_code=404, detail={"code": ErrorCode.GENOME_NOT_FOUND, "message": message}
     )
 
 
@@ -152,7 +144,7 @@ def get_genome(digest: str, rgc: Refgenie = Depends(get_refgenie)):
     try:
         detail = rgc.genome.detail(digest)
     except UnservedStoreError as e:
-        raise _unserved(e) from None
+        raise _no_collection(e, digest) from None
     except MissingGenomeError:
         raise _genome_not_found(digest, rgc) from None
     response = GenomeDetailResponse.model_validate(detail.genome, from_attributes=True)
@@ -191,15 +183,11 @@ def compare_genomes(digest: str, other: str, rgc: Refgenie = Depends(get_refgeni
     name to B's for each sequence they share under another name, so a client
     can word the result without fetching both collections.
     """
-    from refgenie.utils.seqcol import compare_level2, seqcol_level2, summarize_comparison
+    from refgenie.utils.seqcol import compare_level2, summarize_comparison
 
     try:
-        a = rgc.genome.get_served(digest)
-        b = rgc.genome.get_served(other)
-        # The loaded stores, never a genome's remote_url; the same comparison
-        # `refgenie compare` and MCP return.
-        side_a = seqcol_level2(rgc.store_router.store_for_genome(digest, a.store_name), digest)
-        side_b = seqcol_level2(rgc.store_router.store_for_genome(other, b.store_name), other)
+        # The loaded stores, never a genome's remote_url.
+        side_a, side_b = rgc.genome.compare_sides(digest, other, remote=False)
     except (MissingGenomeError, ValueError) as e:  # ValueError: no level 2 in the store
         raise _no_collection(e, f"{digest} or {other}") from None
     result = compare_level2(side_a, side_b, digest, other)
@@ -507,10 +495,10 @@ def get_alias(name: str, rgc: Refgenie = Depends(get_refgenie)):
         raise HTTPException(status_code=404, detail=f"Alias '{name}' not found")
 
     try:
-        genome = rgc.genome.get_served(digest)
+        genome = rgc.genome.get(digest)
         collection = rgc.store_router.get_collection_level2(digest, genome.store_name)
     except UnservedStoreError as e:
-        raise _unserved(e) from None
+        raise _no_collection(e, digest) from None
     except MissingGenomeError:
         raise HTTPException(
             status_code=404, detail=f"Collection data not found for {digest}"

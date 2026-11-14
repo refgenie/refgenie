@@ -60,17 +60,7 @@ dependencies = [
     # so the driver cannot live behind an extra.
     "psycopg>=3.3.8",
     "pyyaml>=6.0.3",
-    # 0.12.0 is the first release carrying what the server needs:
-    # `refget.seqcolapi.create_seqcol_app` / `prepare_store` and
-    # `create_refget_router(mount_prefix=...)` (the seqcol-store-app-factory
-    # work). Older refget makes `refgenie.server.main` raise TypeError.
-    #
-    # refget.seqcolapi is gated: a base `pip install refget` ships the code but
-    # not fastapi/starlette, so importing it raises. Everything it actually
-    # needs (fastapi via refgenie[dash], sqlmodel below) is already a
-    # refgenie[server] dependency, and only refgenie.server.main imports it, so
-    # refget's own `seqcolapi` extra -- which additionally pulls uvicorn and
-    # psycopg2-binary for its PostgreSQL app -- is deliberately not requested.
+    # refget.seqcolapi's fastapi comes from refgenie[dash], so refget's seqcolapi extra is not needed.
     "refget>=0.13.0",
     "rich>=15.0.0",
     "sqlmodel>=0.0.48",
@@ -86,11 +76,6 @@ snakemake = [
     "snakemake>=9.16.3,<9.17",
 ]
 dash = [
-    # Floor is 0.141.1: the route-registration guards in tests/server/test_server.py
-    # use fastapi.routing.iter_route_contexts to walk effective (prefixed)
-    # routes, since 0.137 include_router no longer flattens child routes onto
-    # app.routes. The guards import that walker defensively and skip if it is
-    # absent, so a version drift never crashes test collection.
     "fastapi>=0.162.2",
     "uvicorn>=0.54.0",
 ]

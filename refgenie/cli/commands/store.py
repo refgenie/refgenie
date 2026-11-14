@@ -131,7 +131,7 @@ def handle_store_apply(cmd, refgenie) -> None:
     if not isinstance(declared, list):
         fail(f"Store declaration {cmd.file} must be a JSON array of store objects")
     try:
-        changes = refgenie.store.apply_declaration(declared, disable_missing=True)
+        changes = refgenie.store.apply_declaration(declared)
     except ValueError as e:
         fail(f"Invalid store declaration: {e}")
     rows = [(kind, name) for kind, names in changes.items() for name in names]

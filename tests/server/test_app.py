@@ -8,7 +8,13 @@ from pathlib import Path
 import pytest
 
 from tests.support.actions import CAPABILITY_KEY_SET
-from tests.support.factories import fake_digest, make_engine, make_server_rgc
+from tests.support.factories import (
+    build_on_disk_store,
+    fake_digest,
+    make_engine,
+    make_server_rgc,
+    server_with_stores,
+)
 from tests.support.server import (
     assert_no_duplicate_routes,
     assert_unique_operation_ids,
@@ -734,10 +740,9 @@ def test_enums_match_the_frontend_unions(openapi_schema, enum_name, members):
 # Collection views (REFGENIE_COLLECTIONS -> /service-info refgenie.collections)
 # ===========================================================================
 
-from refgenie.server.collections import (  # noqa: E402
-    load_collections_from_env,
-    validate_collections,
-)
+from pydantic import ValidationError  # noqa: E402
+
+from refgenie.server.collections import load_collections_from_env  # noqa: E402
 
 _COLLECTIONS_EXAMPLE = _REPO_ROOT / "deployment" / "collections.example.json"
 
@@ -756,49 +761,38 @@ def _collection(**overrides):
 class TestCollectionConfig:
     def test_unset_is_empty(self, monkeypatch):
         monkeypatch.delenv("REFGENIE_COLLECTIONS", raising=False)
-        assert load_collections_from_env(["vgp"]) == []
+        assert load_collections_from_env() == []
 
     def test_valid_entry_gets_defaults(self, monkeypatch):
         monkeypatch.setenv("REFGENIE_COLLECTIONS", json.dumps([_collection()]))
-        [got] = load_collections_from_env(["vgp"])
-        assert got["id"] == "vgp"
-        assert got["short_name"] is None and got["note"] is None and got["logo_url"] is None
-        assert got["links"] == [] and got["genome_links"] == [] and got["columns"] == []
+        [got] = load_collections_from_env()
+        assert got.id == "vgp"
+        assert got.short_name is None and got.note is None and got.logo_url is None
+        assert got.links == [] and got.genome_links == [] and got.columns == []
 
-    def test_invalid_json_is_empty(self, monkeypatch):
+    @pytest.mark.parametrize(
+        "raw",
+        [
+            "[{not json",
+            json.dumps(_collection()),
+            json.dumps([_collection(accent_color="teal")]),
+            json.dumps([_collection(columns=["bogus"])]),
+        ],
+    )
+    def test_a_bad_value_raises(self, monkeypatch, raw):
+        monkeypatch.setenv("REFGENIE_COLLECTIONS", raw)
+        with pytest.raises(ValidationError):
+            load_collections_from_env()
+
+    def test_a_bad_value_stops_startup(self, monkeypatch, rgc):
         monkeypatch.setenv("REFGENIE_COLLECTIONS", "[{not json")
-        assert load_collections_from_env(["vgp"]) == []
-
-    def test_non_list_is_empty(self, monkeypatch):
-        monkeypatch.setenv("REFGENIE_COLLECTIONS", '{"id": "vgp"}')
-        assert load_collections_from_env(["vgp"]) == []
-
-    def test_bad_entry_drops_only_that_entry(self):
-        got = validate_collections(
-            [_collection(id="bad", accent_color="teal"), _collection()], ["vgp"]
-        )
-        assert [c["id"] for c in got] == ["vgp"]
-
-    def test_undeclared_store_drops_the_entry(self):
-        got = validate_collections(
-            [_collection(id="hprc", stores=["hprc"]), _collection()], ["vgp"]
-        )
-        assert [c["id"] for c in got] == ["vgp"]
-
-    def test_duplicate_id_keeps_the_first(self):
-        got = validate_collections([_collection(name="first"), _collection(name="second")], ["vgp"])
-        assert [c["name"] for c in got] == ["first"]
-
-    def test_unknown_column_is_rejected(self):
-        assert validate_collections([_collection(columns=["bogus"])], ["vgp"]) == []
+        with pytest.raises(ValidationError):
+            make_server_app(rgc)
 
     def test_deployment_example_is_valid(self, monkeypatch):
-        """deployment/collections.example.json loads against a vgp store."""
+        """deployment/collections.example.json parses."""
         monkeypatch.setenv("REFGENIE_COLLECTIONS", _COLLECTIONS_EXAMPLE.read_text())
-        got = load_collections_from_env({"vgp"})
-        assert [c["id"] for c in got] == ["vgp"]
-        assert got[0]["logo_url"] is None
-        assert "official" not in _COLLECTIONS_EXAMPLE.read_text().lower()
+        assert [c.id for c in load_collections_from_env()] == ["vgp"]
 
 
 @pytest.mark.component
@@ -806,18 +800,8 @@ class TestCollectionsInServiceInfo:
     @pytest.fixture
     def store_rg(self, tmp_path, fixtures_path):
         """A server-mode refgenie with one on-disk store named 'vgp'."""
-        from refget.store import RefgetStore
-
-        from refgenie import Refgenie
-        from refgenie.db.tables import StoreType
-
-        RefgetStore.on_disk(str(tmp_path / "vgp")).add_sequence_collection_from_fasta(
-            str(fixtures_path / "t7.fa")
-        )
-        rg = Refgenie(database_engine=make_engine(), suppress_migrations=True, server_mode=True)
-        rg.database.create_tables()
-        rg.store.add("vgp", str(tmp_path / "vgp"), StoreType.on_disk, priority=20)
-        return rg
+        build_on_disk_store(tmp_path / "vgp", fixtures_path / "t7.fa", "t7")
+        return server_with_stores(("vgp", tmp_path / "vgp", 20))
 
     def test_server_serves_declared_collections(self, store_rg, monkeypatch):
         declared = [

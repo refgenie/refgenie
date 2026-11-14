@@ -9,9 +9,8 @@ restart. In local mode
 (``readonly=False``) it holds the editable on-disk store.
 """
 
-import threading
+import functools
 import time
-from collections import OrderedDict
 from pathlib import Path
 
 from refget.store import ReadonlyRefgetStore, RefgetStore
@@ -98,18 +97,18 @@ class RefgetStoreRouter:
             stores: The store rows to open.
             cache_dir: Where remote stores cache what they fetch.
             readonly: Load each store in full and freeze it (server mode).
-            sole_store: The one store (there must be exactly one) holds every
-                genome this node reads, so a genome's ``store_name`` does not
-                pick it (local mode).
+            sole_store: The one store holds every genome this node reads, so a
+                genome's ``store_name`` does not pick it (local mode).
         """
-        if sole_store and len(stores) != 1:
-            raise ValueError("A sole-store router needs exactly one store")
         self._cache_dir = Path(cache_dir)
         self._readonly = readonly
         self._sole_store = sole_store
-        #: (store, digest) -> rows, for frozen stores only (collections never change).
-        self._sequences_cache: OrderedDict[tuple[str, str], CollectionSequences] = OrderedDict()
-        self._sequences_lock = threading.Lock()
+        #: (store name, digest) -> rows; frozen stores never change, so they are cached.
+        self._sequences = (
+            functools.lru_cache(maxsize=32)(self._read_collection_sequences)
+            if readonly
+            else self._read_collection_sequences
+        )
 
         #: Cached digest sets per store; filled only when the stores are frozen.
         self._digests: dict[str, frozenset[str]] = {}
@@ -172,14 +171,8 @@ class RefgetStoreRouter:
         digests: set[str] = set()
         page = 0
         while True:
-            result = store.list_collections(page=page, page_size=page_size)
-            items = (result or {}).get("results", [])
-            for item in items:
-                digest = (
-                    item.get("digest") if isinstance(item, dict) else getattr(item, "digest", None)
-                )
-                if digest:
-                    digests.add(digest)
+            items = store.list_collections(page=page, page_size=page_size)["results"]
+            digests.update(item.digest for item in items)
             if len(items) < page_size:
                 break
             page += 1
@@ -190,20 +183,14 @@ class RefgetStoreRouter:
 
     # --- Dispatch -----------------------------------------------------------
 
-    @property
-    def sole_store(self) -> bool:
-        """Whether one store holds every genome this router reads (local mode)."""
-        return self._sole_store
-
     def serves(self, store_name: str | None) -> bool:
         """Whether a genome whose ``store_name`` is this is read through this router.
 
         ``None`` means a genome this node built itself, held by its own
-        ``local`` store.
+        ``local`` store. Every genome is served when
+        :meth:`served_store_names` is ``None``.
         """
-        if self._sole_store:
-            return True
-        return (store_name or LOCAL_STORE_NAME) in self._stores
+        return self.served_store_names() is None or (store_name or LOCAL_STORE_NAME) in self._stores
 
     def served_store_names(self) -> tuple[list[str], bool] | None:
         """The ``store_name`` values of the genomes this router serves.
@@ -229,21 +216,19 @@ class RefgetStoreRouter:
 
         Raises:
             UnservedStoreError: If this router does not serve that store.
-            MissingGenomeError: If the store does not hold the collection.
+            MissingGenomeError: If the store does not hold the collection, or
+                there are no stores.
         """
-        if self._sole_store:
-            store = self._stores[self._order[0]]
-        else:
-            store = self._stores.get(store_name or LOCAL_STORE_NAME)
-            if store is None:
-                raise UnservedStoreError(genome_digest, store_name)
-        if not store.is_collection_loaded(genome_digest):
-            raise MissingGenomeError(genome_digest)
-        return store
+        return self._stores[self._owner(genome_digest, store_name)]
 
-    def _store_name_for(self, store: AnyRefgetStore) -> str:
-        """The registered name of an opened store."""
-        return next(name for name, s in self._stores.items() if s is store)
+    def _owner(self, genome_digest: GenomeDigest, store_name: str | None) -> str:
+        """The name of the store :meth:`store_for_genome` returns."""
+        if not self.serves(store_name):
+            raise UnservedStoreError(genome_digest, store_name)
+        name = self._order[0] if self._sole_store else store_name or LOCAL_STORE_NAME
+        if name not in self._stores or not self._stores[name].is_collection_loaded(genome_digest):
+            raise MissingGenomeError(genome_digest)
+        return name
 
     # --- Genome-routed pass-throughs ---------------------------------------
     # Each takes the genome's ``store_name``, which picks the store.
@@ -270,44 +255,23 @@ class RefgetStoreRouter:
             return None
         return store.get_fhr_metadata(genome_digest)
 
-    #: Most collections :meth:`get_collection_sequences` keeps per router.
-    SEQUENCES_CACHE_SIZE = 32
-
     def get_collection_sequences(
         self, genome_digest: GenomeDigest, store_name: str | None
     ) -> CollectionSequences:
         """A genome's sequences with metadata and aliases.
 
-        Sequence records come from one ``get_collection`` call, and aliases
-        from a per-store index built once, so the cost does not grow with a
-        store call per sequence. Frozen stores never change, so results are
-        kept in a small LRU cache keyed by (store, digest).
+        Sequence records come from one store call, and a large collection's
+        aliases from one pass over the store's alias tables, so the cost does
+        not grow with a store call per sequence. Frozen stores never change,
+        so results are kept in a small LRU cache keyed by (store, digest).
 
         Raises:
             MissingGenomeError: If the genome's store is not served or lacks it.
         """
-        store = self.store_for_genome(genome_digest, store_name)
-        name = self._store_name_for(store)
-        key = (name, genome_digest)
-        if self._readonly:
-            with self._sequences_lock:
-                cached = self._sequences_cache.get(key)
-                if cached is not None:
-                    self._sequences_cache.move_to_end(key)
-                    return cached
-        result = self._read_collection_sequences(name, store, genome_digest)
-        if self._readonly:
-            with self._sequences_lock:
-                self._sequences_cache[key] = result
-                self._sequences_cache.move_to_end(key)
-                while len(self._sequences_cache) > self.SEQUENCES_CACHE_SIZE:
-                    self._sequences_cache.popitem(last=False)
-        return result
+        return self._sequences(self._owner(genome_digest, store_name), genome_digest)
 
     #: From this many sequences up, aliases come from one pass over the
-    #: store's alias tables rather than a store call per sequence. Each such
-    #: call scans the tables (about 4 ms on the vgp store); one pass costs
-    #: about 0.5 s however many sequences there are.
+    #: store's alias tables rather than a store call per sequence.
     ALIAS_SCAN_MIN_SEQUENCES = 100
 
     def _sequence_aliases(self, store: AnyRefgetStore, digests: set[str]):
@@ -330,9 +294,10 @@ class RefgetStoreRouter:
         return found
 
     def _read_collection_sequences(
-        self, name: str, store: AnyRefgetStore, genome_digest: GenomeDigest
+        self, name: str, genome_digest: GenomeDigest
     ) -> CollectionSequences:
-        """Build :meth:`get_collection_sequences`'s result from the store."""
+        """Build :meth:`get_collection_sequences`'s result from store ``name``."""
+        store = self._stores[name]
         if self._readonly:
             # One call; a frozen store hands back records without sequence bytes.
             records = [record.metadata for record in store.get_collection(genome_digest).sequences]
@@ -361,7 +326,6 @@ class RefgetStoreRouter:
             )
         return CollectionSequences(
             digest=genome_digest,
-            store=name,
             level1=dict(store.get_collection_level1(genome_digest)),
             sequences=rows,
             collection_aliases=[
