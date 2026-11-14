@@ -255,7 +255,9 @@ def test_get_asset_loads_parents_and_children(mcp_refgenie, chain):
     assert [c.digest for c in asset.children] == [chain["leaf"]]
     assert asset.asset_class == "fasta"
     assert asset.names == ["mid"]
-    assert asset.pull_command == "refgenie pull hg38/fasta:mid"
+    # stdio: the asset is local, so it says how to seek it, not pull it.
+    assert asset.seek_command == "refgenie seek hg38/fasta:mid"
+    assert asset.pull_command is None
     # stdio: no archive URL, and a chain asset with no seek keys has no files.
     assert asset.archive_url is None
     assert asset.files == {}
@@ -293,6 +295,7 @@ def _add_seek_keys(rgc, digest, **keys):
 
 @requires_mcp
 def test_pull_command_uses_the_shortest_plain_alias(mcp_refgenie, chain, monkeypatch):
+    tools.set_refgenie(mcp_refgenie, public_url="https://rg.example")
     mcp_refgenie.alias.add("GRCh38-igenomes-ncbi", A)
     mcp_refgenie.alias.add("hs38", A)
     assert tools.get_asset(chain["mid"]).pull_command == "refgenie pull hg38/fasta:mid"

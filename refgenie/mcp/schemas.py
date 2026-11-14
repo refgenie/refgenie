@@ -116,8 +116,10 @@ class AssetDetail(AssetRow):
     #: Path seek key -> where its file is: a local path, or a URL on a server
     #: (file-served assets only).
     files: dict[str, str]
-    #: The command that pulls this asset.
-    pull_command: str
+    #: On a server: the command that pulls this asset.
+    pull_command: str | None = None
+    #: Over stdio (the asset is local): the command that prints its path.
+    seek_command: str | None = None
 
 
 class RecipeRow(BaseModel):
