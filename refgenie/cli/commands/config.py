@@ -19,7 +19,7 @@ class ConfigGetModel(BaseModel):
 
 
 class ConfigParser(BaseModel):
-    """Intermediate parser for config subcommands."""
+    """Show refgenie's configuration (`refgenie config get`, or plain `refgenie config`)."""
 
     get: CliSubCommand[ConfigGetModel] = Field(description="Get config.")
 

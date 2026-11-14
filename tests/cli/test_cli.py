@@ -355,16 +355,6 @@ class TestTopLevelHelp:
         assert "subcommands:" not in help_output
 
 
-class TestPlaceholderHelp:
-    def test_placeholder_marked(self, capsys):
-        """A command that always fails says so in --help."""
-        with pytest.raises(SystemExit):
-            main(test_args=["config", "--help"])
-        out = capsys.readouterr().out
-        line = next((ln for ln in out.splitlines() if ln.strip().startswith("set")), None)
-        assert line is not None and "[not implemented]" in line, out
-
-
 class TestHelpTextRendering:
     def test_no_build_help_uses_short_form(self, capsys):
         """`refgenie genome init --help` shows `--no-build`, not the dotted
