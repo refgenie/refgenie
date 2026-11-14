@@ -745,8 +745,8 @@ name = "httpcore2"
 version = "2.16.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "h11", marker = "python_full_version < '3.12' or sys_platform != 'emscripten'" },
-    { name = "truststore", marker = "python_full_version < '3.12' or sys_platform != 'emscripten'" },
+    { name = "h11", marker = "sys_platform != 'emscripten'" },
+    { name = "truststore", marker = "sys_platform != 'emscripten'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/c0/61/afa9d6b7452f9eca73f73d45324eb0bb52f098fd5e6049bf6b8263be9b4e/httpcore2-2.16.0.tar.gz", hash = "sha256:c72cd0413563b17e1cd8354677dff887466f8ec2551679759e93126534428643", size = 69886, upload-time = "2026-10-21T07:09:45.31Z" }
 wheels = [
@@ -1863,7 +1863,7 @@ name = "pexpect"
 version = "4.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ptyprocess", marker = "python_full_version < '3.12' or sys_platform != 'emscripten'" },
+    { name = "ptyprocess", marker = "(python_full_version >= '3.12' and sys_platform == 'win32') or (sys_platform != 'emscripten' and sys_platform != 'win32')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/42/92/cc564bf6381ff43ce1f4d06852fc19a2f11d180f23dc32d9588bee2f149d/pexpect-4.9.0.tar.gz", hash = "sha256:ee7d41123f3c9911050ea2c2dac107568dc43b2d3b0c7557a33212c398ead30f", size = 166450, upload-time = "2023-11-25T09:07:26.339Z" }
 wheels = [
@@ -2484,7 +2484,7 @@ requires-dist = [
     { name = "alembic", specifier = ">=1.20.1" },
     { name = "apscheduler", marker = "extra == 'server'", specifier = ">=3.11.3" },
     { name = "cryptography", specifier = ">=50.0.2" },
-    { name = "fastapi", marker = "extra == 'dash'", specifier = ">=0.162.2" },
+    { name = "fastapi", marker = "extra == 'dash'", specifier = ">=0.162.4" },
     { name = "gtars", specifier = ">=0.11.2" },
     { name = "httpx2", specifier = ">=2.16.0" },
     { name = "jinja2", specifier = ">=3.1.6" },
@@ -2499,7 +2499,7 @@ requires-dist = [
     { name = "refget", specifier = ">=0.13.0" },
     { name = "rich", specifier = ">=15.0.0" },
     { name = "snakemake", marker = "extra == 'snakemake'", specifier = ">=9.16.3,<9.17" },
-    { name = "sqlmodel", specifier = ">=0.0.48" },
+    { name = "sqlmodel", specifier = ">=0.0.49" },
     { name = "ubiquerg", specifier = ">=0.9.3" },
     { name = "uvicorn", marker = "extra == 'dash'", specifier = ">=0.54.0" },
     { name = "yacman", specifier = ">=1.0.0" },
