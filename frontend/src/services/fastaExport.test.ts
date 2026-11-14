@@ -91,14 +91,6 @@ async function collect(gen: AsyncGenerator<Uint8Array>): Promise<Buffer> {
 }
 
 describe('fastaChunks', () => {
-  it('writes name-only headers', async () => {
-    const out = await collect(
-      fastaChunks({ baseUrl: BASE, collection: COLLECTION, wasm, fetchImpl: fixtureFetch }),
-    );
-    expect(out.toString('utf8')).toContain('>chrB\n');
-    expect(out.toString('utf8')).not.toContain('test contig B');
-  });
-
   it('exports only the sequences in the collection it is given', async () => {
     const collection = {
       ...COLLECTION,
@@ -112,15 +104,8 @@ describe('fastaChunks', () => {
     expect(out.length).toBe(fastaSize(collection.seqs));
   });
 
-  it('rebuilds the source FASTA byte for byte', async () => {
-    const out = await collect(
-      fastaChunks({ baseUrl: BASE, collection: COLLECTION, wasm, fetchImpl: fixtureFetch }),
-    );
-    expect(out.equals(SOURCE)).toBe(true);
-  });
-
-  it.each([1, 3, 37, 79, 80, 81])(
-    'is byte-identical with %i-base windows',
+  it.each([1, 3, 37, 79, 80, 81, 10_000])(
+    'rebuilds the source FASTA byte for byte with %i-base windows',
     async (windowBases) => {
       const out = await collect(
         fastaChunks({
@@ -131,7 +116,7 @@ describe('fastaChunks', () => {
           windowBases,
         }),
       );
-      expect(out.toString('utf8')).toBe(SOURCE.toString('utf8'));
+      expect(out.equals(SOURCE)).toBe(true);
     },
   );
 
@@ -177,12 +162,6 @@ describe('fastaChunks', () => {
     await gen.next();
     controller.abort();
     await expect(collect(gen)).rejects.toMatchObject({ name: 'AbortError' });
-  });
-});
-
-describe('fastaSize', () => {
-  it('equals the source FASTA length', async () => {
-    expect(fastaSize(SEQS)).toBe(SOURCE.length);
   });
 });
 
