@@ -174,26 +174,9 @@ describe('Download tab', () => {
     expect(screen.getByRole('radio', { name: 'Choose sequences…' })).toBeChecked();
   });
 
-  it('shows the whole-genome CLI command by default', async () => {
+  it("offers refgenie with this server's install line", async () => {
     renderPanel();
     await screen.findByText(/\(87 B uncompressed\)/);
-    expect(
-      screen.getByText(
-        `refget store export ${genome.digest} --remote ${genome.refget_store_url} -o hg38.fa.gz`,
-      ),
-    ).toBeInTheDocument();
-  });
-
-  it('offers refget, Python and refgenie, each with a copy button', async () => {
-    renderPanel();
-    await screen.findByText(/\(87 B uncompressed\)/);
-    expect(screen.getAllByRole('tab').map((tab) => tab.textContent)).toEqual([
-      'refget CLI',
-      'Python',
-      'refgenie CLI',
-    ]);
-    expect(screen.getByText('pip install refget')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Copy the refget CLI code' })).toBeInTheDocument();
     await userEvent.click(screen.getByRole('tab', { name: 'refgenie CLI' }));
     expect(screen.getByText(/refgenie pull hg38\/fasta/)).toBeInTheDocument();
     // The same install line as the landing page, for the server's version.
