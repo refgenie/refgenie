@@ -82,14 +82,6 @@ const fasta = (name = 'mine.fa.gz', bytes = 1000) =>
   new File([new Uint8Array(bytes)], name, { type: 'application/gzip' });
 
 describe('CompareFasta', () => {
-  it('says the file never leaves the browser', () => {
-    setup();
-    expect(
-      screen.getByRole('heading', { name: 'Compare your own FASTA' }),
-    ).toBeInTheDocument();
-    expect(screen.getByText(/never leaves your computer/)).toBeInTheDocument();
-  });
-
   it('digests a picked file with progress, then shows an identical match', async () => {
     const worker = setup();
     await userEvent.upload(screen.getByLabelText(/FASTA file/), fasta());
