@@ -72,6 +72,10 @@ export function interpretCoordinateSystem(
 }
 
 /** One sentence (or two) on how one attribute's contents compare. */
+/** `all 3 names`, or `the one name`. */
+const every = (n: number, attribute: string) =>
+  n === 1 ? `the one ${attribute.replace(/s$/, '')}` : `all ${n} ${attribute}`;
+
 export function interpretAttribute(
   c: SeqcolComparison,
   attribute: string,
@@ -93,11 +97,11 @@ export function interpretAttribute(
   }
   if (both === nA && both < nB) {
     messages.push(
-      `${cap(other)} has all ${nA} ${attribute} of this genome, and ${nB - both} more.`,
+      `${cap(other)} has ${every(nA, attribute)} of this genome, and ${nB - both} more.`,
     );
   }
   if (both === nB && both < nA) {
-    messages.push(`This genome has all ${nB} ${attribute} of ${other}, and ${nA - both} more.`);
+    messages.push(`This genome has ${every(nB, attribute)} of ${other}, and ${nA - both} more.`);
   }
   if (both === 0 && (nA > 0 || nB > 0)) {
     messages.push(`The ${attribute} contents are disjoint.`);

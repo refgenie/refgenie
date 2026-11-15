@@ -42,7 +42,7 @@ describe('seqcol comparison interpretation', () => {
     const verdict = interpretCoordinateSystem(c);
     expect(verdict.level).toBe('subset');
     expect(verdict.messages[0]).toMatch(/This genome's coordinate system is a subset/);
-    expect(interpretAttribute(c, 'sequences')).toMatch(/all 1 sequences of this genome, and 1 more/);
+    expect(interpretAttribute(c, 'sequences')).toMatch(/the one sequence of this genome, and 1 more/);
   });
 
   it('names the other side as asked', () => {
@@ -51,7 +51,7 @@ describe('seqcol comparison interpretation', () => {
       "Your file's coordinate system is a subset of this genome's.",
     );
     expect(interpretAttribute(c, 'names', 'your file')).toBe(
-      'This genome has all 1 names of your file, and 1 more.',
+      'This genome has the one name of your file, and 1 more.',
     );
   });
 
