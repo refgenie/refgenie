@@ -19,6 +19,8 @@ export interface CompareCandidate {
   digest: string;
   /** The name and its accession or source, e.g. `hg38_primary · UCSC`. */
   label: string;
+  /** Every name the genome answers to, so typing any of them finds it. */
+  aliases: string[];
 }
 
 /** `GCA_000001405.15` -> `{ base: '000001405', version: '15' }`; GCA and GCF share a base. */
@@ -63,7 +65,30 @@ export function rankCompareCandidates(
 ): CompareCandidate[] {
   return genomes
     .filter((g) => g.digest !== self.digest && sameSpecies(self, g))
-    .map((g) => ({ digest: g.digest, label: candidateLabel(g), tier: tier(self, g) }))
+    .map((g) => ({
+      digest: g.digest,
+      label: candidateLabel(g),
+      tier: tier(self, g),
+      aliases: g.aliases,
+    }))
     .sort((x, y) => x.tier - y.tier || x.label.localeCompare(y.label))
-    .map(({ digest, label }) => ({ digest, label }));
+    .map(({ digest, label, aliases }) => ({ digest, label, aliases }));
+}
+
+/**
+ * The candidate that typed text picks: the one whose label or alias it is
+ * (ignoring case), else the first whose label contains it. Null if none.
+ */
+export function findCandidate(
+  candidates: readonly CompareCandidate[],
+  text: string,
+): CompareCandidate | null {
+  const q = text.trim().toLowerCase();
+  if (!q) return null;
+  const is = (name: string) => name.toLowerCase() === q;
+  return (
+    candidates.find((c) => is(c.label) || c.aliases.some(is)) ??
+    candidates.find((c) => c.label.toLowerCase().includes(q)) ??
+    null
+  );
 }
