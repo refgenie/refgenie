@@ -129,6 +129,13 @@ async function saveBlob(
   downloadBlob(filename, new Blob(parts, { type: 'application/octet-stream' }));
 }
 
+/** Fetch a file and save it as `filename`, which a cross-origin link cannot do. */
+export async function saveUrlAs(url: string, filename: string): Promise<void> {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Could not fetch ${url} (HTTP ${response.status})`);
+  downloadBlob(filename, await response.blob());
+}
+
 /** Save a Blob as `filename` through a temporary link. */
 export function downloadBlob(filename: string, blob: Blob): void {
   const url = URL.createObjectURL(blob);

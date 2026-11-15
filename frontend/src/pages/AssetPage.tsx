@@ -232,7 +232,16 @@ export function AssetPage() {
                 This asset is not staged for file-level serving.
               </p>
             ) : (
-              <AssetFileList assetDigest={record.digest ?? ''} files={files.data?.files} />
+              <AssetFileList
+                assetDigest={record.digest ?? ''}
+                files={files.data?.files}
+                size={record.size}
+                genome={
+                  genomeDigest && genomeName
+                    ? { digest: genomeDigest, name: genomeName }
+                    : undefined
+                }
+              />
             )}
           </section>
 
