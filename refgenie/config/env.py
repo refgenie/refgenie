@@ -56,8 +56,8 @@ config = RefgenieConfig(
 )
 
 # Legacy refgenconf read $REFGENIE; warn if it is set without the new variable.
-if "REFGENIE" in os.environ and "REFGENIE_DB_CONFIG_PATH" not in os.environ:
-    _legacy = os.environ["REFGENIE"]
+# An empty $REFGENIE counts as unset.
+if (_legacy := os.environ.get("REFGENIE")) and "REFGENIE_DB_CONFIG_PATH" not in os.environ:
     print(
         "[refgenie] WARNING: $REFGENIE is set but is no longer read by refgenie 1.0.\n"
         f"           legacy value: {_legacy}\n"

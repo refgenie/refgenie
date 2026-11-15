@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `refgenie populater` fills `refgenie://genome/asset` with the default asset, like `populate`.
 - `populate` and `populater` exit nonzero when a `refgenie://` path is left unfilled.
+- An empty `$REFGENIE` no longer triggers the legacy-variable warning.
 
 ## [1.0.0a2] - 2026-11-14
 
