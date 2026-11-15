@@ -24,6 +24,7 @@ from refgenie.exceptions import (
     MissingAliasError,
     MissingAssetClassError,
     MissingAssetError,
+    MissingAssetGroupError,
 )
 from refgenie.managers.asset import AssetManager
 from refgenie.managers.build_inputs import CUSTOM_SEEK_KEY_TIMEOUT, resolve_default_asset
@@ -244,6 +245,19 @@ class TestAssetQuery:
         digest = r.alias.resolve("rCRSd")
         with pytest.raises(MissingAliasError):
             r.asset.seek_components(r.parse_asset_registry_path(f"{digest}/fasta:test"))
+
+    def test_seek_errors_name_the_genome_as_typed(self, refgenie_session):
+        """A miss by alias names the alias, not the digest; an alias passed where
+        seek wants a digest says so."""
+        r = refgenie_session
+        digest = r.alias.resolve("rCRSd")
+        with pytest.raises(MissingAssetGroupError) as by_alias:
+            r.asset.seek_components(r.parse_asset_registry_path("rCRSd/nope"))
+        assert str(by_alias.value) == "Asset group 'rCRSd/nope' not found."
+        with pytest.raises(MissingAssetGroupError, match=r"rgc\.alias\.resolve\('rCRSd'\)"):
+            r.asset.seek("rCRSd", "fasta")
+        with pytest.raises(MissingAssetGroupError, match=digest):
+            r.asset.seek(digest, "nope")
 
     def test_list_assets_by_digest(self, refgenie_session):
         """list_assets (behind `list -g` and `list --genome-digest`) filters by digest."""

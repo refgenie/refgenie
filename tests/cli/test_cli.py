@@ -1498,6 +1498,7 @@ class TestQuietScriptableOutput:
         assert cli("seek", "rCRSd/chrom_sizes") == EXIT_NOT_FOUND
         err = capsys.readouterr().err
         assert "Did you mean: rCRSd/fasta.chrom_sizes?" in err
+        assert "Asset group 'rCRSd/chrom_sizes' not found" in err
         assert "refgenie pull" not in err
 
     def test_seek_of_an_asset_not_here_names_the_pull_command(self, cli, capsys):
