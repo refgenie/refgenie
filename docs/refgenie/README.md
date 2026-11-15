@@ -39,7 +39,7 @@ refgenie pull hg38/fasta_index
 refgenie seek hg38/fasta_index.chrom_sizes
 ```
 
-1. **Install.** Version 1.0 is a pre-release, so ask [PyPI](https://pypi.org/project/refgenie/) for it by version. See [Install](install.md).
+1. **Install.** Version 1.0 is a pre-release, so ask [PyPI](https://pypi.org/project/refgenie/) for it by version: plain `pip install refgenie` gives you the old 0.13. See [Install](install.md). Copied an old command like `refgenie seek -g hg38 -a fasta`? See [0.x commands in 1.0](migration-from-legacy.md#commands).
 2. **Initialize.** `refgenie init` creates the local database and genome folder, and subscribes to the public server at `https://api.refgenie.org`. See [Configure](configuration.md) for other locations and database options.
 3. **Pull.** `hg38/fasta_index` is about 12 KB: the FASTA index and chromosome sizes for hg38, without the 3 GB FASTA. Not sure which hg38 you need? See [Which hg38 should I use?](choosing_hg38.md).
 4. **Seek.** `refgenie seek` prints the local path to a file in the asset, so your scripts work on any computer. See [Retrieve paths to assets](seek.md).

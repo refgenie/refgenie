@@ -1,6 +1,6 @@
 # Upgrade from legacy refgenie
 
-This guide moves a refgenie 0.x setup (config versions 0.3 and 0.4) to refgenie 1.0. The `refgenie-upgrade` tool reads your old config, registers your genomes and assets in a new 1.0 database, and links your existing asset files, so you do not have to rebuild anything. For the changes that affect code and pipelines, see the [migration reference](migration-from-legacy.md).
+This guide moves a refgenie 0.x setup (config versions 0.3 and 0.4) to refgenie 1.0. The `refgenie-upgrade` tool reads your old config, registers your genomes and assets in a new 1.0 database, and links your existing asset files, so you do not have to rebuild anything. For old commands and their 1.0 forms, and changes that affect code and pipelines, see the [migration reference](migration-from-legacy.md).
 
 ## Before you start
 

@@ -38,8 +38,12 @@ Refgenie 1.0 is a pre-release, so ask for it by version:
 
 ```bash
 pip install "refgenie>=1.0.0a2"
-refgenie --version
+refgenie --version   # refgenie 1.0.0a2
 ```
+
+Without the version, pip installs the legacy 0.13, whose commands differ. 0.x
+syntax (`-c genome_config.yaml`, `seek -g hg38 -a fasta`) fails in 1.0; see
+<https://docs.refgenie.org/refgenie/migration-from-legacy/#commands>.
 
 Extras: `mcp` (the MCP server), `dash` (the local web dashboard), `server`
 (`refgenie serve`, includes `dash` and `mcp`), and `snakemake`.
