@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Old 0.x commands like `refgenie seek -g hg38 -a fasta` print a hint with the new form, `refgenie seek hg38/fasta`.
 - The `compare` sentence lists renames that break the pattern (such as `chrM->Mito`), warns when a name holds different sequences in each genome, and says "1 sequence", not "1 sequences".
 - CLI hints on stderr print after the result they describe, even when output is piped.
+- A genome is named by the registry's name for it (`hg38_initial`), not by a shorter synonym (`hg38-ddbj`), in compare results and MCP pull targets.
 
 ## [1.0.0a2] - 2026-11-14
 

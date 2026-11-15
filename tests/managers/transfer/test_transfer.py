@@ -14,7 +14,7 @@ import pytest
 from refgenie.exceptions import PullFailedError
 from refgenie.managers.transfer import TransferManager
 from refgenie.managers.transfer.puller import BulkPullResult
-from refgenie.models import GenomeAlias, GenomeDigest, first_usable_alias
+from refgenie.models import GenomeAlias, GenomeDigest, display_alias, first_usable_alias
 from refgenie.plugins.events import EventSink
 
 pytestmark = pytest.mark.unit
@@ -172,6 +172,15 @@ def test_first_usable_alias_skips_slash_and_empty_names():
     assert first_usable_alias(["a/b", "", "hg38", "mm10"]) == "hg38"
     assert first_usable_alias([]) is None
     assert first_usable_alias(["a/b"]) is None
+
+
+def test_display_alias_prefers_a_name_that_is_not_a_synonym():
+    """hg38_initial, the registry's name, beats hg38-ddbj, a shorter FHR synonym."""
+    names = ["hg38-ddbj", "hg38_initial", "hg38-initial-ucsc", "s::h", "a/b"]
+    assert display_alias(names) == "hg38-ddbj"
+    assert display_alias(names, ["hg38-initial-ucsc", "hg38-ddbj"]) == "hg38_initial"
+    assert display_alias(["hg38-ddbj"], ["hg38-ddbj"]) == "hg38-ddbj"
+    assert display_alias(["a/b"]) is None
 
 
 @pytest.mark.parametrize("value", ["hg38", "a/b", "", "store::x", None, 3])

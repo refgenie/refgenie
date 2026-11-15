@@ -217,7 +217,7 @@ def _asset_detail(asset: Asset) -> AssetDetail:
     rgc = _get_refgenie()
     aliases = rgc.alias.get_for_genomes([asset.genome_digest]).get(asset.genome_digest, [])
     group, genome = asset.asset_group_name, asset.genome_digest
-    alias = display_alias(aliases)
+    alias = display_alias(aliases, rgc.genome.get(genome).synonyms)
     target = (
         f"{alias}/{group}:{asset.name}"
         if alias

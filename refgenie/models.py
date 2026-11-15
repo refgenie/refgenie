@@ -115,11 +115,18 @@ class GenomeAlias(str):
         return core_schema.no_info_after_validator_function(cls, core_schema.str_schema())
 
 
-def display_alias(names: Iterable[str]) -> GenomeAlias | None:
-    """The shortest plain alias of ``names`` (ties alphabetical), the name to
-    show a person: no iGenomes path ('/') and no store-qualified 'store::name'."""
+def display_alias(
+    names: Iterable[str], synonyms: Iterable[str] | None = None
+) -> GenomeAlias | None:
+    """The name to show a person: the shortest plain alias of ``names`` (ties
+    alphabetical) that is not one of the genome's FHR ``synonyms``, else the
+    shortest plain alias. Plain means no iGenomes path ('/') and no
+    store-qualified 'store::name'. FHR lists every name but the registry's own
+    as a synonym, so hg38_initial wins over hg38-ddbj, a shorter synonym."""
     plain = [n for n in names if GenomeAlias.is_valid(n) and "::" not in n]
-    return GenomeAlias(min(plain, key=lambda n: (len(n), n))) if plain else None
+    skip = set(synonyms or ())
+    own = [n for n in plain if n not in skip] or plain
+    return GenomeAlias(min(own, key=lambda n: (len(n), n))) if own else None
 
 
 def first_usable_alias(names: Iterable[str]) -> GenomeAlias | None:
