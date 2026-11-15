@@ -188,7 +188,6 @@ describe('GenomesPage', () => {
           page(new URL(request.url).searchParams.get('has_assets') ? 7 : 879),
         ),
       ),
-      http.get(`${API}/asset_groups`, () => HttpResponse.json(page(12))),
       http.get(`${API}/assets`, () => HttpResponse.json(page(345))),
     );
     renderWithProviders(<GenomesPage />, { config: serverConfig });
@@ -196,7 +195,6 @@ describe('GenomesPage', () => {
       screen.getByText(term, { selector: 'dt' }).nextElementSibling;
     await waitFor(() => expect(stats('Genomes')).toHaveTextContent('879'));
     await waitFor(() => expect(stats('Genomes')).toHaveTextContent('7 with built assets'));
-    expect(stats('Asset groups')).toHaveTextContent('12');
     expect(stats('Assets')).toHaveTextContent('345');
   });
 

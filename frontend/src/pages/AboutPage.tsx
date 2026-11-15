@@ -108,10 +108,10 @@ export function AboutPage() {
           <p className="rg-muted">
             Refgenie is open-source software for managing reference genome assets. It is
             a Python package with a command-line interface, a REST API, and this web
-            interface, all from one install. Genomes are identified by GA4GH
-            sequence-collection digests derived from the sequences themselves, so two
-            people can tell whether they are working from the same assembly without
-            comparing files. It is developed in the open by the Sheffield Lab at the
+            interface, all from one install. Each genome gets an ID computed from its
+            sequences, so two people can tell whether they are working from the same
+            assembly without comparing files (the ID follows the GA4GH sequence
+            collections standard). It is developed in the open by the Sheffield Lab at the
             University of Virginia and released under the BSD 2-Clause license.
           </p>
           <p className="rg-muted text-sm">
@@ -119,7 +119,7 @@ export function AboutPage() {
             <Link className="rg-link" to="/">
               home page
             </Link>{' '}
-            has the three commands that get you a genome asset on disk.
+            has the quick start that gets you a genome asset on disk.
           </p>
         </div>
 

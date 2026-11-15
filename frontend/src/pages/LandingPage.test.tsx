@@ -42,7 +42,9 @@ describe('LandingPage', () => {
 
   it('shows the counts as one line once they load', async () => {
     renderWithProviders(<LandingPage />, { config: serverConfig });
-    expect(await screen.findByText(/2 genomes · \d+ asset groups/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/2 genomes · \d+ assets · \d+ kinds of asset/),
+    ).toBeInTheDocument();
   });
 
   it('deep-links the hero search into the genome list', async () => {

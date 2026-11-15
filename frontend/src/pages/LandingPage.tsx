@@ -7,7 +7,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGenomes } from '../hooks/queries/useGenomes';
-import { useAssetGroups } from '../hooks/queries/useAssetGroups';
+import { useAssets } from '../hooks/queries/useAssets';
 import { useAssetClasses } from '../hooks/queries/useAssetClasses';
 import { useRecipes } from '../hooks/queries/useRecipes';
 import { useUiConfig } from '../hooks/useUiConfig';
@@ -50,14 +50,14 @@ const LATER_STEPS = [
 /** One quiet line of counts, shown once they have all loaded. */
 function Counts() {
   const genomes = useGenomes(COUNT_ONLY).data?.pagination.total;
-  const groups = useAssetGroups(COUNT_ONLY).data?.pagination.total;
+  const assets = useAssets(COUNT_ONLY).data?.pagination.total;
   const classes = useAssetClasses(COUNT_ONLY).data?.pagination.total;
   const recipes = useRecipes(COUNT_ONLY).data?.pagination.total;
-  if ([genomes, groups, classes, recipes].some((n) => n === undefined)) return null;
+  if ([genomes, assets, classes, recipes].some((n) => n === undefined)) return null;
   const n = (value: number | undefined) => (value ?? 0).toLocaleString();
   return (
     <p className="rg-muted text-sm">
-      {n(genomes)} genomes · {n(groups)} asset groups · {n(classes)} asset classes ·{' '}
+      {n(genomes)} genomes · {n(assets)} assets · {n(classes)} kinds of asset ·{' '}
       {n(recipes)} recipes
     </p>
   );

@@ -5,6 +5,12 @@ export interface ServingModeBadgesProps {
   modes: string[] | null | undefined;
 }
 
+/** What each mode means to someone downloading the asset. */
+const MODE_TITLE: Record<string, string> = {
+  archive: 'Downloads as one .tgz archive of all its files',
+  file: 'Each file downloads on its own',
+};
+
 function variantFor(mode: string): BadgeVariant {
   if (mode === 'file') return 'file';
   if (mode === 'archive') return 'archive';
@@ -17,7 +23,7 @@ export function ServingModeBadges({ modes }: ServingModeBadgesProps) {
   return (
     <span className="flex flex-wrap gap-1">
       {modes.map((mode) => (
-        <Badge key={mode} variant={variantFor(mode)}>
+        <Badge key={mode} variant={variantFor(mode)} title={MODE_TITLE[mode]}>
           {mode}
         </Badge>
       ))}
