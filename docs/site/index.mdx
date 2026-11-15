@@ -23,7 +23,7 @@ editUrl: false
 
 ## What refgenie does
 
-Refgenie downloads pre-built reference genome files by name, such as FASTA files and bwa, bowtie2 and hisat2 indexes, and prints their local paths for your pipelines. It builds the same files for any other genome. It identifies each genome by a digest of its sequences, so a mismatched reference gets caught.
+Refgenie downloads pre-built reference genome files by name, such as FASTA files and bwa, bowtie2 and hisat2 indexes, and prints their local paths for your pipelines. It builds the same files for any other genome. It gives each genome an ID computed from its sequences, so a mismatched reference gets caught.
 
 ```bash
 pip install "refgenie>=1.0.0a2"              # without the version, pip gives the old 0.13
