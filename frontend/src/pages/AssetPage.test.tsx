@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import { HttpResponse, http } from 'msw';
 import { Route, Routes } from 'react-router-dom';
 import { AssetPage } from './AssetPage';
@@ -27,6 +27,15 @@ describe('AssetPage', () => {
     // The seek key row: name, type badge, value.
     expect(screen.getAllByText('hg38.fa').length).toBeGreaterThan(0);
     expect(screen.getByText(/The FASTA file/)).toBeInTheDocument();
+  });
+
+  it("names the asset's genome in the breadcrumb", async () => {
+    renderAsset();
+    const crumbs = await screen.findByRole('navigation', { name: /breadcrumb/i });
+    expect(await within(crumbs).findByRole('link', { name: 'hg38' })).toHaveAttribute(
+      'href',
+      '/genomes/5cb5b9d2d1e2b5e5e2f0a3c4d5e6f708',
+    );
   });
 
   it('lists parent assets from the expanded relationships endpoint', async () => {
