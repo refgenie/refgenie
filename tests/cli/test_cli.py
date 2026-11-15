@@ -529,6 +529,13 @@ class TestErrorExitCodes:
         for fragment in fragments:
             assert fragment in text
 
+    def test_legacy_flags_point_to_the_path_form(self, cli, capsys):
+        """0.x `-g/-a` flags, still what web search finds, get a one-line hint."""
+        assert cli("seek", "-g", "hg38", "-a", "fasta") == 2
+        assert "refgenie seek hg38/fasta" in capsys.readouterr().err
+        assert cli("seek", "hg38/fasta", "--bogus") == 2
+        assert "-g/-a" not in capsys.readouterr().err
+
     def test_only_the_missing_arguments_are_named(self, cli, capsys):
         assert cli("remote", "add", "--type", "s3") == 1
         err = capsys.readouterr().err

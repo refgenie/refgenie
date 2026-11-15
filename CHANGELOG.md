@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `populate` and `populater` exit nonzero when a `refgenie://` path is left unfilled.
 - An empty `$REFGENIE` no longer triggers the legacy-variable warning.
 - `seek` errors name the genome as you typed it, not its digest; Python `asset.seek` says when it was given an alias instead of a digest.
+- Old 0.x commands like `refgenie seek -g hg38 -a fasta` print a hint with the new form, `refgenie seek hg38/fasta`.
 
 ## [1.0.0a2] - 2026-11-14
 

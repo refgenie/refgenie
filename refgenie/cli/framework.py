@@ -37,7 +37,8 @@ CliList = Annotated[list, BeforeValidator(deserialize_cli_list)]
 #
 # Overrides help rendering: groups the root parser's subcommands (see
 # COMMAND_GROUPS) and hides the auto-generated `--no-*` negation flags that
-# cli_implicit_flags=True creates for every boolean field.
+# cli_implicit_flags=True creates for every boolean field. Also adds a hint to
+# argparse's "unrecognized arguments" error when it names a 0.x `-g/-a` flag.
 
 
 def grouped_format_help(parser) -> str:
@@ -80,11 +81,26 @@ def grouped_format_help(parser) -> str:
     return "\n".join(lines)
 
 
+# Old 0.x commands (`refgenie seek -g hg38 -a fasta`) are still what web search finds.
+LEGACY_FLAGS_HINT = (
+    "refgenie 1.0 takes genome/asset paths, not -g/-a flags: refgenie seek hg38/fasta\n"
+    "See https://docs.refgenie.org/refgenie/migration-from-legacy/"
+)
+
+
 class CleanHelpCliSource(CliSettingsSource):
     def _connect_root_parser(self, *args, **kwargs):
         super()._connect_root_parser(*args, **kwargs)
         self._hide_negation_flags(self._root_parser)
         self._root_parser.format_help = lambda: grouped_format_help(self._root_parser)
+        argparse_error = self._root_parser.error
+
+        def error(message):
+            if message.startswith("unrecognized arguments") and {"-g", "-a"} & set(message.split()):
+                message += "\n" + LEGACY_FLAGS_HINT
+            argparse_error(message)
+
+        self._root_parser.error = error
 
     # Booleans whose `--no-<leaf>` negation is a documented flag (`--no-build`).
     _KEEP_NEGATION_LEAVES = frozenset({"build", "default-server"})
