@@ -22,7 +22,18 @@ describe('summarizeFileComparison', () => {
     const s = summarizeFileComparison(GENOME, file, digests);
     expect(s.headline).toBe('Same sequences, different names');
     expect(s.details).toContain(
-      '3 shared sequences have a different name in your file (chr1 is 1, chr2 is 2, chrM is MT).',
+      '3 shared sequences have a different name in your file (chrM is MT, chr1 is 1, chr2 is 2).',
+    );
+  });
+
+  it('shows the renames that break the chr pattern first', () => {
+    const genome = ['I', 'II', 'III', 'IV', 'M'].map((n, i) => row(`chr${n}`, i + 1, n));
+    const file = genome.map((r) => ({
+      ...r,
+      name: r.name === 'chrM' ? 'Mito' : r.name.slice(3),
+    }));
+    expect(summarizeFileComparison(genome, file, digests).details).toContain(
+      '5 shared sequences have a different name in your file (for example chrM is Mito, chrI is I, chrII is II).',
     );
   });
 
