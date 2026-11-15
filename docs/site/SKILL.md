@@ -224,8 +224,8 @@ without the 3 GB FASTA. Over MCP: page through `get_genome_sequences`.
 ### A region of a genome you have not downloaded
 
 ```bash
-refgenie getseq -g hg38 -l chr17:43,044,295-43,044,394   # first 100 bp of BRCA1
-refgenie getseq -g hg38 -l chr17:43,044,295-43,044,394 --fasta > brca1_start.fa
+refgenie getseq -g hg38 -l chr17:43,044,295-43,044,394   # 100 bp at BRCA1's 3' end
+refgenie getseq -g hg38 -l chr17:43,044,295-43,044,394 --fasta > brca1_3prime.fa
 ```
 
 The first call registers hg38 from your server; no FASTA is downloaded. Over
