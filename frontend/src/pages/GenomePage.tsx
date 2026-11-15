@@ -132,7 +132,9 @@ export function GenomePage() {
     isGenomeTab(requested) && !tabs.find((tab) => tab.id === requested)?.disabled
       ? requested
       : null;
-  const activeTab = requestedTab ?? 'assets';
+  // A genome with no assets opens on what it does have: its sequences.
+  const activeTab =
+    requestedTab ?? (assetCount === 0 && !noSequences ? 'sequences' : 'assets');
   const selectTab = (id: GenomeTab) => {
     const next = new URLSearchParams(params);
     next.set('tab', id);
