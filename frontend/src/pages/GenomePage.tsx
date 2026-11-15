@@ -24,6 +24,7 @@ import { TabPanel, Tabs } from '../components/common/Tabs';
 import type { TabItem } from '../components/common/Tabs';
 import { GenomeDigest } from '../components/genomes/GenomeDigest';
 import { GenomeHeader } from '../components/genomes/GenomeHeader';
+import { GenomeGuideLink } from '../components/genomes/GenomeGuideLink';
 import { refgeniePullCommand } from '../utils/codeSnippets';
 import { GenomeSummaryCard } from '../components/genomes/GenomeSummaryCard';
 import { GenomeAliases } from '../components/genomes/GenomeAliases';
@@ -193,6 +194,7 @@ export function GenomePage() {
         {!genome.error && (
           <GenomeHeader genome={record} naming={naming} />
         )}
+        {record && <GenomeGuideLink terms={[...aliasNames, record.species_name]} />}
       </MiniHero>
 
       {genome.error && (

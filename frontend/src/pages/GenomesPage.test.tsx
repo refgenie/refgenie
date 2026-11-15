@@ -105,6 +105,13 @@ describe('GenomesPage', () => {
     );
   });
 
+  it('links the docs guide for a search like hg38', async () => {
+    renderWithProviders(<GenomesPage />, { route: '/genomes?q=hg38' });
+    expect(
+      await screen.findByRole('link', { name: /Which hg38 should I use\?/ }),
+    ).toHaveAttribute('href', 'https://docs.refgenie.org/refgenie/choosing_hg38/');
+  });
+
   it('sends the search term to the server when the assets filter is off', async () => {
     const seen: string[] = [];
     server.use(

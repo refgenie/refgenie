@@ -52,6 +52,13 @@ describe('GenomePage', () => {
     );
   });
 
+  it('links the docs guide for choosing an hg38', async () => {
+    renderGenome();
+    expect(
+      await screen.findByRole('link', { name: /Which hg38 should I use\?/ }),
+    ).toBeInTheDocument();
+  });
+
   it("shows the species list's other names", async () => {
     renderGenome(`/genomes/${DIGEST}?tab=details`);
     await screen.findByRole('heading', { name: 'hg38', level: 1 });

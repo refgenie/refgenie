@@ -11,6 +11,7 @@ import { useBridgeDigests } from '../hooks/queries/useBridgeDigests';
 import { useBridgeStore } from '../stores/bridgeStore';
 import { MiniHero } from '../components/layout/MiniHero';
 import { GenomeTable } from '../components/genomes/GenomeTable';
+import { GenomeGuideLink } from '../components/genomes/GenomeGuideLink';
 import { Badge } from '../components/common/Badge';
 import { SearchBox } from '../components/common/SearchBox';
 import { Pagination } from '../components/common/Pagination';
@@ -179,6 +180,8 @@ export function GenomesPage() {
         />
         Only genomes with built assets
       </label>
+
+      <GenomeGuideLink terms={[state.q]} />
 
       <GenomeTable
         genomes={query.data?.results}
