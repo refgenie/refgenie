@@ -207,9 +207,9 @@ Refgenie gives you the index, not the aligner. The asset name is the tool
 version that built it.
 
 ```bash
-refgenie seek yeast_s288c/bowtie2_index.version   # 2.5.5
+refgenie seek R64-1-1/bowtie2_index.version   # 2.5.5
 conda install -c bioconda bowtie2=2.5.5           # or any installer; match the version
-bowtie2 -x "$(refgenie seek yeast_s288c/bowtie2_index)" -U reads.fq -S out.sam
+bowtie2 -x "$(refgenie seek R64-1-1/bowtie2_index)" -U reads.fq -S out.sam
 ```
 
 No conda? Use the prebuilt binary of that version from the tool's GitHub

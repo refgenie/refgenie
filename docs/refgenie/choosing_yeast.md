@@ -4,7 +4,7 @@ For budding yeast (*Saccharomyces cerevisiae*, strain S288C), two genomes on the
 
 | Pull | Names | Pre-built assets |
 |---|---|---|
-| `R64-1-1` (also called `yeast_s288c`) | `I` to `XVI`, and `Mito`. From Ensembl release 81. | FASTA and bwa, bowtie2, hisat2 and suffixerator indexes |
+| `R64-1-1` | `I` to `XVI`, and `Mito`. From Ensembl release 81. | FASTA and bwa, bowtie2, hisat2 and suffixerator indexes |
 | `sacCer3` | `chrI` to `chrXVI`, and `chrM`. UCSC's names, as packaged by Illumina iGenomes. | FASTA and bwa, bowtie2 and hisat2 indexes |
 
 ```bash
