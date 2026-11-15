@@ -156,6 +156,7 @@ def genome_digests_from(
 
 def note(msg: str) -> None:
     """Tell the user something on stderr: a result or hint that must show at any log level."""
+    sys.stdout.flush()  # so a hint about a printed result shows after it, even when piped
     print(msg, file=sys.stderr)
 
 

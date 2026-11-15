@@ -27,15 +27,24 @@ def test_all_renamed():
     summary, name_map = _summary(_level2(names, seqs), _level2(new, seqs))
     assert summary == (
         "Same 17 sequences in the same order; all 17 names differ: "
-        "chr1->1, chr2->2, chr3->3, ..., chrM->MT."
+        "chr1->1, chr2->2, chr3->3, ..., chr16->16, chrM->MT."
     )
     assert name_map["chrM"] == "MT"
+
+
+def test_irregular_rename_is_not_hidden():
+    """sacCer3 vs R64-1-1: chrM->Mito breaks the drop-chr pattern, so it is listed."""
+    names = ROMAN[:3] + ["chrM"] + [f"chr{i}" for i in "VWXYZ"]
+    new = [n.removeprefix("chr") for n in names[:3]] + ["Mito"] + list("VWXYZ")
+    seqs = [f"SQ.{i}" for i in range(len(names))]
+    summary, _ = _summary(_level2(names, seqs), _level2(new, seqs))
+    assert summary.endswith("chrI->I, chrII->II, chrIII->III, ..., chrZ->Z, chrM->Mito.")
 
 
 def test_some_renamed():
     seqs = ["SQ.1", "SQ.2", "SQ.3"]
     summary, name_map = _summary(_level2(["a", "b", "M"], seqs), _level2(["a", "b", "MT"], seqs))
-    assert summary == "Same 3 sequences in the same order; 1 names differ: M->MT."
+    assert summary == "Same 3 sequences in the same order; 1 name differs: M->MT."
     assert name_map == {"M": "MT"}
 
 
@@ -51,8 +60,24 @@ def test_same_names_and_lengths_but_content_differs():
     names = [f"c{i}" for i in range(25)]
     a = _level2(names, [f"SQ.a{i}" for i in range(25)])
     b = _level2(names, [f"SQ.a{i}" if i < 7 else f"SQ.b{i}" for i in range(25)])
-    assert (
-        _summary(a, b)[0] == "Same 25 names and lengths, but 18 of 25 sequences differ in content."
+    assert _summary(a, b)[0] == (
+        "Same names and lengths, but 18 of 25 sequences differ in content: c7, c8, c9, ..., c24."
+    )
+
+
+def test_same_names_with_other_sequences_warn():
+    """R64-1-1 vs EF2: one sequence is shared, but the chromosome names in both
+    hold different sequences."""
+    names = ["I", "II", "III", "IV", "V"]
+    a = _level2(names + ["Mito"], [f"SQ.a{i}" for i in range(5)] + ["SQ.m"])
+    b = _level2(names + ["MT"], [f"SQ.b{i}" for i in range(5)] + ["SQ.m"])
+    assert _summary(a, b)[0] == (
+        "1 sequence is shared (a has 6, b has 6); 1 name differs: Mito->MT. "
+        "Warning: 5 names in both hold different sequences: I, II, III, ..., V."
+    )
+    c = _level2(["I"], ["SQ.c"], [99])
+    assert _summary(a, c)[0] == (
+        "No sequences in common. Warning: 1 name in both holds different sequences: I."
     )
 
 
@@ -69,12 +94,15 @@ def test_subset():
     a = _level2(["x", "y", "z"], ["SQ.1", "SQ.2", "SQ.3"])
     b = _level2(["x", "y"], ["SQ.1", "SQ.2"])
     assert _summary(a, b)[0] == "All 2 sequences of b are in a, which has 1 more; same names."
+    assert _summary(a, _level2(["x"], ["SQ.1"]))[0] == (
+        "The one sequence of b is in a, which has 2 more; same names."
+    )
 
 
 def test_overlap_and_disjoint():
     a = _level2(["x", "y"], ["SQ.1", "SQ.2"])
     b = _level2(["x", "w", "v"], ["SQ.1", "SQ.8", "SQ.9"])
-    assert _summary(a, b)[0].startswith("1 sequences are shared (a has 2, b has 3)")
+    assert _summary(a, b)[0].startswith("1 sequence is shared (a has 2, b has 3)")
     c = _level2(["p"], ["SQ.7"], [99])
     assert _summary(a, c) == ("No sequences in common.", {})
 
