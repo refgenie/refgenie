@@ -84,8 +84,9 @@ describe('LandingPage', () => {
 
   it('says 1.0 is an alpha and links the details', () => {
     renderWithProviders(<LandingPage />, { config: serverConfig });
+    // The pin it asks for is spelled out, unlike the `>=` install line.
     expect(screen.getByText(/is an alpha release/)).toHaveTextContent(
-      /pin the version in production pipelines/,
+      /pin the exact version: refgenie==1\.0\.0a2\./,
     );
     expect(screen.getByRole('link', { name: /Details/ })).toHaveAttribute(
       'href',

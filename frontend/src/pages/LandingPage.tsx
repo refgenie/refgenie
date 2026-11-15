@@ -18,7 +18,7 @@ import { ExternalLink } from '../components/common/ExternalLink';
 import { Icon } from '../components/common/Icon';
 import { Badge } from '../components/common/Badge';
 import { CopyButton } from '../components/common/CopyButton';
-import { installCommand } from '../utils/install';
+import { installCommand, releaseVersion } from '../utils/install';
 import { PROJECT_LINKS } from '../services/projectLinks';
 import { absoluteServerRoot } from '../services/instanceLinks';
 
@@ -99,7 +99,12 @@ export function LandingPage() {
         </p>
         <p className="rg-hero__note text-sm">
           <Badge>Alpha</Badge> Refgenie 1.0 is an alpha release: it works, but commands
-          and data can still change, so pin the version in production pipelines.{' '}
+          and data can still change, and a later alpha may need your assets rebuilt. In
+          production pipelines, pin the exact version:{' '}
+          <code className="rg-code rg-code--inline">
+            refgenie=={releaseVersion(config.refgenie_version)}
+          </code>
+          .{' '}
           <ExternalLink href={PROJECT_LINKS.refgenieDocs}>Details</ExternalLink>
         </p>
 
