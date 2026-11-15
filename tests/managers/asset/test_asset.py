@@ -149,6 +149,7 @@ class TestAssetRegistryPath:
         [
             ("refgenie://hg38/fasta.fasta:default", "REPLACED", "REPLACED"),
             ("refgenie://hg38/fasta:default", "REPLACED", "REPLACED"),
+            ("refgenie://hg38/fasta", "REPLACED", "REPLACED"),
             ({"key": "refgenie://hg38/fasta:default"}, {"key": "REPLACED"}, "REPLACED"),
             (
                 {"key": "refgenie://hg38/fasta:default", "key2": "refgenie://hg38/fasta:default"},
@@ -178,6 +179,20 @@ class TestAssetRegistryPath:
 
         with patch.object(ServerManager, "seek_components", return_value=value):
             assert refgenie_minimal.populater(asset_registry_path) == result
+
+    def test_populater_leaves_unresolved_path_as_written(self, refgenie_minimal):
+        """A path no server resolves is kept, and later paths are still replaced."""
+        text = "refgenie://hg38/nope refgenie://hg38/fasta"
+        with patch.object(
+            ServerManager, "seek_components", side_effect=[ValueError("no"), "REPLACED"]
+        ):
+            assert refgenie_minimal.populater(text) == "refgenie://hg38/nope REPLACED"
+
+    def test_populate_prefix_path_does_not_clobber_longer_path(self, refgenie_minimal):
+        """Each path is replaced on its own, not as a prefix of a longer one."""
+        text = "refgenie://hg38/fasta refgenie://hg38/fasta.fai"
+        with patch.object(AssetManager, "seek_components", side_effect=["A", "B"]):
+            assert refgenie_minimal.populate(text) == "A B"
 
 
 class TestAssetQuery:

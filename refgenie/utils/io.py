@@ -41,7 +41,7 @@ def read_yaml(path: Path | str) -> dict:
     return safe_load(Path(path).read_text())
 
 
-def populate_file(file_path: Path, pop_fun: Callable[[str], str]) -> None:
+def populate_file(file_path: Path, pop_fun: Callable[[str], str]) -> int:
     """
     Read a file line by line, apply pop_fun to each line, and write the
     populated result to stdout. The input file is not modified.
@@ -49,25 +49,39 @@ def populate_file(file_path: Path, pop_fun: Callable[[str], str]) -> None:
     Args:
         file_path: Path to the input file containing refgenie registry paths.
         pop_fun: A function that populates refgenie registry paths in objects.
+
+    Returns:
+        int: The number of output lines that still hold a ``refgenie://`` path.
     """
     logger.debug(f"Populating file: {file_path}")
+    unresolved = 0
     with open(file_path) as fp:
         for line in fp:
-            sys.stdout.write(pop_fun(line))
+            populated = pop_fun(line)
+            unresolved += "refgenie://" in populated
+            sys.stdout.write(populated)
+    return unresolved
 
 
-def populate_stdin(pop_fun: Callable[[str], str]) -> None:
+def populate_stdin(pop_fun: Callable[[str], str]) -> int:
     """
     Read lines from stdin, apply pop_fun to each, and write the result to
     stdout; a line of 'q', 'quit', or 'exit' stops processing.
 
     Args:
         pop_fun: A function that populates refgenie registry paths in objects.
+
+    Returns:
+        int: The number of output lines that still hold a ``refgenie://`` path.
     """
+    unresolved = 0
     for line in sys.stdin:
         if line.rstrip() in ["q", "quit", "exit"]:
             break
-        sys.stdout.write(pop_fun(line))
+        populated = pop_fun(line)
+        unresolved += "refgenie://" in populated
+        sys.stdout.write(populated)
+    return unresolved
 
 
 def cli_show_yaml(string: str) -> None:

@@ -596,6 +596,21 @@ class TestEmptyDatabaseCommands:
         assert cli("populater", "-s", "http://transient.example.com", "-f", str(temp_file)) == 0
         assert cli_rg.servers.subscriptions() == []
 
+    @pytest.mark.parametrize("command", ["populate", "populater"])
+    def test_populate_unresolved_path_exits_nonzero(self, cli, cli_rg, tmp_path, capsys, command):
+        """A refgenie:// path left as written fails the command; the text still prints."""
+        temp_file = tmp_path / "config.yaml"
+        temp_file.write_text("fasta: refgenie://hg38/fasta\n")
+        with (
+            patch(
+                "refgenie.managers.asset.manager.AssetManager.seek_components",
+                side_effect=ValueError("no"),
+            ),
+            patch.object(ServerManager, "seek_components", side_effect=ValueError("no")),
+        ):
+            assert cli(command, "-f", str(temp_file)) == EXIT_NOT_FOUND
+        assert capsys.readouterr().out == "fasta: refgenie://hg38/fasta\n"
+
     @pytest.mark.parametrize(
         "argvs",
         [

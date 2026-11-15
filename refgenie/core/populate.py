@@ -17,14 +17,21 @@ if TYPE_CHECKING:  # pragma: no cover - annotation only; importing would cycle
 Populateable = str | list[str, dict[str, str]]
 
 
+_REGISTRY_PATH = re.compile(r"refgenie://([A-Za-z0-9_\-/\.\:]+)?")
+
+
 def _populate_string(
     rgc: "Refgenie",
     input: str,
     remote: bool = False,
     server_urls: list[str] | None = None,
-) -> str | None:
+) -> str:
     """
     Populate refgenie registry paths in the input string.
+
+    A path that cannot be resolved (a missing asset group, asset or seek key,
+    or no server that serves it) only warns and is left as written; an
+    unknown genome raises locally.
 
     Args:
         rgc: The Refgenie instance to resolve paths against.
@@ -36,33 +43,19 @@ def _populate_string(
     Returns:
         str: The populated input string.
     """
-    regex_pattern = re.compile(r"refgenie://([A-Za-z0-9_\-/\.\:]+)?")
-    for registry_match in re.finditer(regex_pattern, input):
-        registry_path = registry_match.group()
-        if not (parsed_registry_path := rgc.parse_asset_registry_path(registry_path)):
-            logger.info(f"Can't convert non-conforming refgenie registry path: {registry_path}")
-            return input
-        if remote:
-            if parsed_registry_path.asset is None:
-                logger.error("Asset name is required to run remote populate")
-                return input
-            resolved_path = rgc.servers.seek_components(
-                parsed_registry_path, server_urls=server_urls
-            )
-        else:
-            # A missing group, asset or seek key on a known genome only warns
-            # (below) and leaves the text as written; an unknown genome raises.
-            try:
-                resolved_path = rgc.asset.seek_components(
-                    asset_registry_path_components=parsed_registry_path,
-                )
-            except (MissingAssetGroupError, MissingAssetError, MissingSeekKeyError):
-                resolved_path = None
-        if resolved_path is None:
-            logger.warning(f"'{registry_path}' refgenie registry path not populated.")
-            continue
-        input = re.sub(registry_path, resolved_path, input)
-    return input
+
+    def resolve(match: re.Match) -> str:
+        registry_path = match.group()
+        components = rgc.parse_asset_registry_path(registry_path)
+        try:
+            if remote:
+                return rgc.servers.seek_components(components, server_urls=server_urls)
+            return rgc.asset.seek_components(asset_registry_path_components=components)
+        except (MissingAssetGroupError, MissingAssetError, MissingSeekKeyError, ValueError) as e:
+            logger.warning(f"'{registry_path}' refgenie registry path not populated: {e}")
+            return registry_path
+
+    return _REGISTRY_PATH.sub(resolve, input)
 
 
 def populate_registry_paths(

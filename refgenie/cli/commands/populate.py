@@ -10,6 +10,7 @@ from refgenie.cli.commands.helpers import (
     _GENOME_SERVER_TRANSIENT_DESCRIPTION,
     resolve_transient_servers,
 )
+from refgenie.cli.errors import EXIT_NOT_FOUND, fail
 from refgenie.cli.framework import CliList
 
 
@@ -39,25 +40,19 @@ class PopulaterModel(BaseModel):
     )
 
 
-def handle_populate(cmd, refgenie) -> None:
+def _populate(file: str | None, pop_fun) -> None:
+    """Populate the file (or stdin) to stdout; fail if any path was left unresolved."""
     from refgenie.utils.io import populate_file, populate_stdin
 
-    file_path = Path(cmd.file) if cmd.file else None
-    if file_path is not None:
-        populate_file(file_path=file_path, pop_fun=refgenie.populate)
-    else:
-        populate_stdin(pop_fun=refgenie.populate)
+    unresolved = populate_file(Path(file), pop_fun) if file else populate_stdin(pop_fun)
+    if unresolved:
+        fail(f"{unresolved} line(s) kept a refgenie:// path that was not populated", EXIT_NOT_FOUND)
+
+
+def handle_populate(cmd, refgenie) -> None:
+    _populate(cmd.file, refgenie.populate)
 
 
 def handle_populater(cmd, refgenie) -> None:
-    from refgenie.utils.io import populate_file, populate_stdin
-
-    pop_fun = partial(
-        refgenie.populater,
-        server_urls=resolve_transient_servers(cmd, refgenie),
-    )
-    file_path = Path(cmd.file) if cmd.file else None
-    if file_path is not None:
-        populate_file(file_path=file_path, pop_fun=pop_fun)
-    else:
-        populate_stdin(pop_fun=pop_fun)
+    servers = resolve_transient_servers(cmd, refgenie)
+    _populate(cmd.file, partial(refgenie.populater, server_urls=servers))
