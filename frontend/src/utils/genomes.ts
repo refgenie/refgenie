@@ -12,11 +12,14 @@ export function buildGenomeIndex(genomes: readonly GenomeResponse[]): GenomeInde
 
 /**
  * The alias to show: an exact match on the query, then a substring match, then
- * the shortest alias (usually the canonical name, like `hg38`).
+ * the shortest alias that is not one of the genome's FHR `synonyms` (FHR lists
+ * every name but the registry's own as a synonym, so `hg38_initial` wins over
+ * `hg38-ddbj`), then the shortest alias.
  */
 export function preferredAlias(
   aliases: readonly string[] | null | undefined,
   query?: string,
+  synonyms?: readonly string[] | null,
 ): string | undefined {
   if (!aliases || aliases.length === 0) return undefined;
   const needle = query?.trim().toLowerCase();
@@ -26,7 +29,10 @@ export function preferredAlias(
     const partial = aliases.find((alias) => alias.toLowerCase().includes(needle));
     if (partial) return partial;
   }
-  return [...aliases].sort((a, b) => a.length - b.length || a.localeCompare(b))[0];
+  const own = aliases.filter((alias) => !synonyms?.includes(alias));
+  return [...(own.length ? own : aliases)].sort(
+    (a, b) => a.length - b.length || a.localeCompare(b),
+  )[0];
 }
 
 /** The genome's preferred alias, or a short digest when it has none. */

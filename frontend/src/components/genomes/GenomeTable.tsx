@@ -41,7 +41,7 @@ export function GenomeTable({
       // A real <Link> so keyboard and middle-click work. Other aliases sit on
       // a second line rather than in their own wide column.
       render: (genome) => {
-        const shown = preferredAlias(genome.aliases, query);
+        const shown = preferredAlias(genome.aliases, query, genome.synonyms);
         // Exclude whichever alias the primary cell chose, not blindly index 0.
         const rest = genome.aliases.filter((alias) => alias !== shown);
         const extra = rest.length - OTHER_ALIASES_SHOWN;

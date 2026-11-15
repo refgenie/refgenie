@@ -69,7 +69,7 @@ export function GenomePage() {
   const record = genome.data;
   const aliasNames = aliases.data?.results.map((alias) => alias.name) ?? [];
   // A new genome may have no alias; fall back to a shortened digest.
-  const primaryAlias = preferredAlias(aliasNames);
+  const primaryAlias = preferredAlias(aliasNames, undefined, record?.synonyms);
   const title = record ? (primaryAlias ?? formatDigest(record.digest)) : 'Genome';
 
   const storeUrl = record?.refget_store_url ?? null;

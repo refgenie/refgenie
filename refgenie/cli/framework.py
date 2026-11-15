@@ -84,7 +84,7 @@ def grouped_format_help(parser) -> str:
 # Old 0.x commands (`refgenie seek -g hg38 -a fasta`) are still what web search finds.
 LEGACY_FLAGS_HINT = (
     "refgenie 1.0 takes genome/asset paths, not -g/-a flags: refgenie seek hg38/fasta\n"
-    "See https://docs.refgenie.org/refgenie/migration-from-legacy/"
+    "See https://docs.refgenie.org/refgenie/migration-from-legacy/#commands"
 )
 
 

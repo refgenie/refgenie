@@ -18,6 +18,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CLI hints on stderr print after the result they describe, even when output is piped.
 - A genome is named by the registry's name for it (`hg38_initial`), not by a shorter synonym (`hg38-ddbj`), in compare results and MCP pull targets.
 
+### Changed
+
+- A genome page with no assets opens on its Sequences tab.
+- The Compare box picks a genome when you press Enter and says when none is chosen.
+- Searches and genome pages for hg38, mm39 and yeast link the docs guide on which one to use.
+- The alpha notice shows the exact pin to use in pipelines (`refgenie==1.0.0a2`).
+- The website's no-JavaScript text gives the install command.
+- The asset page breadcrumb names the asset's genome instead of saying "Genome".
+- Small asset files download under the genome's name (`hg38.chrom.sizes`), not its digest.
+- Comparing your own FASTA lists odd renames such as `chrM` to `Mito` before `chr1` to `1`.
+- Plainer website words: menu hover hints, no "asset groups" count, a simpler About intro.
+- The website names a genome by the registry's name for it, like the CLI.
+- Docs: the install page says plain `pip install refgenie` gives the old 0.13, a table maps 0.x commands to 1.0, and the sidebar is shorter.
+
 ## [1.0.0a2] - 2026-11-14
 
 ### Added

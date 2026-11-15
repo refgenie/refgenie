@@ -123,7 +123,7 @@ export default function CollectionTree({ genomes }: { genomes: GenomeResponse[] 
                 {selectedGenomes.map((g) => (
                   <li key={g.digest}>
                     <ScopedLink className="rg-link" to={`/genomes/${g.digest}`}>
-                      {preferredAlias(g.aliases) ?? formatDigest(g.digest)}
+                      {preferredAlias(g.aliases, undefined, g.synonyms) ?? formatDigest(g.digest)}
                     </ScopedLink>
                   </li>
                 ))}

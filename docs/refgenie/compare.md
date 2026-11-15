@@ -23,10 +23,10 @@ refgenie compare hg38 --genome-digest <digest_b>
 
 ```console
 $ refgenie compare hg38 hg38_primary
-Every name and length of hg38_primary is also in hg38, but 18 of those 25 sequences differ in content.
+Every name and length of hg38_primary is also in hg38, but 18 of those 25 sequences differ in content: chr1, chr2, chr3, ..., chrY.
 
 $ refgenie compare sacCer3 R64-1-1
-Same 17 sequences in the same order; all 17 names differ: chrI->I, chrII->II, chrIII->III, ..., chrXVI->XVI.
+Same 17 sequences in the same order; all 17 names differ: chrI->I, chrII->II, chrIII->III, ..., chrXVI->XVI, chrM->Mito.
   chrI -> I
   chrII -> II
   ...
