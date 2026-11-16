@@ -63,7 +63,7 @@ dependencies = [
     # refget.seqcolapi's fastapi comes from refgenie[dash], so refget's seqcolapi extra is not needed.
     "refget>=0.13.0",
     "rich>=15.0.0",
-    "sqlmodel>=0.0.49",
+    "sqlmodel>=0.0.37",
     "ubiquerg>=0.9.3",
     "yacman>=1.0.0",
     "pydantic-settings>=2.16.2",
@@ -73,7 +73,7 @@ dependencies = [
 snakemake = [
     # The generated Snakefile uses `pepfile:`, which snakemake runs with peppy.
     "peppy>=0.40.8",
-    "snakemake>=9.16.3,<9.17",
+    "snakemake>=9.16.3,<10",
 ]
 dash = [
     "fastapi>=0.162.4",

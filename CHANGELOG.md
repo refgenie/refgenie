@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- refgenie installs next to current Snakemake 9.x: the sqlmodel minimum is 0.0.37 again, and the `snakemake` extra accepts any 9.x release.
 - A genome page with no assets opens on its Sequences tab.
 - The Compare box picks a genome when you press Enter and says when none is chosen.
 - Searches and genome pages for hg38, mm39 and yeast link the docs guide on which one to use.
