@@ -105,7 +105,7 @@ class TestCLIScenarios:
             "-g",
             GENOME_ALIAS,
             "-l",
-            "rCRSd:0-10",
+            "rCRSd:1-10",
             env=env,
         )
         seq = result.stdout.strip()
