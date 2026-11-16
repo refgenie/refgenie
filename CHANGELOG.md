@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comparing your own FASTA lists odd renames such as `chrM` to `Mito` before `chr1` to `1`.
 - Plainer website words: menu hover hints, no "asset groups" count, a simpler About intro.
 - The website names a genome by the registry's name for it, like the CLI.
+- A server's catalog import now also prunes: genomes, assets and stores the catalog dropped leave the server on the next import, with no `refgenie catalog-prune` run. A prune that would delete more than half the server's genomes or assets is refused and logged.
 - Docs: the install page says plain `pip install refgenie` gives the old 0.13, a table maps 0.x commands to 1.0, and the sidebar is shorter.
 
 ## [1.0.0a2] - 2026-11-14

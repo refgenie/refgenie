@@ -1,5 +1,6 @@
 """The publish catalog (``refgenie.publish_catalog``): export, import and prune."""
 
+import logging
 import pathlib
 
 import pytest
@@ -117,7 +118,7 @@ class TestAliasImport:
         server.genome.add("S" * 32, "server only", [], store_name=None)
         seed_alias_row(server, "kept", "S" * 32)
         seed_alias_row(server, "rAllMis1", "S" * 32)  # the catalog assigns it to F
-        import_publish_catalog(server.database_engine, str(dest))
+        import_publish_catalog(server.database_engine, str(dest), prune=False)
         seed_alias_row(server, "renamed-upstream", FEDERATED_DIGEST)
         with artifact_engine(dest).begin() as conn:
             conn.execute(
@@ -126,7 +127,7 @@ class TestAliasImport:
                 )
             )
 
-        summary = import_publish_catalog(server.database_engine, str(dest))
+        summary = import_publish_catalog(server.database_engine, str(dest), prune=False)
 
         assert (summary["alias"], summary["alias_skipped"]) == (2, 1)
         assert _rows(server, Alias.name, Alias.genome_digest) == {
@@ -240,7 +241,7 @@ class TestStores:
         server.store.add("vgp", "url://stale", StoreType.remote, priority=99)
         server.store.add("retired", "url://r", StoreType.remote, priority=60)
 
-        summary = import_publish_catalog(server.database_engine, str(dest))
+        summary = import_publish_catalog(server.database_engine, str(dest), prune=False)
 
         assert summary["store"] == 2
         assert summary["store_disabled"] == 1
@@ -374,7 +375,7 @@ def artifacts(tmp_path_factory, fixtures_path):
 def _imported(tmp_path, artifacts, *names):
     server = _new_server(tmp_path)
     for name in names:
-        import_publish_catalog(server.database_engine, str(artifacts[1][name]))
+        import_publish_catalog(server.database_engine, str(artifacts[1][name]), prune=False)
     return server
 
 
@@ -488,6 +489,53 @@ class TestCatalogPrune:
         assert _rows(server, Genome.digest) == before[0] - {"P" * 32}
         assert _rows(server, Alias.name) == before[1] - {"athal"}
         assert _rows(server, Store.name) == before[2] - {"plantref"}
+
+
+def _retired_plantref(server, count: int) -> list[str]:
+    """Add a disabled plantref store holding ``count`` asset-less genomes, one alias each."""
+    server.store.add("plantref", "url://p", StoreType.remote, priority=50, enabled=False)
+    digests = [f"{i:032d}" for i in range(count)]
+    for i, digest in enumerate(digests):
+        server.genome.add(digest, "retired", [], store_name="plantref")
+        seed_alias_row(server, f"retired{i}", digest)
+    return digests
+
+
+class TestImportPrunes:
+    """Each import also prunes, from the same file, so a server matches its catalog
+    without anyone running ``catalog-prune``."""
+
+    def test_import_drops_a_retired_store_and_its_genomes(self, tmp_path, artifacts):
+        digest, paths = artifacts
+        server = _imported(tmp_path, artifacts, "first")
+        retired = _retired_plantref(server, 1)
+
+        import_publish_catalog(server.database_engine, str(paths["first"]))
+
+        assert digest in _rows(server, Genome.digest)
+        assert not set(retired) & _rows(server, Genome.digest)
+        assert "retired0" not in _rows(server, Alias.name)
+        assert "plantref" not in _rows(server, Store.name)
+
+    def test_import_retracts_the_old_copy_of_a_rebuilt_asset(self, tmp_path, artifacts):
+        server = _imported(tmp_path, artifacts, "first")
+
+        import_publish_catalog(server.database_engine, str(artifacts[1]["second"]))
+
+        assert "a" * 64 not in _rows(server, Asset.digest)
+        assert "b" * 64 in _rows(server, Asset.digest)
+
+    def test_import_refuses_a_prune_of_more_than_half(self, tmp_path, artifacts, caplog):
+        _, paths = artifacts
+        server = _imported(tmp_path, artifacts, "first")
+        retired = _retired_plantref(server, len(_rows(server, Genome.digest)) + 1)
+
+        with caplog.at_level(logging.ERROR, logger="refgenie.publish_catalog"):
+            import_publish_catalog(server.database_engine, str(paths["first"]))
+
+        assert set(retired) <= _rows(server, Genome.digest)
+        assert "plantref" in _rows(server, Store.name)
+        assert "Not pruning" in caplog.text
 
 
 # ---------------------------------------------------------------------------

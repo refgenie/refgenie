@@ -325,7 +325,7 @@ def create_app(
             args=[app, rg],
         )
         if REFGENIE_CATALOG_URL:
-            # Idempotent upsert, so the per-worker scheduler is harmless.
+            # Idempotent (upsert, then prune), so the per-worker scheduler is harmless.
             scheduler.add_job(
                 _scheduled_catalog_import,
                 "interval",

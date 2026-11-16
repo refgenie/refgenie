@@ -633,9 +633,11 @@ genomes. The export fails if a genome belongs to a store it cannot publish (an
 
 #### `catalog-prune`
 
-Delete what a server holds but its publish catalog no longer has. A catalog
-import never deletes assets, genomes or stores, so run this on the server
-after it imports the catalog, with `--dry-run` first. It removes:
+Delete what a server holds but its publish catalog no longer has. A server
+already does this after every catalog import, so use this command to preview
+with `--dry-run`, or for a removal the import refuses: an import's prune is
+skipped if it would delete more than half the server's genomes or assets, and
+this command has no such limit. It removes:
 
 - assets the catalog no longer lists (such as the old copy of a rebuilt asset);
 - genomes the catalog no longer carries that have no assets, with their aliases
