@@ -25,6 +25,7 @@ nav:
       - "Coordinates: 1-based or 0-based": coordinates.md
       - Compare genomes: compare.md
       - Use refgenie from Python: refgenie_object.md
+      - Use refgenie from R (Bioconductor): bioconductor.md
       - Use refgenie with AI: use_with_ai.md
   - More guides:
       - Configure: configuration.md
