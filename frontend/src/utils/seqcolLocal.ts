@@ -30,6 +30,11 @@ function examples(items: string[]): string {
   return items.length > EXAMPLES ? ` (for example ${shown})` : ` (${shown})`;
 }
 
+/** True if two names differ only by UCSC's `chr` prefix, as `chr1` and `1` do. */
+function chrOnly(a: string, b: string): boolean {
+  return a === `chr${b}` || b === `chr${a}`;
+}
+
 function firstBy<K>(rows: readonly SeqcolRow[], key: (row: SeqcolRow) => K) {
   const map = new Map<K, SeqcolRow>();
   for (const row of rows) if (!map.has(key(row))) map.set(key(row), row);
@@ -87,9 +92,13 @@ export function summarizeFileComparison(
     );
   }
   if (renamed.length > 0) {
+    // Renames that break the chr1 -> 1 pattern, like chrM -> Mito, come first.
+    const pairs = renamed
+      .map((row) => [genomeBySeq.get(row.sha512t24u)?.name ?? '', row.name])
+      .sort(([a, b], [c, d]) => Number(chrOnly(a, b)) - Number(chrOnly(c, d)));
     details.push(
       `${plural(renamed.length, 'shared sequence')} ${renamed.length === 1 ? 'has' : 'have'} a different name in your file${examples(
-        renamed.map((row) => `${genomeBySeq.get(row.sha512t24u)?.name} is ${row.name}`),
+        pairs.map(([a, b]) => `${a} is ${b}`),
       )}.`,
     );
   }

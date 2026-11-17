@@ -7,6 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0a3] - 2026-11-17
+
+### Added
+
+- A docs guide to using refgenie genomes in R: BiocRefgetStore turns any
+  refgenie genome into a Bioconductor BSgenome package.
+- `refgenie catalog-export --catalog-store-priority` sets the catalog store's
+  priority.
+
+### Changed
+
+- A server's catalog import also prunes: genomes, assets and stores the catalog
+  dropped leave on the next import, with no `refgenie catalog-prune` run. An
+  import refuses a prune that would delete more than half the server's genomes
+  or assets.
+- refgenie installs next to current Snakemake 9.x: the sqlmodel minimum is
+  0.0.37 again, and the `snakemake` extra takes any 9.x release. The `dash`
+  extra needs fastapi 0.162.4 or later.
+- A genome is named by the registry's name for it (`hg38_initial`), not a
+  shorter synonym (`hg38-ddbj`), on the website, in compare results and in MCP
+  pull targets.
+- Website: a genome page with no assets opens on its Sequences tab; the Compare
+  box picks a genome on Enter and says when none is chosen; comparing your own
+  FASTA lists odd renames such as `chrM` to `Mito` first.
+- Website: hg38, mm39 and yeast searches and genome pages link the docs guide
+  on which one to use; the alpha notice shows the exact version to pin; the
+  no-JavaScript text gives the install command.
+- Website: the asset page breadcrumb names the genome, and small asset files
+  download under the genome's name (`hg38.chrom.sizes`).
+- Website: plainer words, with menu hover hints, no "asset groups" count and a
+  simpler About intro.
+- Docs: the install page says plain `pip install refgenie` gives the old 0.13,
+  a table maps 0.x commands to 1.0, and the sidebar is shorter.
+
+### Fixed
+
+- `refgenie populater` fills `refgenie://genome/asset` with the default asset,
+  like `populate`.
+- `populate` and `populater` exit nonzero when a `refgenie://` path is left
+  unfilled.
+- An empty `$REFGENIE` no longer triggers the legacy-variable warning.
+- `seek` errors name the genome as you typed it, not its digest. Python
+  `asset.seek` says when it was given an alias instead of a digest.
+- Old 0.x commands such as `refgenie seek -g hg38 -a fasta` print a hint with
+  the 1.0 form, `refgenie seek hg38/fasta`.
+- The `compare` sentence lists renames that break the pattern (such as
+  `chrM->Mito`), warns when a name holds different sequences in the two
+  genomes, and says "1 sequence", not "1 sequences".
+- CLI hints on stderr print after the result they describe, even when output is
+  piped.
+
 ## [1.0.0a2] - 2026-11-14
 
 ### Added
@@ -134,6 +185,7 @@ what changed for pipelines and Python code.
 - The implicit `.dir` seek key on every asset.
 - The separate `refgenconf` and `refgenieserver` packages.
 
-[Unreleased]: https://github.com/refgenie/refgenie/compare/v1.0.0a2...HEAD
+[Unreleased]: https://github.com/refgenie/refgenie/compare/v1.0.0a3...HEAD
+[1.0.0a3]: https://github.com/refgenie/refgenie/compare/v1.0.0a2...v1.0.0a3
 [1.0.0a2]: https://github.com/refgenie/refgenie/compare/v1.0.0a1...v1.0.0a2
 [1.0.0a1]: https://github.com/refgenie/refgenie/releases/tag/v1.0.0a1

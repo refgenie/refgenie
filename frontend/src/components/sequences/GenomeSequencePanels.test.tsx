@@ -25,8 +25,8 @@ const DIGEST = '5cb5b9d2d1e2b5e5e2f0a3c4d5e6f708';
 const OTHER = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
 const THIRD = 'ffffffffffffffffffffffffffffffff';
 const CANDIDATES = [
-  { digest: OTHER, label: 'rCRSd · GenBank' },
-  { digest: THIRD, label: 'hg38_primary · UCSC' },
+  { digest: OTHER, label: 'rCRSd · GenBank', aliases: ['rCRSd', 'mito'] },
+  { digest: THIRD, label: 'hg38_primary · UCSC', aliases: ['hg38_primary'] },
 ];
 
 describe('SequencesPanel', () => {
@@ -203,6 +203,42 @@ describe('ComparePanel', () => {
     expect(screen.getByRole('link', { name: 'rCRSd · GenBank' })).toHaveAttribute(
       'href',
       `/genomes/${OTHER}`,
+    );
+  });
+
+  it('compares with the genome an alias or partial name picks on Enter', async () => {
+    let requested: string | undefined;
+    server.use(
+      http.get(`${API}/genomes/:digest/compare/:other`, ({ params }) => {
+        requested = String(params.other);
+        return HttpResponse.json(genomeComparisonFixture);
+      }),
+    );
+    renderWithProviders(<ComparePanel digest={DIGEST} candidates={CANDIDATES} />);
+    const box = await screen.findByRole('combobox', { name: /Other genome/ });
+    await userEvent.type(box, 'MITO{Enter}');
+    expect(
+      await screen.findByRole('link', { name: 'rCRSd · GenBank' }),
+    ).toBeInTheDocument();
+    expect(requested).toBe(OTHER);
+    await userEvent.clear(box);
+    await userEvent.type(box, 'primary{Enter}');
+    expect(box).toHaveValue('hg38_primary · UCSC');
+    expect(
+      await screen.findByRole('link', { name: 'hg38_primary · UCSC' }),
+    ).toBeInTheDocument();
+  });
+
+  it('says so when nothing is picked', async () => {
+    renderWithProviders(<ComparePanel digest={DIGEST} candidates={CANDIDATES} />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Compare' }));
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'No genome selected. Choose one from the list.',
+    );
+    const box = screen.getByRole('combobox', { name: /Other genome/ });
+    await userEvent.type(box, 'mm10{Enter}');
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'No genome of this species matches "mm10".',
     );
   });
 

@@ -405,7 +405,22 @@ def _prune_absent_genomes(dest, carried: set[str], dry_run: bool) -> dict[str, l
     }
 
 
-def prune_catalog(engine: Engine, local_path: str, dry_run: bool = False) -> dict[str, list[str]]:
+def _refuse_large_prune(dest, stale_assets: list[str], stale_genomes: list[str], max_share: float):
+    """Raise if the prune would delete more than ``max_share`` of ``dest``'s genomes or assets."""
+    for kind, table, stale in (
+        ("genome", Genome.__table__, stale_genomes),
+        ("asset", Asset.__table__, stale_assets),
+    ):
+        held = dest.execute(select(func.count()).select_from(table)).scalar_one()
+        if len(stale) > max_share * held:
+            raise ValueError(
+                f"Prune would delete {len(stale)} of this server's {held} {kind}s; refusing"
+            )
+
+
+def prune_catalog(
+    engine: Engine, local_path: str, dry_run: bool = False, max_share: float | None = None
+) -> dict[str, list[str]]:
     """
     Delete, from ``engine``, what the publish catalog at ``local_path`` no longer has.
 
@@ -417,8 +432,14 @@ def prune_catalog(engine: Engine, local_path: str, dry_run: bool = False) -> dic
     Uses Core deletes, so no files are removed. Run it after importing the same
     artifact: an older one would retract newer assets.
 
+    Args:
+        max_share: If given, refuse a prune that would delete more than this
+            share of the server's genomes or of its assets, so a short artifact
+            cannot empty a server.
+
     Raises:
-        ValueError: If the file's schema stamp is not this code's.
+        ValueError: If the file's schema stamp is not this code's, or the prune
+            exceeds ``max_share`` (then nothing is deleted).
 
     Returns:
         What was (or, with ``dry_run``, would be) deleted: ``asset`` digests,
@@ -465,6 +486,9 @@ def prune_catalog(engine: Engine, local_path: str, dry_run: bool = False) -> dic
             )
             if (r.genome_digest, r.name) not in kept_groups and r.id not in live_group_ids
         ]
+        absent = _prune_absent_genomes(dest, genomes, dry_run=True)
+        if max_share is not None:
+            _refuse_large_prune(dest, stale_assets, absent["genome"], max_share)
         if not dry_run and stale_assets:
             links, names = AssetLink.__table__, AssetName.__table__
             seeks, staged = SeekKey.__table__, StagedAsset.__table__
@@ -481,7 +505,8 @@ def prune_catalog(engine: Engine, local_path: str, dry_run: bool = False) -> dic
             dest.execute(asset.delete().where(asset.c.digest.in_(stale_assets)))
         if not dry_run and stale_groups:
             dest.execute(group.delete().where(group.c.id.in_([g.id for g in stale_groups])))
-        absent = _prune_absent_genomes(dest, genomes, dry_run)
+        if not dry_run:
+            absent = _prune_absent_genomes(dest, genomes, dry_run=False)
     return {
         "asset": stale_assets,
         "assetgroup": [f"{g.genome_digest}/{g.name}" for g in stale_groups],

@@ -33,6 +33,12 @@ const HUMAN = [
 ];
 
 describe('preferredAlias', () => {
+  it('prefers the registry name over a shorter synonym', () => {
+    const names = ['hg38-ddbj', 'hg38_initial'];
+    expect(preferredAlias(names, undefined, ['hg38-ddbj'])).toBe('hg38_initial');
+    expect(preferredAlias(names, undefined, names)).toBe('hg38-ddbj');
+  });
+
   it('echoes the term the user searched for rather than aliases[0]', () => {
     expect(preferredAlias(HUMAN, 'hg38')).toBe('hg38');
   });

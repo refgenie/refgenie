@@ -60,6 +60,11 @@ class CatalogExportModel(BaseModel):
         description="Public root URL of the catalog store. Required with --catalog-store-name.",
         validation_alias=AliasChoices("catalog-store-url"),
     )
+    catalog_store_priority: int = Field(
+        default=30,
+        description="Priority of the catalog store (lower wins alias ties).",
+        validation_alias=AliasChoices("catalog-store-priority"),
+    )
 
 
 class CatalogPruneModel(BaseModel):
@@ -105,6 +110,7 @@ def handle_catalog_export(cmd, refgenie) -> None:
             cmd.https_prefix,
             catalog_store_name=cmd.catalog_store_name,
             catalog_store_url=cmd.catalog_store_url,
+            catalog_store_priority=cmd.catalog_store_priority,
         )
     except (ValueError, RuntimeError) as e:
         fail(f"Catalog export failed: {e}")

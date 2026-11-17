@@ -11,8 +11,11 @@ updates:
   - package-ecosystem: "pip"
     directory: "/"
     patterns: ["*"]
+    # Update uv.lock, but leave pyproject minimums alone unless a new release
+    # falls outside them. Raised minimums block installs next to other tools.
+    versioning-strategy: increase-if-necessary
     ignore:
-      # Pinned to 9.16.x; moved by hand in the snakemake 10 upgrade.
+      # Allows any 9.x; moved by hand in the snakemake 10 upgrade.
       - dependency-name: "snakemake"
     multi-ecosystem-group: "monthly"
 

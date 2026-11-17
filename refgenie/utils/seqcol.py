@@ -5,6 +5,7 @@ store) builds each side's level 2 with :func:`seqcol_level2` and compares with
 :func:`compare_level2`, so all of them return the same GA4GH comparison.
 """
 
+from collections import Counter
 from typing import Any
 
 from refget.utils import compare_seqcols
@@ -61,12 +62,36 @@ def _names_by_digest(level2: dict) -> dict[str, list[str]]:
     return by_digest
 
 
+def _n(count: int, noun: str) -> str:
+    """``1 sequence``, ``2 sequences``."""
+    return f"{count} {noun}" if count == 1 else f"{count} {noun}s"
+
+
+def _abbreviate(items: list[str]) -> str:
+    """At most 4 items; more shows the first 3, ``...`` and the last."""
+    if len(items) > 4:
+        items = items[:3] + ["...", items[-1]]
+    return ", ".join(items)
+
+
+def _prefix_change(a: str, b: str) -> str | None:
+    """The prefix dropped (``-chr``) or added (``+chr``) to make ``b`` from ``a``, if that is all."""
+    if a.endswith(b):
+        return "-" + a[: len(a) - len(b)]
+    if b.endswith(a):
+        return "+" + b[: len(b) - len(a)]
+    return None
+
+
 def _pairs(renames: dict[str, str]) -> str:
-    """``a->b`` pairs, at most 4; more shows the first 3, ``...`` and the last."""
-    pairs = [f"{a}->{b}" for a, b in renames.items()]
-    if len(pairs) > 4:
-        pairs = pairs[:3] + ["...", pairs[-1]]
-    return ", ".join(pairs)
+    """``a->b`` pairs: those with the most common prefix change (such as dropping
+    ``chr``), abbreviated, then the rest (such as ``chrM->Mito``), so no odd one hides."""
+    changes = {a: _prefix_change(a, b) for a, b in renames.items()}
+    common = Counter(c for c in changes.values() if c).most_common(1)
+    pattern = common[0][0] if common else None
+    regular = [f"{a}->{b}" for a, b in renames.items() if changes[a] == pattern]
+    irregular = [f"{a}->{b}" for a, b in renames.items() if changes[a] != pattern]
+    return ", ".join(part for part in (_abbreviate(regular), _abbreviate(irregular)) if part)
 
 
 def summarize_comparison(
@@ -75,7 +100,8 @@ def summarize_comparison(
     """One sentence on how two genomes differ, and a map of renamed sequences.
 
     The map takes A's name to B's name for each sequence the two share by
-    content but not by name, in A's order.
+    content but not by name, in A's order. A name both genomes use for
+    different sequences adds a warning.
     """
     counts = comparison["array_elements"]
     n_a, n_b = counts["a_count"]["sequences"], counts["b_count"]["sequences"]
@@ -98,38 +124,58 @@ def summarize_comparison(
         return "Identical.", {}
 
     if name_map:
-        which = f"all {shared}" if len(name_map) == shared else str(len(name_map))
-        naming = f"; {which} names differ: {_pairs(name_map)}."
+        k = len(name_map)
+        which = "1 name differs" if k == 1 else f"{'all ' if k == shared else ''}{k} names differ"
+        naming = f"; {which}: {_pairs(name_map)}."
     else:
         naming = "; same names."
+    seq_b = dict(zip(level2_b["names"], level2_b["sequences"]))
+    clash = [
+        name
+        for name, digest in zip(level2_a["names"], level2_a["sequences"])
+        if seq_b.get(name, digest) != digest
+    ]
+    warning = (
+        f" Warning: {_n(len(clash), 'name')} in both {'holds' if len(clash) == 1 else 'hold'} "
+        f"different sequences: {_abbreviate(clash)}."
+        if clash
+        else ""
+    )
     smaller, other = (label_a, label_b) if n_a <= n_b else (label_b, label_a)
     low = min(n_a, n_b)
 
     if shared == n_a == n_b:
         same_order = counts["a_and_b_same_order"]["sequences"] is not False
         order = "in the same order" if same_order else "in a different order"
-        return f"Same {n_a} sequences {order}{naming}", name_map
+        return f"Same {_n(n_a, 'sequence')} {order}{naming}{warning}", name_map
     if same_nl == low and shared < same_nl:
         differ = same_nl - shared
+        verb = "differs" if differ == 1 else "differ"
+        listed = f": {_abbreviate(clash)}." if clash else "."
         if n_a == n_b:
             return (
-                f"Same {n_a} names and lengths, but {differ} of {n_a} sequences differ in content.",
+                f"Same names and lengths, but {differ} of {_n(n_a, 'sequence')} {verb} "
+                f"in content{listed}",
                 name_map,
             )
         return (
             f"Every name and length of {smaller} is also in {other}, but {differ} of those "
-            f"{same_nl} sequences differ in content.",
+            f"{_n(same_nl, 'sequence')} {verb} in content{listed}",
             name_map,
         )
     if shared == low:
+        if shared > 1:
+            whole = f"All {shared} sequences of {smaller} are"
+        else:
+            whole = f"The one sequence of {smaller} is"
         return (
-            f"All {shared} sequences of {smaller} are in {other}, which has "
-            f"{max(n_a, n_b) - shared} more{naming}",
+            f"{whole} in {other}, which has {max(n_a, n_b) - shared} more{naming}{warning}",
             name_map,
         )
     if shared > 0:
         return (
-            f"{shared} sequences are shared ({label_a} has {n_a}, {label_b} has {n_b}){naming}",
+            f"{_n(shared, 'sequence')} {'is' if shared == 1 else 'are'} shared "
+            f"({label_a} has {n_a}, {label_b} has {n_b}){naming}{warning}",
             name_map,
         )
-    return "No sequences in common.", {}
+    return f"No sequences in common.{warning}", {}

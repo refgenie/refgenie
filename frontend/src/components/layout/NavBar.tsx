@@ -23,6 +23,7 @@ export function NavBar() {
               to={entry.to}
               // Without `end`, `/` matches every path and Home never deactivates.
               end={entry.to === '/'}
+              title={entry.hint}
               className={({ isActive }) =>
                 cn('rg-nav__item', isActive && 'rg-nav__item--active')
               }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { rankCompareCandidates, sameSpecies } from './compareCandidates';
+import { findCandidate, rankCompareCandidates, sameSpecies } from './compareCandidates';
 import type { CandidateGenome } from './compareCandidates';
 
 const genome = (
@@ -76,5 +76,21 @@ describe('rankCompareCandidates', () => {
     ]);
     expect(first.label).toBe('hg38_full · GCA_000001405.15');
     expect(second.label).toBe('hg38_ucsc · UCSC');
+  });
+});
+
+describe('findCandidate', () => {
+  const candidates = [
+    { digest: 'a', label: 'hg38-ddbj · UCSC', aliases: ['hg38-ddbj', 'hg38_initial'] },
+    { digest: 'b', label: 'hg38_primary · UCSC', aliases: ['hg38_primary'] },
+  ];
+
+  it('picks a label or alias, ignoring case, else the first label containing the text', () => {
+    expect(findCandidate(candidates, ' HG38_initial ')?.digest).toBe('a');
+    expect(findCandidate(candidates, 'hg38_primary · UCSC')?.digest).toBe('b');
+    expect(findCandidate(candidates, 'prim')?.digest).toBe('b');
+    expect(findCandidate(candidates, 'hg38')?.digest).toBe('a');
+    expect(findCandidate(candidates, 'mm10')).toBeNull();
+    expect(findCandidate(candidates, '  ')).toBeNull();
   });
 });

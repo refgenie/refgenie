@@ -20,7 +20,7 @@ from refgenie.db.engine import Engine
 from refgenie.db.queries import asset as queries
 from refgenie.db.queries import asset_group as group_queries
 from refgenie.db.tables import Asset, SeekKeyType, is_path_type, prefix_matches
-from refgenie.exceptions import MissingAssetError
+from refgenie.exceptions import MissingAssetError, MissingAssetGroupError, MissingSeekKeyError
 from refgenie.logger import logger
 from refgenie.managers.asset.alias_tree import AliasTree
 from refgenie.managers.asset.content import AssetContentManager
@@ -597,9 +597,20 @@ class AssetManager(ResourceManager):
         abs_path: bool,
     ) -> str:
         """Seek, keying the alias-tree path by ``genome_alias`` when one is given."""
-        asset_name, seek_key = self.seek_key.resolve(
-            genome_digest, asset_group_name, asset_name, seek_key_name
-        )
+        try:
+            asset_name, seek_key = self.seek_key.resolve(
+                genome_digest, asset_group_name, asset_name, seek_key_name
+            )
+        except (MissingAssetGroupError, MissingAssetError, MissingSeekKeyError) as e:
+            # Name the genome as the caller typed it, not by its digest.
+            if genome_alias is not None:
+                e.args = (str(e).replace(genome_digest, genome_alias),)
+            elif self._alias_manager.exists(genome_digest):
+                e.args = (
+                    f"{e} '{genome_digest}' is an alias, but seek takes a digest: "
+                    f"pass rgc.alias.resolve('{genome_digest}').",
+                )
+            raise
 
         if not is_path_type(seek_key.type):
             return seek_key.value

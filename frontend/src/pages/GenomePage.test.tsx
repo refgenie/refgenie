@@ -52,6 +52,13 @@ describe('GenomePage', () => {
     );
   });
 
+  it('links the docs guide for choosing an hg38', async () => {
+    renderGenome();
+    expect(
+      await screen.findByRole('link', { name: /Which hg38 should I use\?/ }),
+    ).toBeInTheDocument();
+  });
+
   it("shows the species list's other names", async () => {
     renderGenome(`/genomes/${DIGEST}?tab=details`);
     await screen.findByRole('heading', { name: 'hg38', level: 1 });
@@ -187,6 +194,14 @@ describe('GenomePage', () => {
     );
   });
 
+  it('opens on the Sequences tab when the genome has no assets', async () => {
+    server.use(http.get(`${API}/assets`, () => HttpResponse.json(emptyPage)));
+    renderGenome();
+    await waitFor(() =>
+      expect(screen.getByRole('tab', { selected: true })).toHaveTextContent(/^Sequences/),
+    );
+  });
+
   it('opens the tab named in the URL', async () => {
     renderGenome(`/genomes/${DIGEST}?tab=sequences`);
     expect(await screen.findByRole('tab', { selected: true })).toHaveTextContent(
@@ -251,7 +266,7 @@ describe('GenomePage', () => {
       <Routes>
         <Route path="/genomes/:digest" element={<GenomePage />} />
       </Routes>,
-      { route: `/genomes/${DIGEST}`, config: serverConfig },
+      { route: `/genomes/${DIGEST}?tab=assets`, config: serverConfig },
     );
     expect(await screen.findByText('No assets yet')).toBeInTheDocument();
     const link = screen.getByRole('link', { name: /Request assets/ });
@@ -263,7 +278,7 @@ describe('GenomePage', () => {
 
   it('on a local dash with no assets, offers to build and no request link', async () => {
     server.use(http.get(`${API}/assets`, () => HttpResponse.json(emptyPage)));
-    renderGenome();
+    renderGenome(`/genomes/${DIGEST}?tab=assets`);
     expect(await screen.findByText('Build the first one')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /Request assets/ })).not.toBeInTheDocument();
   });

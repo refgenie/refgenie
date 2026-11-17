@@ -1433,8 +1433,15 @@ class TestGenomeSequences:
         assert counts["b_count"]["sequences"] == 2
         assert counts["a_and_b_count"]["sequences"] == 1
         # One sentence and the renames, so clients need not fetch both collections.
-        assert data["summary"].startswith("All 1 sequences of")
+        assert data["summary"].startswith("The one sequence of")
         assert isinstance(data["name_map"], dict)
+
+    def test_compare_names_genomes_by_their_own_name_not_a_synonym(self, world, client):
+        rgc, digest, other = world
+        rgc.alias.add("rc-ddbj", other)
+        rgc.genome.apply_fhr_columns(other, {"genomeSynonym": ["rc-ddbj"]})
+        summary = client.get(f"/v4/genomes/{digest}/compare/{other}").json()["summary"]
+        assert summary.startswith("The one sequence of rCRSd is in rCRSd_extra,")
 
     def test_compare_unknown_is_404(self, world, client):
         _, digest, _ = world

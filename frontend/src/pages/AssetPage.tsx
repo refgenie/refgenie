@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAsset, useAssetFiles } from '../hooks/queries/useAssets';
+import { useAliases } from '../hooks/queries/useAliases';
 import { useRelationshipsExpanded } from '../hooks/queries/useRelationships';
 import { useStagedAssets } from '../hooks/queries/useStagedAssets';
 import { useUiConfig } from '../hooks/useUiConfig';
@@ -22,6 +23,8 @@ import { LocalAssetFileList } from '../components/assets/LocalAssetFileList';
 import { useCapability } from '../hooks/useCapability';
 import { RelationshipLists } from '../components/assets/RelationshipLists';
 import { StagedAssetTable } from '../components/genomes/StagedAssetTable';
+import { preferredAlias } from '../utils/genomes';
+import { formatDigest } from '../utils/format';
 
 export function AssetPage() {
   const { digest } = useParams<{ digest: string }>();
@@ -43,6 +46,12 @@ export function AssetPage() {
     ? `${record.asset_group_name ? `${record.asset_group_name}:` : ''}${record.name}`
     : 'Asset';
   const builds = (record?.names ?? []).filter((n) => n.build_digest !== null);
+  const genomeDigest = record?.genome_digest ?? undefined;
+  const genomeAliases = useAliases(
+    { genome_digest: genomeDigest, pageSize: 100 },
+    { enabled: !!genomeDigest },
+  );
+  const genomeName = preferredAlias(genomeAliases.data?.results.map((a) => a.name));
 
   return (
     <div className="flex flex-col gap-8">
@@ -54,8 +63,13 @@ export function AssetPage() {
           <Breadcrumbs
             items={[
               { label: 'Genomes', to: '/genomes' },
-              ...(record?.genome_digest
-                ? [{ label: 'Genome', to: `/genomes/${record.genome_digest}` }]
+              ...(genomeDigest
+                ? [
+                    {
+                      label: genomeName ?? formatDigest(genomeDigest),
+                      to: `/genomes/${genomeDigest}`,
+                    },
+                  ]
                 : []),
               { label },
             ]}
@@ -218,7 +232,16 @@ export function AssetPage() {
                 This asset is not staged for file-level serving.
               </p>
             ) : (
-              <AssetFileList assetDigest={record.digest ?? ''} files={files.data?.files} />
+              <AssetFileList
+                assetDigest={record.digest ?? ''}
+                files={files.data?.files}
+                size={record.size}
+                genome={
+                  genomeDigest && genomeName
+                    ? { digest: genomeDigest, name: genomeName }
+                    : undefined
+                }
+              />
             )}
           </section>
 

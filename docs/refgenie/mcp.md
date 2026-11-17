@@ -6,7 +6,7 @@ The MCP server is read-only. It queries genomes, assets, recipes and sequence co
 
 !!! info "Prerequisites"
 
-    - Refgenie installed with the `mcp` extra (`pip install "refgenie[mcp]>=1.0.0a2"`), or with the `server` extra, which includes `dash` and `mcp`
+    - Refgenie installed with the `mcp` extra (`pip install "refgenie[mcp]>=1.0.0a3"`), or with the `server` extra, which includes `dash` and `mcp`
     - `refgenie init` run once. An empty database works; the tools return empty lists until you pull or build something
     - An MCP client, such as Claude Desktop or Claude Code
 
@@ -141,9 +141,9 @@ The assistant calls `search_genomes` with `query="mouse"` and returns any genome
 
 **Reading a region:**
 
-> "Show me the first 100 bases of BRCA1 in hg38."
+> "Show me chr17:43,044,295-43,044,394 in hg38."
 
-The assistant calls `get_sequence` with `alias="hg38"`, `name="chr17"`, `start=43044294`, `end=43044394`. These are 0-based, half-open numbers for the region a genome browser writes as `chr17:43,044,295-43,044,394` (see [Coordinates](coordinates.md)).
+The assistant calls `get_sequence` with `alias="hg38"`, `name="chr17"`, `start=43044294`, `end=43044394`. These are the 0-based, half-open numbers for that 1-based region (see [Coordinates](coordinates.md)).
 
 **Comparing genomes:**
 

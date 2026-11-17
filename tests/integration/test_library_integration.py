@@ -716,7 +716,7 @@ class TestCatalogImportPostgres:
         import_publish_catalog(server.database_engine, str(artifact))
 
         assert [s.name for s in server.store.enabled_stores()] == ["refgenie-main", "igenomes"]
-        assert not server.store.get("retired").enabled
+        assert "retired" not in [s.name for s in server.store.list_all()]  # empty, so pruned
         assert server.genome.get("I" * 32).store_name == "igenomes"
         assert server.genome.get(server.alias.resolve("rCRSd")).store_name == "refgenie-main"
 

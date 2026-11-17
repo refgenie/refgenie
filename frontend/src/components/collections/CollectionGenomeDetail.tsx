@@ -26,7 +26,7 @@ export function CollectionGenomeDetail({
   onClose,
 }: CollectionGenomeDetailProps) {
   const detail = useGenome(genome.digest);
-  const title = preferredAlias(genome.aliases) ?? formatDigest(genome.digest);
+  const title = preferredAlias(genome.aliases, undefined, genome.synonyms) ?? formatDigest(genome.digest);
   const links = collection.genome_links
     .map((link) => ({
       label: link.label,

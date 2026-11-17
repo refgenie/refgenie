@@ -3,7 +3,6 @@ import { useSearchParams } from 'react-router-dom';
 import { useSearchParamsState } from '../hooks/useSearchParamsState';
 import { useResetPastEndPage } from '../hooks/useResetPastEndPage';
 import { useGenomes } from '../hooks/queries/useGenomes';
-import { useAssetGroups } from '../hooks/queries/useAssetGroups';
 import { useAssets } from '../hooks/queries/useAssets';
 import { useCapability } from '../hooks/useCapability';
 import { useRouteBase } from '../hooks/useRouteBase';
@@ -11,6 +10,7 @@ import { useBridgeDigests } from '../hooks/queries/useBridgeDigests';
 import { useBridgeStore } from '../stores/bridgeStore';
 import { MiniHero } from '../components/layout/MiniHero';
 import { GenomeTable } from '../components/genomes/GenomeTable';
+import { GenomeGuideLink } from '../components/genomes/GenomeGuideLink';
 import { Badge } from '../components/common/Badge';
 import { SearchBox } from '../components/common/SearchBox';
 import { Pagination } from '../components/common/Pagination';
@@ -81,7 +81,6 @@ export function GenomesPage() {
 
   // The same list totals the landing page reads; only the totals are used.
   const totalGenomes = useGenomes({ pageSize: 1 }).data?.pagination.total;
-  const totalGroups = useAssetGroups({ pageSize: 1 }).data?.pagination.total;
   const totalAssets = useAssets({ pageSize: 1 }).data?.pagination.total;
   const withAssets = useGenomes({ has_assets: true, pageSize: 1 });
 
@@ -130,7 +129,7 @@ export function GenomesPage() {
       />
 
       {totalGenomes !== undefined && (
-        <dl className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="rg-stat">
             <dt className="rg-kv__term">Genomes</dt>
             <dd className="text-2xl font-semibold">
@@ -142,19 +141,12 @@ export function GenomesPage() {
               </span>
             </dd>
           </div>
-          {(
-            [
-              ['Asset groups', totalGroups],
-              ['Assets', totalAssets],
-            ] as const
-          ).map(([term, value]) => (
-            <div className="rg-stat" key={term}>
-              <dt className="rg-kv__term">{term}</dt>
-              <dd className="text-2xl font-semibold">
-                {value === undefined ? '…' : value.toLocaleString()}
-              </dd>
-            </div>
-          ))}
+          <div className="rg-stat">
+            <dt className="rg-kv__term">Assets</dt>
+            <dd className="text-2xl font-semibold">
+              {totalAssets === undefined ? '…' : totalAssets.toLocaleString()}
+            </dd>
+          </div>
         </dl>
       )}
 
@@ -179,6 +171,8 @@ export function GenomesPage() {
         />
         Only genomes with built assets
       </label>
+
+      <GenomeGuideLink terms={[state.q]} />
 
       <GenomeTable
         genomes={query.data?.results}

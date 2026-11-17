@@ -399,11 +399,16 @@ own table match. There is no server-side store list (`REFGENIE_STORES` is gone):
 two lists, one on the build node and one in the task definition, drifted apart
 and silently dropped whole stores.
 
-- **Disable, never delete.** Genomes and aliases have foreign keys to
+- **Disable, then prune.** Genomes and aliases have foreign keys to
   `store.name`, so an import adds or updates stores by name and disables any the
-  catalog no longer lists. It never deletes a genome; `refgenie catalog-prune`
-  does that, by hand, with `--dry-run` first. An artifact with no store rows
-  leaves the stores alone, so one empty table cannot switch every store off.
+  catalog no longer lists. Then, from the same file, it prunes: assets the
+  catalog retracted, genomes it dropped that have no assets, and disabled stores
+  left empty. Pruning was once a manual `refgenie catalog-prune` step, and a
+  retired store (plantref) sat in production for days because nobody ran it. A
+  prune that would delete more than half the server's genomes or assets is
+  refused and logged, so a short artifact cannot empty a server; the manual
+  command remains for that case. An artifact with no store rows leaves the
+  stores alone, so one empty table cannot switch every store off.
 - **Only publishable stores are exported.** An `on_disk` store's URL is a path on
   the build node, so exporting a genome in one fails. A disabled store (plantref,
   too big for the server's memory) is left out with its genomes, at the source,

@@ -354,7 +354,7 @@ Use `/mcp` exactly, with no trailing slash. Only server mode has `/mcp`;
 check `"mode": "server"` in `/service-info` first.
 
 **Over stdio, against the user's own database**, with the `refgenie-mcp`
-command from `pip install "refgenie[mcp]>=1.0.0a2"`; setup is in the CLI
+command from `pip install "refgenie[mcp]>=1.0.0a3"`; setup is in the CLI
 [SKILL.md](https://docs.refgenie.org/SKILL.md).
 
 The tools:

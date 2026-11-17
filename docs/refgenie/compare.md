@@ -2,7 +2,7 @@
 
 Many analyses need two genomes to be compatible, not identical. For example, to annotate reads aligned with a `bowtie2_index` using a feature annotation file, the two only need the same coordinate system (sequence names and lengths); the sequences themselves may differ.
 
-`refgenie compare` answers this. When you run `refgenie genome init`, refgenie loads the genome into the RefgetStore as a GA4GH [sequence collection](https://ga4gh.github.io/seqcol-spec/) (seqcol): its sequence names, lengths, and sequence digests. `refgenie compare` runs the standard seqcol comparison on two of these collections, so no asset has to be built first.
+`refgenie compare` answers this. When you run `refgenie genome init`, refgenie loads the genome into the RefgetStore as a GA4GH [sequence collection](https://ga4gh.github.io/refget/seqcols/) (seqcol): its sequence names, lengths, and sequence digests. `refgenie compare` runs the standard seqcol comparison on two of these collections, so no asset has to be built first.
 
 ## Usage
 
@@ -23,10 +23,10 @@ refgenie compare hg38 --genome-digest <digest_b>
 
 ```console
 $ refgenie compare hg38 hg38_primary
-Every name and length of hg38_primary is also in hg38, but 18 of those 25 sequences differ in content.
+Every name and length of hg38_primary is also in hg38, but 18 of those 25 sequences differ in content: chr1, chr2, chr3, ..., chrY.
 
 $ refgenie compare sacCer3 R64-1-1
-Same 17 sequences in the same order; all 17 names differ: chrI->I, chrII->II, chrIII->III, ..., chrXVI->XVI.
+Same 17 sequences in the same order; all 17 names differ: chrI->I, chrII->II, chrIII->III, ..., chrXVI->XVI, chrM->Mito.
   chrI -> I
   chrII -> II
   ...
@@ -37,7 +37,7 @@ The first pair shares a coordinate system (the same names and lengths for hg38_p
 
 ## The full comparison
 
-`refgenie compare --json` prints the summary, the rename map (`name_map`) and the GA4GH [sequence collection](https://ga4gh.github.io/seqcol-spec/) comparison (`comparison`):
+`refgenie compare --json` prints the summary, the rename map (`name_map`) and the GA4GH [sequence collection](https://ga4gh.github.io/refget/seqcols/) comparison (`comparison`):
 
 ```console
 {

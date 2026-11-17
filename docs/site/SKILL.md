@@ -37,9 +37,13 @@ HTTP with nothing installed, read <https://api.refgenie.org/SKILL.md>.
 Refgenie 1.0 is a pre-release, so ask for it by version:
 
 ```bash
-pip install "refgenie>=1.0.0a2"
-refgenie --version
+pip install "refgenie>=1.0.0a3"
+refgenie --version   # refgenie 1.0.0a3
 ```
+
+Without the version, pip installs the legacy 0.13, whose commands differ. 0.x
+syntax (`-c genome_config.yaml`, `seek -g hg38 -a fasta`) fails in 1.0; see
+<https://docs.refgenie.org/refgenie/migration-from-legacy/#commands>.
 
 Extras: `mcp` (the MCP server), `dash` (the local web dashboard), `server`
 (`refgenie serve`, includes `dash` and `mcp`), and `snakemake`.
@@ -52,7 +56,7 @@ To *answer questions* about a user's genomes and assets, use the read-only MCP
 server instead of shelling out:
 
 ```bash
-pip install "refgenie[mcp]>=1.0.0a2"
+pip install "refgenie[mcp]>=1.0.0a3"
 claude mcp add refgenie "$(which refgenie-mcp)"
 ```
 
@@ -203,9 +207,9 @@ Refgenie gives you the index, not the aligner. The asset name is the tool
 version that built it.
 
 ```bash
-refgenie seek yeast_s288c/bowtie2_index.version   # 2.5.5
+refgenie seek R64-1-1/bowtie2_index.version   # 2.5.5
 conda install -c bioconda bowtie2=2.5.5           # or any installer; match the version
-bowtie2 -x "$(refgenie seek yeast_s288c/bowtie2_index)" -U reads.fq -S out.sam
+bowtie2 -x "$(refgenie seek R64-1-1/bowtie2_index)" -U reads.fq -S out.sam
 ```
 
 No conda? Use the prebuilt binary of that version from the tool's GitHub
@@ -224,8 +228,8 @@ without the 3 GB FASTA. Over MCP: page through `get_genome_sequences`.
 ### A region of a genome you have not downloaded
 
 ```bash
-refgenie getseq -g hg38 -l chr17:43,044,295-43,044,394   # first 100 bp of BRCA1
-refgenie getseq -g hg38 -l chr17:43,044,295-43,044,394 --fasta > brca1_start.fa
+refgenie getseq -g hg38 -l chr17:43,044,295-43,044,394   # 100 bp at BRCA1's 3' end
+refgenie getseq -g hg38 -l chr17:43,044,295-43,044,394 --fasta > brca1_3prime.fa
 ```
 
 The first call registers hg38 from your server; no FASTA is downloaded. Over
@@ -321,7 +325,7 @@ refgenie serve                  # start the HTTP server (REST API, web UI, /mcp)
 refgenie dash                   # start the local dashboard on port 8080
 ```
 
-`serve` needs `pip install "refgenie[server]>=1.0.0a2"`; `dash` needs
+`serve` needs `pip install "refgenie[server]>=1.0.0a3"`; `dash` needs
 `"refgenie[dash]"`. See <https://docs.refgenie.org/refgenie/building_tutorial/>
 for the full build, stage, push, and serve steps.
 

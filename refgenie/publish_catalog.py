@@ -54,6 +54,7 @@ def _publishable_stores(
     store_rows: list[dict],
     catalog_store_name: str | None,
     catalog_store_url: str | None,
+    catalog_store_priority: int,
 ) -> list[dict]:
     """The store rows to publish: the remote ones, plus the catalog's own store.
 
@@ -79,7 +80,7 @@ def _publishable_stores(
                 name=catalog_store_name,
                 url=catalog_store_url,
                 type=StoreType.remote,
-                priority=30,  # lower wins alias ties
+                priority=catalog_store_priority,
                 enabled=True,
                 description="Genomes built for this catalog",
             ).model_dump()
@@ -158,6 +159,7 @@ def export_publish_catalog(
     https_prefix: str,
     catalog_store_name: str | None = None,
     catalog_store_url: str | None = None,
+    catalog_store_priority: int = 30,
 ) -> dict[str, int]:
     """
     Write the publishable subset of ``rg``'s catalog to a fresh SQLite file.
@@ -176,6 +178,7 @@ def export_publish_catalog(
             built itself (those with no store). When given, it is published
             and those genomes are exported as living in it.
         catalog_store_url: That store's public root URL. Required with the name.
+        catalog_store_priority: That store's priority (lower wins alias ties).
 
     Returns a table -> row-count summary.
 
@@ -186,7 +189,9 @@ def export_publish_catalog(
     """
     pushed_pairs, rows = publish.read_publishable(rg.database_engine)
     pushed_pairs, _ = _omit_disabled_store_genomes(rows, pushed_pairs)
-    stores = _publishable_stores(rows["store"], catalog_store_name, catalog_store_url)
+    stores = _publishable_stores(
+        rows["store"], catalog_store_name, catalog_store_url, catalog_store_priority
+    )
     if catalog_store_name:
         for g in rows["genome"]:
             if g["store_name"] is None:
@@ -269,21 +274,34 @@ def _local_copy(source: str):
         Path(tmp.name).unlink(missing_ok=True)
 
 
-def import_publish_catalog(engine, source: str) -> dict[str, int]:
-    """
-    Upsert a publish-catalog artifact (local path or http(s) URL) into
-    ``engine``'s catalog.
+IMPORT_PRUNE_MAX_SHARE = 0.5
 
-    Insert-or-update in one transaction. Nothing is deleted (ORM deletes would
-    queue file removals), except that each species taxon and each carried
-    genome's alias set is rewritten; an alias with '/' is skipped. Retracted
-    assets, genomes and stores stay until :func:`prune_publish_catalog` runs.
-    The artifact's schema stamp must match this code's.
+
+def import_publish_catalog(engine, source: str, *, prune: bool = True) -> dict[str, int]:
+    """
+    Make ``engine``'s catalog match a publish-catalog artifact (local path or http(s) URL).
+
+    First an insert-or-update in one transaction: nothing is deleted (ORM deletes
+    would queue file removals), except that each species taxon and each carried
+    genome's alias set is rewritten; an alias with '/' is skipped. Then, from the
+    same file, a prune deletes what the artifact no longer has: retracted assets,
+    genomes it dropped that have no assets, and empty disabled stores. A prune
+    that would delete more than half the server's genomes or assets is refused
+    and logged, and the import stands. ``prune=False`` skips the prune. The
+    artifact's schema stamp must match this code's.
     """
     with _local_copy(source) as local_path:
         summary = publish.import_catalog(engine, local_path, valid_alias=GenomeAlias.is_valid)
-
-    logger.info(f"Imported publish catalog from {source}: {summary}")
+        logger.info(f"Imported publish catalog from {source}: {summary}")
+        if prune:
+            try:
+                removed = publish.prune_catalog(
+                    engine, local_path, max_share=IMPORT_PRUNE_MAX_SHARE
+                )
+            except ValueError as e:
+                logger.error(f"Not pruning after the import from {source}: {e}")
+            else:
+                _log_prune(removed, source, dry_run=False)
     return summary
 
 
@@ -292,19 +310,28 @@ def prune_publish_catalog(engine, source: str, dry_run: bool = False) -> dict[st
     Delete from ``engine`` what the artifact at ``source`` no longer has: retracted
     assets, genomes it dropped that have no assets, and empty disabled stores.
 
-    Never run automatically. See :func:`refgenie.db.publish.prune_catalog`.
+    Every import already prunes; this is the by-hand version, with no share
+    limit, to preview with ``dry_run`` or to make a large removal an import
+    refuses. See :func:`refgenie.db.publish.prune_catalog`.
     """
     with _local_copy(source) as local_path:
         removed = publish.prune_catalog(engine, local_path, dry_run=dry_run)
-    verb = "Would prune" if dry_run else "Pruned"
-    logger.info(
-        f"{verb} {len(removed['asset'])} asset(s), {len(removed['assetgroup'])} asset "
-        f"group(s), {len(removed['genome'])} genome(s), {len(removed['alias'])} alias(es) "
-        f"and {len(removed['store'])} store(s) no longer in {source}"
-    )
+    _log_prune(removed, source, dry_run)
+    return removed
+
+
+def _log_prune(removed: dict[str, list[str]], source: str, dry_run: bool) -> None:
+    """Log what a prune removed (or would remove); a real prune that removed nothing is quiet."""
+    counted = ("asset", "assetgroup", "genome", "alias", "store")
+    if dry_run or any(removed[k] for k in counted):
+        verb = "Would prune" if dry_run else "Pruned"
+        logger.info(
+            f"{verb} {len(removed['asset'])} asset(s), {len(removed['assetgroup'])} asset "
+            f"group(s), {len(removed['genome'])} genome(s), {len(removed['alias'])} alias(es) "
+            f"and {len(removed['store'])} store(s) no longer in {source}"
+        )
     if removed["kept_genome"]:
         logger.warning(
             f"Kept {len(removed['kept_genome'])} genome(s) the catalog no longer carries, "
             f"because they still have assets"
         )
-    return removed

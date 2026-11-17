@@ -19,7 +19,7 @@ export const localConfig: UiConfig = {
   mode: 'local',
   api_base: '/v4',
   root_path: '',
-  refgenie_version: '1.0.0a2',
+  refgenie_version: '1.0.0a3',
   service_name: 'refgenie local dashboard',
   capabilities: capabilities({
     pull: true,

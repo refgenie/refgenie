@@ -24,6 +24,7 @@ import { TabPanel, Tabs } from '../components/common/Tabs';
 import type { TabItem } from '../components/common/Tabs';
 import { GenomeDigest } from '../components/genomes/GenomeDigest';
 import { GenomeHeader } from '../components/genomes/GenomeHeader';
+import { GenomeGuideLink } from '../components/genomes/GenomeGuideLink';
 import { refgeniePullCommand } from '../utils/codeSnippets';
 import { GenomeSummaryCard } from '../components/genomes/GenomeSummaryCard';
 import { GenomeAliases } from '../components/genomes/GenomeAliases';
@@ -68,7 +69,7 @@ export function GenomePage() {
   const record = genome.data;
   const aliasNames = aliases.data?.results.map((alias) => alias.name) ?? [];
   // A new genome may have no alias; fall back to a shortened digest.
-  const primaryAlias = preferredAlias(aliasNames);
+  const primaryAlias = preferredAlias(aliasNames, undefined, record?.synonyms);
   const title = record ? (primaryAlias ?? formatDigest(record.digest)) : 'Genome';
 
   const storeUrl = record?.refget_store_url ?? null;
@@ -132,7 +133,9 @@ export function GenomePage() {
     isGenomeTab(requested) && !tabs.find((tab) => tab.id === requested)?.disabled
       ? requested
       : null;
-  const activeTab = requestedTab ?? 'assets';
+  // A genome with no assets opens on what it does have: its sequences.
+  const activeTab =
+    requestedTab ?? (assetCount === 0 && !noSequences ? 'sequences' : 'assets');
   const selectTab = (id: GenomeTab) => {
     const next = new URLSearchParams(params);
     next.set('tab', id);
@@ -191,6 +194,7 @@ export function GenomePage() {
         {!genome.error && (
           <GenomeHeader genome={record} naming={naming} />
         )}
+        {record && <GenomeGuideLink terms={[...aliasNames, record.species_name]} />}
       </MiniHero>
 
       {genome.error && (

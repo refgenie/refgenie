@@ -9,7 +9,7 @@ To turn a text region into start and end numbers, subtract 1 from the start and 
 
 ## The same 100 bases, four ways
 
-These all return the first 100 bases of BRCA1 in `hg38`, starting `TGGAAGTGTTTGCTACCAAG`.
+These all return the same 100 bases of `hg38`, at the 3' end of BRCA1 (a minus-strand gene), starting `TGGAAGTGTTTGCTACCAAG`.
 
 On the command line:
 

@@ -42,7 +42,9 @@ describe('LandingPage', () => {
 
   it('shows the counts as one line once they load', async () => {
     renderWithProviders(<LandingPage />, { config: serverConfig });
-    expect(await screen.findByText(/2 genomes · \d+ asset groups/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/2 genomes · \d+ assets · \d+ kinds of asset/),
+    ).toBeInTheDocument();
   });
 
   it('deep-links the hero search into the genome list', async () => {
@@ -74,7 +76,7 @@ describe('LandingPage', () => {
     // The install line follows the version the server reports, and the
     // first pull is the small FASTA index, not the multi-GB FASTA.
     expect(steps.map((step) => step.querySelector('code')?.textContent)).toEqual([
-      'pip install "refgenie>=1.0.0a2"',
+      'pip install "refgenie>=1.0.0a3"',
       'refgenie init',
       'refgenie pull hg38/fasta_index',
       'refgenie seek hg38/fasta_index.chrom_sizes',
@@ -84,8 +86,9 @@ describe('LandingPage', () => {
 
   it('says 1.0 is an alpha and links the details', () => {
     renderWithProviders(<LandingPage />, { config: serverConfig });
+    // The pin it asks for is spelled out, unlike the `>=` install line.
     expect(screen.getByText(/is an alpha release/)).toHaveTextContent(
-      /pin the version in production pipelines/,
+      /pin the exact version: refgenie==1\.0\.0a3\./,
     );
     expect(screen.getByRole('link', { name: /Details/ })).toHaveAttribute(
       'href',

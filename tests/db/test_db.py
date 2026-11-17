@@ -264,18 +264,19 @@ def test_warning_fires_when_REFGENIE_set_and_new_var_missing(monkeypatch, capsys
 
 
 @pytest.mark.parametrize(
-    "legacy_set, new_var_set",
+    "legacy, new_var_set",
     [
-        pytest.param(True, True, id="new_var_set"),
-        pytest.param(False, False, id="REFGENIE_unset"),
+        pytest.param("/legacy/genome_config.yaml", True, id="new_var_set"),
+        pytest.param(None, False, id="REFGENIE_unset"),
+        pytest.param("", False, id="REFGENIE_empty"),
     ],
 )
-def test_warning_silent(monkeypatch, capsys, tmp_path, legacy_set, new_var_set):
-    """No warning when the new var is set, or when legacy $REFGENIE is unset."""
-    if legacy_set:
-        monkeypatch.setenv("REFGENIE", "/legacy/genome_config.yaml")
-    else:
+def test_warning_silent(monkeypatch, capsys, tmp_path, legacy, new_var_set):
+    """No warning when the new var is set, or when legacy $REFGENIE is unset or empty."""
+    if legacy is None:
         monkeypatch.delenv("REFGENIE", raising=False)
+    else:
+        monkeypatch.setenv("REFGENIE", legacy)
     if new_var_set:
         monkeypatch.setenv("REFGENIE_DB_CONFIG_PATH", str(tmp_path / "db.yaml"))
     else:

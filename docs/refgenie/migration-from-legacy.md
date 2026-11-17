@@ -1,6 +1,22 @@
 # Migration reference: 0.x to 1.0
 
-This page lists the changes in refgenie 1.0 that affect code, pipelines, and plugins written for 0.x. To move an existing install, use the [upgrade guide](upgrade.md).
+This page lists the changes in refgenie 1.0 that affect commands, code, pipelines, and plugins written for 0.x. To move an existing install, use the [upgrade guide](upgrade.md).
+
+## Commands
+
+Older docs and search results show 0.x commands. Here are their 1.0 forms:
+
+| 0.x | 1.0 |
+| --- | --- |
+| `pip install refgenie` | `pip install "refgenie>=1.0.0a3"` |
+| `refgenie init -c genome_config.yaml` | `refgenie init` |
+| `refgenie seek -c genome_config.yaml -g hg38 -a bowtie2_index` | `refgenie seek hg38/bowtie2_index` |
+| `refgenie pull -g hg38 -a bowtie2_index` | `refgenie pull hg38/bowtie2_index` |
+| `refgenie seek -g hg38 -a chrom_sizes` | `refgenie seek hg38/fasta_index.chrom_sizes` |
+| `refgenie seek hg38/bowtie2_index.dir` | `refgenie seek hg38/bowtie2_index` (see [Seek keys](#seek-keys)) |
+| `refgenie build hg38/fasta --files fasta=hg38.fa.gz` | `refgenie genome init --fasta hg38.fa.gz --name hg38` (see [Build assets](build.md)) |
+
+There is no `-c` config file: refgenie finds its files through `REFGENIE_HOME_PATH` (see [Environment variables](#environment-variables)). The [CLI reference](refgenie-cli.md) lists every command.
 
 ## Environment variables
 

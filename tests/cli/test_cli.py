@@ -529,6 +529,13 @@ class TestErrorExitCodes:
         for fragment in fragments:
             assert fragment in text
 
+    def test_legacy_flags_point_to_the_path_form(self, cli, capsys):
+        """0.x `-g/-a` flags, still what web search finds, get a one-line hint."""
+        assert cli("seek", "-g", "hg38", "-a", "fasta") == 2
+        assert "refgenie seek hg38/fasta" in capsys.readouterr().err
+        assert cli("seek", "hg38/fasta", "--bogus") == 2
+        assert "-g/-a" not in capsys.readouterr().err
+
     def test_only_the_missing_arguments_are_named(self, cli, capsys):
         assert cli("remote", "add", "--type", "s3") == 1
         err = capsys.readouterr().err
@@ -595,6 +602,21 @@ class TestEmptyDatabaseCommands:
         temp_file.write_text("rCRSd/fasta\n")
         assert cli("populater", "-s", "http://transient.example.com", "-f", str(temp_file)) == 0
         assert cli_rg.servers.subscriptions() == []
+
+    @pytest.mark.parametrize("command", ["populate", "populater"])
+    def test_populate_unresolved_path_exits_nonzero(self, cli, cli_rg, tmp_path, capsys, command):
+        """A refgenie:// path left as written fails the command; the text still prints."""
+        temp_file = tmp_path / "config.yaml"
+        temp_file.write_text("fasta: refgenie://hg38/fasta\n")
+        with (
+            patch(
+                "refgenie.managers.asset.manager.AssetManager.seek_components",
+                side_effect=ValueError("no"),
+            ),
+            patch.object(ServerManager, "seek_components", side_effect=ValueError("no")),
+        ):
+            assert cli(command, "-f", str(temp_file)) == EXIT_NOT_FOUND
+        assert capsys.readouterr().out == "fasta: refgenie://hg38/fasta\n"
 
     @pytest.mark.parametrize(
         "argvs",
@@ -1483,6 +1505,7 @@ class TestQuietScriptableOutput:
         assert cli("seek", "rCRSd/chrom_sizes") == EXIT_NOT_FOUND
         err = capsys.readouterr().err
         assert "Did you mean: rCRSd/fasta.chrom_sizes?" in err
+        assert "Asset group 'rCRSd/chrom_sizes' not found" in err
         assert "refgenie pull" not in err
 
     def test_seek_of_an_asset_not_here_names_the_pull_command(self, cli, capsys):

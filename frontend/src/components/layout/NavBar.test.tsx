@@ -23,6 +23,14 @@ describe('NavBar', () => {
     }
   });
 
+  it('explains refgenie words on hover', () => {
+    renderWithProviders(<NavBar />, { config: serverConfig });
+    expect(screen.getByRole('link', { name: 'Asset classes' })).toHaveAttribute(
+      'title',
+      'The kinds of files refgenie manages, such as fasta or bowtie2_index',
+    );
+  });
+
   it('shows Species on a local dash too — it is not capability-gated', () => {
     // The species table is grouped from /v4/genomes, which both modes serve,
     // so unlike the tree it needs no `archives` capability.

@@ -7,7 +7,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useGenomes } from '../hooks/queries/useGenomes';
-import { useAssetGroups } from '../hooks/queries/useAssetGroups';
+import { useAssets } from '../hooks/queries/useAssets';
 import { useAssetClasses } from '../hooks/queries/useAssetClasses';
 import { useRecipes } from '../hooks/queries/useRecipes';
 import { useUiConfig } from '../hooks/useUiConfig';
@@ -18,7 +18,7 @@ import { ExternalLink } from '../components/common/ExternalLink';
 import { Icon } from '../components/common/Icon';
 import { Badge } from '../components/common/Badge';
 import { CopyButton } from '../components/common/CopyButton';
-import { installCommand } from '../utils/install';
+import { installCommand, releaseVersion } from '../utils/install';
 import { PROJECT_LINKS } from '../services/projectLinks';
 import { absoluteServerRoot } from '../services/instanceLinks';
 
@@ -50,14 +50,14 @@ const LATER_STEPS = [
 /** One quiet line of counts, shown once they have all loaded. */
 function Counts() {
   const genomes = useGenomes(COUNT_ONLY).data?.pagination.total;
-  const groups = useAssetGroups(COUNT_ONLY).data?.pagination.total;
+  const assets = useAssets(COUNT_ONLY).data?.pagination.total;
   const classes = useAssetClasses(COUNT_ONLY).data?.pagination.total;
   const recipes = useRecipes(COUNT_ONLY).data?.pagination.total;
-  if ([genomes, groups, classes, recipes].some((n) => n === undefined)) return null;
+  if ([genomes, assets, classes, recipes].some((n) => n === undefined)) return null;
   const n = (value: number | undefined) => (value ?? 0).toLocaleString();
   return (
     <p className="rg-muted text-sm">
-      {n(genomes)} genomes · {n(groups)} asset groups · {n(classes)} asset classes ·{' '}
+      {n(genomes)} genomes · {n(assets)} assets · {n(classes)} kinds of asset ·{' '}
       {n(recipes)} recipes
     </p>
   );
@@ -99,7 +99,12 @@ export function LandingPage() {
         </p>
         <p className="rg-hero__note text-sm">
           <Badge>Alpha</Badge> Refgenie 1.0 is an alpha release: it works, but commands
-          and data can still change, so pin the version in production pipelines.{' '}
+          and data can still change, and a later alpha may need your assets rebuilt. In
+          production pipelines, pin the exact version:{' '}
+          <code className="rg-code rg-code--inline">
+            refgenie=={releaseVersion(config.refgenie_version)}
+          </code>
+          .{' '}
           <ExternalLink href={PROJECT_LINKS.refgenieDocs}>Details</ExternalLink>
         </p>
 

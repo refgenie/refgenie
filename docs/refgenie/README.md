@@ -10,7 +10,7 @@
 Refgenie manages storage, access, and transfer of reference genome resources. It provides command-line and Python interfaces to *download* pre-built reference genome "assets", like indexes used by bioinformatics tools. It can also *build* assets for custom genome assemblies. Refgenie provides programmatic access to a standard genome folder structure, so software can swap from one genome to another.
 
 !!! warning "Alpha"
-    Refgenie 1.0 is an alpha. It works, but commands and data can still change, so pin the version in production pipelines (for example, `refgenie==1.0.0a2`).
+    Refgenie 1.0 is an alpha. It works, but commands and data can still change, so pin the version in production pipelines (for example, `refgenie==1.0.0a3`).
 
 ## What makes refgenie better?
 
@@ -24,7 +24,7 @@ Refgenie manages storage, access, and transfer of reference genome resources. It
 
 5. **It includes a Python API**. Tool developers use `from refgenie import Refgenie` to get paths to any genome asset from Python.
 
-6. **It checks genome compatibility**. You refer to genomes by aliases like "hg38", but refgenie identifies each genome by a digest computed from its sequences ([GA4GH sequence collections](https://ga4gh.github.io/seqcol-spec/)), so assets always match the genome they were built from.
+6. **It checks genome compatibility**. You call genomes by names like "hg38", but refgenie also gives each genome an ID computed from its sequences (a [GA4GH sequence collection](https://ga4gh.github.io/refget/seqcols/) digest), so assets always match the genome they were built from.
 
 7. **It scales**. Refgenie keeps its records in a database. It uses a local SQLite file by default and can use PostgreSQL, including on a remote server, for multi-user and distributed setups.
 
@@ -33,13 +33,13 @@ Refgenie manages storage, access, and transfer of reference genome resources. It
 Four commands install refgenie, set it up, download a small asset, and print its path:
 
 ```console
-pip install "refgenie>=1.0.0a2"
+pip install "refgenie>=1.0.0a3"
 refgenie init
 refgenie pull hg38/fasta_index
 refgenie seek hg38/fasta_index.chrom_sizes
 ```
 
-1. **Install.** Version 1.0 is a pre-release, so ask [PyPI](https://pypi.org/project/refgenie/) for it by version. See [Install](install.md).
+1. **Install.** Version 1.0 is a pre-release, so ask [PyPI](https://pypi.org/project/refgenie/) for it by version: plain `pip install refgenie` gives you the old 0.13. See [Install](install.md). Copied an old command like `refgenie seek -g hg38 -a fasta`? See [0.x commands in 1.0](migration-from-legacy.md#commands).
 2. **Initialize.** `refgenie init` creates the local database and genome folder, and subscribes to the public server at `https://api.refgenie.org`. See [Configure](configuration.md) for other locations and database options.
 3. **Pull.** `hg38/fasta_index` is about 12 KB: the FASTA index and chromosome sizes for hg38, without the 3 GB FASTA. Not sure which hg38 you need? See [Which hg38 should I use?](choosing_hg38.md).
 4. **Seek.** `refgenie seek` prints the local path to a file in the asset, so your scripts work on any computer. See [Retrieve paths to assets](seek.md).
@@ -77,7 +77,7 @@ See [Configure remote storage](remotes.md).
 from refgenie import Refgenie
 
 rgc = Refgenie()
-digest = rgc.alias.resolve("hg38")  # seek takes a genome digest, not an alias
+digest = rgc.alias.resolve("hg38")  # seek takes the genome's ID (digest), not its name
 rgc.asset.seek(digest, "fasta_index", seek_key_name="chrom_sizes")
 ```
 

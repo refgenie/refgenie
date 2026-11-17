@@ -2,59 +2,67 @@
 # (built by databio/doc-hubs, hubs/refgenie). Pages not listed here are
 # still published, just not in the sidebar.
 site_name: Refgenie
+# Groups that start closed in the sidebar, so a newcomer sees the first two.
+# A group opens by itself when it holds the current page.
+collapsed:
+  - More guides
+  - Build and serve
+  - Reference
 nav:
   - Getting started:
       - Introduction: README.md
-      - "What's new in 1.0": whats_new.md
-      - Overview: overview.md
       - Install: install.md
-      - Upgrade from legacy: upgrade.md
-      - Configure: configuration.md
       - CLI tutorial: cli_tutorial.md
-      - Genome initialization: genome_tutorial.md
+      - "What's new in 1.0": whats_new.md
+      - Upgrade from 0.x: upgrade.md
       - Citing refgenie: manuscripts.md
-  - How-to guides:
-      - Refer to assets: asset_registry_paths.md
+  - Use refgenie:
+      - Which hg38 should I use?: choosing_hg38.md
+      - Which mm39 should I use?: choosing_mm39.md
+      - Which yeast genome should I use?: choosing_yeast.md
       - Download pre-built assets: pull.md
-      - Use refgenie from Python: refgenie_object.md
-      - Use data channels: data_channels.md
-      - Build assets: build.md
-      - Stage assets for serving: staging.md
-      - Configure remote storage: remotes.md
-      - Building and serving tutorial: building_tutorial.md
       - Retrieve paths to assets: seek.md
       - "Coordinates: 1-based or 0-based": coordinates.md
       - Compare genomes: compare.md
-      - Choose an hg38 genome: choosing_hg38.md
-      - Choose an mm39 genome: choosing_mm39.md
-      - Choose a yeast genome: choosing_yeast.md
-      - Add custom assets: custom_assets.md
+      - Use refgenie from Python: refgenie_object.md
+      - Use refgenie from R (Bioconductor): bioconductor.md
+      - Use refgenie with AI: use_with_ai.md
+  - More guides:
+      - Configure: configuration.md
+      - Refer to assets: asset_registry_paths.md
       - Manage aliases: alias.md
       - Managing asset groups and naming: naming_assets.md
       - Populate refgenie paths: populate.md
-      - Set up your own data channel: set_up_data_channel.md
-      - Run a server: server_tutorial.md
       - Use the dashboard: dash.md
       - Connect the web UI to your local refgenie: bridge.md
-      - Use refgenie with AI: use_with_ai.md
       - Connect AI assistants (MCP): mcp.md
-      - Write a plugin: plugins.md
-  - Server:
-      - Server reference: server/README.md
+  - Build and serve:
+      - Build assets: build.md
+      - Genome initialization: genome_tutorial.md
+      - Add custom assets: custom_assets.md
+      - Use data channels: data_channels.md
+      - Set up your own data channel: set_up_data_channel.md
+      - Building and serving tutorial: building_tutorial.md
+      - Run a server: server_tutorial.md
+      - Stage assets for serving: staging.md
+      - Configure remote storage: remotes.md
       - Serving modes: serving_modes.md
       - Public servers: servers.md
+      - Server reference: server/README.md
       - Serve data channels: server/data_channels.md
       - Remotes on a server: server/remotes.md
       - Pagination and search: server/pagination_and_search.md
+      - Write a plugin: plugins.md
   - Reference:
       - CLI reference: refgenie-cli.md
+      - Migration reference (0.x to 1.0): migration-from-legacy.md
       - Glossary: glossary.md
+      - FAQ: faq.md
+      - Overview: overview.md
       - Database backends: database.md
       - Asset classes and recipes: flexible_asset_types.md
-      - Studies using refgenie: uses_refgenie.md
       - Recipe specification: recipe_specification.md
       - Asset class specification: asset_class_specification.md
-      - Migration reference (0.x to 1.0): migration-from-legacy.md
-      - FAQ: faq.md
+      - Studies using refgenie: uses_refgenie.md
       - Contributing: contributing.md
       - Development setup: development.md

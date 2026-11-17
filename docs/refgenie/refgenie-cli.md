@@ -9,7 +9,7 @@ Install from [PyPI](https://pypi.org/project/refgenie/). Refgenie 1.0 is a
 pre-release, so ask for it by version:
 
 ```bash
-pip install "refgenie>=1.0.0a2"
+pip install "refgenie>=1.0.0a3"
 ```
 
 The base install provides the CLI and the Python API. `refgenie dash`,
@@ -21,7 +21,7 @@ Check the installed version:
 
 ```bash
 $ refgenie --version
-refgenie 1.0.0a1
+refgenie 1.0.0a3
 ```
 
 ## Getting started
@@ -615,7 +615,7 @@ Export a publish catalog covering pushed assets only, for a server to import.
 
 ```
 refgenie catalog-export [--dest PATH] [--https-prefix URL]
-    [--catalog-store-name NAME --catalog-store-url URL]
+    [--catalog-store-name NAME --catalog-store-url URL [--catalog-store-priority N]]
 ```
 
 | Option | Description |
@@ -624,6 +624,7 @@ refgenie catalog-export [--dest PATH] [--https-prefix URL]
 | `--https-prefix` | Public https base URL mirroring the stage folder that `refgenie push` uploaded to, e.g. `https://<bucket>.s3.amazonaws.com/assets`. Download links are served from here. |
 | `--catalog-store-name` | Name of the public store that holds the genomes this node built itself, e.g. `refgenie-main`. Those genomes belong to no registered store; the catalog lists them under this one. |
 | `--catalog-store-url` | Public root URL of that store. Required with `--catalog-store-name`. |
+| `--catalog-store-priority` | Priority of that store. Defaults to `30`. |
 
 The catalog carries the [store list](#store): every enabled `remote` store,
 plus the catalog store if one is named. Disabled stores are left out with their
@@ -632,9 +633,11 @@ genomes. The export fails if a genome belongs to a store it cannot publish (an
 
 #### `catalog-prune`
 
-Delete what a server holds but its publish catalog no longer has. A catalog
-import never deletes assets, genomes or stores, so run this on the server
-after it imports the catalog, with `--dry-run` first. It removes:
+Delete what a server holds but its publish catalog no longer has. A server
+already does this after every catalog import, so use this command to preview
+with `--dry-run`, or for a removal the import refuses: an import's prune is
+skipped if it would delete more than half the server's genomes or assets, and
+this command has no such limit. It removes:
 
 - assets the catalog no longer lists (such as the old copy of a rebuilt asset);
 - genomes the catalog no longer carries that have no assets, with their aliases

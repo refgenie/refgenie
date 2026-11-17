@@ -13,6 +13,38 @@ export const PROJECT_LINKS = {
   useWithAi: 'https://docs.refgenie.org/refgenie/use_with_ai/',
 } as const;
 
+/**
+ * The docs' guides to choosing among look-alike genomes, each with the name
+ * starts it covers: an alias, a species or a search for one of these.
+ */
+const GENOME_GUIDES = [
+  {
+    title: 'Which hg38 should I use?',
+    href: 'https://docs.refgenie.org/refgenie/choosing_hg38/',
+    names: ['hg38', 'grch38'],
+  },
+  {
+    title: 'Which mm39 should I use?',
+    href: 'https://docs.refgenie.org/refgenie/choosing_mm39/',
+    names: ['mm39', 'grcm39'],
+  },
+  {
+    title: 'Which yeast genome should I use?',
+    href: 'https://docs.refgenie.org/refgenie/choosing_yeast/',
+    names: ['yeast', 'saccer', 'r64', 'saccharomyces cerevisiae'],
+  },
+] as const;
+
+/** The guide for the first of `terms` that starts with one of its names, ignoring case. */
+export function genomeGuide(
+  terms: readonly (string | null | undefined)[],
+): { title: string; href: string } | undefined {
+  const words = terms.map((term) => term?.trim().toLowerCase() ?? '');
+  return GENOME_GUIDES.find((guide) =>
+    words.some((word) => guide.names.some((name) => word.startsWith(name))),
+  );
+}
+
 export interface Citation {
   readonly authors: string;
   readonly year: string;

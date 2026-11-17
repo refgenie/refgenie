@@ -36,7 +36,7 @@ Give any assistant that can fetch a URL or run shell commands an instruction lik
 Refgenie includes an **MCP server** that gives an assistant read-only access to your local refgenie database. Install the `mcp` extra and connect it to Claude Code:
 
 ```bash
-pip install "refgenie[mcp]>=1.0.0a2"
+pip install "refgenie[mcp]>=1.0.0a3"
 claude mcp add refgenie "$(which refgenie-mcp)"
 ```
 

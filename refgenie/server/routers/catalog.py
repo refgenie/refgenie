@@ -192,7 +192,9 @@ def compare_genomes(digest: str, other: str, rgc: Refgenie = Depends(get_refgeni
         raise _no_collection(e, f"{digest} or {other}") from None
     result = compare_level2(side_a, side_b, digest, other)
     aliases = rgc.alias.get_for_genomes([digest, other])
-    label_a, label_b = (display_alias(aliases.get(d, [])) or d for d in (digest, other))
+    label_a, label_b = (
+        display_alias(aliases.get(d, []), rgc.genome.get(d).synonyms) or d for d in (digest, other)
+    )
     summary, name_map = summarize_comparison(side_a, side_b, result, label_a, label_b)
     return {**result, "summary": summary, "name_map": name_map}
 
