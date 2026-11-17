@@ -101,8 +101,6 @@ def handle_catalog_export(cmd, refgenie) -> None:
         fail("--dest is required: path for the publish-catalog artifact")
     if not cmd.https_prefix:
         fail("--https-prefix is required: public https base URL for the pushed assets")
-    if bool(cmd.catalog_store_name) != bool(cmd.catalog_store_url):
-        fail("--catalog-store-name and --catalog-store-url must be given together")
     from refgenie.publish_catalog import export_publish_catalog
 
     try:
