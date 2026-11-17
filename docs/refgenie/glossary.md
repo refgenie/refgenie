@@ -1,7 +1,7 @@
 # Glossary
 
 - **Genome** (also *assembly*, *reference genome*): a set of sequences for an organism, such as hg38.
-- **Genome digest**: a genome's identifier, the GA4GH [sequence collection](https://ga4gh.github.io/seqcol-spec/) digest of its sequences. For example, `jthDpfNIgzM5AGJlOkRtfnky4rXMBIUP`.
+- **Genome digest**: a genome's identifier, the GA4GH [sequence collection](https://ga4gh.github.io/refget/seqcols/) digest of its sequences. For example, `jthDpfNIgzM5AGJlOkRtfnky4rXMBIUP`.
 - **Alias**: a human-readable name for a genome digest, such as `hg38`. A genome can have several aliases.
 - **Asset group**: a kind of asset for a genome, such as `fasta` or `bowtie2_index`. A group holds one or more assets, and one is the default.
 - **Asset**: one named build within an asset group, such as `default` or `2.5.5`, made of one or more files.

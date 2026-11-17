@@ -6,7 +6,7 @@ Refgenie 1.0 is a rewrite. One package now does the work of the three 0.x packag
 
 - **Your own recipes and asset types.** Asset classes and recipes come from **data channels**, simple collections of YAML files on any web host. Subscribe to others' channels or publish your own. See [Use data channels](data_channels.md) and [Set up your own data channel](set_up_data_channel.md).
 - **Single-file downloads.** Servers can serve each asset file at its own URL, including straight from cloud storage, as well as whole-asset `.tgz` archives. See [Serving modes](serving_modes.md).
-- **Standard genome identifiers.** Genomes are identified by GA4GH [sequence collection](https://ga4gh.github.io/seqcol-spec/) digests and sequences by refget digests, with aliases like `hg38` on top. See [Manage aliases](alias.md).
+- **Standard genome identifiers.** Genomes are identified by GA4GH [sequence collection](https://ga4gh.github.io/refget/seqcols/) digests and sequences by refget digests, with aliases like `hg38` on top. See [Manage aliases](alias.md).
 - **Sequence retrieval.** `refgenie getseq` reads a sequence or subsequence straight from the local sequence store, with no FASTA file needed. See [Genome initialization](genome_tutorial.md).
 - **A local dashboard.** `refgenie dash` opens a web app that shows your genomes, aliases, and assets, plus assets on your subscribed servers. See [Use the dashboard](dash.md).
 - **AI-assistant access.** A built-in, read-only MCP server lets Claude or another MCP client answer questions like "what genomes do I have?" See [Connect AI assistants](mcp.md).

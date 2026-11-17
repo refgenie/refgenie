@@ -144,7 +144,7 @@ The RefgetStore (`~/.refgenie/genomes/.refget_store/`) stores each sequence unde
 
 ## Compare genomes
 
-Each genome is a GA4GH [sequence collection](https://ga4gh.github.io/seqcol-spec/): a set of sequences with names, lengths, and digests. Its identity is the sequence collection digest, so:
+Each genome is a GA4GH [sequence collection](https://ga4gh.github.io/refget/seqcols/): a set of sequences with names, lengths, and digests. Its identity is the sequence collection digest, so:
 
 - The same sequences, with the same names and in the same order, give the same digest no matter who computes it or where.
 - Adding or removing one sequence changes the digest.

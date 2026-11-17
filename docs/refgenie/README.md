@@ -24,7 +24,7 @@ Refgenie manages storage, access, and transfer of reference genome resources. It
 
 5. **It includes a Python API**. Tool developers use `from refgenie import Refgenie` to get paths to any genome asset from Python.
 
-6. **It checks genome compatibility**. You call genomes by names like "hg38", but refgenie also gives each genome an ID computed from its sequences (a [GA4GH sequence collection](https://ga4gh.github.io/seqcol-spec/) digest), so assets always match the genome they were built from.
+6. **It checks genome compatibility**. You call genomes by names like "hg38", but refgenie also gives each genome an ID computed from its sequences (a [GA4GH sequence collection](https://ga4gh.github.io/refget/seqcols/) digest), so assets always match the genome they were built from.
 
 7. **It scales**. Refgenie keeps its records in a database. It uses a local SQLite file by default and can use PostgreSQL, including on a remote server, for multi-user and distributed setups.
 
