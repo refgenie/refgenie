@@ -274,8 +274,6 @@ def _local_copy(source: str):
         Path(tmp.name).unlink(missing_ok=True)
 
 
-#: An import's prune is refused if it would delete more than this share of the
-#: server's genomes or assets, so a short artifact cannot empty a server.
 IMPORT_PRUNE_MAX_SHARE = 0.5
 
 
