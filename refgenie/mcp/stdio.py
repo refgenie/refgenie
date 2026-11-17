@@ -22,6 +22,10 @@ def main(argv=None):
         formatter_class=argparse.RawDescriptionHelpFormatter,
     ).parse_args(argv)
 
+    from refgenie.logger import configure_logging
+
+    configure_logging()
+
     # Imported lazily: the `mcp` package ships only in the 'mcp' extras, but this
     # console script is installed by every refgenie install. Report the missing
     # extras the way the main CLI does, instead of dumping an import traceback.

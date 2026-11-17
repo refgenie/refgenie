@@ -13,6 +13,7 @@ from pathlib import Path
 
 from refgenie.const import API_VERSION
 from refgenie.core import Refgenie
+from refgenie.logger import configure_logging
 from refgenie.server.collections import load_collections_from_env
 from refgenie.server.const import (
     ALL_VERSIONS,
@@ -447,6 +448,7 @@ def create_app(
 
 def create_local_app() -> FastAPI:
     """Factory entry point: uvicorn refgenie.server.main:create_local_app --factory"""
+    configure_logging()
     return create_app(mode=APP_MODE_LOCAL)
 
 
@@ -454,9 +456,11 @@ def __getattr__(name: str):
     """Build the module-level server app on first access.
 
     Lazy because server mode needs the ``server`` extra, which ``refgenie dash``
-    installs lack.
+    installs lack. It is uvicorn's entry point (``refgenie.server.main:app``),
+    so it also sets up logging.
     """
     if name == "app":
+        configure_logging()
         application = create_app()
         globals()["app"] = application
         return application

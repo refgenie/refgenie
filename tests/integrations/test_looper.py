@@ -1,5 +1,9 @@
 """The looper pre-submit hook, ``refgenie.integrations.looper.populate``."""
 
+import json
+import subprocess
+import sys
+
 import pytest
 
 from refgenie.integrations import looper
@@ -63,3 +67,43 @@ def test_refgenie_is_built_once_per_config(refgenie_session, monkeypatch):
         looper._open.cache_clear()
     assert len(built) == 1
     assert str(built[0]["database_config_path"]) == "/some/config.yaml"
+
+
+# ---------------------------------------------------------------------------
+# Importing the hook must leave the host's logging alone: looper's own output
+# went quiet when it reset the root logger.
+# ---------------------------------------------------------------------------
+
+_ROOT_LOGGER_PROBE = """
+import json, logging, sys
+
+root = logging.getLogger()
+logging.basicConfig(level=logging.INFO)  # the host program's own setup
+
+
+def state():
+    return {
+        "handlers": [[type(h).__name__, id(h), h.level] for h in root.handlers],
+        "level": root.level,
+    }
+
+
+before = state()
+import refgenie
+import refgenie.integrations.looper
+from refgenie import Refgenie
+print(json.dumps({"before": before, "after": state()}))
+"""
+
+
+@pytest.mark.component  # a fresh interpreter, so nothing has imported refgenie yet
+def test_importing_the_hook_leaves_the_root_logger_alone():
+    result = subprocess.run(
+        [sys.executable, "-c", _ROOT_LOGGER_PROBE],
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert result.returncode == 0, result.stderr
+    states = json.loads(result.stdout)
+    assert states["after"] == states["before"]

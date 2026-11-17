@@ -61,6 +61,11 @@ else:
 os.environ["REFGENIE_SUBSCRIBE_DEFAULT_SERVER"] = "false"
 
 from refgenie import Refgenie  # noqa: E402  (must follow the home redirect above)
+from refgenie.logger import configure_logging  # noqa: E402
+
+# Run under the logging the refgenie and dash commands set up; importing
+# refgenie does not. The dash job log and the CLI output tests read it.
+configure_logging()
 
 from tests.support.factories import (
     TESTS_DATA_DIR,

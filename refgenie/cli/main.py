@@ -61,6 +61,13 @@ def main(test_args: list[str] | None = None) -> None:
             print("refgenie (version unknown)")
         sys.exit(0)
 
+    # Here, not on import: refgenie must not change the logging of a program
+    # that imports it as a library. Before the imports below, so their log
+    # records are shown too.
+    from refgenie.logger import configure_logging
+
+    configure_logging()
+
     # Lazy import to keep --help fast
     from refgenie.cli.commands.database import InitModel
     from refgenie.cli.dispatch import get_dispatch

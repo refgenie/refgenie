@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Importing refgenie no longer changes Python's logging setup. Looper, which
+  imports the refgenie hook, stopped printing its own progress after the first
+  sample. Only the `refgenie` and `refgenie-mcp` commands and the server set up
+  logging now.
+
 ## [1.0.0a3] - 2026-11-17
 
 ### Added
