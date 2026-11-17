@@ -70,8 +70,10 @@ class Refgenie:
         Initialize the reference genome manager.
 
         Args:
-            database_config_path: The database configuration file; defaults to
-                the configured path.
+            database_config_path: The database configuration file, with
+                environment variables expanded; defaults to the configured
+                path. Blank text, or a path naming an unset variable, also
+                means the configured path.
             database_engine: The database engine; defaults to one built from the config.
             server_clients_mapping: Server URL -> client, handed to ``rgc.servers``.
                 Clients are otherwise created on first use.

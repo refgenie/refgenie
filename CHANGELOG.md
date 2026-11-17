@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   imports the refgenie hook, stopped printing its own progress after the first
   sample. Only the `refgenie` and `refgenie-mcp` commands and the server set up
   logging now.
+- A database config path that is empty, or still names an unset variable, now
+  counts as unset. The looper hook no longer creates a file named
+  `$REFGENIE_DB_CONFIG_PATH` in the working folder when the pipeline interface
+  sets `refgenie_db_config: "${REFGENIE_DB_CONFIG_PATH}"` (as PEPATAC does) and
+  that variable is unset.
 
 ## [1.0.0a3] - 2026-11-17
 

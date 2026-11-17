@@ -70,6 +70,64 @@ def test_refgenie_is_built_once_per_config(refgenie_session, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
+# refgenie_db_config that names no file: PEPATAC sets it to
+# "${REFGENIE_DB_CONFIG_PATH}", which looper passes as written when unset.
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture
+def db_config_files(refgenie_session, tmp_path, monkeypatch):
+    """Run the hook in an empty working folder, with the real config-path handling.
+
+    Returns the working folder and the configured (fallback) config file.
+    """
+    from refgenie.config import config
+    from refgenie.db.engine import load_database_config
+
+    work = tmp_path / "work"
+    work.mkdir()
+    monkeypatch.chdir(work)
+    monkeypatch.delenv("REFGENIE_DB_CONFIG_PATH", raising=False)
+    fallback = tmp_path / "home" / "refgenie_db_config.yaml"
+    monkeypatch.setattr(config, "database_config_path", fallback)
+
+    def fake_refgenie(database_config_path=None):
+        load_database_config(database_config_path)  # creates the file it reads
+        return refgenie_session
+
+    monkeypatch.setattr(looper, "Refgenie", fake_refgenie)
+    looper._open.cache_clear()
+    yield work, fallback
+    looper._open.cache_clear()
+
+
+@pytest.mark.parametrize("value", ["${REFGENIE_DB_CONFIG_PATH}", "$REFGENIE_DB_CONFIG_PATH"])
+def test_unexpanded_db_config_falls_back(db_config_files, value):
+    work, fallback = db_config_files
+    looper.populate(_namespaces(refgenie_db_config=value))
+    assert list(work.iterdir()) == []
+    assert fallback.is_file()
+
+
+@pytest.mark.parametrize("value", ["", "  ", None])
+def test_empty_db_config_falls_back(db_config_files, value):
+    work, fallback = db_config_files
+    looper.populate(_namespaces(refgenie_db_config=value))
+    assert list(work.iterdir()) == []
+    assert fallback.is_file()
+
+
+def test_db_config_variable_wins_when_set(db_config_files, tmp_path, monkeypatch):
+    work, fallback = db_config_files
+    from_env = tmp_path / "env" / "refgenie_db_config.yaml"
+    monkeypatch.setenv("REFGENIE_DB_CONFIG_PATH", str(from_env))
+    looper.populate(_namespaces(refgenie_db_config="${REFGENIE_DB_CONFIG_PATH}"))
+    assert list(work.iterdir()) == []
+    assert from_env.is_file()
+    assert not fallback.exists()
+
+
+# ---------------------------------------------------------------------------
 # Importing the hook must leave the host's logging alone: looper's own output
 # went quiet when it reset the root logger.
 # ---------------------------------------------------------------------------

@@ -12,12 +12,14 @@ this once per sample; the Refgenie instance and its path view are built once
 per process and reused, so each path is looked up at most once per run.
 
 The database comes from ``var_templates.refgenie_db_config`` in the pipeline
-interface when that is set and non-empty, else from ``$REFGENIE_DB_CONFIG_PATH``
-(the ``Refgenie()`` default).
+interface, else from ``$REFGENIE_DB_CONFIG_PATH``, else from
+``$REFGENIE_HOME_PATH`` (the ``Refgenie()`` default). An empty value counts as
+unset, and so does one still naming an unset variable: with
+``refgenie_db_config: "${REFGENIE_DB_CONFIG_PATH}"`` and that variable unset,
+looper passes the text through as written.
 """
 
 from functools import cache
-from pathlib import Path
 
 from refgenie.core import Refgenie
 from refgenie.core.paths import AssetPaths
@@ -32,8 +34,8 @@ def populate(namespaces: dict) -> dict:
         missing asset is logged and left as written; an unknown genome raises.
     """
     pipeline = namespaces["pipeline"]
-    db_config = (pipeline.get("var_templates") or {}).get("refgenie_db_config") or ""
-    rg, paths = _open(db_config.strip() or None)
+    db_config = (pipeline.get("var_templates") or {}).get("refgenie_db_config")
+    rg, paths = _open(db_config or None)
     # Set in place: looper merges returned dicts leaf by leaf, which would
     # force a full walk of the lazy view.
     namespaces["refgenie"] = paths
@@ -42,5 +44,7 @@ def populate(namespaces: dict) -> dict:
 
 @cache
 def _open(db_config: str | None) -> tuple[Refgenie, AssetPaths]:
-    rg = Refgenie(database_config_path=Path(db_config) if db_config else None)
+    # Passed as written: Refgenie expands variables, and treats blank text or
+    # an unset variable as no path, falling back to the configured one.
+    rg = Refgenie(database_config_path=db_config)
     return rg, rg.paths()
