@@ -1,5 +1,5 @@
 /** Used when the server does not report its version. */
-export const FALLBACK_VERSION = '1.0.0a2';
+export const FALLBACK_VERSION = '1.0.0a3';
 
 /**
  * The refgenie version this server runs, else the fallback. A local build

@@ -26,7 +26,7 @@ editUrl: false
 Refgenie downloads pre-built reference genome files by name, such as FASTA files and bwa, bowtie2 and hisat2 indexes, and prints their local paths for your pipelines. It builds the same files for any other genome. It gives each genome an ID computed from its sequences, so a mismatched reference gets caught.
 
 ```bash
-pip install "refgenie>=1.0.0a2"              # without the version, pip gives the old 0.13
+pip install "refgenie>=1.0.0a3"              # without the version, pip gives the old 0.13
 refgenie init
 refgenie pull hg38/fasta_index               # about 12 KB
 refgenie seek hg38/fasta_index.chrom_sizes   # prints the local path

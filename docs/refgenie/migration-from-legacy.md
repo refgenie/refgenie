@@ -8,7 +8,7 @@ Older docs and search results show 0.x commands. Here are their 1.0 forms:
 
 | 0.x | 1.0 |
 | --- | --- |
-| `pip install refgenie` | `pip install "refgenie>=1.0.0a2"` |
+| `pip install refgenie` | `pip install "refgenie>=1.0.0a3"` |
 | `refgenie init -c genome_config.yaml` | `refgenie init` |
 | `refgenie seek -c genome_config.yaml -g hg38 -a bowtie2_index` | `refgenie seek hg38/bowtie2_index` |
 | `refgenie pull -g hg38 -a bowtie2_index` | `refgenie pull hg38/bowtie2_index` |

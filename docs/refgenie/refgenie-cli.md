@@ -9,7 +9,7 @@ Install from [PyPI](https://pypi.org/project/refgenie/). Refgenie 1.0 is a
 pre-release, so ask for it by version:
 
 ```bash
-pip install "refgenie>=1.0.0a2"
+pip install "refgenie>=1.0.0a3"
 ```
 
 The base install provides the CLI and the Python API. `refgenie dash`,
@@ -21,7 +21,7 @@ Check the installed version:
 
 ```bash
 $ refgenie --version
-refgenie 1.0.0a1
+refgenie 1.0.0a3
 ```
 
 ## Getting started

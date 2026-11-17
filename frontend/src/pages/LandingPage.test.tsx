@@ -76,7 +76,7 @@ describe('LandingPage', () => {
     // The install line follows the version the server reports, and the
     // first pull is the small FASTA index, not the multi-GB FASTA.
     expect(steps.map((step) => step.querySelector('code')?.textContent)).toEqual([
-      'pip install "refgenie>=1.0.0a2"',
+      'pip install "refgenie>=1.0.0a3"',
       'refgenie init',
       'refgenie pull hg38/fasta_index',
       'refgenie seek hg38/fasta_index.chrom_sizes',
@@ -88,7 +88,7 @@ describe('LandingPage', () => {
     renderWithProviders(<LandingPage />, { config: serverConfig });
     // The pin it asks for is spelled out, unlike the `>=` install line.
     expect(screen.getByText(/is an alpha release/)).toHaveTextContent(
-      /pin the exact version: refgenie==1\.0\.0a2\./,
+      /pin the exact version: refgenie==1\.0\.0a3\./,
     );
     expect(screen.getByRole('link', { name: /Details/ })).toHaveAttribute(
       'href',
