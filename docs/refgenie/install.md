@@ -23,7 +23,8 @@ The base install gives you the CLI and the Python API. Add extras for more:
 | Extra | Install | What it enables |
 | --- | --- | --- |
 | `dash` | `pip install "refgenie[dash]>=1.0.0a3"` | `refgenie dash`, the local web UI |
-| `server` | `pip install "refgenie[server]>=1.0.0a3"` | `refgenie serve`, the REST API server (includes `dash` and `mcp`) |
+| `postgres` | `pip install "refgenie[postgres]>=1.0.0a3"` | A PostgreSQL catalog instead of SQLite |
+| `server` | `pip install "refgenie[server]>=1.0.0a3"` | `refgenie serve`, the REST API server (includes `dash`, `mcp` and `postgres`) |
 | `mcp` | `pip install "refgenie[mcp]>=1.0.0a3"` | `refgenie-mcp`, the MCP server for AI assistants |
 | `snakemake` | `pip install "refgenie[snakemake]>=1.0.0a3"` | Building many assets at once with Snakemake |
 

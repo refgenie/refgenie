@@ -43,7 +43,7 @@ refgenie pull hg38/fasta
 
 For a server other people rely on:
 
-- **Use PostgreSQL** instead of the default SQLite database. See [Database backends](database.md).
+- **Use PostgreSQL** instead of the default SQLite database. The `server` extra includes the PostgreSQL driver. See [Database backends](database.md).
 - **Put it behind a reverse proxy** such as nginx with HTTPS. Do not use `--reload` in production.
 - **Host files on cloud storage.** Push staged assets to an S3 bucket or web server with `refgenie push`. When an asset has been pushed to an `http` or `https` remote, the server sends download requests there instead of serving the file itself. See [Configure remote storage](remotes.md) and [Remotes on a server](server/remotes.md).
 - **Serve data channels.** The server re-serves the data channels listed in its config file, so clients can get recipes and asset classes from it. See [Serve data channels](server/data_channels.md).

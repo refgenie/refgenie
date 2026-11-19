@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- A plain install no longer includes the PostgreSQL driver or refget. Install
+  `refgenie[postgres]` for a PostgreSQL catalog; `refgenie[server]` includes
+  both.
+
 ### Fixed
 
 - Importing refgenie no longer changes Python's logging setup. Looper, which

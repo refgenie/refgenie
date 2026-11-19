@@ -14,7 +14,13 @@ path: ~/.refgenie/refgenie
 
 ## PostgreSQL
 
-Use PostgreSQL for shared servers and for anything that writes from several processes at once. Write the config file yourself:
+Use PostgreSQL for shared servers and for anything that writes from several processes at once. It needs the `postgres` extra, which adds the `psycopg` driver (the `server` extra includes it):
+
+```bash
+pip install "refgenie[postgres]>=1.0.0a3"
+```
+
+Then write the config file yourself:
 
 ```yaml
 # ~/.refgenie/refgenie_db_config.yaml
@@ -26,7 +32,7 @@ host: localhost
 port: 5432
 ```
 
-Values can use environment variables, such as `password: $POSTGRES_PASSWORD`. Refgenie connects with the `psycopg` driver.
+Values can use environment variables, such as `password: $POSTGRES_PASSWORD`. Refgenie connects with the `psycopg` driver. Without the `postgres` extra, refgenie stops with a message that names it.
 
 ## Choosing a backend
 

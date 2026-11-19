@@ -24,7 +24,7 @@ Yes. Each asset group (such as `bowtie2_index`) can hold several named assets, s
 
 ## Can several people share one refgenie setup?
 
-Yes. Point everyone at the same database and genome folder. For several users writing at once, use PostgreSQL; see [Database backends](database.md).
+Yes. Point everyone at the same database and genome folder. For several users writing at once, use PostgreSQL, which needs the `postgres` extra; see [Database backends](database.md).
 
 ## How can I tell how an asset was built?
 

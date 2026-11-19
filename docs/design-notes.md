@@ -267,6 +267,19 @@ database are plain `str`; they are wrapped where a digest enters a typed API
 from outside (an edge, or a public return such as `AliasManager.resolve`), not
 on every internal hop.
 
+## What the plain install carries
+
+`pip install refgenie` is what pipeline tools install (nf-core, looper,
+Snakemake wrappers), so it carries only what the CLI, the Python API and the
+integrations need: the local SQLite catalog (SQLModel, SQLAlchemy, Alembic), the
+local RefgetStore (gtars), the HTTP client for pulls (httpx2) and the build
+system (pypiper). Everything else is an extra: `dash` (fastapi, uvicorn), `mcp`,
+`postgres` (psycopg) and `server` (all of those plus apscheduler and refget).
+Nothing imports psycopg; SQLAlchemy loads it from the URL, and
+`create_database_engine` names the extra when it is missing.
+`server/seqcol.py` imports refget inside functions so `refgenie dash` starts
+without it.
+
 ## Route ownership across app modes
 
 There is one FastAPI factory, `refgenie/server/main.py::create_app(mode=...)`,

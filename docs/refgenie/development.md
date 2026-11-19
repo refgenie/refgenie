@@ -110,6 +110,14 @@ uv run refgenie-mcp
 
 ## Running tests
 
+Install the `server` extra first, the same as CI:
+
+```bash
+uv sync --all-packages --extra server
+```
+
+Some tests need it: they exercise the server, PostgreSQL and the seqcol API.
+
 `task test` runs the unit tier, and `task ktest TARGET=alias` runs tests whose
 names match `alias`. The suite has four tiers (unit, component, e2e,
 integration); see [the tier table in CONTRIBUTING.md](https://github.com/refgenie/refgenie/blob/master/CONTRIBUTING.md#running-the-tests)

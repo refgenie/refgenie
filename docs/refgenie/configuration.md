@@ -83,6 +83,8 @@ The `Refgenie` constructor takes these options:
 - `database_engine`: a SQLAlchemy engine you already have, such as a pooled connection or a test database. If you pass both, the engine wins.
 - `server_clients_mapping`: a dict of server URL to client object, for custom or mock server clients. Each client is a `RefgenieserverClient` from `refgenie.managers.sources.client`.
 
+A `postgresql+psycopg://` engine needs the `postgres` extra (`pip install "refgenie[postgres]>=1.0.0a3"`), which adds the driver:
+
 ```python
 from sqlalchemy import create_engine
 from refgenie import Refgenie

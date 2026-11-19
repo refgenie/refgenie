@@ -50,13 +50,14 @@ extra:
 | --- | --- | --- | --- |
 | *(none)* | `pip install "refgenie>=1.0.0a3"` | CLI, Python API, building, pulling, staging | — |
 | `dash` | `pip install "refgenie[dash]>=1.0.0a3"` | `refgenie dash`, the local web UI | fastapi, uvicorn |
-| `server` | `pip install "refgenie[server]>=1.0.0a3"` | `refgenie serve`, the public REST API + DRS + `/mcp` endpoint (includes `dash` and `mcp`) | apscheduler, mcp |
+| `postgres` | `pip install "refgenie[postgres]>=1.0.0a3"` | A PostgreSQL catalog | psycopg |
+| `server` | `pip install "refgenie[server]>=1.0.0a3"` | `refgenie serve`, the public REST API + DRS + `/mcp` endpoint | apscheduler, mcp, psycopg, refget (and includes dash, mcp, postgres) |
 | `mcp` | `pip install "refgenie[mcp]>=1.0.0a3"` | `refgenie-mcp`, the stdio MCP server for LLM agents | mcp |
 | `snakemake` | `pip install "refgenie[snakemake]>=1.0.0a3"` | snakemake-based bulk asset building | snakemake, peppy |
 
 Running `refgenie serve`, `refgenie dash`, or `refgenie-mcp` without its extra
-prints which extra to install. PostgreSQL support is included in the base
-install.
+prints which extra to install. PostgreSQL needs the `postgres` extra; `server`
+includes it.
 
 ## Quick Start
 

@@ -42,14 +42,15 @@ A pull request is ready for review when:
 
 ## Running the tests
 
-The suite has four tiers:
+The suite has four tiers. Every tier needs the `server` extra, the same as
+CI: run `uv sync --all-packages --extra server` first.
 
 | Tier | Command | Needs |
 |------|---------|-------|
-| `unit` | `pytest` | nothing |
-| `component` | `pytest -m component` | nothing |
-| `e2e` | `pytest -m e2e` | `samtools` on PATH |
-| `integration` | `./tests/scripts/test-integration.sh` | Docker, bulker |
+| `unit` | `pytest` | the `server` extra |
+| `component` | `pytest -m component` | the `server` extra |
+| `e2e` | `pytest -m e2e` | the `server` extra, `samtools` on PATH |
+| `integration` | `./tests/scripts/test-integration.sh` | the `server` extra, Docker, bulker |
 
 Run integration tests only through the script, which starts and stops the
 PostgreSQL container, the HTTP data channel, and the bulker crate. Run it
