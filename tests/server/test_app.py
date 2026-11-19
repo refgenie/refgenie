@@ -293,35 +293,6 @@ class TestRouteHygiene:
             assert ("GET", f"/{segment}") not in set(route_keys(app)), f"{label}: /{segment}"
 
 
-#: The frontend route table. Present in a source checkout; absent from a wheel.
-_ROUTES_TSX = _REPO_ROOT / "frontend" / "src" / "app" / "routes.tsx"
-
-
-@pytest.mark.skipif(not _ROUTES_TSX.is_file(), reason="frontend source not present")
-def test_spa_route_mirror():
-    """``SPA_CLIENT_ROUTES`` (Python) and the frontend route table must agree.
-    Two regex passes over ``routes.tsx``, with no TS parser."""
-    source = _ROUTES_TSX.read_text()
-
-    const_block = re.search(r"export const SPA_CLIENT_ROUTES = \[(.*?)\]", source, re.DOTALL)
-    assert const_block, "routes.tsx no longer exports SPA_CLIENT_ROUTES"
-    ts_const = set(re.findall(r"'/([a-z0-9-]+)'", const_block.group(1)))
-    assert ts_const == set(SPA_CLIENT_ROUTES), (
-        "frontend/src/app/routes.tsx SPA_CLIENT_ROUTES drifted from "
-        "refgenie/server/const.py:\n"
-        f"  frontend only: {sorted(ts_const - set(SPA_CLIENT_ROUTES))}\n"
-        f"  backend only:  {sorted(set(SPA_CLIENT_ROUTES) - ts_const)}"
-    )
-
-    registered = re.findall(r"path:\s*'([^']+)'", source)
-    segments = {path.split("/")[0] for path in registered} - {"", "*"}
-    assert segments == set(SPA_CLIENT_ROUTES), (
-        "registered frontend routes drifted from SPA_CLIENT_ROUTES:\n"
-        f"  registered only: {sorted(segments - set(SPA_CLIENT_ROUTES))}\n"
-        f"  tuple only:      {sorted(set(SPA_CLIENT_ROUTES) - segments)}"
-    )
-
-
 # ===========================================================================
 # SPA serving (refgenie.server.spa)
 # ===========================================================================

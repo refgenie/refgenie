@@ -61,10 +61,4 @@ describe('createRoutes', () => {
     expect(paths(createRoutes(serverConfig))).toContain('local/species');
     expect(paths(createRoutes(localConfig))).not.toContain('local/species');
   });
-
-  it('keeps /local in the catch-all mirror', () => {
-    // `tests/server/test_app.py::test_spa_route_mirror` asserts the other half of
-    // this against `refgenie/server/const.py`.
-    expect(SPA_CLIENT_ROUTES).toContain('/local');
-  });
 });

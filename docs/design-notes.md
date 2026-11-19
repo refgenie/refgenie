@@ -9,8 +9,7 @@ Repeated module basenames are fine here (`manager.py`, `const.py`,
 package). `models.py` is the exception, because the word is ambiguous: it can
 mean domain types, ORM tables, or the JSON an HTTP client sends.
 
-So one rule, enforced by `test_models_names_one_thing` in
-`tests/test_layering.py`:
+So one rule:
 
 - **`refgenie/models.py`** is the only `models.py` in the package. It holds the
   domain types (`BuildParams`, `AssetRegistryPathComponents`, the validated
@@ -62,11 +61,6 @@ the same manager reads (`rgc.genome.page`, `rgc.asset.get_by_digest`, ...)
 and present them differently: `server/schemas.py` and the GA4GH page-based
 envelope for HTTP, `mcp/schemas.py` and token paging with slim rows for MCP.
 One query path, two presentations, so the two front doors cannot drift apart.
-
-**The check.** `test_sql_is_written_only_in_the_db_layer` in
-`tests/test_layering.py` fails on any import from `sqlalchemy` or `sqlmodel`
-outside `refgenie/db/` that names anything but `Engine`, `Session`,
-`SQLModel` or `Field`.
 
 ## SQL table names
 
@@ -516,8 +510,7 @@ the asset group directory, and the next pull overwrites it.
 `looper.py` (the pre-submit hook) and `snakemake/` (Snakefile generation). These
 are bridges, not front doors like `cli/`, `server/` and `mcp/`: each is reached
 by a dotted path a user types into the other tool's config, or by one CLI
-command. Nothing in `integrations/` imports looper or Snakemake, and
-`tests/test_layering.py` holds it to that.
+command. Nothing in `integrations/` imports looper or Snakemake.
 
 **The looper hook lives in refgenie.** Looper should not know about refgenie,
 and a pipeline should not carry its own copy. Looper already calls any Python
@@ -579,7 +572,7 @@ re-entrancy guard, so a plugin that pulls or builds does not fire hooks again.
 
 **Layer 2.** `plugins/` imports only `config`, `logger` and `const`, so managers
 (layer 5) and the root (layer 6) can both import it. Plugins get `rg` by duck
-typing. `tests/test_layering.py` holds it there.
+typing.
 
 **Lazy discovery.** Nothing scans entry points at `import refgenie`, at
 `Refgenie()`, or on a read. The first hook that fires makes one scan, cached
@@ -588,11 +581,6 @@ for the process, and loads only that hook's plugins.
 **Log, never raise.** A plugin that fails to load or run is logged at WARNING
 with its name and hook (traceback at DEBUG), and the operation and the other
 plugins carry on. `Exception` is caught, not `BaseException`, so Ctrl-C works.
-
-**The guard test.** `tests/plugins/test_update_scope_coverage.py` reads the
-asset, group and genome managers statically: every public method that commits
-must carry `@update_scope` or be named in its allowlist with a reason. That
-keeps a new mutator from forgetting to fire `post_update`.
 
 **Settings are one JSON column on `Configuration`.** Refgenie has no
 free-form config keys, and one environment variable per plugin does not scale.

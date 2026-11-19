@@ -9,11 +9,14 @@ Wire models (request bodies, response envelopes, SSE frames) go in a
 `schemas.py`; internal records that never hit the wire stay in the module that
 owns them. SQL is written only in `refgenie/db/` (`db/queries/<entity>.py`):
 services call managers, managers call db functions, and nothing else builds a
-query. `tests/test_layering.py` enforces this, and `docs/design-notes.md`
-explains why. That file is the place to look for, and record, decisions that
-are not obvious from the code.
+query. `docs/design-notes.md` explains why. That file is the place to look
+for, and record, decisions that are not obvious from the code.
 
 ## Testing
+
+**No meta tests.** Tests check what refgenie does, never how the code is
+arranged: no tests that read source files, check imports or layering, check
+which packages are installed, or check that two files agree.
 
 The suite is split into four tiers.
 

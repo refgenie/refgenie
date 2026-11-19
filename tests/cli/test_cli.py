@@ -1,6 +1,5 @@
 """The refgenie CLI: argv parsing, --help output, dispatch and exit codes."""
 
-import inspect
 import io
 import re
 from contextlib import redirect_stdout
@@ -14,11 +13,7 @@ from pydantic_settings import get_subcommand
 from refgenie import Refgenie
 from refgenie.cli import main as cli_main
 from refgenie.cli.main import main
-from refgenie.cli.commands import asset as cli_asset
-from refgenie.cli.commands import helpers as cli_helpers
-from refgenie.cli.commands import listing as cli_listing
 from refgenie.cli.commands.pull import MirrorModel, PullModel
-from refgenie.cli.dispatch import get_dispatch
 from refgenie.managers.build import BuildManager
 from refgenie.cli.errors import EXIT_INVALID_INPUT, EXIT_NOT_FOUND
 from refgenie.managers.sources.servers import ServerManager
@@ -1338,78 +1333,6 @@ class TestBuildFastaCli:
         # RefgetStore.load_collection.
         with pytest.raises(OSError, match="Error loading collection"):
             build_fasta_main([str(store_path), "nonexistent_digest", str(output)])
-
-
-# ===========================================================================
-# Regression guard: every CLI model field is consumed by its handler
-# ===========================================================================
-
-# Fields consumed indirectly, not via ``cmd.<field>`` in the handler body.
-# Keep this short: growth here means a flag went unwired again.
-_INDIRECT = {
-    # LargeArchiveFlags reads these through ``self.<field>`` in
-    # resolve_force_large() and its validators (refgenie/cli/commands/pull.py).
-    "skip_large",
-    "pull_large",
-    "batch",
-}
-
-
-def _model_handler_pairs():
-    """Yield (model, handler) for every leaf command model in the CLI."""
-    pairs = []
-    for model, handler in get_dispatch().items():
-        group_dispatch = None
-        for name, value in vars(inspect.getmodule(handler)).items():
-            if name.endswith("_DISPATCH") and isinstance(value, dict):
-                group_dispatch = value
-        if model.__name__.endswith("Parser"):
-            if group_dispatch:
-                pairs.extend(group_dispatch.items())
-        else:
-            pairs.append((model, handler))
-    # asset.handle_asset_group forwards its only leaf to listing.handle_list.
-    pairs.append((cli_asset.AssetListNestedModel, cli_listing.handle_list))
-    return pairs
-
-
-_PAIRS = _model_handler_pairs()
-
-
-@pytest.mark.parametrize(
-    "model,handler",
-    _PAIRS,
-    ids=[f"{m.__name__}-{h.__name__}" for m, h in _PAIRS],
-)
-def test_every_model_field_is_consumed(model, handler):
-    """A field with no handler reader renders a flag that is a silent no-op.
-    The rule is wire-or-delete: if this fails, consume the field or remove it --
-    do not extend ``_INDIRECT``."""
-    source = inspect.getsource(handler)
-    # A handler may delegate ``cmd`` to a shared helper or to a helper in its
-    # own module (which may delegate again); count what those read as consumed.
-    candidates = {
-        name: value
-        for module in (cli_helpers, inspect.getmodule(handler))
-        for name, value in vars(module).items()
-        if inspect.isfunction(value) and value is not handler
-    }
-    followed = set()
-    while new := [n for n in candidates if n not in followed and re.search(rf"\b{n}\(", source)]:
-        for name in new:
-            followed.add(name)
-            source += inspect.getsource(candidates[name])
-    unwired = [
-        field
-        for field in model.model_fields
-        if field not in _INDIRECT
-        and not re.search(rf"cmd\.{field}\b", source)
-        and not re.search(rf"""getattr\(\s*cmd\s*,\s*["']{field}["']""", source)
-    ]
-    assert not unwired, (
-        f"{model.__name__} fields {unwired} are never read by "
-        f"{handler.__module__}.{handler.__name__}. Wire the flag or delete the field."
-    )
 
 
 class TestPluginsCommand:

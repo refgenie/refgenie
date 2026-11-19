@@ -81,8 +81,7 @@ against a test double (see `managers/test_genome.py::TestGenomeInitFailure`) sta
 
 ## Two homes: fixtures vs helpers
 
-There is one rule about where shared test code lives, and the
-hygiene tests in `tests/test_layering.py` enforce it:
+There is one rule about where shared test code lives:
 
 - **`tests/support/`** — every plain importable function, class and constant,
   one module per concern (`factories`, `server`, `processes`, `remotes`,
@@ -96,8 +95,7 @@ hygiene tests in `tests/test_layering.py` enforce it:
   beside them (`tests/integration/helpers.py`, `tests/e2e/cli_compat/helpers.py`),
   never from a conftest.
 
-Never redefine a fixture name the root conftest already owns; the
-hygiene tests in `test_layering.py` fail if you do.
+Never redefine a fixture name the root conftest already owns.
 
 ## Key Fixtures
 

@@ -243,8 +243,7 @@ Properties that are load-bearing, not incidental:
   `useBridgeJobPolling` only while one is active and the bridge is connected.
 
 Adding a `/local` route means editing `SPA_CLIENT_ROUTES` in **both**
-`src/app/routes.tsx` and `refgenie/server/const.py`;
-`tests/server/test_app.py::test_spa_route_mirror` fails on any drift.
+`src/app/routes.tsx` and `refgenie/server/const.py`.
 
 ### Testing the bridge end to end
 

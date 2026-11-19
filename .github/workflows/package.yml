@@ -104,12 +104,8 @@ jobs:
           print('Core modules import successfully')
           "
 
-  # The guard on the [dash] / [server] boundary the app-factory rework
-  # introduces: `package` (installs [server]) and `base-install` (installs
-  # nothing) each miss it from opposite sides. A `[dash]`-only install must
-  # import the web layer and build `create_app(mode="local")` -- and must NOT
-  # pull in apscheduler, which `refgenie[server]` adds and `refgenie[dash]`
-  # must not.
+  # A `[dash]`-only install must serve `refgenie dash` and refuse
+  # `refgenie serve` with the friendly message.
   dash-install:
     needs: frontend
     if: >-
@@ -148,15 +144,6 @@ jobs:
           uv venv .dash-venv
           WHEEL=$(ls dist/*.whl)
           uv pip install --python .dash-venv "${WHEEL}[dash]"
-
-      - name: Assert fastapi is importable, apscheduler is not
-        run: |
-          .dash-venv/bin/python -c "import fastapi; print('fastapi: OK')"
-          if .dash-venv/bin/python -c "import apscheduler" 2>/dev/null; then
-            echo "::error::apscheduler is importable on a [dash]-only install; it belongs to [server]"
-            exit 1
-          fi
-          echo "apscheduler correctly absent from a [dash]-only install"
 
       - name: Smoke test - create_app(mode=local) builds and serves the web UI
         run: |
@@ -250,16 +237,6 @@ jobs:
           uv venv .base-venv
           WHEEL=$(ls dist/*.whl)
           uv pip install --python .base-venv "${WHEEL}"
-
-      - name: Assert no extras leaked into the base install
-        run: |
-          for mod in fastapi uvicorn apscheduler mcp; do
-            if .base-venv/bin/python -c "import ${mod}" 2>/dev/null; then
-              echo "::error::${mod} is importable on a base install; it should be behind an extra"
-              exit 1
-            fi
-          done
-          echo "Base install is free of extra-only packages"
 
       - name: Smoke test - import refgenie
         run: .base-venv/bin/python -c "import refgenie; from refgenie import Refgenie; print('ok')"

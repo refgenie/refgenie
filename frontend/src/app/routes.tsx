@@ -155,10 +155,7 @@ export function createRoutes(config: UiConfig): RouteObject[] {
   ];
 }
 
-/**
- * Must match `SPA_CLIENT_ROUTES` in `refgenie/server/const.py`;
- * `test_spa_route_mirror` checks this.
- */
+/** Must match `SPA_CLIENT_ROUTES` in `refgenie/server/const.py`. */
 export const SPA_CLIENT_ROUTES = [
   '/genomes',
   '/species',

@@ -13,8 +13,7 @@ How it fits together:
   ``describe()`` for ``refgenie plugins``.
 - ``host.py``: ``PluginHost``, the one place plugin code is called.
 
-It imports only ``config``, ``logger`` and ``const`` (see
-``tests/test_layering.py``), and discovery is lazy.
+It imports only ``config``, ``logger`` and ``const``, and discovery is lazy.
 """
 
 from refgenie.plugins.hooks import HOOKS, Change, HookEvent
