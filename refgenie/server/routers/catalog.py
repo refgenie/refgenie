@@ -186,14 +186,15 @@ def compare_genomes(digest: str, other: str, rgc: Refgenie = Depends(get_refgeni
     from refgenie.utils.seqcol import compare_level2, summarize_comparison
 
     try:
+        genomes = [rgc.genome.get(d) for d in (digest, other)]
         # The loaded stores, never a genome's remote_url.
-        side_a, side_b = rgc.genome.compare_sides(digest, other, remote=False)
+        side_a, side_b = (rgc.genome.compare_side(g, remote=False) for g in genomes)
     except (MissingGenomeError, ValueError) as e:  # ValueError: no level 2 in the store
         raise _no_collection(e, f"{digest} or {other}") from None
     result = compare_level2(side_a, side_b, digest, other)
     aliases = rgc.alias.get_for_genomes([digest, other])
     label_a, label_b = (
-        display_alias(aliases.get(d, []), rgc.genome.get(d).synonyms) or d for d in (digest, other)
+        display_alias(aliases.get(d, []), g.synonyms) or d for d, g in zip((digest, other), genomes)
     )
     summary, name_map = summarize_comparison(side_a, side_b, result, label_a, label_b)
     return {**result, "summary": summary, "name_map": name_map}

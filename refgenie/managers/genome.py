@@ -593,11 +593,11 @@ class GenomeManager(ResourceManager):
         ``remote_url``.
         """
         return (
-            self._compare_side(self.get(digest_a), remote),
-            self._compare_side(self.get(digest_b), remote),
+            self.compare_side(self.get(digest_a), remote=remote),
+            self.compare_side(self.get(digest_b), remote=remote),
         )
 
-    def _compare_side(self, genome: Genome, remote: bool) -> dict:
+    def compare_side(self, genome: Genome, *, remote: bool = True) -> dict:
         """One side of a compare: from the genome's store, else from its ``remote_url``.
 
         The remote is read only when the store that ``store_name`` picks does
