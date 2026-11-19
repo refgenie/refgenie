@@ -2,6 +2,7 @@
 
 import os
 import re
+from importlib.util import find_spec
 from pathlib import Path
 
 from sqlalchemy.engine import Engine
@@ -10,10 +11,12 @@ from sqlmodel import create_engine
 from refgenie.config import config
 from refgenie.config.db import (
     DatabaseConfig,
+    PostgresConfig,
     create_default_db_config,
     dump_db_config,
     load_db_config,
 )
+from refgenie.exceptions import ConfigError
 from refgenie.logger import logger
 
 __all__ = ["Engine", "create_database_engine", "load_database_config"]
@@ -80,8 +83,17 @@ def create_database_engine(
 
     Returns:
         Engine: The database engine.
+
+    Raises:
+        ConfigError: If the config uses PostgreSQL and the driver (the
+            ``postgres`` extra) is not installed.
     """
     database_config = load_database_config(config_path=database_config_path)
+    if isinstance(database_config, PostgresConfig) and find_spec("psycopg") is None:
+        raise ConfigError(
+            "This database config uses PostgreSQL, which needs the 'postgres' extra: "
+            "pip install 'refgenie[postgres]' (the 'server' extra includes it)."
+        )
     # pre_ping + recycle avoid hangs on pooled connections a remote Postgres
     # silently dropped while idle. No-ops for SQLite.
     return create_engine(url=database_config.url, echo=echo, pool_pre_ping=True, pool_recycle=300)

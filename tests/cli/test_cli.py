@@ -537,6 +537,17 @@ class TestErrorExitCodes:
         assert "Missing required argument '--prefix'" in err
         assert "Missing required argument '--type'" not in err
 
+    def test_postgres_without_the_driver_names_the_extra(
+        self, postgres_config_without_driver, capsys, caplog
+    ):
+        """Not the `cli` fixture: it hands refgenie an engine, and this must open the config."""
+        with pytest.raises(SystemExit) as exit_info:
+            main(test_args=["list"])
+        assert exit_info.value.code == 1
+        text = capsys.readouterr().err + caplog.text
+        assert "pip install 'refgenie[postgres]'" in text
+        assert "Traceback" not in text
+
 
 DC_ADD = ("data-channel", "add", "test_channel", "http", "http://example.com/index.yaml")
 REMOTE_ADD = (

@@ -188,6 +188,28 @@ def engine():
     return make_engine()
 
 
+@pytest.fixture
+def postgres_config_without_driver(tmp_path, monkeypatch):
+    """The configured database is PostgreSQL, and psycopg is not installed.
+
+    That is a plain install (no ``postgres`` extra) pointed at a shared
+    PostgreSQL catalog. Returns the config file's path.
+    """
+    from refgenie.config import config
+    from refgenie.db import engine as db_engine
+
+    path = tmp_path / "refgenie_db_config.yaml"
+    path.write_text(
+        "type: postgresql\nname: refgenie\nuser: u\npassword: p\nhost: localhost\nport: 5432\n"
+    )
+    monkeypatch.setattr(config, "database_config_path", path)
+    find_spec = db_engine.find_spec
+    monkeypatch.setattr(
+        db_engine, "find_spec", lambda name: None if name == "psycopg" else find_spec(name)
+    )
+    return path
+
+
 @pytest.fixture(scope="session")
 def fixtures_path():
     """Path to test data fixtures."""

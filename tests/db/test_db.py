@@ -244,6 +244,13 @@ class TestDatabaseConfig:
         assert config.type == DatabaseType.SQLITE
         assert config.url.startswith("sqlite:///")
 
+    def test_postgres_without_the_driver_names_the_extra(self, postgres_config_without_driver):
+        from refgenie.db.engine import create_database_engine
+        from refgenie.exceptions import ConfigError
+
+        with pytest.raises(ConfigError, match=r"refgenie\[postgres\]"):
+            create_database_engine()
+
 
 class TestMigrationCheck:
     """The catalog reports whether it needs a schema upgrade."""

@@ -93,7 +93,11 @@ def main(test_args: list[str] | None = None) -> None:
 
     logger.debug(f"CLI subcmd: {type(subcmd).__name__}")
     suppress_migrations = isinstance(subcmd, InitModel)
-    refgenie = Refgenie(suppress_migrations=suppress_migrations)
+    try:
+        refgenie = Refgenie(suppress_migrations=suppress_migrations)
+    except RefgenieError as e:
+        logger.error(str(e))
+        sys.exit(1)
 
     dispatch = get_dispatch()
     handler = dispatch.get(type(subcmd))
