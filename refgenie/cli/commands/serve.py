@@ -46,7 +46,7 @@ def _require_extra(extra: str, *modules: str) -> None:
     """Fail with the "install this extra" message if ``modules`` are missing.
 
     ``refgenie.server.main`` guards only the *dash* extra's imports, so
-    ``serve`` checks the ``server`` extra (apscheduler, mcp) here.
+    ``serve`` checks the ``server`` extra (apscheduler, mcp, refget) here.
     """
     from importlib import import_module
 
@@ -61,7 +61,7 @@ def _require_extra(extra: str, *modules: str) -> None:
 
 
 def handle_serve(cmd, refgenie) -> None:
-    _require_extra("server", "fastapi", "uvicorn", "apscheduler", "mcp")
+    _require_extra("server", "fastapi", "uvicorn", "apscheduler", "mcp", "refget")
     from refgenie.server.main import run_server
 
     note(

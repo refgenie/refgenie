@@ -12,13 +12,17 @@ it is served wholly by the old set or wholly by the new one.
 URL layout: the highest-priority store is served at ``SEQCOL_MOUNT_PATH``,
 every other store at ``SEQCOL_MOUNT_PATH/<name>``. With no stores, the
 DB-backed refget router is served at ``SEQCOL_MOUNT_PATH``.
+
+refget is in the ``server`` extra only, and ``refgenie.server.main`` imports
+this module in both modes, so refget is imported inside the two functions that
+build seqcol apps, which only server mode calls. ``refgenie dash`` starts
+without it.
 """
 
 import threading
 from dataclasses import dataclass
 
 from fastapi import FastAPI
-from refget.router import create_refget_router, setup_backend
 from starlette.types import Receive, Scope, Send
 
 from refgenie.db.tables import Store, StoreType
@@ -77,6 +81,8 @@ class SeqcolTable:
 
 def _db_seqcol_app(engine) -> FastAPI:
     """The DB-backed seqcol app, used when no store is enabled."""
+    from refget.router import create_refget_router, setup_backend
+
     app = FastAPI(title=SEQCOL_SERVICE_NAME)
     app.include_router(create_refget_router(sequences=False, pangenomes=False))
 
@@ -95,6 +101,7 @@ def _db_seqcol_app(engine) -> FastAPI:
 
 def _store_mount(row: Store, store, *, default: bool) -> SeqcolMount:
     """A seqcol sub-app serving ``store``, the opened store for ``row``."""
+    from refget.router import setup_backend
     from refget.seqcolapi import create_seqcol_app
 
     service = SeqcolService.for_row(row, default=default)
