@@ -154,24 +154,3 @@ export function createRoutes(config: UiConfig): RouteObject[] {
     },
   ];
 }
-
-/** Must match `SPA_CLIENT_ROUTES` in `refgenie/server/const.py`. */
-export const SPA_CLIENT_ROUTES = [
-  '/genomes',
-  '/species',
-  '/assets',
-  '/asset-groups',
-  '/asset-classes',
-  '/recipes',
-  '/aliases',
-  '/tree',
-  '/collections',
-  '/local',
-  '/remote',
-  '/manage',
-  '/servers',
-  '/jobs',
-  '/build',
-  '/pull',
-  '/about',
-] as const;

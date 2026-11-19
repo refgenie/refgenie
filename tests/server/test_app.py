@@ -35,14 +35,10 @@ requires_dash()
 
 from fastapi.testclient import TestClient  # noqa: E402  (must follow the extras guard)
 
-from refgenie.server.const import (  # noqa: E402
-    APP_MODE_LOCAL,
-    APP_MODE_SERVER,
-    SPA_CLIENT_ROUTES,
-)
+from refgenie.server.const import APP_MODE_LOCAL, APP_MODE_SERVER  # noqa: E402
 from refgenie.server.main import _capabilities, create_app  # noqa: E402
 
-#: The repository root, for the frontend files the drift guards read.
+#: The repository root, for files the tests read as input.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -267,6 +263,29 @@ def either_app(request, rgc):
     return make(rgc), f"{request.param} app"
 
 
+#: Top-level pages of the web UI. The public site deep-links into some of them
+#: on a local dash (/genomes/{digest}, /pull?server=..., /servers?subscribe=...).
+SPA_PAGES = (
+    "genomes",
+    "species",
+    "assets",
+    "asset-groups",
+    "asset-classes",
+    "recipes",
+    "aliases",
+    "tree",
+    "collections",
+    "local",
+    "remote",
+    "manage",
+    "servers",
+    "jobs",
+    "build",
+    "pull",
+    "about",
+)
+
+
 class TestRouteHygiene:
     """FastAPI matches the first route registered, so a duplicate is dead code
     that the OpenAPI document still advertises."""
@@ -286,7 +305,7 @@ class TestRouteHygiene:
                 key = (method.upper(), path)
                 assert registered[key] == 1, f"{label}: {key} has {registered[key]} routes"
 
-    @pytest.mark.parametrize("segment", SPA_CLIENT_ROUTES)
+    @pytest.mark.parametrize("segment", SPA_PAGES)
     def test_spa_client_routes_do_not_collide_with_the_api(self, rgc, segment):
         """No API route may shadow an SPA page, in either mode."""
         for app, label in ((make_server_app(rgc), "server"), (make_local_app(rgc), "local")):
@@ -374,16 +393,6 @@ class TestSpaServing:
         assert '<base href="/refgenie/" />' in response.text
         assert info["refgenie"]["root_path"] == "/refgenie"
 
-    def test_route_guard_single_spa_mount(self, rgc):
-        """Exactly one catch-all, registered last -- Starlette matches routes in
-        registration order, so anything after it would be dead."""
-        app = create_app(mode=APP_MODE_SERVER, refgenie_instance=rgc)
-        catch_alls = [
-            r for r in app.router.routes if getattr(r, "path", None) == "/{full_path:path}"
-        ]
-        assert len(catch_alls) == 1
-        assert app.router.routes[-1] is catch_alls[0]
-
 
 def test_missing_assets_returns_503(rgc, monkeypatch):
     """Absence must be tolerated, never fatal. Not marked ``requires_web_assets``:
@@ -452,11 +461,11 @@ def test_built_bundle_carries_public_files(server_client, name, content_type, ma
 
 
 # ===========================================================================
-# OpenAPI <-> TypeScript wire-type drift guard (frontend/src/types/api.ts),
-# and the same guard for the hand-written frontend/public/SKILL.md
+# API contract: the response fields, paths and enums the web UI relies on
+# (it declares them in frontend/src/types/api.ts)
 # ===========================================================================
 
-#: Property key sets, mirroring frontend/src/types/api.ts one interface at a time.
+#: The fields each response model must have, one model at a time.
 EXPECTED_PROPERTIES = {
     "GenomeResponse": {
         "digest",
@@ -609,7 +618,7 @@ def openapi_schema(tmp_path_factory):
 
 
 @pytest.mark.parametrize("model_name", sorted(EXPECTED_PROPERTIES))
-def test_wire_model_properties_match_frontend_types(openapi_schema, model_name):
+def test_response_models_have_the_fields_the_web_ui_reads(openapi_schema, model_name):
     schemas = openapi_schema["components"]["schemas"]
     assert model_name in schemas, (
         f"{model_name} is no longer in the OpenAPI schema. "
@@ -643,59 +652,6 @@ def test_paths_the_spa_calls_are_stable(openapi_schema, expected, service_module
     )
 
 
-#: The agent-facing capability doc served at /SKILL.md on every refgenie origin.
-#: It is hand-written, so it goes stale silently -- every /v4 path it names must
-#: still exist in the schema. The doc's own convention: {braces} are path
-#: parameters; <ANGLE_BRACKETS> are values the reader substitutes, and the regex
-#: stops at the '<' so they are never mistaken for routes.
-SKILL_MD = _REPO_ROOT / "frontend" / "public" / "SKILL.md"
-
-_V4_PATH_RE = re.compile(r"/v4/[A-Za-z0-9_{}/.-]*")
-
-
-def _normalize_api_path(path: str) -> str:
-    return re.sub(r"\{[^}]*\}", "{}", path.rstrip("/.-"))
-
-
-def _skill_md_v4_paths() -> set[str]:
-    return {
-        p
-        for p in (_normalize_api_path(m) for m in _V4_PATH_RE.findall(SKILL_MD.read_text()))
-        if p != "/v4"
-    }
-
-
-def test_skill_md_exists_and_is_a_skill_file():
-    """A missing SKILL.md is invisible: /SKILL.md is not an API prefix, so the
-    SPA catch-all answers 200 with index.html rather than 404. Assert presence
-    positively -- no negative test will ever fire."""
-    assert SKILL_MD.is_file(), f"{SKILL_MD} is missing; /SKILL.md would serve the SPA shell"
-    text = SKILL_MD.read_text()
-    assert text.startswith("---\n"), "SKILL.md must open with YAML frontmatter"
-    head = text.split("---", 2)[1]
-    assert "name:" in head and "description:" in head
-
-
-def test_skill_md_paths_still_exist(openapi_schema):
-    """Every /v4 path SKILL.md names still resolves to a real route.
-
-    A worked example spells a parameter out (``/v4/aliases/hg38``) where a
-    reference entry writes the template (``/v4/aliases/{name}``). Both are
-    claims that the same route exists, so a concrete final segment is accepted
-    when the one-parameter template above it does.
-    """
-    actual = {_normalize_api_path(p) for p in openapi_schema["paths"]}
-    missing = sorted(
-        p
-        for p in _skill_md_v4_paths()
-        if p not in actual and f"{p.rpartition('/')[0]}/{{}}" not in actual
-    )
-    assert not missing, (
-        f"frontend/public/SKILL.md documents endpoints that no longer exist: "
-        f"{missing}. Update SKILL.md."
-    )
-
-
 @pytest.mark.parametrize(
     "enum_name,members",
     [
@@ -703,7 +659,7 @@ def test_skill_md_paths_still_exist(openapi_schema):
         ("SearchOperator", {"eq", "contains", "starts_with", "ends_with"}),
     ],
 )
-def test_enums_match_the_frontend_unions(openapi_schema, enum_name, members):
+def test_enums_have_the_values_the_web_ui_reads(openapi_schema, enum_name, members):
     assert set(openapi_schema["components"]["schemas"][enum_name]["enum"]) == members
 
 

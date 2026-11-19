@@ -192,11 +192,8 @@ jobs:
           echo "refgenie dash: OK"
 
   base-install:
-    # The `package` job installs the wheel with [server], so it cannot catch a
-    # dependency that escaped into the base import path. This job installs the
-    # wheel with NO extras: it would have caught apscheduler leaking out of the
-    # server import guard, psycopg sitting under the dash extra while
-    # PostgresConfig is a base config type, and the refgenie-mcp crash.
+    # Installs the wheel with no extras, the way pipeline tools do, and runs the
+    # commands a plain install must support.
     needs: frontend
     if: >-
       github.event_name != 'pull_request'
@@ -240,17 +237,6 @@ jobs:
 
       - name: Smoke test - import refgenie
         run: .base-venv/bin/python -c "import refgenie; from refgenie import Refgenie; print('ok')"
-
-      - name: Smoke test - PostgresConfig driver is present
-        run: |
-          .base-venv/bin/python -c "
-          import psycopg
-          from refgenie.config.db import PostgresConfig
-          from sqlalchemy import create_engine
-          cfg = PostgresConfig(name='n', user='u', password='p', host='h', port=5432)
-          create_engine(cfg.url)  # resolves the psycopg driver; makes no connection
-          print('PostgreSQL driver resolves on a base install')
-          "
 
       - name: Smoke test - CLI help
         run: .base-venv/bin/refgenie --help

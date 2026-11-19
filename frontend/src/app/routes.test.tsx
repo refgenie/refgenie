@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { RouteObject } from 'react-router-dom';
-import { SPA_CLIENT_ROUTES, createRoutes } from './routes';
+import { createRoutes } from './routes';
 import { localConfig, serverConfig } from '../test/renderWithProviders';
 
 function paths(routes: RouteObject[], prefix = ''): string[] {
@@ -22,7 +22,6 @@ describe('createRoutes', () => {
     expect(registered).toContain('collections');
     expect(registered).toContain('collections/:id');
     expect(registered).not.toContain('local/collections');
-    expect(SPA_CLIENT_ROUTES).toContain('/collections');
   });
 
   it('registers the /local branch on a page that is not itself the dash', () => {
@@ -51,10 +50,9 @@ describe('createRoutes', () => {
     expect(registered.filter((path) => path.startsWith('local'))).toEqual([]);
   });
 
-  it('registers /species in both modes and mirrors it', () => {
+  it('registers /species in both modes', () => {
     expect(paths(createRoutes(serverConfig))).toContain('species');
     expect(paths(createRoutes(localConfig))).toContain('species');
-    expect(SPA_CLIENT_ROUTES).toContain('/species');
   });
 
   it('registers the /local species twin only off the dash', () => {

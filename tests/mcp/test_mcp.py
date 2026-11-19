@@ -453,13 +453,6 @@ def test_known_arguments_still_work_through_the_protocol(mcp_refgenie):
     assert not _call("list_genomes", {"page_size": 1, "taxon_id": 9606}).is_error
 
 
-@requires_mcp
-def test_every_tool_has_its_parameters_recorded(mcp_refgenie):
-    for tool in asyncio.run(tools.mcp.list_tools()):
-        assert tool.name in tools._PARAMS
-        assert set(tool.input_schema.get("properties", {})) == set(tools._PARAMS[tool.name])
-
-
 # ---------------------------------------------------------------------------
 # The import guard (needs the extras to be ABSENT -- simulated)
 # ---------------------------------------------------------------------------
@@ -533,21 +526,3 @@ def test_refgenie_mcp_help_works_without_the_extra(without_mcp, capsys):
         stdio.main(["--help"])
     assert excinfo.value.code == 0
     assert "REFGENIE_HOME_PATH" in capsys.readouterr().out
-
-
-@requires_mcp
-@pytest.mark.parametrize(
-    "doc", ["docs/site/SKILL.md", "frontend/public/SKILL.md", "docs/refgenie/mcp.md"]
-)
-def test_doc_tool_tables_match_registered_tools(doc):
-    import re
-
-    root = Path(__file__).resolve().parents[2]
-    lines = (root / doc).read_text().splitlines()
-    start = next(i for i, line in enumerate(lines) if line.startswith("| Tool |"))
-    documented = set()
-    for line in lines[start + 2 :]:
-        if not line.startswith("|"):
-            break
-        documented.update(re.findall(r"`(\w+)`", line.split("|")[1]))
-    assert documented == {t.name for t in asyncio.run(tools.mcp.list_tools())}

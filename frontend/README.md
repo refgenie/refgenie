@@ -242,9 +242,6 @@ Properties that are load-bearing, not incidental:
   jobs. Bridge pulls live in `bridgeJobStore`, polled by
   `useBridgeJobPolling` only while one is active and the bridge is connected.
 
-Adding a `/local` route means editing `SPA_CLIENT_ROUTES` in **both**
-`src/app/routes.tsx` and `refgenie/server/const.py`.
-
 ### Testing the bridge end to end
 
 The bridge needs **two origins**: a page in server mode, and a `refgenie dash`

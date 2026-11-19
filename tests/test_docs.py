@@ -128,11 +128,3 @@ def test_documented_command_parses(path, line, argv, capsys):
             err = capsys.readouterr().err.strip().splitlines()
             last = err[-1] if err else str(e)
             pytest.fail(f"{path}:{line}: `{cmd}` does not parse: {last}")
-
-
-def test_no_local_paths_in_docs():
-    files = [ROOT / "frontend/public/SKILL.md"]
-    for ext in ("md", "mdx", "yml"):
-        files += (ROOT / "docs").rglob(f"*.{ext}")
-    bad = [f.relative_to(ROOT).as_posix() for f in files if "file://" in f.read_text()]
-    assert not bad, f"file:// links in {bad}"

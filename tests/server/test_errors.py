@@ -20,7 +20,6 @@ from refgenie.exceptions import (  # noqa: E402  (must follow the extras guard)
     RefgenieError,
 )
 from refgenie.server.errors import (  # noqa: E402
-    _CLASSIFICATION,
     ErrorCode,
     WebError,
     action_error,
@@ -58,17 +57,6 @@ def test_messages_pass_through():
     assert "subscribe" in classify_exception(NoSubscriptionsError())[2].lower()
     exc = WebError("no servers", ErrorCode.NO_SUBSCRIPTIONS, 409)
     assert classify_exception(exc) == (409, ErrorCode.NO_SUBSCRIPTIONS, "no servers")
-
-
-def test_no_subclass_is_listed_after_its_parent():
-    """The table is scanned in order, so a subclass after its parent never matches."""
-    types = [entry[0] for entry in _CLASSIFICATION]
-    for i, earlier in enumerate(types):
-        for later in types[i + 1 :]:
-            if later is not earlier:
-                assert not issubclass(later, earlier), (
-                    f"{later.__name__} is listed after its parent {earlier.__name__}"
-                )
 
 
 def test_action_error_carries_classified_status_and_envelope_detail():

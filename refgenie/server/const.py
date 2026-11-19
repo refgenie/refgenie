@@ -19,38 +19,6 @@ APP_MODE_SERVER = "server"
 APP_MODE_LOCAL = "local"
 AppMode = Literal["server", "local"]
 
-# Client-side routes the SPA owns at the root; the JSON API lives under /v4 and /v1.
-#
-# The public SPA deep-links into these, so changes must be coordinated with it:
-#
-#   http://localhost:{port}/genomes/{digest}
-#   http://localhost:{port}/genomes/{digest}/{assetDigest}
-#   http://localhost:{port}/pull?server={remoteApiBase}&genome={digest}&asset_group={name}
-#   http://localhost:{port}/servers?subscribe={serverUrl}
-#
-# /pull and /servers open a prefilled form and must never act on load (CSRF).
-SPA_CLIENT_ROUTES: tuple[str, ...] = (
-    "genomes",
-    "species",
-    "assets",
-    "asset-groups",
-    "asset-classes",
-    "recipes",
-    "aliases",
-    "tree",
-    "collections",
-    # The public SPA's browse scope for a connected local refgenie; here it
-    # only makes a pasted /local URL show the SPA's not-found page.
-    "local",
-    "remote",
-    "manage",
-    "servers",
-    "jobs",
-    "build",
-    "pull",
-    "about",
-)
-
 #: Path prefixes owned by the API. An unmatched path under one gets a JSON 404, not index.html.
 API_PATH_PREFIXES: tuple[str, ...] = (
     "/v4/",

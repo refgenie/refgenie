@@ -14,9 +14,10 @@ for, and record, decisions that are not obvious from the code.
 
 ## Testing
 
-**No meta tests.** Tests check what refgenie does, never how the code is
-arranged: no tests that read source files, check imports or layering, check
-which packages are installed, or check that two files agree.
+**No meta tests.** Tests check what refgenie does by running it. No tests or
+CI checks that read source code, check imports or layering, check which
+packages are installed, or compare one file's text with another's. Running a
+documented command through the real CLI is fine.
 
 The suite is split into four tiers.
 
