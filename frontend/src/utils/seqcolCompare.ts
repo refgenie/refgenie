@@ -71,11 +71,11 @@ export function interpretCoordinateSystem(
   return { level: 'disjoint', messages };
 }
 
-/** One sentence (or two) on how one attribute's contents compare. */
 /** `all 3 names`, or `the one name`. */
 const every = (n: number, attribute: string) =>
   n === 1 ? `the one ${attribute.replace(/s$/, '')}` : `all ${n} ${attribute}`;
 
+/** One sentence (or two) on how one attribute's contents compare. */
 export function interpretAttribute(
   c: SeqcolComparison,
   attribute: string,
