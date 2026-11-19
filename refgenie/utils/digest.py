@@ -7,6 +7,7 @@ Asset identity: the content digest scheme and build provenance.
 """
 
 import hashlib
+import json
 from dataclasses import dataclass
 from datetime import datetime
 from fnmatch import fnmatch
@@ -153,12 +154,46 @@ BUILD_INHERENT_ATTRS = [
 BUILD_DIGEST_SCHEME = "refgenie-build-1"
 
 
+def _reject_floats(item) -> None:
+    """Raise if there's a float anywhere in the item (copied from refget 0.13.0).
+
+    We can't handle floats correctly (see _canonical_str), so it's safer to
+    error out than to make a bad digest quietly.
+    """
+    if isinstance(item, float):
+        raise ValueError(
+            f"canonical_str got a float ({item!r}), which it can't digest "
+            "correctly. Convert numbers to int or str first."
+        )
+    if isinstance(item, dict):
+        for v in item.values():
+            _reject_floats(v)
+    elif isinstance(item, (list, tuple)):
+        for v in item:
+            _reject_floats(v)
+
+
+def _canonical_str(item: dict) -> bytes:
+    """Seqcol canonical JSON (copied from refget 0.13.0): sorted keys, no spaces, no floats.
+
+    Build digests already stored in catalogs were computed with refget's
+    ``canonical_str``, so this must stay byte-for-byte the same. It is
+    json.dumps with sorted keys, not a real RFC-8785 (JCS) implementation.
+    The two agree on strings and normal-sized ints but not on floats
+    (json.dumps(1.0) is "1.0", JCS wants "1"), so floats are rejected.
+    """
+    _reject_floats(item)
+    return json.dumps(
+        item, separators=(",", ":"), ensure_ascii=False, allow_nan=False, sort_keys=True
+    ).encode()
+
+
 def _canonicalize_value(value: Any) -> Any:
     """
     Coerce a level-2 attribute to the form its digest is computed from.
 
     Every leaf becomes a string, since params render as text into the shell
-    command (``30`` and ``"30"`` are the same build) and ``canonical_str``
+    command (``30`` and ``"30"`` are the same build) and ``_canonical_str``
     rejects floats. ``None`` is dropped so it cannot collide with ``"None"``.
 
     Args:
@@ -223,11 +258,10 @@ def build_level2_to_level1(level2: dict[str, Any]) -> dict[str, str]:
     Level 1 covers every attribute, not just the inherent ones, so the
     inherent set can change later by re-filtering stored level 1.
     """
-    from refget import canonical_str
-    from refget.digests import sha512t24u_digest
+    from gtars.refget import sha512t24u_digest
 
     return {
-        name: sha512t24u_digest(canonical_str(_canonicalize_value(value)))
+        name: sha512t24u_digest(_canonical_str(_canonicalize_value(value)))
         for name, value in level2.items()
     }
 
@@ -236,11 +270,10 @@ def build_level1_to_digest(
     level1: dict[str, str], inherent_attrs: list[str] = BUILD_INHERENT_ATTRS
 ) -> str:
     """Digest the ``inherent_attrs`` of a level-1 object into the build digest."""
-    from refget import canonical_str
-    from refget.digests import sha512t24u_digest
+    from gtars.refget import sha512t24u_digest
 
     filtered = {k: v for k, v in level1.items() if k in inherent_attrs}
-    return sha512t24u_digest(canonical_str(filtered))
+    return sha512t24u_digest(_canonical_str(filtered))
 
 
 def build_digest(level2: dict[str, Any]) -> tuple[str, dict[str, str]]:

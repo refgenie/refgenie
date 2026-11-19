@@ -8,8 +8,6 @@ store) builds each side's level 2 with :func:`seqcol_level2` and compares with
 from collections import Counter
 from typing import Any
 
-from refget.utils import compare_seqcols
-
 from refgenie.logger import logger
 
 __all__ = ["compare_level2", "seqcol_level2", "summarize_comparison"]
@@ -48,9 +46,81 @@ def seqcol_level2(store: Any, digest: str) -> dict:
     return level2
 
 
+def _compare_seqcols(A: dict, B: dict) -> dict:
+    """The GA4GH seqcol comparison function (copied from refget 0.13.0).
+
+    Copied so a plain install does not need refget. Its output is the spec's
+    comparison, which the server, the CLI and MCP all return, so it must not
+    change.
+
+    Args:
+        A: Sequence collection A
+        B: Sequence collection B
+
+    Returns:
+        dict: Following formal seqcol specification comparison function return value
+    """
+    a_keys = list(A.keys())
+    b_keys = list(B.keys())
+    a_keys.sort()
+    b_keys.sort()
+
+    all_keys = a_keys + list(set(b_keys) - set(a_keys))
+    all_keys.sort()
+
+    # Compute lengths of each array; only do this for array attributes
+    a_lengths = {}
+    b_lengths = {}
+    for k in a_keys:
+        a_lengths[k] = len(A[k])
+    for k in b_keys:
+        b_lengths[k] = len(B[k])
+
+    return_obj = {
+        "attributes": {"a_only": [], "b_only": [], "a_and_b": []},
+        "array_elements": {
+            "a_count": a_lengths,
+            "b_count": b_lengths,
+            "a_and_b_count": {},
+            "a_and_b_same_order": {},
+        },
+    }
+
+    for k in all_keys:
+        if k not in A:
+            return_obj["attributes"]["b_only"].append(k)
+        elif k not in B:
+            return_obj["attributes"]["a_only"].append(k)
+        else:
+            return_obj["attributes"]["a_and_b"].append(k)
+            res = _compare_elements(A[k], B[k])
+            return_obj["array_elements"]["a_and_b_count"][k] = res["a_and_b"]
+            return_obj["array_elements"]["a_and_b_same_order"][k] = res["a_and_b_same_order"]
+    return return_obj
+
+
+def _compare_elements(A: list, B: list) -> dict[str, int | bool | None]:
+    """Compare two arrays' elements for :func:`_compare_seqcols` (copied from refget 0.13.0)."""
+    A_filtered = list(filter(lambda x: x in B, A))
+    B_filtered = list(filter(lambda x: x in A, B))
+    A_count = len(A_filtered)
+    B_count = len(B_filtered)
+    overlap = min(len(A_filtered), len(B_filtered))  # counts duplicates
+
+    if A_count + B_count < 1:
+        # order match requires at least 2 matching elements
+        order = None
+    elif not (A_count == B_count == overlap):
+        # duplicated matches means order match is undefined
+        order = None
+    else:
+        order = A_filtered == B_filtered
+    return {"a_and_b": overlap, "a_and_b_same_order": order}
+
+
 def compare_level2(level2_a: dict, level2_b: dict, digest_a: str, digest_b: str) -> dict:
     """The GA4GH seqcol comparison of two level 2 collections."""
-    result = compare_seqcols(level2_a, level2_b)
+    result = _compare_seqcols(level2_a, level2_b)
     result.setdefault("digests", {"a": digest_a, "b": digest_b})
     return result
 
