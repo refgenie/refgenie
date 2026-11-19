@@ -274,3 +274,47 @@ jobs:
             .base-venv/bin/refgenie-mcp
 
           exit "$fail"
+
+      - name: Smoke test - PostgreSQL config without the driver
+        env:
+          REFGENIE_HOME_PATH: ${{ runner.temp }}/refgenie-postgres-home
+          REFGENIE_DB_CONFIG_PATH: ${{ runner.temp }}/postgres_db_config.yaml
+        run: |
+          printf 'type: postgresql\nname: refgenie\nuser: u\npassword: p\nhost: localhost\nport: 5432\n' \
+            > "$REFGENIE_DB_CONFIG_PATH"
+          set +e
+          out=$(.base-venv/bin/refgenie list 2>&1)
+          rc=$?
+          flat=$(printf '%s' "$out" | tr -s ' \t\n' ' ')
+          if [ "$rc" -eq 0 ]; then
+            echo "::error::refgenie list exited 0 with a PostgreSQL config and no driver"
+            exit 1
+          elif ! printf '%s' "$flat" | grep -qF "refgenie[postgres]"; then
+            echo "::error::refgenie list did not name the postgres extra. Got:"
+            printf '%s\n' "$out"
+            exit 1
+          elif printf '%s' "$out" | grep -qF "Traceback"; then
+            echo "::error::refgenie list printed a traceback:"
+            printf '%s\n' "$out"
+            exit 1
+          fi
+          echo "PostgreSQL config without the driver: OK"
+
+      - name: Smoke test - core commands
+        env:
+          REFGENIE_HOME_PATH: ${{ runner.temp }}/refgenie-home
+        run: |
+          B=.base-venv/bin
+          $B/refgenie init
+          $B/refgenie pull hg38/fasta_index            # about 12 KB from api.refgenie.org
+          $B/refgenie seek hg38/fasta_index.chrom_sizes
+          $B/refgenie list
+          $B/refgenie compare hg38 hg38
+          printf 'f: refgenie://hg38/fasta_index.chrom_sizes\n' > in.yaml
+          out=$($B/refgenie populate -f in.yaml)        # a populate failure fails the step
+          if grep -q 'refgenie://' <<< "$out"; then echo "::error::populate left a refgenie:// URI"; exit 1; fi
+          $B/python -c "
+          from refgenie.integrations.looper import populate
+          out = populate({'pipeline': {'x': 'refgenie://hg38/fasta_index.chrom_sizes'}})
+          assert not out['pipeline']['x'].startswith('refgenie://'), out
+          "
