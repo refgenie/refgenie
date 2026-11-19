@@ -94,14 +94,22 @@ echo "----------------------------------------------"
 
 cd "$PROJECT_ROOT"
 
+# The project's venv (`uv sync --all-packages --extra server`), so the tests
+# never run on a system python3 that lacks refgenie and its extras.
+PYTHON="$PROJECT_ROOT/.venv/bin/python"
+if [ ! -x "$PYTHON" ]; then
+    PYTHON=python3
+fi
+log_info "Using Python: $PYTHON"
+
 # Activate bulker crate for bioinformatics tools (samtools, bowtie2, bwa)
 BULKER_MANIFEST="$PROJECT_ROOT/bulker_manifest.yaml"
 if command -v bulker &> /dev/null && [ -f "$BULKER_MANIFEST" ]; then
     log_info "Running tests inside bulker crate: $BULKER_MANIFEST"
-    bulker exec "$BULKER_MANIFEST" -- python3 -m pytest tests/integration/ "$@"
+    bulker exec "$BULKER_MANIFEST" -- "$PYTHON" -m pytest tests/integration/ "$@"
 else
     log_info "bulker not found; running tests without containerized tools (some may skip)"
-    python3 -m pytest tests/integration/ "$@"
+    "$PYTHON" -m pytest tests/integration/ "$@"
 fi
 TEST_EXIT_CODE=$?
 
