@@ -35,7 +35,7 @@ class _Stores:
     PRIORITY = {"jungle": 10, "vgp": 20, "plantref": 30}
 
     def __init__(self, tmp_path, fixtures_path):
-        from refget.store import RefgetStore
+        from gtars.refget import RefgetStore
 
         from refgenie.managers.genome import GenomeManager
 

@@ -485,7 +485,7 @@ def build_on_disk_store(path, fasta, alias, namespace="name"):
 
     Returns the collection digest.
     """
-    from refget.store import RefgetStore
+    from gtars.refget import RefgetStore
 
     store = RefgetStore.on_disk(str(path))
     meta, _ = store.add_sequence_collection_from_fasta(str(fasta))

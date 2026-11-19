@@ -13,7 +13,7 @@ import functools
 import time
 from pathlib import Path
 
-from refget.store import ReadonlyRefgetStore, RefgetStore
+from gtars.refget import ReadonlyRefgetStore, RefgetStore
 
 from refgenie.db.tables import Store, StoreType
 from refgenie.exceptions import MissingGenomeError, UnservedStoreError

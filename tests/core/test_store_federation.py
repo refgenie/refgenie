@@ -319,7 +319,7 @@ class TestStoreSyncIntegration:
 
     def test_resync_backfills_fhr_columns(self, tmp_path, fixtures_path):
         """A sidecar added to the store after the first sync lands on re-sync."""
-        from refget.store import RefgetStore
+        from gtars.refget import RefgetStore
 
         from refgenie.cli.commands.store import _sync_one_store
         from refgenie.managers.genome import GenomeManager
@@ -364,7 +364,7 @@ class TestStoreSyncIntegration:
 
     def test_lower_priority_store_does_not_overwrite_fhr_columns(self, tmp_path, fixtures_path):
         """Only the owning store writes FHR columns, whatever the sync order."""
-        from refget.store import RefgetStore
+        from gtars.refget import RefgetStore
 
         from refgenie.cli.commands.store import StoreSyncModel, handle_store_sync
         from refgenie.managers.genome import GenomeManager
@@ -393,7 +393,7 @@ class TestStoreSyncIntegration:
 
 def _jungle(tmp_path, fixtures_path):
     """A server with one on-disk store 'jungle': rCRSd (aliases a, b, c) and t7 (alias t7)."""
-    from refget.store import RefgetStore
+    from gtars.refget import RefgetStore
 
     path = tmp_path / "jungle"
     rcrsd = build_on_disk_store(path, fixtures_path / "rCRSd.fa", "a")
@@ -784,7 +784,7 @@ class TestSharedReadonlyStores:
     }
 
     def _served(self, tmp_path, fixtures_path):
-        from refget.store import RefgetStore
+        from gtars.refget import RefgetStore
 
         from refgenie.managers.genome import GenomeManager
 
@@ -803,8 +803,9 @@ class TestSharedReadonlyStores:
     def test_seqcol_mounts_share_the_routers_readonly_stores(
         self, tmp_path, fixtures_path, monkeypatch
     ):
+        pytest.importorskip("refget")
+        from gtars.refget import ReadonlyRefgetStore
         from refget.middleware import StoreFreshnessMiddleware
-        from refget.store import ReadonlyRefgetStore
 
         from tests.support.server import make_server_client
 
@@ -829,8 +830,8 @@ class TestSharedReadonlyStores:
                 raise AssertionError("store opened or loaded after startup")
 
             monkeypatch.setattr("refgenie.core.store_router.make_store", _no_io)
-            monkeypatch.setattr("refget.store.RefgetStore.on_disk", _no_io)
-            monkeypatch.setattr("refget.store.RefgetStore.open_remote", _no_io)
+            monkeypatch.setattr("gtars.refget.RefgetStore.on_disk", _no_io)
+            monkeypatch.setattr("gtars.refget.RefgetStore.open_remote", _no_io)
             monkeypatch.setattr("refget.seqcolapi.app.prepare_store", _no_io)
 
             detail = client.get(f"/v4/genomes/{human}")

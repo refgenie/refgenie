@@ -8,7 +8,7 @@ from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import Any, Protocol
 
-from refget.store import RefgetStore
+from gtars.refget import RefgetStore
 from rich.table import Table
 
 from refgenie.db.engine import Engine

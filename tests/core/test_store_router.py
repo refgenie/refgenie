@@ -264,7 +264,7 @@ def test_collection_digests_recomputed_when_editable(monkeypatch, tmp_path, stor
 @pytest.mark.parametrize("scan", [False, True])
 def test_collection_sequences_bulk_and_cached(tmp_path, fixtures_path, monkeypatch, scan):
     """Rows match level 2 with metadata and aliases, by either alias path, and are cached."""
-    from refget.store import RefgetStore
+    from gtars.refget import RefgetStore
 
     store = RefgetStore.on_disk(str(tmp_path / "s"))
     digest = store.add_sequence_collection_from_fasta(str(fixtures_path / "demo.fa"))[0].digest

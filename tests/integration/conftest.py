@@ -607,7 +607,7 @@ def _build_demo_store(store_dir: Path) -> list[str]:
 
     Returns the list of collection digests (FASTA-add order).
     """
-    from refget.store import RefgetStore
+    from gtars.refget import RefgetStore
 
     store = RefgetStore.on_disk(str(store_dir))
     for fa in STORE_DEMO_FASTAS:

@@ -1,7 +1,7 @@
 """Refgenie: reference genome asset manager.
 
 Top-level names are resolved lazily (PEP 562), so ``import refgenie`` does
-not pay about 0.6s to load SQLModel, alembic, refget and cryptography.
+not pay about 0.6s to load SQLModel, alembic, gtars and cryptography.
 """
 
 from typing import TYPE_CHECKING

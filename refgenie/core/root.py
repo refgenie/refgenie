@@ -5,7 +5,7 @@ Refgenie is a SQLModel backed reference genome manager.
 import threading
 from pathlib import Path
 
-from refget.store import RefgetStore
+from gtars.refget import RefgetStore
 
 from refgenie.config import config
 from refgenie.config.settings import LogLevel

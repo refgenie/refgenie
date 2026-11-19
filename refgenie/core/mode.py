@@ -11,7 +11,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable
 from pathlib import Path
 
-from refget.store import RefgetStore
+from gtars.refget import RefgetStore
 
 from refgenie.core.store_router import RefgetStoreRouter
 from refgenie.db.engine import Engine
