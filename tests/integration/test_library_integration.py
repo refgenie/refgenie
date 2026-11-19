@@ -299,7 +299,8 @@ class TestTwoGenomesCompare:
     """
 
     @pytest.fixture(autouse=True, scope="class")
-    def two_genome_instance(self, fixtures_path, tmp_path_factory):
+    @classmethod
+    def two_genome_instance(cls, fixtures_path, tmp_path_factory):
         """Build two genomes for comparison tests with isolated SQLite DB."""
         from sqlmodel import create_engine, SQLModel
 
@@ -369,7 +370,8 @@ class TestBowtie2Operations:
     """
 
     @pytest.fixture(autouse=True, scope="class")
-    def bowtie2_setup(self, fixtures_path, tmp_path_factory):
+    @classmethod
+    def bowtie2_setup(cls, fixtures_path, tmp_path_factory):
         """Build fasta + bowtie2 once for the class with isolated SQLite DB."""
         from sqlmodel import create_engine, SQLModel
 
@@ -444,7 +446,8 @@ class TestDockerColocationBuild:
     BWA_INDEX_FILES = (".amb", ".ann", ".bwt", ".pac", ".sa")
 
     @pytest.fixture(scope="class")
-    def bwa_docker_setup(self, fixtures_path, tmp_path_factory):
+    @classmethod
+    def bwa_docker_setup(cls, fixtures_path, tmp_path_factory):
         """Init genome, build fasta natively, then build bwa_index with container=True."""
         from sqlmodel import create_engine, SQLModel
 
@@ -533,7 +536,8 @@ class TestCustomSeekKeyProbeInARealContainer:
     VERSION_PATTERN = re.compile(r"^\d+(\.\d+)+")
 
     @pytest.fixture(scope="class")
-    def recipe_instance(self, fixtures_path, tmp_path_factory):
+    @classmethod
+    def recipe_instance(cls, fixtures_path, tmp_path_factory):
         """A Refgenie with the bowtie2_index recipe registered. Nothing built."""
         from sqlmodel import create_engine, SQLModel
 
