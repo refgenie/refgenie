@@ -2439,10 +2439,8 @@ dependencies = [
     { name = "httpx2" },
     { name = "jinja2" },
     { name = "piper" },
-    { name = "psycopg" },
     { name = "pydantic-settings" },
     { name = "pyyaml" },
-    { name = "refget" },
     { name = "rich" },
     { name = "sqlmodel" },
     { name = "ubiquerg" },
@@ -2457,10 +2455,15 @@ dash = [
 mcp = [
     { name = "mcp", extra = ["cli"] },
 ]
+postgres = [
+    { name = "psycopg" },
+]
 server = [
     { name = "apscheduler" },
     { name = "fastapi" },
     { name = "mcp", extra = ["cli"] },
+    { name = "psycopg" },
+    { name = "refget" },
     { name = "uvicorn" },
 ]
 snakemake = [
@@ -2492,11 +2495,11 @@ requires-dist = [
     { name = "mcp", extras = ["cli"], marker = "extra == 'server'", specifier = ">=2.3.0" },
     { name = "peppy", marker = "extra == 'snakemake'", specifier = ">=0.40.8" },
     { name = "piper", specifier = ">=0.15.1" },
-    { name = "psycopg", specifier = ">=3.3.8" },
+    { name = "psycopg", marker = "extra == 'postgres'", specifier = ">=3.3.8" },
     { name = "pydantic-settings", specifier = ">=2.16.2" },
     { name = "pyyaml", specifier = ">=6.0.3" },
-    { name = "refgenie", extras = ["dash"], marker = "extra == 'server'" },
-    { name = "refget", specifier = ">=0.13.0" },
+    { name = "refgenie", extras = ["dash", "postgres"], marker = "extra == 'server'" },
+    { name = "refget", marker = "extra == 'server'", specifier = ">=0.13.0" },
     { name = "rich", specifier = ">=15.0.0" },
     { name = "snakemake", marker = "extra == 'snakemake'", specifier = ">=9.16.3,<10" },
     { name = "sqlmodel", specifier = ">=0.0.37" },
@@ -2504,7 +2507,7 @@ requires-dist = [
     { name = "uvicorn", marker = "extra == 'dash'", specifier = ">=0.54.0" },
     { name = "yacman", specifier = ">=1.0.0" },
 ]
-provides-extras = ["snakemake", "dash", "mcp", "server"]
+provides-extras = ["snakemake", "dash", "mcp", "postgres", "server"]
 
 [package.metadata.requires-dev]
 dev = [

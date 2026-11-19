@@ -55,13 +55,7 @@ dependencies = [
     "httpx2>=2.16.0",
     "jinja2>=3.1.6",
     "piper>=0.15.1",
-    # PostgresConfig is a first-class base config type (refgenie/config/db.py),
-    # and refgenie.py calls create_engine() on its postgresql+psycopg:// URL,
-    # so the driver cannot live behind an extra.
-    "psycopg>=3.3.8",
     "pyyaml>=6.0.3",
-    # refget.seqcolapi's fastapi comes from refgenie[dash], so refget's seqcolapi extra is not needed.
-    "refget>=0.13.0",
     "rich>=15.0.0",
     "sqlmodel>=0.0.37",
     "ubiquerg>=0.9.3",
@@ -83,10 +77,17 @@ dash = [
 # mcp.server.mcpserver (the 2.x replacement for the removed
 # mcp.server.fastmcp.FastMCP).
 mcp = ["mcp[cli]>=2.3.0"]
+# A PostgreSQL catalog. SQLAlchemy loads the driver only for a
+# postgresql+psycopg:// URL, so SQLite users never need it;
+# create_database_engine() names this extra when it is missing.
+postgres = ["psycopg>=3.3.8"]
 server = [
-    "refgenie[dash]",
+    "refgenie[dash,postgres]",
     "apscheduler>=3.11.3",
     "mcp[cli]>=2.3.0",
+    # The seqcol API mounted at /seqcol (refgenie/server/seqcol.py). Its fastapi
+    # comes from refgenie[dash], so refget's seqcolapi extra is not needed.
+    "refget>=0.13.0",
 ]
 
 [project.urls]
