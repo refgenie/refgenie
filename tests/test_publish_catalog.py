@@ -402,8 +402,8 @@ NOTHING_ABSENT = {"genome": [], "alias": [], "store": [], "kept_genome": []}
 
 
 class TestCatalogPrune:
-    """Import never deletes genomes or assets; ``catalog-prune`` removes what the
-    artifact no longer has."""
+    """``catalog-prune`` removes what the artifact no longer has. Import also
+    prunes, through the same code."""
 
     def test_prune_removes_retracted_asset(self, tmp_path, artifacts):
         from refgenie.db.tables import AssetGroup, AssetName
