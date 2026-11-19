@@ -244,7 +244,7 @@ describe('ComparePanel', () => {
 
   it('shows the server summary in place of its own sentences, and lists renames', async () => {
     const summary =
-      'All 1 sequences of hg38 are in rCRSd, which has 1 more; 1 names differ: chrM->MT.';
+      'The one sequence of hg38 is in rCRSd, which has 1 more; 1 name differs: chrM->MT.';
     server.use(
       http.get(`${API}/genomes/:digest/compare/:other`, () =>
         HttpResponse.json({
