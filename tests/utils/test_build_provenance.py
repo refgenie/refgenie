@@ -91,3 +91,25 @@ def test_param_type_does_not_change_the_digest():
     """
     assert digest_of(params={"size": 10}) == digest_of(params={"size": "10"})
     assert digest_of(params={"fraction": 0.5})
+
+
+def test_build_digest_is_unchanged():
+    """Build digests are stored in catalogs, so the same inputs must keep the same
+    digest. The values were computed with refget 0.13.0's canonical_str."""
+    digest, level1 = build_digest(build_level2(**BASE))
+    assert digest == "FIa9okAsfAdMIQMIvs6P2POhxOsPXHM4"
+    unset = "BPj_JoJgSGLkBb-I3hAu13EKxFwSBZV2"
+    assert level1 == {
+        "genome": "VPjbCeDUH5aS3uLO8kxyE4KsM7qweh0j",
+        "recipe": "utoCyZ1CPaXUu4HHY0VwGNk0oxWRs_UC",
+        "recipe_version": "O9lAc_2TKtc4GLDP74kFVS5q646jF8Xh",
+        "input_assets": "xAatRVBXM6w9lR05TGIizrX67hOdpiAR",
+        "input_asset_names": "_jwM7041g7eDln9SxVcLOAK-7Z-o6v2E",
+        "input_files": "YpdTZbyBeQGECUVPtveX3N4gT-cIP9F7",
+        "params": "24LdI4NUZwvxnJCq8nlCBsO3jlCVhCG7",
+        "build_timestamp": unset,
+        "refgenie_version": unset,
+        "docker_image": unset,
+        "docker_image_digest": unset,
+        "container_engine": unset,
+    }

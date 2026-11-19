@@ -113,3 +113,34 @@ def test_duplicate_digests_do_not_crash():
     summary, name_map = _summary(a, b)
     assert name_map == {"x": "x2", "y": "y2"}
     assert summary.startswith("Same 2 sequences")
+
+
+def test_comparison_is_unchanged():
+    """The GA4GH seqcol comparison, as refget 0.13.0 computes it: attributes in
+    one side only, and each order outcome (same, different, undefined)."""
+    a = {
+        "names": ["chr1", "chr2", "chrM"],
+        "lengths": [10, 20, 16569],
+        "sequences": ["SQ.1", "SQ.2", "SQ.m"],
+        "sorted_sequences": ["SQ.1", "SQ.2", "SQ.m"],
+    }
+    b = {
+        "names": ["chr2", "chr1", "MT"],
+        "lengths": [20, 20, 10],
+        "sequences": ["SQ.1", "SQ.2", "SQ.x"],
+        "name_length_pairs": [{"length": 20, "name": "chr2"}],
+    }
+    assert compare_level2(a, b, "A" * 32, "B" * 32) == {
+        "attributes": {
+            "a_only": ["sorted_sequences"],
+            "b_only": ["name_length_pairs"],
+            "a_and_b": ["lengths", "names", "sequences"],
+        },
+        "array_elements": {
+            "a_count": {"lengths": 3, "names": 3, "sequences": 3, "sorted_sequences": 3},
+            "b_count": {"lengths": 3, "name_length_pairs": 1, "names": 3, "sequences": 3},
+            "a_and_b_count": {"lengths": 2, "names": 2, "sequences": 2},
+            "a_and_b_same_order": {"lengths": None, "names": False, "sequences": True},
+        },
+        "digests": {"a": "A" * 32, "b": "B" * 32},
+    }
