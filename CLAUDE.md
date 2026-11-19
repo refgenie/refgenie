@@ -19,14 +19,15 @@ CI checks that read source code, check imports or layering, check which
 packages are installed, or compare one file's text with another's. Running a
 documented command through the real CLI is fine.
 
-The suite is split into four tiers.
+The suite is split into four tiers. Every tier needs the `server` extra, the
+same as CI: run `uv sync --all-packages --extra server` first.
 
 | Tier | Command | Needs |
 |------|---------|-------|
-| `unit` | `pytest` | nothing |
-| `component` | `pytest -m component` | nothing |
-| `e2e` | `pytest -m e2e` | `samtools` on PATH (some tests skip without it; see below) |
-| `integration` | `./tests/scripts/test-integration.sh` | Docker, bulker |
+| `unit` | `pytest` | the `server` extra |
+| `component` | `pytest -m component` | the `server` extra |
+| `e2e` | `pytest -m e2e` | the `server` extra, `samtools` on PATH (some tests skip without it; see below) |
+| `integration` | `./tests/scripts/test-integration.sh` | the `server` extra, Docker, bulker |
 
 No `samtools`? Use bulker to get it and run e2e locally with nothing skipped:
 `bulker exec bulker_manifest.yaml -- python3 -m pytest -m e2e`. CI installs
