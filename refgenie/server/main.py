@@ -237,9 +237,10 @@ def create_app(
 
     Args:
         mode: ``"server"`` (default) or ``"local"``.
-        root_path: URL prefix for sub-path mounting (e.g. "/refgenie").
-            Passed to FastAPI(root_path=...) and used to rewrite the SPA's
-            ``<base href>`` so a sub-path deployment needs no frontend rebuild.
+        root_path: URL prefix for sub-path mounting (e.g. "/refgenie"). Rewrites
+            the SPA's ``<base href>``, so a sub-path deployment needs no frontend
+            rebuild, and is reported in ``/service-info``. Start the ASGI server
+            with the same prefix (``uvicorn --root-path``) so request URLs use it.
         refgenie_instance: Optional pre-built Refgenie instance. If provided,
             it is used instead of creating a new one (useful for testing).
         web_dist: Optional path to a built web UI bundle, overriding the
@@ -350,7 +351,6 @@ def create_app(
         lifespan=local_lifespan if is_local else server_lifespan,
         openapi_tags=LOCAL_TAGS_METADATA if is_local else SERVER_TAGS_METADATA,
         swagger_ui_parameters={"docExpansion": "none", "defaultModelsExpandDepth": 0},
-        root_path=root_path,
         dependencies=[Depends(reject_nul_bytes)],
     )
     app.state.mode = mode
@@ -441,7 +441,7 @@ def create_app(
         _mount_mcp(app, rg)
 
     # Last: the SPA catch-all.
-    mount_spa(app, web_dist, shell=is_local)
+    mount_spa(app, web_dist, shell=is_local, root_path=root_path)
 
     return app
 

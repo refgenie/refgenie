@@ -158,14 +158,12 @@ def _json_404(full_path: str):
     return error_response(404, ErrorCode.NOT_FOUND, f"Not Found: /{full_path}")
 
 
-def mount_spa(app: FastAPI, dist: "Path | None", shell: bool = True) -> None:
+def mount_spa(app: FastAPI, dist: "Path | None", shell: bool = True, root_path: str = "") -> None:
     """Register the SPA catch-all on ``app``. Must be last: it matches every path.
 
     With ``shell=False`` (a public server) ``/`` is a short landing page, other
     page paths 404, and only static bundle files such as ``SKILL.md`` are served.
     """
-    root_path = app.root_path or ""
-
     index_html: str | None = None
     if dist is not None:
         try:
