@@ -29,7 +29,9 @@ def build_fasta_main(args=None):
     output.mkdir(parents=True, exist_ok=True)
 
     fa_path = output / f"{digest}.fa"
-    store.export_fasta(str(fa_path), collections=[digest], label="{name}", line_width=parsed.line_width)
+    store.export_fasta(
+        str(fa_path), collections=[digest], label="{name}", line_width=parsed.line_width
+    )
 
     fai_records = compute_fai(fa_path)
     fai_path = output / f"{digest}.fa.fai"
