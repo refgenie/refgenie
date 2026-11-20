@@ -99,6 +99,9 @@ cd "$PROJECT_ROOT"
 PYTHON="$PROJECT_ROOT/.venv/bin/python"
 if [ ! -x "$PYTHON" ]; then
     PYTHON=python3
+else
+    # Recipes call console scripts like refgenie-build-fasta; find the venv's.
+    export PATH="$PROJECT_ROOT/.venv/bin:$PATH"
 fi
 log_info "Using Python: $PYTHON"
 

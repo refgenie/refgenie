@@ -587,9 +587,9 @@ STORE_DEMO_FASTAS = ["base.fa", "subset.fa", "different_names.fa"]
 def _serve_directory_http(directory: Path) -> tuple[subprocess.Popen, str]:
     """Serve a directory over HTTP via a `python -m http.server` subprocess.
 
-    Returns (process, base_url). A subprocess (not a thread) is required because
-    gtars' open_remote holds the GIL during HTTP requests and would deadlock a
-    Python-thread HTTP server.
+    Returns (process, base_url). A subprocess keeps the server independent of
+    the gtars build under test (gtars before 0.12.0 held the GIL during HTTP
+    requests, which would deadlock a Python-thread HTTP server).
     """
     port = find_free_port()
     proc = subprocess.Popen(
