@@ -16,6 +16,7 @@ Or manually:
 import os
 import subprocess
 import sys
+import threading
 from pathlib import Path
 
 import pytest
@@ -26,8 +27,10 @@ from tests.support.server import make_server_client, requires_server
 
 from tests.integration.helpers import (
     TEST_DB_URL,
+    SlowHTTPServer,
     create_client_env,
     write_db_config,
+    write_store_catalog,
 )
 
 GENOME_ALIAS = "rCRSd"
@@ -692,6 +695,64 @@ def store_backed_server(tmp_path_factory):
     except subprocess.TimeoutExpired:
         store_proc.kill()
         store_proc.wait()
+
+
+#: Seconds the slow store server waits before each response (S3 stand-in).
+SLOW_STORE_DELAY = 0.75
+
+
+@pytest.fixture
+def catalog_reload_server(tmp_path):
+    """A `refgenie serve` that gains a slow remote store from a scheduled catalog import.
+
+    The server starts from a catalog with no stores and imports it again every
+    second. ``publish_store()`` swaps in a catalog that lists the demo store,
+    served by a :class:`SlowHTTPServer`; the next import then loads that store
+    in the scheduler's thread while the server keeps answering requests, as
+    production does when the published catalog gains a store.
+
+    Yields a dict with:
+        - url: refgenie server base URL
+        - store: the :class:`SlowHTTPServer` serving the store
+        - publish_store: call to list the store in the catalog
+    """
+    store_dir = tmp_path / "store"
+    store_dir.mkdir()
+    _build_demo_store(store_dir)
+    catalog = tmp_path / "catalog.sqlite"
+    write_store_catalog(catalog, {})
+
+    home = tmp_path / "home"
+    home.mkdir()
+    db_config = home / "refgenie_db_config.yaml"
+    db_config.write_text(f"type: sqlite\npath: {home / 'db'}\n")
+    genome_folder = home / "genomes"
+    genome_folder.mkdir()
+    env = {
+        "REFGENIE_HOME_PATH": str(home),
+        "REFGENIE_DB_CONFIG_PATH": str(db_config),
+        "REFGENIE_GENOME_FOLDER": str(genome_folder),
+        "REFGENIE_CATALOG_URL": str(catalog),
+        "CATALOG_IMPORT_INTERVAL_SECONDS": "1",
+        "REFGENIE": None,
+        "NO_COLOR": "1",
+        "TERM": "dumb",
+    }
+
+    with SlowHTTPServer(store_dir, SLOW_STORE_DELAY) as store:
+        port = find_free_port()
+        proc = start_refgenie_serve(env, port)
+        # Read the server's output as it comes, so a full pipe never blocks it.
+        for pipe in (proc.stdout, proc.stderr):
+            threading.Thread(target=pipe.read, daemon=True).start()
+        try:
+            yield {
+                "url": f"http://127.0.0.1:{port}",
+                "store": store,
+                "publish_store": lambda: write_store_catalog(catalog, {"slow": store.url}),
+            }
+        finally:
+            stop_refgenie_serve(proc)
 
 
 @pytest.fixture(scope="session")

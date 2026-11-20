@@ -3,8 +3,12 @@
 Fixtures stay in ``conftest.py``; anything a test module imports lives here.
 """
 
+import functools
+import http.server
 import os
 import subprocess
+import threading
+import time
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -123,3 +127,65 @@ def create_client_env(tmp_path: Path, *server_urls: str) -> dict:
     engine.dispose()
 
     return env
+
+
+class SlowHTTPServer:
+    """Serve a directory over HTTP, waiting ``delay`` seconds before each response.
+
+    Stands in for a remote store on S3, where each request takes a while. It
+    runs in a thread of the test process, so it may only serve another
+    process: a gtars call here could hold this process's GIL and stall it.
+    ``first_request`` is set when the first request arrives.
+    """
+
+    def __init__(self, directory: Path, delay: float):
+        self.first_request = threading.Event()
+        server = self
+
+        class Handler(http.server.SimpleHTTPRequestHandler):
+            def do_GET(self):
+                server.first_request.set()
+                time.sleep(delay)
+                super().do_GET()
+
+            def log_message(self, *args):
+                pass
+
+        handler = functools.partial(Handler, directory=str(directory))
+        self._httpd = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
+        self.url = f"http://127.0.0.1:{self._httpd.server_port}"
+
+    def __enter__(self) -> "SlowHTTPServer":
+        threading.Thread(target=self._httpd.serve_forever, daemon=True).start()
+        return self
+
+    def __exit__(self, *exc) -> None:
+        self._httpd.shutdown()
+        self._httpd.server_close()
+
+
+def write_store_catalog(dest: Path, stores: dict[str, str]) -> None:
+    """Write a publish catalog at ``dest`` that lists ``stores`` (name -> URL) and nothing else.
+
+    The catalog is built beside ``dest`` and moved into place in one step, so
+    a server importing ``dest`` on a schedule never reads half a file.
+    """
+    from sqlmodel import create_engine
+
+    from refgenie import Refgenie
+    from refgenie.db.tables import StoreType
+    from refgenie.publish_catalog import export_publish_catalog
+
+    build = dest.parent / f"{dest.stem}-build"
+    build.mkdir(parents=True, exist_ok=True)
+    db_path = build / "db.sqlite"
+    db_path.unlink(missing_ok=True)
+    engine = create_engine(f"sqlite:///{db_path}")
+    rg = Refgenie(database_engine=engine, suppress_migrations=True)
+    rg.database.init(genome_folder=build / "genomes", genome_stage_folder=build / "stage")
+    for priority, (name, url) in enumerate(stores.items(), start=10):
+        rg.store.add(name, url, StoreType.remote, priority=priority)
+    staged = build / "catalog.sqlite"
+    export_publish_catalog(rg, staged, "https://example.org/assets")
+    engine.dispose()
+    os.replace(staged, dest)

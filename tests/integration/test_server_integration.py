@@ -7,6 +7,7 @@ Run via: ./tests/scripts/test-integration.sh
 """
 
 import os
+import time
 import urllib.request
 from pathlib import Path
 
@@ -108,6 +109,46 @@ class TestGenomeSpeciesSearch:
 
 
 # =============================================================================
+class TestStoreLoadKeepsServing:
+    """Loading a remote store must not stop the server answering other requests.
+
+    gtars calls that hold the Python GIL while they fetch from the network
+    freeze every thread in the server until they return.
+    """
+
+    #: A cheap request may take this long while a store loads. Loading the demo
+    #: store makes 8 fetches of SLOW_STORE_DELAY each; with the GIL held a
+    #: request waits for most of that (about 6s), without it a few ms.
+    MAX_LATENCY = 1.0
+
+    def test_requests_answer_while_a_store_loads(self, catalog_reload_server):
+        server = catalog_reload_server
+        latencies = []
+        with httpx2.Client(base_url=server["url"], timeout=60) as http:
+            assert http.get("/seqcol/service-info").json()["seqcol"]["refget_store"] == {
+                "enabled": False
+            }
+            server["publish_store"]()
+            assert server["store"].first_request.wait(timeout=30), "the store never started loading"
+            deadline = time.monotonic() + 60
+            while time.monotonic() < deadline:
+                for path in ("/v4/healthcheck", "/seqcol/service-info"):
+                    start = time.monotonic()
+                    resp = http.get(path)
+                    latencies.append((round(time.monotonic() - start, 2), path))
+                    assert resp.status_code == 200
+                if resp.json()["seqcol"]["refget_store"].get("n_collections") == 3:
+                    break
+                time.sleep(0.02)
+            else:
+                pytest.fail("the store never finished loading")
+        worst = max(latencies)
+        assert worst[0] < self.MAX_LATENCY, (
+            f"{worst[1]} took {worst[0]}s while the store loaded "
+            f"(slowest: {sorted(latencies, reverse=True)[:5]})"
+        )
+
+
 # Scenario 12: Data Channel Integration
 # =============================================================================
 
